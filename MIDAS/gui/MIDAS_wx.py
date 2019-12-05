@@ -25,7 +25,6 @@ class MainWindow(wx.Frame):
 
         self.SetSize((1400, 900))
         #self.CheckVersion()
-
         self.main = wx.SplitterWindow(self, wx.ID_ANY, style=wx.SP_3DSASH | wx.SP_BORDER)
         self.topsplit = wx.SplitterWindow(self.main, wx.ID_ANY, style=wx.SP_3DSASH | wx.SP_BORDER)
 
