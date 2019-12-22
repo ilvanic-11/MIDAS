@@ -45,6 +45,7 @@
 #Syn-5. def FIBONACCI_TO_MUSIC(range_l, range_h, scale_mode, base, note_length = 1, spaces=False)
 #Syn-   def fibonacci_range_mm(l, h)
 #Syn-   def base10toN(num, base)
+
 #MUSIC21_FUNCTIONS\CLASSES
 #-------------------------------------
 #M21-1. def DELETE_REDUNDANT_NOTES( in_stream, force_sort=False)
@@ -55,13 +56,14 @@
 #M21-. TODO: music21.clash.Clash() A music21 object for housing multiple notes of same pitch and offset with different velocities.
 # 		Similar to music21.chord.Chord. (redundant, might use stream.Parts instead for simplicity)
 #M21-. TODO:  MUSIC21.CONVERTER.PARSE(notafy=True)
-#
+#M21-. def MAKE_MUSICODE()
 ##GUI_FUNCTIONS (Generally Private)
 #----------------------------------
 #GUI-1. def STREAM_TO_MATRIX( stream)
 #GUI-2. def MATRIX_TO_STREAM( matrix, connect, cell_note_size)
 ###############################################################################
 
+import os
 import music21
 import copy
 import random
@@ -776,6 +778,31 @@ def change_velocities_by_duration(in_stream, dur_choice=None, vel_choice=None):
         new_vel_list.append(x.volume.velocity)
     print("Velocities are now: ", new_vel_list)
     return in_stream
+
+def make_musicode(in_stream, musicode_name, shorthand, full_path=None):
+    #Latin_Script = "AaBbCcDdEeFfGgHhIiJjKkLlMmNnOoPpQqRrSsTtUuVvWwXxYyZz          ?,;':-.!\"()[]/   0123456789"
+
+    set_path = r"musicode_libraries\\"       #TODO Should resources be named something else? Regardless, this relative path is set.
+    if full_path is None:
+        full_path = set_path
+        absFilePath = os.path.dirname(os.path.abspath(set_path))
+        resource_path = absFilePath + "\\resources\\" + full_path
+        os.mkdir(resource_path + musicode_name + "\\\\")    #TODO What should we do if directory already exists?
+        full_new_musicode_path = resource_path + musicode_name + "\\\\"
+        #print(resource_path + musicode_name + "\\")
+        #print(full_new_musicode_path)
+    else:
+        full_new_musicode_path = full_path
+    if os.path.exists(full_new_musicode_path) == False:
+        os.mkdir(full_new_musicode_path)
+    if in_stream.hasMeasures is False:
+        in_stream.makeMeasures()
+    assert in_stream.hasMeasures(), "There are no measures in this stream. Call 'in_stream.makeMeasures().'"
+    assert in_stream[0].isMeasure, "This first index is not a music21.stream.Measure() object."
+    for j in in_stream:   #j will be an iteration of measures, since we just established them.
+        print(j)
+        j.write("mid",  full_new_musicode_path + "musicode" + "_" + shorthand + "_" + str(j.measureNumber) + ".mid")
+
 
 
 
