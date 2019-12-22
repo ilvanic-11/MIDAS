@@ -48,6 +48,24 @@ import copy
 from midas_scripts import music21funcs
 import numpy
 
+FLStudioColors = {
+    1: (158, 209, 165),  # "Green"),
+    2: (159, 211, 186),  # "Pale Green"),
+    3: (161, 214, 208),  # "Teal"),
+    4: (163, 202, 216),  # "Light Blue"),
+    5: (165, 184, 219),  # "Blue"),
+    6: (168, 167, 222),  # "Violet"),
+    7: (188, 167, 222),  # "Purple"),
+    8: (209, 167, 222),  # "Fuschia"),
+    9: (221, 167, 214),  # "Pink"),
+    10: (219, 165, 192),  # "Red"),
+    11: (217, 163, 169),  # "Red-Orange"),
+    12: (214, 175, 162),  # "Orange"),
+    13: (212, 193, 160),  # "Orange-Yellow"),
+    14: (209, 210, 158),  # "Yellow"),
+    15: (189, 209, 158),  # "Yellow-Green"),
+    16: (169, 209, 157)  # "Light-Green")
+}
 
 ##MIDIART_FUNCTIONS
 # --------------------------------------
@@ -107,123 +125,118 @@ def filter_notes_by_key(stream, key, in_place=True):
 	elif (type(keysig) is music21.key.Key):
 		for p in music21.scale.Scale.extractPitchList(keysig.getScale()):
 			allowedPitches.append(p.pitchClass)
-	print(allowedPitches)
+	#print(f"AllowedPitches: {allowedPitches}")
 
 	#remove notes that aren't in allowed pitches
 	for n in list(s.recurse()):
 		if type(n) is music21.chord.Chord:
 			for p in n.pitches:
-				if (p.pitchClass in allowedPitches):
-					print(f"removep:{p}")
+				if (p.pitchClass not in allowedPitches):
+					print(f"removed_pitch:{p}")
 					n.remove(p)
 		elif type(n) is music21.note.Note:
-			if (n.pitch.pitchClass in allowedPitches):
+			#print(f"n.pitch.pitchClass: {n.pitch.pitchClass}")
+			if (n.pitch.pitchClass not in allowedPitches):
 				s.remove(n, recurse=True)
-				print(f"removen:{n}")
-	s.show('txt')
+				print(f"removed_note:{n}")
+	#s.show('txt')
 	if in_place:
 		stream = s
 	return s
 
 # MA-2.
-def make_midi_from_pixels(pixels, granularity, connect=False, note_pxl_value=255, colors=True):
+def make_midi_from_colored_pixels(pixels, granularity, connect=False, colors=None):
 	"""
-	Make midi picture, b***h.
-	:param pixels: 			The 2D array of pixel values.
+	Make midiart from pixels.  Splits into colors of FLStudio piano roll.
+	:param pixels: 			The 2D array of pixel values. each element of 2D array must be a tuple with RGB values (R,G,B)
 	:param granularity: 	like music21's quarterlength.  4=each 'pixel' is whole note, 1=quarternote, 0.5=eightnote etc.
 	:param connect: 		True means connect adjacent notes.
-	:param keychoice: 		Musical key to keep notes in.  Notes that would not be in this key are not put in the final midi.
-	:param note_pxl_value:  When not using the color function, note_pxl_value, either 255 or 0,  determines whether "black" colors are notes or "white" colors are notes. Allows for inverted images.
-	:param colors:			When not using note_pxl_value, clrs will enable the use of color values acquired from the nearest-neighbor algorithm that allows for a color display of notes in FL Studio.
-							See set_to_nn_colors().
-	:
+	:param colors			The list of colors to use.  if colors=None, will use FLStudio Piano Roll colors
 	:return: music21.stream.Stream
 	"""
 
 	if len(pixels) > 128:
-		print("Too big, asshole. Fix it\n")
 		raise ValueError("The .png file size is too large.")
 		return None
 	# Establish variables.
-	s_stream = music21.stream.Stream()
+
 	part_stream = music21.stream.Stream()
-	end_stream = music21.stream.Stream()
+	out_stream = music21.stream.Stream()
 
-	if colors is True:
-		colors = {
-			1: (158, 209, 165),  # "Green"),
-			2: (159, 211, 186),  # "Pale Green"),
-			3: (161, 214, 208),  # "Teal"),
-			4: (163, 202, 216),  # "Light Blue"),
-			5: (165, 184, 219),  # "Blue"),
-			6: (168, 167, 222),  # "Violet"),
-			7: (188, 167, 222),  # "Purple"),
-			8: (209, 167, 222),  # "Fuschia"),
-			9: (221, 167, 214),  # "Pink"),
-			10: (219, 165, 192),  # "Red"),
-			11: (217, 163, 169),  # "Red-Orange"),
-			12: (214, 175, 162),  # "Orange"),
-			13: (212, 193, 160),  # "Orange-Yellow"),
-			14: (209, 210, 158),  # "Yellow"),
-			15: (189, 209, 158),  # "Yellow-Green"),
-			16: (169, 209, 157)  # "Light-Green")
-		}
-		# Create stream with parts and parts names.
-		for k in colors:
-			parts1 = music21.stream.Part()
-			parts1.partsName = k
-			part_stream.insert(0.0, copy.deepcopy(parts1))
+	if colors == None:
+		colors = FLStudioColors
 
-		for l in part_stream.getElementsByClass(music21.stream.Part):
-			# for x in note_list:
-			# for c in pixels2:
-			for y in range(0, len(pixels)):
-				for x in range(0, len(pixels[y])):
+	for q in colors:
+		part = music21.stream.Part()
+		part.partsName = q
+		part.offset = 0
+
+		for y in range(0, len(pixels)):
+			for x in range(0, len(pixels[y])):
+				if tuple(pixels[y][x].flatten()) == colors[q]:
 					newpitch = music21.pitch.Pitch()
 					newpitch.ps = 127 - y
-					# y_list.append(y)
 					n = music21.note.Note(newpitch)
 
 					n.offset = x
 					totalduration = granularity
-					d = music21.duration.Duration()
-					d.quarterLength = totalduration
-					n.duration = d
-					# note_list.append(n)
-					for q in colors:
-						if tuple(pixels[y][x].flatten()) == colors[
-							q] and q == l.partsName:  ##ex == clrs[q] and q == l.partsName:  ##if q.volume.velocity == l.partsName:
-							l.insert(n.offset * granularity, copy.deepcopy(n))
-						else:
-							pass
 
-			end_stream.insert(l.offset, copy.deepcopy(l))
-		print("Stream created.")
-		# end_stream.show('txt')
-		return end_stream  # part_stream.insert(offsetx * granularity, n)
-	# Below here works.
-	elif colors is False:
-		for y in range(0, len(pixels)):
-			for x in range(0, len(pixels[y])):
-				if pixels[y][x] == note_pxl_value:
-					newpitch = music21.pitch.Pitch()
-					newpitch.ps = 127 - y
-					n = music21.note.Note(newpitch)
-					# n.pitch.midi = 127 - y
-					totalduration = granularity
-					offsetx = x
 					if connect:
-						while (x + 1) < len(pixels[y]) and pixels[y][x + 1] == note_pxl_value:
+						while (x + 1) < len(pixels[y]) and tuple(pixels[y][x+1].flatten()) == colors[q]:
 							totalduration = totalduration + granularity
 
-							pixels[y][x + 1] = abs(note_pxl_value - 1)
+							pixels[y][x + 1] = (-1,-1,-1)
 							x = x + 1
 
 					d = music21.duration.Duration()
 					d.quarterLength = totalduration
 					n.duration = d
-					s_stream.insert(offsetx * granularity, n)
-		return s_stream
+					part.insert(n.offset * granularity, copy.deepcopy(n))
+
+		out_stream.insert(part.offset, copy.deepcopy(part))
+
+	#print("Stream created.")
+	# out_stream.show('txt')
+	return out_stream
+
+
+
+def make_midi_from_grayscale_pixels(pixels, granularity, connect=False, note_pxl_value=255):
+	"""
+	Make midi picture
+	:param pixels: 			The 2D array of pixel values. each element is a single grayscale value.  0=Black, 255=White.
+	:param granularity: 	like music21's quarterlength.  4=each 'pixel' is whole note, 1=quarternote, 0.5=eightnote etc.
+	:param connect: 		True means connect adjacent notes.
+	:param note_pxl_value:  note_pxl_value determines which pixels will count as notes.
+								0=Black, 255=White, or any gray value 0-255.
+	:
+	:return: music21.stream.Stream
+	"""
+
+	out_stream = music21.stream.Stream()
+	for y in range(0, len(pixels)):
+		for x in range(0, len(pixels[y])):
+			if pixels[y][x] == note_pxl_value:
+				newpitch = music21.pitch.Pitch()
+				newpitch.ps = 127 - y
+				n = music21.note.Note(newpitch)
+				# n.pitch.midi = 127 - y
+				totalduration = granularity
+				n.offset = x
+				if connect:
+					while (x + 1) < len(pixels[y]) and pixels[y][x + 1] == note_pxl_value:
+						totalduration = totalduration + granularity
+
+						pixels[y][x + 1] = abs(note_pxl_value - 1)
+						x = x + 1
+
+				d = music21.duration.Duration()
+				d.quarterLength = totalduration
+				n.duration = d
+				out_stream.insert(n.offset * granularity, n)
+
+
+	return out_stream
 
 
 # channels_dict = OrderedDict.fromkeys(b for b in range(1, 17))
@@ -315,33 +328,19 @@ def make_midi_from_pixels(pixels, granularity, connect=False, note_pxl_value=255
 # NEW METHOD
 
 ###TODO Figure out threshold ranges. K-D Trees shit.
-def set_to_nn_colors(im_array, clrs=None, FL=True):
+def set_to_nn_colors(im_array, clrs=None):
 	"""
-	This function takes a 3D numpy color array(i.e an image), and converts all of the color tuples of that image to 16 different colors. This allows for display in FL studio with those 16 colors.
+	This function takes a 3D numpy color array(i.e an image), and converts all of the color tuples of that image to
+	16 different colors. This allows for display in FL studio with those 16 colors.
+
 	:param im_array: A 3D numpy image array.
-	:param clrs: A user defined dictionary of colors, allowing for greater possibility of color display once for future applications.
-	:param FL: Defaults to true, FL=True means the colors to which the colors tuples from im_array will be exactly the same as the ones use in FL studios which represent midi channels.
+	:param clrs: A user defined dictionary of colors, allowing for greater possibility of colors for future applications.
+				 If clrs=None, will default to using the FLStudio Piano Roll colors
+
 	:return:
 	"""
-	if FL:
-		clrs = {
-			1: (158, 209, 165),  # "Green"),
-			2: (159, 211, 186),  # "Pale Green"),
-			3: (161, 214, 208),  # "Teal"),
-			4: (163, 202, 216),  # "Light Blue"),
-			5: (165, 184, 219),  # "Blue"),
-			6: (168, 167, 222),  # "Violet"),
-			7: (188, 167, 222),  # "Purple"),
-			8: (209, 167, 222),  # "Fuschia"),
-			9: (221, 167, 214),  # "Pink"),
-			10: (219, 165, 192),  # "Red"),
-			11: (217, 163, 169),  # "Red-Orange"),
-			12: (214, 175, 162),  # "Orange"),
-			13: (212, 193, 160),  # "Orange-Yellow"),
-			14: (209, 210, 158),  # "Yellow"),
-			15: (189, 209, 158),  # "Yellow-Green"),
-			16: (169, 209, 157)  # "Light-Green")
-		}
+	if clrs == None:
+		clrs = FLStudioColors
 	else:
 		l_clrs = array_to_lists_of(clrs)
 		clrs = dict.fromkeys(b for b in range(len(l_clrs)))
@@ -379,28 +378,18 @@ def set_to_nn_colors(im_array, clrs=None, FL=True):
 	return im_array
 
 
-##nparray.reshape((-1, 3))
-# Note:if we rip out coords\colors in order, and we put them back in order, we will get the original image back.
-# Reshape colors_array for iteration.
-# new_colors = np.reshape(im_array, (im_array.shape))
-
-##(2, IntVector[2, 1], DoubleVector[3, 12])
-
-
-###music21.midi.translate.midiTracksToStreams(midiTracks, ticksPerQuarter=None, quantizePost=True, inputM21=None,
-##**keywords) Given a list of midiTracks, populate this Stream with a Part for each track.
-
-def set_parts_to_midi_channels(in_stream, fptf):
+def set_parts_to_midi_channels(in_stream, output_file):
 	"""
-	Assuming that notes are allocated to particular parts in a music21 stream, this function takes those parts and allocates them to specific midi channels in a midifile.
+	Assuming that notes are allocated to particular parts in a music21 stream, this function takes those parts and
+	allocates them to specific midi channels in a midifile.
 	This changes how midi data is imported in DAWS and the like.
 	:param in_stream: Stream we are turning into a midi file.
-	:param fptf: Full path to output midi full.
+	:param output_file: Full path to output midi full.
 	:return: Writes music21.stream.Stream data to a midifile. This function doesn't return anything.
 	"""
 
 	# Create the operand .mid file from in_stream.
-	in_stream.write('mid', fptf)  # Include filename.mid in fptf.
+	in_stream.write('mid', output_file)  # Include filename.mid in fptf.
 
 	# Change stream to list of miditracks (if one wishes to view the data.
 	##Given a Stream, Score, Part, etc., that may have substreams
@@ -415,7 +404,7 @@ def set_parts_to_midi_channels(in_stream, fptf):
 
 	# Create music21.midi.MidiFile() object.
 	sparky = music21.midi.MidiFile()
-	sparky.open(fptf, attrib='rb')
+	sparky.open(output_file, attrib='rb')
 	#sparky.tracks
 	sparky.read()
 	#sparky.tracks
@@ -429,32 +418,10 @@ def set_parts_to_midi_channels(in_stream, fptf):
 	# if t < 17:
 	#     t += 1
 	sparky.close()
-	sparky.open(fptf, attrib='wb')
+	sparky.open(output_file, attrib='wb')
 	sparky.write()
 	sparky.close()
 
-
-# End notes:
-# music21.converter.parse() ruins channel allocation?
-# Open file in FL Studio by drag opening in to channel rack or by file-->open fptf.
-# Drag opening maintains the colors, but does not separate the notes into separate tracks.
-# File->Open OR File->import midi file will separate the notes into channels by track. (there is a "create one channel per track" option, but it was malfunctioning at present.
-
-
-###  # for j in in_stream.getElementsByClass(stream.Part):
-#     for q in clrs_list:
-#         if i == q:
-
-
-###Set channel based on threshold ranges. With the midi file-writing feature
-
-
-# 255, 255, 255 color grid coords_array?
-
-# a = np.arange(0, 256, 1).reshape((256, 1))
-# b = a
-# c = b
-# my255 = np.column_stack((a, b, c))
 
 # MA-3.
 def make_pixels_from_midi(in_stream, color=[255, 255, 255], gran=16):
@@ -488,16 +455,6 @@ def make_pixels_from_midi(in_stream, color=[255, 255, 255], gran=16):
 	c = np.fliplr(b)
 	return c
 
-
-# im_list = list()
-# for i in a.flatten():
-#     if i == 0:
-#         im_list.append([0, 0, 0])
-#     elif i == 1:
-#         im_list.append([255, 255, 255])
-# im_array = np.array(im_list, dtype=np.float64, ndmin=3)
-# im_array.reshape(127, int(in_stream.highestTime * 16), 3)
-# return im_array
 
 # MA-4.
 def strip_midi_by_chords(in_stream, directory):
@@ -647,41 +604,76 @@ def stagger_pitch_range(in_stream, stepsize=1, ascending=True, starting_offset=N
 # MA-7. TODO: def stagger_offset_range():
 
 # MA-8.
-def transcribe_image_to_midiart(im_path, midi_path, granularity, connect, keychoice=None, note_pxl_value=255, clrs=False, write=False):
+def transcribe_colored_image_to_midiart(img, granularity, connect, keychoice=None, colors=None, output_path=None):
 	"""
-	This function is the commonly called transcribe function for creating musical images. It inherits parameters from "make_midi_from_pixels."
+	This function is the commonly called transcribe function for creating musical images.
 	:param im_path: A file path or numpy array of an image.
-	:param midi_path: Directory to which output will be written, specified as a string.
 	:param granularity: quarterLength value that determines the offset and duration values of all the notes transcribed.
 	:param connect: The contiguity feature. Notes are chopped by default. Connect=True connects adjacent notes contiguously.
-	:param keychoice: The key of the piece, specificed as a string (i.e. "C" for C Major or "C#m" for C Sharp Minor)
-	:param note_pxl_value: When not dealing clrs, images are converted to having black and white pixels. A value of 255 or 0 will determine what of those pixels from the image will be turned into note
-	:param clrs: If clrs= True, note_pxl_value becomes irrelevant, and this enables the use of color tuples found in the image.
-	:param write:
+	:param keychoice: The key of the piece, specified as a string (i.e. "C" for C Major or "C#m" for C Sharp Minor)
+	:param colors: If clrs=True, note_pxl_value becomes irrelevant, and this enables the use of color tuples found in the image.
+	:param output_path: Directory to which output will be written, specified as a string.
+
 	:return: Returns a music21.stream.Stream() object.
 	"""
-	if type(im_path) == numpy.ndarray and im_path.ndim == 2:
-		img = im_path
-	elif type(im_path) == str:
-		img = cv2.imread(im_path, 0)
-	else:
-		print("Not a filepath or correct numpy array. For correct numpy array, use cv2.imread(image, 0).")
+	if type(img) == str:
+		img = cv2.imread(img, cv2.IMREAD_COLOR)
+
+	if img.ndim != 3:
+		print("Incorrect numpy array format.  Colored image numpy array should have shape (x,y,3).")
+		print(f" Your input img had shape {img.shape}.")
 		return None
-	if clrs is False:
-		for x in range(0, len(img)):
-			for y in range(0, len(img[x])):
-				if img[x][y] != 255:
-					img[x][y] = 0
-	# np.set_printoptions(threshold=np.inf)
-	print(img)
+
 	if len(img) > 127:
-		print("Too big, asshole. Fix it\n")
-		raise ValueError("The .png file size is too large.")
-	s = make_midi_from_pixels(img, granularity, connect, keychoice, note_pxl_value, clrs)
-	if write == True:
-		s.write('mid', midi_path)
-	else:
-		pass
+		print("The .png file size is too large. Scaling to height of 127.")
+		height = 127
+		width = int(127 / len(img) * len(img[0]))
+		img = cv2.resize(img, (width, height), cv2.INTER_AREA)
+
+	img_nn = set_to_nn_colors(img, colors)
+	s = make_midi_from_colored_pixels(img_nn, granularity, connect, colors)
+	filter_notes_by_key(s, keychoice, in_place=True)
+	if output_path is not None:
+		set_parts_to_midi_channels(s, output_path)
+
+	return s
+
+
+def transcribe_grayscale_image_to_midiart(img, granularity, connect, keychoice=None, note_pxl_value=255, output_path=None):
+	"""
+	This function is the commonly called transcribe function for creating musical images.
+	:param img: A file path or numpy array of an image.
+	:param granularity: quarterLength value that determines the offset and duration values of all the notes transcribed.
+	:param connect: The contiguity feature. Notes are chopped by default. Connect=True connects adjacent notes contiguously.
+	:param keychoice: The key of the piece, specified as a string (i.e. "C" for C Major or "C#m" for C Sharp Minor)
+	:param note_pxl_value: When not dealing clrs, images are converted to having black and white pixels.
+						A value of 255 or 0 will determine what of those pixels from the image will be turned into note
+	:param output_path: Directory to which output will be written, specified as a string.
+
+	:return: Returns a music21.stream.Stream() object.
+	"""
+
+	if type(img) == str:
+		img = cv2.imread(img, cv2.IMREAD_GRAYSCALE)
+
+	if img.ndim != 2:
+		print("Incorrect numpy array format.  Grayscale image numpy array should have shape (x,y).")
+		print(f" Your input img had shape {img.shape}.")
+		return None
+
+	if len(img) > 127:
+		print("The .png file size is too large. Scaling to height of 127.")
+		height = 127
+		width = int(127 / len(img) * len(img[0]))
+		img = cv2.resize(img, (width, height), cv2.INTER_AREA)
+
+	s = make_midi_from_grayscale_pixels(img, granularity, connect, note_pxl_value)
+
+	filter_notes_by_key(s, keychoice, in_place=True)
+
+	if output_path is not None:
+		s.write('mid', output_path)
+
 	return s
 
 
@@ -706,27 +698,16 @@ def transcribe_image_edges_to_midiart(image_path, height, granularity, midi_path
 		# If a file path,
 		img = cv2.imread(image_path, 0)
 		small = cv2.resize(img, (int(height / len(img) * len(img[0])), height), cv2.INTER_AREA)
+
 	edges = cv2.Canny(small, 100, 200)
-	s = make_midi_from_pixels(edges, granularity, connect, keychoice, note_pxl_value, clrs)
+	s = make_midi_from_grayscale_pixels(edges, granularity, connect, note_pxl_value)
+
+	filter_notes_by_key(s, keychoice, in_place=True)
+
 	s.write('mid', midi_path)
 	return s
 
-# MA-10.
-def transcribe_image_clrs_to_midiart(image, out_file):
-	"""
-	The commonly called function for transcribing an image to a colored musical image .mid file.\
-	#TODO More parameters.
-	:param image:
-	:param out_file:
-	:return:
-	"""
-	# fptf1 = r"C:\Users\Isaac's\Desktop\PicPick AutoSave-T\Image 394.png"
 
-	imread = cv2.imread(image)
-	set_nn = set_to_nn_colors(imread, clrs=True, FL=True)
-	set_stream = make_midi_from_pixels(set_nn, .5, connect=False, colors=True)
-	set_parts_to_midi_channels(set_stream, out_file)
-	return set_stream
 
 # MA-11.
 def extract_sub_melodies(stream, keep_dur=False, chop_durs=False, offset_interval=0.25):
