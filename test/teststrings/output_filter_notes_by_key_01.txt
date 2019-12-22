@@ -1,0 +1,1 @@
+<music21.stream.Measure 1 offset=0.0><music21.clef.BassClef><music21.meter.TimeSignature 4/4><music21.note.Note B><music21.note.Note C><music21.chord.Chord A5 B5 B#5 C5 D5><music21.stream.Measure 2 offset=4.0><music21.note.Note D><music21.note.Note E><music21.note.Note E><music21.stream.Measure 3 offset=8.0><music21.note.Note F><music21.bar.Barline style=final>

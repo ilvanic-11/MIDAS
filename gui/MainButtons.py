@@ -122,9 +122,9 @@ class MainButtonsPanel(wx.Panel):
         if btn == "OK":
             pixels = dialog.edges
             print (pixels)
-            print("pixels shape", numpy.shape( pixels))
+            print("pixels shape", numpy.shape(pixels))
 
-            stream = midiart.make_midi_from_pixels(pixels, 0.125, True, dialog.inputKey.GetValue(), note_pxl_value=255, colors=False)
+            stream = midiart.make_midi_from_grayscale_pixels(pixels, 0.125, True, dialog.inputKey.GetValue(), note_pxl_value=255, colors=False)
             stream.show('txt')
 
             self.GetTopLevelParent().pianorollpanel.currentPage.StreamToGrid(stream)
@@ -285,10 +285,9 @@ class MIDIArtDialog(wx.Dialog):
 
         self.pixScaler = int(8 * self.granularitiesDict[self.rdbtnGranularity.GetString(self.rdbtnGranularity.GetSelection())])
 
-
-
         height = int(self.sldrHeight.GetValue())
         width = int(height / len(self.img) * len(self.img[0]))
+
         resizedImg = cv2.resize(self.img, (width, height), cv2.INTER_AREA)
         self.edges = cv2.Canny(resizedImg, 100, 200)
         self.previewImg = cv2.resize(self.edges, (self.pixScaler*width, height), cv2.INTER_AREA)
