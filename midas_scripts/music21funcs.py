@@ -782,6 +782,7 @@ def change_velocities_by_duration(in_stream, dur_choice=None, vel_choice=None):
 def make_musicode(in_stream, musicode_name, shorthand, full_path=None):
     #Latin_Script = "AaBbCcDdEeFfGgHhIiJjKkLlMmNnOoPpQqRrSsTtUuVvWwXxYyZz          ?,;':-.!\"()[]/   0123456789"
 
+    ##This block executes to save to local "midas/resources/musicode_libraries/" folder.
     set_path = r"musicode_libraries\\"       #TODO Should resources be named something else? Regardless, this relative path is set.
     if full_path is None:
         full_path = set_path
@@ -791,7 +792,7 @@ def make_musicode(in_stream, musicode_name, shorthand, full_path=None):
         full_new_musicode_path = resource_path + musicode_name + "\\\\"
         #print(resource_path + musicode_name + "\\")
         #print(full_new_musicode_path)
-    else:
+    else:   ##This block executes to save to specified fullpath.
         full_new_musicode_path = full_path
     if os.path.exists(full_new_musicode_path) == False:
         os.mkdir(full_new_musicode_path)
@@ -803,9 +804,77 @@ def make_musicode(in_stream, musicode_name, shorthand, full_path=None):
         print(j)
         j.write("mid",  full_new_musicode_path + "musicode" + "_" + shorthand + "_" + str(j.measureNumber) + ".mid")
 
+def change_midi_channels_to_one_channel(midi_file, channel=1):
+
+    a_file = music21.midi.MidiFile()
+    a_file.open(midi_file, attrib="rb")
+    a_file.read()
+    for j in a_file.tracks:
+        j.setChannel(channel)
+    a_file.close()
+    a_file.open(midi_file, attrib="wb")
+    a_file.write()
+    a_file.close()
 
 
+def split_midi_channels(midi_file, file_path, name, to_file=False):
 
+    ##Read Midi File
+    a_file = music21.midi.MidiFile()
+    a_file.open(midi_file, attrib="rb")
+    a_file.read()
+
+    ##Access and separate tracks and name stream.Parts accordingly.
+    a_stream = music21.midi.translate.midiTracksToStreams(a_file.tracks)
+    #note_tracks = [m for m in a_file.tracks if m.hasNotes()]
+    note_tracks_channels = []
+    for m in a_file.tracks:
+        if m.hasNotes():
+            if len(m.getChannels()) > 1:
+                note_tracks_channels.append(m.getChannels()[1])
+            else:
+                note_tracks_channels.append(m.getChannels())
+    print("NTCs", note_tracks_channels)
+    index_list = []
+    for indexes in a_file.tracks:
+        if indexes.hasNotes():
+            index_list.append(indexes)
+    print("IndexList", index_list)
+    print("Note_track Length:", len(note_tracks_channels))
+
+    for s in a_stream:
+        print("Firstfirst partname", s.partName)
+
+
+    # for t in note_tracks:
+    #     print("Notetrack Channel:", t.getChannels())
+
+    # for h in note_tracks_channels:
+    #     for i in a_stream:
+    #         i.partName = h
+
+    for z in range(0, len(index_list)):
+        a_stream[z].partName = note_tracks_channels[z]
+
+    #a_file.close()
+    #a_stream.show('txt')
+    for p in a_stream:
+        print("Changed partname:", p.partName)
+    if to_file:
+        for v in a_stream:
+            final_midis = music21.midi.MidiFile()
+            print("Changed partname:", v.partName)
+            v.write("mid", file_path + "\\" + name + "_" + "%s" % v.partName + ".mid")
+            final_midis.open(file_path + "\\" + name + "_" + "%s" % v.partName + ".mid", attrib='rb')
+            final_midis.read()
+            final_midis.tracks[0].setChannel(v.partName)
+            final_midis.close()
+            final_midis.open(file_path + "\\" + name + "_" + "%s" % v.partName + ".mid", attrib='wb')
+            final_midis.write()
+    else:
+        return a_stream
+
+# a_headers = [n for n in a_file.tracks if not n.hasNotes()]   ## Unnecessary because of midi.MidiFile()
         #M21-. TODO
 #def music21.clash.Clash? Khord? Vhord? Music21 object for housing multiple notes with different velocities at the same offset.
 
