@@ -5,7 +5,7 @@ import sys
 import os
 #Append your path to allow importing of musicode.py
 #sys.path.append(r"C:\Users\Isaac's\PycharmProjects\musicode")
-sys.path.append( os.path.join( os.path.dirname(__file__), os.path.pardir ) )
+sys.path.append( os.path.join( os.path.dirname(__file__), os.path.pardir ) )  #TODO Do abspath?
 
 #import musicode
 

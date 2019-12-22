@@ -390,7 +390,7 @@ def set_to_nn_colors(im_array, clrs=None, FL=True):
 ###music21.midi.translate.midiTracksToStreams(midiTracks, ticksPerQuarter=None, quantizePost=True, inputM21=None,
 ##**keywords) Given a list of midiTracks, populate this Stream with a Part for each track.
 
-def set_parts_to_midi_channels(in_stream, fptf):
+def set_parts_to_midi_channels(in_stream, fptf):   #TODO Should be a music21funcs function?
 	"""
 	Assuming that notes are allocated to particular parts in a music21 stream, this function takes those parts and allocates them to specific midi channels in a midifile.
 	This changes how midi data is imported in DAWS and the like.
@@ -424,7 +424,7 @@ def set_parts_to_midi_channels(in_stream, fptf):
 		if len(sparky.tracks) < 17:
 			sparky.tracks[j - 1].setChannel(j)
 		elif len(sparky.tracks) > 16:
-			print("Check your .mid File data. There may be an extra track at the beginning or another problem.")
+			print("Check your .mid file data. There may be an extra track at the beginning or another problem.")
 
 	# if t < 17:
 	#     t += 1
