@@ -13,13 +13,13 @@ class MainButtonsPanel(wx.Panel):
 
         sizer = wx.BoxSizer(wx.VERTICAL)
 
+        btn_Music21_Converter_Parse = wx.Button(self, -1, "Music21.Converter.Parse")
+        sizer.Add(btn_Music21_Converter_Parse, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL, 10)
+        self.Bind(wx.EVT_BUTTON, self.OnMusic21ConverterParseDialog, btn_Music21_Converter_Parse)
+
         btn_musicode = wx.Button(self, -1, "Musicode" )
         sizer.Add(btn_musicode, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL, 10)
         self.Bind(wx.EVT_BUTTON, self.OnMusicodeDialog, btn_musicode)
-
-        btn_show_in_FLStudio = wx.Button(self, -1, "Show in FLStudio")
-        sizer.Add(btn_show_in_FLStudio, 0, wx.ALL|wx.ALIGN_CENTER_HORIZONTAL, 10)
-        self.Bind(wx.EVT_BUTTON, self.OnShowinFLStudio, btn_show_in_FLStudio)
 
         btn_MIDIart = wx.Button(self, -1, "MIDI Art")
         sizer.Add(btn_MIDIart, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL, 10)
@@ -29,9 +29,17 @@ class MainButtonsPanel(wx.Panel):
         sizer.Add(btn_MIDIart3D, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL, 10)
         self.Bind(wx.EVT_BUTTON, self.OnMIDIArt3DDialog, btn_MIDIart3D)
 
-        btn_show_stream_txt = wx.Button(self, -1, "Show Stream Text")
-        sizer.Add(btn_show_stream_txt, 0, wx.ALL|wx.ALIGN_CENTER_HORIZONTAL, 10)
-        self.Bind(wx.EVT_BUTTON, self.OnShowStreamTxt, btn_show_stream_txt)
+        btn_show_in_FLStudio = wx.Button(self, -1, "Show in FLStudio")
+        sizer.Add(btn_show_in_FLStudio, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL, 10)
+        self.Bind(wx.EVT_BUTTON, self.OnShowinFLStudio, btn_show_in_FLStudio)
+
+        btn_show_in_MuseScore = wx.Button(self, -1, "Show in MuseScore")
+        sizer.Add(btn_show_in_MuseScore, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL, 10)
+        self.Bind(wx.EVT_BUTTON, self.OnShowinMuseScore, btn_show_in_MuseScore)
+
+        # btn_show_stream_txt = wx.Button(self, -1, "Show Stream Text")
+        # sizer.Add(btn_show_stream_txt, 0, wx.ALL|wx.ALIGN_CENTER_HORIZONTAL, 10)
+        # self.Bind(wx.EVT_BUTTON, self.OnShowStreamTxt, btn_show_stream_txt)
 
         btn_update_stream = wx.Button(self, -1, "Update Stream")
         sizer.Add(btn_update_stream, 0, wx.ALL|wx.ALIGN_CENTER_HORIZONTAL, 10)
@@ -72,6 +80,10 @@ class MainButtonsPanel(wx.Panel):
     def OnShowStreamTxt(self, evt):
         self.GetTopLevelParent().pianorollpanel.currentPage.stream.show('txt')
 
+    def OnMusic21ConverterParseDialog(self, evt):
+        dlg = Music21ConverterParseDialog(self, -1, "Parse Midi")
+        dlg.ShowWindowModal()
+
     def OnMusicodeDialog(self, evt):
         dlg = MusicodeDialog(self, -1, "Create Musicode")
         dlg.ShowWindowModal()
@@ -92,6 +104,8 @@ class MainButtonsPanel(wx.Panel):
             self._OnMusicodeDialogClosed(dialog, evt)
         elif type (dialog) is MIDIArtDialog:
             self._OnMIDIArtDialogClosed(dialog, evt)
+        elif type (dialog is Music21ConverterParseDialog):
+            self._OnM21ConverterParseDialogClosed(dialog, evt)
 
         dialog.Destroy()
 
@@ -124,11 +138,24 @@ class MainButtonsPanel(wx.Panel):
             print (pixels)
             print("pixels shape", numpy.shape(pixels))
 
-            stream = midiart.make_midi_from_grayscale_pixels(pixels, 0.125, True, dialog.inputKey.GetValue(), note_pxl_value=255, colors=False)
+            stream = midiart.make_midi_from_grayscale_pixels(pixels, 0.125, True,  note_pxl_value=255)   ##dialog.inputKey.GetValue(), , colors=False
             stream.show('txt')
 
             self.GetTopLevelParent().pianorollpanel.currentPage.StreamToGrid(stream)
 
+    def _OnM21ConverterParseDialogClosed(self, dialog, evt):
+        val = evt.GetReturnCode()
+        print("Val %d: " % val)
+        try:
+            btn = {wx.ID_OK: "OK",
+                   wx.ID_CANCEL: "Cancel"}[val]
+        except KeyError:
+            btn = '<unknown>'
+
+        if btn == "OK":
+            stream = music21.converter.parse(dialog.midi)
+            stream.show('txt')
+            self.GetTopLevelParent().pianorollpanel.currentPage.StreamToGrid(stream)
 
     def OnShowinFLStudio(self, evt):
         grid = self.GetTopLevelParent().pianorollpanel.currentPage
@@ -141,6 +168,15 @@ class MainButtonsPanel(wx.Panel):
         s.write("mid", os.getcwd() + os.sep + "MIDAS_temp.mid")
         print("\"C:\Program Files (x86)\Image-Line\FL Studio 12\FL64.exe\" \"" + os.getcwd() + os.sep + "MIDAS_temp.mid\"")
         subprocess.Popen([r"C:\Program Files (x86)\Image-Line\FL Studio 20\FL64.exe", os.getcwd() + os.sep + "MIDAS_temp.mid"])
+
+    def OnShowinMuseScore(self, evt):
+        s = self.GetTopLevelParent().pianorollpanel.currentPage.stream
+        s.show('txt')
+
+        s.write("mid", os.getcwd() + os.sep + "MIDAS_temp.mid")
+        print("\"C:\Program Files\MuseScore 3\bin\MuseScore3.exe\" \"" + os.getcwd() + os.sep + "MIDAS_temp.mid\"")
+        subprocess.Popen([r"C:\Program Files\MuseScore 3\bin\MuseScore3.exe", os.getcwd() + os.sep + "MIDAS_temp.mid"])
+        #r"C:\Program Files\MuseScore 3\bin\MuseScore3.exe"
 
 
 class MusicodeDialog(wx.Dialog):
@@ -306,3 +342,49 @@ class MIDIArt3DDialog(wx.Dialog):
         wx.Dialog.__init__(self)
         self.Create(parent, id, title, pos, size, style, name)
 
+class Music21ConverterParseDialog(wx.Dialog):
+    def __init__(self, parent, id, title, size=wx.DefaultSize,
+                 pos=wx.DefaultPosition, style=wx.DEFAULT_DIALOG_STYLE, name='MIDI Art 3D'):
+        wx.Dialog.__init__(self)
+        #self.midi = ""
+        self.Create(parent, id, title, pos, size, style, name)
+        self.ctrlsPanel = wx.Panel(self, -1, wx.DefaultPosition, style=wx.BORDER_RAISED)
+        self.btnLoadMidi = wx.Button(self.ctrlsPanel, -1, "Load Midi")
+        self.Bind(wx.EVT_BUTTON, self.OnLoadMidi, self.btnLoadMidi)
+
+        btnsizer = wx.StdDialogButtonSizer()
+        # if wx.Platform != "__WXMSW__":
+        btn = wx.ContextHelpButton(self)
+        btnsizer.AddButton(btn)
+        btn = wx.Button(self, wx.ID_OK)
+        btn.SetDefault()
+        btnsizer.AddButton(btn)
+        btn = wx.Button(self, wx.ID_CANCEL)
+        btnsizer.AddButton(btn)
+        btnsizer.Realize()
+
+        sizerMain = wx.BoxSizer(wx.VERTICAL)
+        #sizerMain.Add(sizerHor, 30)
+        sizerMain.Add(btnsizer, 0, wx.ALIGN_CENTER_HORIZONTAL | wx.ALL, 5)
+
+        self.SetSizerAndFit(sizerMain)
+
+        sizerCtrls = wx.BoxSizer(wx.VERTICAL)
+        sizerCtrls.Add(self.btnLoadMidi, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL, 20)
+
+
+
+    def OnLoadMidi(self, evt):
+        with wx.FileDialog(self, "Open Midi file", wildcard="Midi files (*.mid)|*.mid",
+                           style=wx.FD_OPEN | wx.FD_FILE_MUST_EXIST) as fileDialog:
+
+            if fileDialog.ShowModal() == wx.ID_CANCEL:
+                return  # the user changed their mind
+
+            # Proceed loading the file chosen by the user
+            pathname = fileDialog.GetPath()
+            print(pathname)
+            try:
+                self.midi = pathname
+            except IOError:
+                wx.LogError("Cannot open file '%s'." % pathname)

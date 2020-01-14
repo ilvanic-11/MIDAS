@@ -31,6 +31,8 @@ class PianoRollPanel(wx.Panel):
         self.pianorolls = list()
 
         self.InsertNewPianoRoll(0)
+        print(self.pianorolls[0])
+        print(type(self.pianorolls[0]))
         self.currentPage = self.pianorolls[self.pianorollNB.GetSelection()]
 
         self.pianorolls[0].GetGridWindow().Bind(wx.EVT_MOTION, self.OnMotion)

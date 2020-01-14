@@ -23,7 +23,7 @@ class MainWindow(wx.Frame):
 
         self.log = Log()
 
-        self.SetSize((1400, 900))
+        self.SetSize((1400, 900))  #TODO Optimize for users screen resolution.
         #self.CheckVersion()
         self.main = wx.SplitterWindow(self, wx.ID_ANY, style=wx.SP_3DSASH | wx.SP_BORDER)
         self.topsplit = wx.SplitterWindow(self.main, wx.ID_ANY, style=wx.SP_3DSASH | wx.SP_BORDER)
@@ -31,7 +31,7 @@ class MainWindow(wx.Frame):
         self.leftsplit = wx.SplitterWindow(self.topsplit, wx.ID_ANY, style=wx.SP_3DSASH | wx.SP_BORDER)
 
 
-        self.pycrustpanel = wx.py.shell.Shell(self.main)
+        self.pyshellpanel = wx.py.shell.Shell(self.main)
         self.pianorollpanel = PianoRollPanel.PianoRollPanel(self.topsplit, self.log)
         self.mainbuttonspanel = MainButtons.MainButtonsPanel(self.leftsplit, self.log)
         self.statsdisplaypanel = StatsDisplay.StatsDisplayPanel(self.leftsplit, self.log)
@@ -40,7 +40,14 @@ class MainWindow(wx.Frame):
         self._set_properties()
         self._do_layout()
         self.Maximize(True)
-
+        self.pyshellpanel.run('''exec(open(str(os.getcwd()) + "\\\\resources\\\\" + "Midas_Startup_Configs.py").read())''')
+        self.pyshellpanel.run('''intermediary_path''')
+        # Layer_0 = self.pianorollpanel
+        # new_locals = locals()
+        # self.pyshellpanel.run('''new_locals = %s''' % new_locals)
+        # self.pyshellpanel.run('''Layer_0 = %s''' % new_locals['Layer_0'])
+        # print("Chiggy Wiggy Dir", dir())
+        # print("Chiggy Wiggy Locals", locals())
 
     def _set_properties(self):
         self.SetTitle("MIDAS")
@@ -55,7 +62,7 @@ class MainWindow(wx.Frame):
     def _do_layout(self):
         self.leftsplit.SplitHorizontally(self.mainbuttonspanel, self.statsdisplaypanel)
         self.topsplit.SplitVertically(self.leftsplit, self.pianorollpanel, )
-        self.main.SplitHorizontally(self.topsplit, self.pycrustpanel)
+        self.main.SplitHorizontally(self.topsplit, self.pyshellpanel)
         self.topsplit.SetSashPosition(200)
 
         self.Layout()

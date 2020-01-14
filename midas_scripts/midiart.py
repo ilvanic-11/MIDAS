@@ -72,30 +72,6 @@ FLStudioColors = {
 # -----------------------------------------------------------------------
 # ----------------------------------------------------------------------------------------------------------------------
 
-# MA-1.
-def print_chords_in_piece(in_stream):
-	"""Use .flat and .makeMeasures to acquire appropriate callable stream
-	:param in_stream:
-	:return:
-	"""
-	ret_str = ""
-	s = in_stream.chordify().flat.makeMeasures()
-	ret_str += "[offset] [dur]   [pitches] : [common name]\n"
-	for m in s.getElementsByClass(music21.stream.Measure):
-		ret_str += "Measure " + repr(m.number) + "\n"
-		for c in m.getElementsByClass("Chord"):
-			if isinstance(c.offset, fractions.Fraction) or isinstance(c.duration.quarterLength, fractions.Fraction):
-				ret_str += "  " + repr(float(format(float(c.offset), ".3f"))).ljust(6) + " " + repr(
-					float(format(float(c.duration.quarterLength), ".3f"))).ljust(6) + " " + "["
-			else:
-				ret_str += "  " + repr(c.offset).ljust(6) + " " + repr(c.duration.quarterLength).ljust(
-					6) + " " + "["
-			for p in c.pitches:
-				ret_str += repr(p.nameWithOctave)
-			ret_str += "] : " + c.pitchedCommonName + "\n"
-
-	print(ret_str)
-	return ret_str
 
 def filter_notes_by_key(stream, key, in_place=True):
 	"""
@@ -604,7 +580,7 @@ def stagger_pitch_range(in_stream, stepsize=1, ascending=True, starting_offset=N
 # MA-7. TODO: def stagger_offset_range():
 
 # MA-8.
-def transcribe_colored_image_to_midiart(img, granularity, connect, keychoice=None, colors=None, output_path=None):
+def transcribe_colored_image_to_midiart(img, granularity=1, connect=False, keychoice=None, colors=None, output_path=None):
 	"""
 	This function is the commonly called transcribe function for creating musical images.
 	:param im_path: A file path or numpy array of an image.

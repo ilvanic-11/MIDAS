@@ -55,8 +55,12 @@
 #M21-5. def CHANGE_VELOCITIES_BY_RANGELIST(in_stream, volume_list)
 #M21-. TODO: music21.clash.Clash() A music21 object for housing multiple notes of same pitch and offset with different velocities.
 # 		Similar to music21.chord.Chord. (redundant, might use stream.Parts instead for simplicity)
-#M21-. TODO:  MUSIC21.CONVERTER.PARSE(notafy=True)
-#M21-. def MAKE_MUSICODE()
+#M21-.6 TODO:  MUSIC21.CONVERTER.PARSE(notafy=True)
+#M21-.7 def CHANGE_VELOCITES_BY_DURATION(in_stream, dur_choice=None, vel_choice=None)
+#M21-.8 def MAKE_MUSICODE(in_stream, musicode_name, shorthand, full_path=None)
+#M21-.9 def CHANGE_MIDI_CHANNELS_TO_ONE_CHANNEL(midi_file, channel=1)
+#M21-.10 def SPLIT_MIDI_CHANNELS(midi_file, file_path, name, to_file=False)
+#M21-.11 def PRINT_CHORDS_IN_PIECE(in_stream)
 ##GUI_FUNCTIONS (Generally Private)
 #----------------------------------
 #GUI-1. def STREAM_TO_MATRIX( stream)
@@ -761,6 +765,7 @@ def change_velocities_by_rangelist(in_stream, volume_list):
             v = 0
     return in_stream
 
+#M21-6.
 def change_velocities_by_duration(in_stream, dur_choice=None, vel_choice=None):
     #Create a set of duration choices.
     duration_list = list()
@@ -779,6 +784,7 @@ def change_velocities_by_duration(in_stream, dur_choice=None, vel_choice=None):
     print("Velocities are now: ", new_vel_list)
     return in_stream
 
+#M21-7.
 def make_musicode(in_stream, musicode_name, shorthand, full_path=None):
     #Latin_Script = "AaBbCcDdEeFfGgHhIiJjKkLlMmNnOoPpQqRrSsTtUuVvWwXxYyZz          ?,;':-.!\"()[]/   0123456789"
 
@@ -804,6 +810,7 @@ def make_musicode(in_stream, musicode_name, shorthand, full_path=None):
         print(j)
         j.write("mid",  full_new_musicode_path + "musicode" + "_" + shorthand + "_" + str(j.measureNumber) + ".mid")
 
+#M21-8.
 def change_midi_channels_to_one_channel(midi_file, channel=1):
 
     a_file = music21.midi.MidiFile()
@@ -817,6 +824,7 @@ def change_midi_channels_to_one_channel(midi_file, channel=1):
     a_file.close()
 
 
+#M21-9.
 def split_midi_channels(midi_file, file_path, name, to_file=False):
 
     ##Read Midi File
@@ -874,8 +882,59 @@ def split_midi_channels(midi_file, file_path, name, to_file=False):
     else:
         return a_stream
 
+# M21-1.
+def print_chords_in_piece(in_stream):
+	"""Use .flat and .makeMeasures to acquire appropriate callable stream
+	:param in_stream:
+	:return:
+	"""
+	ret_str = ""
+	s = in_stream.chordify().flat.makeMeasures()
+	ret_str += "[offset] [dur]   [pitches] : [common name]\n"
+	for m in s.getElementsByClass(music21.stream.Measure):
+		ret_str += "Measure " + repr(m.number) + "\n"
+		for c in m.getElementsByClass("Chord"):
+			if isinstance(c.offset, fractions.Fraction) or isinstance(c.duration.quarterLength, fractions.Fraction):
+				ret_str += "  " + repr(float(format(float(c.offset), ".3f"))).ljust(6) + " " + repr(
+					float(format(float(c.duration.quarterLength), ".3f"))).ljust(6) + " " + "["
+			else:
+				ret_str += "  " + repr(c.offset).ljust(6) + " " + repr(c.duration.quarterLength).ljust(
+					6) + " " + "["
+			for p in c.pitches:
+				ret_str += repr(p.nameWithOctave)
+			ret_str += "] : " + c.pitchedCommonName + "\n"
+
+	#print(ret_str)
+	return ret_str
 # a_headers = [n for n in a_file.tracks if not n.hasNotes()]   ## Unnecessary because of midi.MidiFile()
-        #M21-. TODO
+
+def print_show_streamtxt(in_stream):
+    filename = "Temp_Stream_Print.txt"
+    set_path = r"intermediary_path"
+    absFilePath = os.path.dirname(os.path.abspath(set_path))
+    resourcePath = absFilePath + "\\resources\\" + set_path
+    masterPath = resourcePath + "\\" + filename
+    in_stream.write('txt', masterPath)
+    file_read = open(masterPath, "r+")
+    ret_str = str(file_read.read())
+    in_stream.show('txt')
+    return ret_str
+
+def print_midi_data(in_stream):
+    filename = "Temp_Midi.mid"
+    set_path = r"intermediary_path"
+    absFilePath = os.path.dirname(os.path.abspath(set_path))
+    resourcePath = absFilePath + "\\resources\\" + set_path
+    masterPath = resourcePath + "\\" + filename
+    in_stream.write('mid', masterPath)
+    midiFile = music21.midi.MidiFile()
+    midiFile.open(masterPath, attrib='rb')
+    midiFile.read()
+    midistring = str(midiFile)
+    midiFile.close()
+    return midistring
+
+#M21-. TODO
 #def music21.clash.Clash? Khord? Vhord? Music21 object for housing multiple notes with different velocities at the same offset.
 
 
