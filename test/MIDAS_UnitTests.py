@@ -30,9 +30,10 @@ class MIDASTestCases(TestMIDAS):
 
 
 
-class MidiartTestCases(TestMidiart):
+class MidiartTestCases(TestMIDAS):
 
     def test_filter_notes_by_key(self):
+        self.maxDiff = None
         s = music21.converter.parse("tinyNotation: A#4 B4 C#4 C4 D#4 D4 E4 E4 F#4 F4")
         s.insert(music21.chord.Chord(["A5","B5","B#5","C5","C#5","D5","D#5"]))
 
