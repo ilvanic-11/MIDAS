@@ -13,7 +13,7 @@ class MainButtonsPanel(wx.Panel):
 
         sizer = wx.BoxSizer(wx.VERTICAL)
 
-        btn_Music21_Converter_Parse = wx.Button(self, -1, "Music21.Converter.Parse")
+        btn_Music21_Converter_Parse = wx.Button(self, -1, "Midi\Score \n Import")
         sizer.Add(btn_Music21_Converter_Parse, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL, 10)
         self.Bind(wx.EVT_BUTTON, self.OnMusic21ConverterParseDialog, btn_Music21_Converter_Parse)
 
