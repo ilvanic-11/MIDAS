@@ -199,4 +199,6 @@ class PianoRollPanel(wx.Panel):
                 for col in range(0, self.currentPage.GetNumberCols()):
                     s += self.currentPage.print_cell_info(row, col)
                 s += "\n"
+                print(type(s))
             f.write(s)
+            return s
