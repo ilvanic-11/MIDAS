@@ -200,7 +200,7 @@ def rain_execute():
         col.append(Column(i * row_width, screen, font))
 
     screen.fill(BLACK)
-    pygame.time.set_timer(pygame.QUIT, 3000)
+    pygame.time.set_timer(pygame.QUIT, 5000)
 
     while True:
         for event in pygame.event.get():

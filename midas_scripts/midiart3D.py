@@ -474,7 +474,14 @@ def make_vtk_points_mesh( points):
     return pdata
 
 
+def BPM_to_FPS(bpm, fps):
+    fps = (bpm * (bpm/60)) / 60
+    modulo = (bpm * fpb) % 60
+    return fps, modulo
 
+    # for i in range(51, 201, 1):
+    #     if BPM_to_FPS(i, 4)[1] == 0:
+    #         print("BPM:", i, "FPS:", BPM_to_FPS(i, 4))
 
 
     ##Research:

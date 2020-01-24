@@ -17,8 +17,8 @@ from numpy import array
 import numpy as np
 from Mayavi3D import PianoDisplay
 import music21
-from traits.etsconfig.api import ETSConfig
-ETSConfig.toolkit = 'wx'
+# from traits.etsconfig.api import ETSConfig
+# ETSConfig.toolkit = 'wx'
 #import vtk
 #import tvtk
 #g.mc = musicode.Musicode()
@@ -45,6 +45,7 @@ class Mayavi3DAnimator():
         self.scene = self.engine.scenes[0]
         ###Set Scene Background Color
         self.scene.scene.background = (0.0, 0.0, 0.0)
+        self.scene.scene.movie_maker.record = True   ###RECORD
         print("TYPE OF SCENE", self.scene)
         print("TYPE OF ENGINE", self.engine)
     def insert_piano_grid_text_timeplane(self, length):
@@ -187,7 +188,7 @@ class Mayavi3DAnimator():
         print("Children LIST length", len(self.engine.scenes[0].children))
         print("CHILDREN[0] CHILD", self.engine.scenes[0].children[0].children[0], type(self.engine.scenes[0].children[0].children[0],))
     ###DEFINE MUSIC ANIMATION
-    def animate(self, time_length, bpm=None, i_div=4):
+    def animate(self, time_length, bpm=None, i_div=2):
         from mayavi import mlab
         """ I_div should be 2 or 4. Upon a division of greater than 4, say 8, the millisecond delay becomes so small,
         that it is almost not even read properly, producing undesired results.
@@ -226,6 +227,7 @@ class Mayavi3DAnimator():
                 #print("timesleep:", (delay-.01))
                 #self.image_plane_widget.ipw.slice_index = int(round(i))
                 self.image_plane_widget.ipw.slice_position = i
+
                 yield
 
 
@@ -316,8 +318,9 @@ Points = midiart3D.transform_points_by_axis(Points, positive_octant=True)
 ##Acquire Span(s)
 Points_Span = Points.max()
 
-SM_Span = SparkMidiData.max()
-
+#SM_Span = SparkMidiData.max()
+SM_Span = SM_Midi.highestTime
+print(SM_Span)
 #Render Animation Scene with grid, music data, and title.
 animator.insert_piano_grid_text_timeplane(SM_Span)
 
@@ -331,10 +334,13 @@ animator.insert_piano_grid_text_timeplane(SM_Span)
 ####---Data Insert
 Ani3 = animator.insert_array_data(SparkMidiData, color=(1, .5, 0), mode="sphere", scale_factor=1)
 print('ANI 3!!!', type(Ani3))
-Ani4 = animator.insert_array_data(Points, color=(1, 0, .5), mode="sphere", scale_factor=1)
-print('ANI 4!!!', type(Ani4))
+# Ani4 = animator.insert_array_data(Points, color=(1, 0, .5), mode="sphere", scale_factor=1)
+# print('ANI 4!!!', type(Ani4))
 ####---Data Insert
 #Ani5 = animator.insert_array_data(LampTeddyData, color=(0, 1, 0), mode="cube", scale_factor=.5)
+
+####---Data Insert
+Ani7 = animator.insert_music_data(music21.converter.parse(r"C:\Users\Isaac's\Desktop\Neo Mp3s-Wavs-and-Midi\BEATS.mid"), color=(0, 1, 0), mode="cube", scale_factor=.5)
 
 #Title
 Ani6 = animator.insert_title("3iDiArt: Mesh", color=(1, .5, 0), size=50)
@@ -342,7 +348,8 @@ print('ANI 6!!!', type(Ani6))
 animator.establish_opening()
 
 #Animate.
-animator.animate(SM_Span, i_div=4)
+animator.animate(120, SM_Span, i_div=8)
+
 
 #def execute_animation():
 
