@@ -64,7 +64,7 @@ print("Successfully imported all paths.")
 print('\n')
 print("----Welcome to MIDAS, the Music-Intermediary Digital Art Suite.----")
 print('\n')
-print('     Using knowledge and techniques of python, music21, numpy, opencv-python, open3d, vtk, and mayavi, this gui\toolkit provides a musical engineer \n'
+print('     Using knowledge and techniques of python, music21, numpy, opencv-python, open3d, vtk, and mayavi, this gui toolkit provides a musical engineer \n'
       'with the ability to transform text, images, and point clouds into musical data for composing, production and visualization purposes. \n'
       'MIDAS incorporates strong musicological analyses displays as well as grants the user the ability to rapidly manipulate their musical data via input\output methods \n'
       'to and from other programs such as MuseScore, FL Studio, NotePad++, Word, Paint\PicPick, and even Blender. \n'

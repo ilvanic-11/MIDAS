@@ -3,9 +3,10 @@ from traits.etsconfig.api import ETSConfig
 ETSConfig.toolkit = 'wx'
 from gui import MainButtons, StatsDisplay, PianoRollPanel,Musical_Matrix_Rain
 from wx.adv import SplashScreen as SplashScreen
-from Mayavi3D import Mayavi3idiArtAnimation
-from Mayavi3D import Mayavi3idiArtAnimation_WorkSession_Copy
+#from Mayavi3D import Mayavi3idiArtAnimation
+from Mayavi3D import MayaviClassExamples_Work_Session
 import mayavi
+from mayavi import mlab
 from mayavi import plugins
 from mayavi.plugins import envisage_engine
 from mayavi.api import Engine
@@ -48,8 +49,8 @@ class MySplashScreen(SplashScreen):
 
 
     def ShowMain(self):
-        frame = MainWindow(None,-1, "MIDAS")
-        frame.Show()
+        # frame = MainWindow(None,-1, "MIDAS")
+        # frame.Show()
         if self.fc.IsRunning():
             self.Raise()
        #f wx.CallAfter(frame.ShowTip)
@@ -81,18 +82,25 @@ class MainWindow(wx.Frame):
 
         # Use traits to create a panel, and use it as the content of this
         # wx frame.
-        self.mayavi_view_control_panel = Mayavi3idiArtAnimation_WorkSession_Copy.MayaviSampleView().edit_traits(
+        self.mayavi_view = MayaviClassExamples_Work_Session.Mayavi3idiView()
+        #self.mayavi_view.configure_traits()
+        self.mayavi_view_control_panel = self.mayavi_view.edit_traits(
             parent=self.basesplit,
             kind='subpanel').control
+        print("CONTROL TYPE:", type( self.mayavi_view_control_panel))
+        print("ENGINE:", self.mayavi_view.scene3d.engine)
 
         self.CreateStatusBar()
         self._set_properties()
         self._do_layout()
+
         self.Maximize(True)
         self.pyshellpanel.run('''exec(open(str(os.getcwd()) + "\\\\resources\\\\" + "Midas_Startup_Configs.py").read())''')
         self.pyshellpanel.run('''intermediary_path''')
+        #self.mayavi_view_control_panel.configure_traits()
+        self.Show(True)
 
-        #self.Show(True)
+
         # Layer_0 = self.pianorollpanel
         # new_locals = locals()
         # self.pyshellpanel.run('''new_locals = %s''' % new_locals)
@@ -100,8 +108,8 @@ class MainWindow(wx.Frame):
         # print("Chiggy Wiggy Dir", dir())
         # print("Chiggy Wiggy Locals", locals())
 
-
-
+        # @self.Show()
+        # def
 
     def _set_properties(self):
         self.SetTitle("MIDAS")
@@ -127,18 +135,18 @@ class MainWindow(wx.Frame):
 
 
 
-
 if __name__ == '__main__':
     # When this module is run (not imported) then create the app, the
     # frame, show it, and start the event loop.
+    Musical_Matrix_Rain.rain_execute()
+    # time.sleep(5)
+    # splash = MySplashScreen()
+    # splash.Show()
     app = wx.App()
     frm = MainWindow(None, -1, "MIDAS")
-    Musical_Matrix_Rain.rain_execute()
 
-    splash = MySplashScreen()
-    splash.Show()
-    #time.sleep(5)
     #frm.Show()
-    time.sleep(1.2)
+    # time.sleep(1.2)
     app.MainLoop()
-
+    #frm.mayavi_view.configure_traits()
+    mlab.show()
