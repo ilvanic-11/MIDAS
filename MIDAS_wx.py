@@ -138,7 +138,7 @@ class MainWindow(wx.Frame):
 if __name__ == '__main__':
     # When this module is run (not imported) then create the app, the
     # frame, show it, and start the event loop.
-    Musical_Matrix_Rain.rain_execute()
+    #Musical_Matrix_Rain.rain_execute()
     # time.sleep(5)
     # splash = MySplashScreen()
     # splash.Show()
@@ -149,4 +149,4 @@ if __name__ == '__main__':
     # time.sleep(1.2)
     app.MainLoop()
     #frm.mayavi_view.configure_traits()
-    mlab.show()
+   # mlab.show()

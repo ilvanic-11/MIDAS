@@ -42,8 +42,8 @@ class Musicode():
 
 
 	# The path to the top level of Musicode midi Libraries
-	#musicode_path = r"C:\Users\Zach-X\PycharmProjects\MIDAS\resources\musicode_libraries"
-	musicode_path = r"C:\Users\Isaac's\Desktop\Isaacs_Synth_Music_Source_Folder\FL\Workflow\10_Musicode_Libraries"  #TODO Needs to be localized to installation folders.
+	musicode_path = r"C:\Users\Zach-X\PycharmProjects\MIDAS\resources\musicode_libraries"
+	#musicode_path = r"C:\Users\Isaac's\Desktop\Isaacs_Synth_Music_Source_Folder\FL\Workflow\10_Musicode_Libraries"  #TODO Needs to be localized to installation folders.
 	#musicode_path = r"C:\Users\iplovanic\Desktop\10_Musicode Libraries"
 	#musicode_path = r"C:\Users\iplovanic\Desktop\MIDAS\10_Musicode_Libraries"
 
