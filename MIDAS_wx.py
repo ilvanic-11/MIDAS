@@ -4,7 +4,7 @@ ETSConfig.toolkit = 'wx'
 from gui import MainButtons, StatsDisplay, PianoRollPanel,Musical_Matrix_Rain
 from wx.adv import SplashScreen as SplashScreen
 #from Mayavi3D import Mayavi3idiArtAnimation
-from Mayavi3D import MayaviClassExamples_Work_Session
+from Mayavi3D import Mayavi3DWindow
 import mayavi
 from mayavi import mlab
 from mayavi import plugins
@@ -82,7 +82,7 @@ class MainWindow(wx.Frame):
 
         # Use traits to create a panel, and use it as the content of this
         # wx frame.
-        self.mayavi_view = MayaviClassExamples_Work_Session.Mayavi3idiView()
+        self.mayavi_view = Mayavi3DWindow.Mayavi3idiView()
         #self.mayavi_view.configure_traits()
         self.mayavi_view_control_panel = self.mayavi_view.edit_traits(
             parent=self.basesplit,

@@ -1,4 +1,12 @@
-import sys, os
+
+####SHOWS A PIANO 3D GRID VIEW IN MAYAVI
+##IMPORTS
+from importlib import reload
+import sys
+import os
+#Append your path to allow importing of musicode.py
+#sys.path.append(r"C:\Users\Isaac's\PycharmProjects\musicode")
+sys.path.append( os.path.join( os.path.dirname(__file__), os.path.pardir ) )  #TODO Do abspath?
 from midas_scripts import musicode, midiart, midiart3D, music21funcs
 
 import mayavi
@@ -12,11 +20,55 @@ ETSConfig.toolkit = 'wx'
 from mayavi import mlab
 from Mayavi3D import PianoDisplay
 
-from traits.api import HasTraits, Range, Instance, on_trait_change
+#from Mayavi3D import Mayavi3idiArtAnimation
+#import vtk
+#import tvtk
+#g.mc = musicode.Musicode()
+from numpy import ogrid, sin
+
+# from traits.api import HasTraits, Instance
+# from traitsui.api import View, Item
+from tvtk.api import tvtk
+from tvtk.pyface.scene import Scene
+from mayavi.sources.api import ArraySource
+from mayavi.modules.api import IsoSurface
+from mayavi.core.ui.api import SceneEditor, MlabSceneModel
+import wx
+from numpy import sqrt, sin, mgrid
+
+# Enthought imports.
+
+# from mayavi.tools.mlab_scene_model import MlabSceneModel
+# from mayavi.core.ui.mayavi_scene import MayaviScene
+#
+# from traits.api import HasTraits, Range, Instance, \
+#                     on_trait_change
+# from traitsui.api import View, Item, HGroup
+# from tvtk.pyface.scene_editor import SceneEditor
+# from numpy import linspace, pi, cos, sin
+
+
+
+from traits.api import HasTraits, Range, Instance, \
+                    on_trait_change
+
 from traitsui.api import View, Item, HGroup
 from tvtk.pyface.scene_editor import SceneEditor
 from mayavi.tools.mlab_scene_model import MlabSceneModel
 from mayavi.core.ui.mayavi_scene import MayaviScene
+
+from numpy import linspace, pi, cos, sin
+
+def trim(Points, axis='y', trim=0):
+    Points_Odict = midiart3D.get_planes_on_axis(Points, axis, set_it=True)
+
+    # Trim (Trim by index in the list. An in-place operation.)
+    [Points_Odict.pop(i) for i in list(Points_Odict.keys())[:trim]]
+
+    # Restore to a coords_array.
+    Restored_Points = midiart3D.restore_coords_array_from_ordered_dict(Points_Odict)
+    return Restored_Points
+
 
 #mlab.options.offscreen = True
 class Mayavi3idiView(HasTraits):
@@ -51,13 +103,30 @@ class Mayavi3idiView(HasTraits):
         self.insert_array_data(self.SparkMidiData, color=(1, .5, 0), mode="sphere", scale_factor=1)
         self.insert_array_data(self.Points, color=(1, 0, .5), mode="sphere", scale_factor=1)
 
+        ###RECORD
         #mlab.start_recording(ui=True)
-        #@mlab.show
+
+
+        ###TITLE
+        self.insert_title("3-Dimensional Music", color=(1, 0, 1), opacity=.12, size=.75)
+
+        ##For some acceleration thing.
         #self.scene3d.disable_render = False
 
-        self.establish_opening()
-        self.animate(160, self.SM_Span, i_div=8)
+        self.scene3d.mlab.view()            #TODO What's this for?
+        def execute_process():
+            self.establish_opening()
+            self.animate(160, self.SM_Span, i_div=8)
 
+            self.insert_note_text("The Midas 3idiArt Display", 0, 154, 0, color=(1, 1, 0), scale=10)
+        execute_process()
+
+
+
+        #self.scene3d.engine.scenes[0] = self.engine.scenes[0]
+    #   #self.scene3d.engine.copy_traits(self.engine)
+    #   for i in range(0, 9, 1):
+    #       self.scene3d.engine.scenes[0].add_child(self.engine.scenes[0].children[i])
 
 
 
@@ -155,9 +224,9 @@ class Mayavi3idiView(HasTraits):
         ## def insert_image_data(self, imarray_2d, color=(0,0,0), mode="cube", scale_factor = 1):
 
     ###SCENE TITLE
-    def insert_title(self, title, color=(1, .5, 0), size=200):
+    def insert_title(self, text, color=(1, .5, 0), opacity=1.0, size=1):
 
-        mlab.title(text=title, color=color, size=size)
+        mlab.title(text=text, color=color, opacity=opacity, size=size)
 
         ###OPENING ANIMATION
         ###-----------------
@@ -272,5 +341,71 @@ class Mayavi3idiView(HasTraits):
         #mlab.show()
 
 
-if __name__ == '__main__':
-    pass
+
+
+
+        # ##Acquire Data
+        # SM_Midi = music21.converter.parse(
+        #     r"C:\Users\Isaac's\Desktop\Neo Mp3s-Wavs-and-Midi\Game Midi Downloads\Spark4.mid")
+        # SparkMidi1 = midiart3D.extract_xyz_coordinates_to_array(SM_Midi)
+        # SparkMidiData = SparkMidi1.astype(float)
+        #
+        # Points = midiart3D.get_points_from_ply(r"C:\Users\Isaac's\3D Objects\Structure Scans\Zach Bday\ZachPose5.ply")
+        #
+        # # -2
+        # # ReOrient Data and possibly trim.
+        # Points = self.standard_reorientation(Points, 2)
+        #
+        # # -3
+        # # Trim
+        # Points = trim(Points, 'y', 5)
+        #
+        # # -4
+        # # Transformation
+        # Points = midiart3D.transform_points_by_axis(Points, positive_octant=True)
+        #
+        # ##Acquire Span(s)
+        # Points_Span = Points.max()
+        #
+        # SM_Span = SparkMidiData.max()
+        #
+        # # Render Animation Scene with grid, music data, and title.
+        # awesome3idi.insert_piano_grid_text_timeplane(SM_Span)
+        #
+        # ####---Data Insert
+        # # animator.insert_music_data(EagleMidi, color=(0, 1, 0), mode="cube", scale_factor=.75)
+        # # animator.insert_music_data(SparkImage, color=(0, 1, 0), mode="sphere", scale_factor=.75)
+        #
+        # ####---Data Insert
+        # # Ani2 = animator.insert_array_data(EarthData6, color=(0, 1, 0), mode="cube", scale_factor=1)
+        #
+        # ####---Data Insert
+        # Ani3 = awesome3idi.insert_array_data(SparkMidiData, color=(1, .5, 0), mode="sphere", scale_factor=1)
+        # Ani4 = awesome3idi.insert_array_data(Points, color=(1, 0, .5), mode="sphere", scale_factor=1)
+        #
+        # ####---Data Insert
+        # # Ani5 = animator.insert_array_data(LampTeddyData, color=(0, 1, 0), mode="cube", scale_factor=.5)
+        #
+        # # Title
+        # Ani6 = awesome3idi.insert_title("3iDiArt: Mesh", color=(1, .5, 0), size=50)
+        #
+        # awesome3idi.establish_opening()
+
+        # Animate.
+        #awesome3idi.animate(SM_Span, i_div=4)
+        # for i in range(0, 8, 1):
+        #      self.scene3d.engine.add_child(awesome3idi.engine.scenes[0].children[i])
+        #self.scene3d.engine = awesome3idi.engine
+
+        # -------------------------------------------------------------------------------
+
+
+    # animator = Mayavi3DAnimator()
+    #
+
+    # # Wx Code
+    # import wx
+    #
+    #
+
+
