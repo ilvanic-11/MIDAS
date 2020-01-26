@@ -6,12 +6,7 @@ import os
 #Append your path to allow importing of musicode.py
 #sys.path.append(r"C:\Users\Isaac's\PycharmProjects\musicode")
 sys.path.append( os.path.join( os.path.dirname(__file__), os.path.pardir ) )  #TODO Do abspath?
-
-#import musicode
-
 from midas_scripts import musicode, midiart, midiart3D, music21funcs
-#import Mayavi2_Source_Tests
-#import g
 import mayavi
 from numpy import array
 import numpy as np
@@ -24,19 +19,14 @@ from Mayavi3D import PianoDisplay
 #import vtk
 #import tvtk
 #g.mc = musicode.Musicode()
-#xpath = r"C:\Users\Isaac's\Desktop\Isaacs_Synth_Music_Source_Folder\FL\Workflow\9_Scribed_Musicode_Midi\\"
-#scratch_path = r"C:\Users\Isaac's\Desktop\Scratch\\"
-
 from numpy import ogrid, sin
 
 # from traits.api import HasTraits, Instance
 # from traitsui.api import View, Item
 from tvtk.api import tvtk
 from tvtk.pyface.scene import Scene
-
 from mayavi.sources.api import ArraySource
 from mayavi.modules.api import IsoSurface
-
 from mayavi.core.ui.api import SceneEditor, MlabSceneModel
 import wx
 from numpy import sqrt, sin, mgrid
@@ -50,10 +40,6 @@ from numpy import sqrt, sin, mgrid
 #                     on_trait_change
 # from traitsui.api import View, Item, HGroup
 # from tvtk.pyface.scene_editor import SceneEditor
-
-
-#
-#
 # from numpy import linspace, pi, cos, sin
 
 
@@ -67,13 +53,6 @@ from mayavi.tools.mlab_scene_model import \
 from mayavi.core.ui.mayavi_scene import MayaviScene
 from numpy import linspace, pi, cos, sin
 
-def curve(n_mer, n_long):
-    phi = linspace(0, 2*pi, 2000)
-    return [ cos(phi*n_mer) * (1 + 0.5*cos(n_long*phi)),
-            sin(phi*n_mer) * (1 + 0.5*cos(n_long*phi)),
-            0.5*sin(n_long*phi),
-            sin(phi*n_mer)]
-
 def trim(Points, axis='y', trim=0):
     Points_Odict = midiart3D.get_planes_on_axis(Points, axis, set_it=True)
 
@@ -84,85 +63,10 @@ def trim(Points, axis='y', trim=0):
     Restored_Points = midiart3D.restore_coords_array_from_ordered_dict(Points_Odict)
     return Restored_Points
 
-class Visualization(HasTraits):
-    scene = Instance(MlabSceneModel, ())
-    meridional = Range(1, 30,  6)
-    transverse = Range(0, 30, 11)
-
-
-    def __init__(self):
-        # Do not forget to call the parent's __init__
-        HasTraits.__init__(self)
-        x, y, z, t = curve(self.meridional, self.transverse)
-        self.plot = self.scene.mlab.plot3d(x, y, z, t, colormap='Spectral')
-
-    @on_trait_change('meridional,transverse')
-    def update_plot(self):
-        x, y, z, t = curve(self.meridional, self.transverse)
-        self.plot.mlab_source.trait_set(x=x, y=y, z=z, scalars=t)
-
-
-    # the layout of the dialog created
-    view = View(Item('scene', editor=SceneEditor(scene_class=MayaviScene),
-                    height=250, width=300, show_label=False),
-                HGroup(
-                        '_', 'meridional', 'transverse',
-                    ),
-                )
-
-# visualization = Visualization()
-# visualization.configure_traits()
-
-
-class MayaviView(HasTraits):
-    scene = Instance(MlabSceneModel, ())
-            # The layout of the panel created by traits.
-    view = View(Item('scene', editor=SceneEditor(),
-                     resizable=True,
-                     show_label=False),
-                resizable=True)
-
-    def __init__(self):
-        HasTraits.__init__(self)
-        x, y, z = ogrid[-10:10:100j, -10:10:100j, -10:10:100j]
-        scalars = sin(x * y * z) / (x * y * z)
-        src = ArraySource(scalar_data=scalars)
-        self.scene.engine.add_source(src)
-        src.add_module(IsoSurface())
-
-class ActorViewer(HasTraits):
-    # The scene model.
-    scene = Instance(MlabSceneModel, ())
-
-    ######################
-    # Using 'scene_class=MayaviScene' adds a Mayavi icon to the toolbar,
-    # to pop up a dialog editing the pipeline.
-    view = View(Item(name='scene',
-                     editor=SceneEditor(scene_class=MayaviScene),
-                     show_label=False,
-                     resizable=True,
-                     height=500,
-                     width=500),
-                resizable=True
-                )
-
-    def __init__(self, **traits):
-        HasTraits.__init__(self, **traits)
-        self.generate_data()
-
-    def generate_data(self):
-        # Create some data
-        X, Y = mgrid[-2:2:100j, -2:2:100j]
-        R = 10 * sqrt(X ** 2 + Y ** 2)
-        Z = sin(R) / R
-
-        self.scene.mlab.surf(X, Y, Z, colormap='gist_earth')
-
-
 #mlab.options.offscreen = True
 class Mayavi3idiView(HasTraits):
     scene3d = Instance(MlabSceneModel, ())
-    view = View(Item('scene3d', editor=SceneEditor(scene_class=Scene), resizable=True, show_label=True), resizable=True)
+    view = View(Item('scene3d', editor=SceneEditor(scene_class=MayaviScene), resizable=True, show_label=True), resizable=True)
 
     def __init__(self):
         HasTraits.__init__(self)
@@ -209,16 +113,23 @@ class Mayavi3idiView(HasTraits):
         self.insert_array_data(self.SparkMidiData, color=(1, .5, 0), mode="sphere", scale_factor=1)
         self.insert_array_data(self.Points, color=(1, 0, .5), mode="sphere", scale_factor=1)
 
+        ###RECORD
         #mlab.start_recording(ui=True)
-        #@on_trait_change('scene3d.activated')
-        #@mlab.show
+
+        ###TITLE
+        self.insert_title("3-Dimensional Music", color=(1, 0, 1), opacity=.12, size=.75)
+
+        ##For some acceleration thing.
         #self.scene3d.disable_render = False
-        self.scene3d.mlab.view()
+
+        self.scene3d.mlab.view()            #TODO What's this for?
         def execute_process():
             self.establish_opening()
             self.animate(160, self.SM_Span, i_div=8)
 
+            self.insert_note_text("The Midas 3idiArt Display", 0, 154, 0, color=(1, 1, 0), scale=10)
         execute_process()
+
 
 
         #self.scene3d.engine.scenes[0] = self.engine.scenes[0]
@@ -325,9 +236,9 @@ class Mayavi3idiView(HasTraits):
         ## def insert_image_data(self, imarray_2d, color=(0,0,0), mode="cube", scale_factor = 1):
 
     ###SCENE TITLE
-    def insert_title(self, title, color=(1, .5, 0), size=200):
+    def insert_title(self, text, color=(1, .5, 0), opacity=1.0, size=1):
 
-        mlab.title(text=title, color=color, size=size)
+        mlab.title(text=text, color=color, opacity=opacity, size=size)
 
         ###OPENING ANIMATION
         ###-----------------
@@ -439,7 +350,7 @@ class Mayavi3idiView(HasTraits):
         animate1.timer.Start()
 
         #mlab.figure()
-        # mlab.show()
+        #mlab.show()
 
 
 
@@ -507,40 +418,4 @@ class Mayavi3idiView(HasTraits):
     # import wx
     #
     #
-class MainWindow(wx.Frame):
 
-    def __init__(self, parent, id):
-        wx.Frame.__init__(self, parent, id, 'Mayavi in a Wx notebook')
-        self.notebook = wx.aui.AuiNotebook(self, id=-1,
-                style=wx.aui.AUI_NB_TAB_SPLIT | wx.aui.AUI_NB_CLOSE_ON_ALL_TABS
-                        | wx.aui.AUI_NB_LEFT)
-
-        self.mayavi_view = MayaviView()
-
-        # The edit_traits method opens a first view of our 'MayaviView'
-        # object
-        self.control = self.mayavi_view.edit_traits(
-                        parent=self,
-                        kind='subpanel').control
-        self.notebook.AddPage(page=self.control, caption='Display 1')
-
-        self.mayavi_view2 = MayaviView()
-
-        # The second call to edit_traits opens a second view
-        self.control2 = self.mayavi_view2.edit_traits(
-                        parent=self,
-                        kind='subpanel').control
-        self.notebook.AddPage(page=self.control2, caption='Display 2')
-
-        sizer = wx.BoxSizer()
-        sizer.Add(self.notebook, 1, wx.EXPAND)
-        self.SetSizer(sizer)
-
-        self.Show(True)
-
-if __name__ == '__main__':
-    app = wx.App()
-    frame = MainWindow(None, wx.ID_ANY)
-    app.MainLoop()
-    a = ActorViewer()
-    a.configure_traits()
