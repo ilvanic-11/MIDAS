@@ -230,7 +230,7 @@ class MIDIArtDialog(wx.Dialog):
         self.displayImage = None
         self.btnLoadImage = wx.Button(self.ctrlsPanel, -1, "Load Image")
 
-        self.sldrHeight = wx.Slider(self.ctrlsPanel, -1, 128, 1, 128, wx.DefaultPosition, (190,40),
+        self.sldrHeight = wx.Slider(self.ctrlsPanel, -1, 127, 1, 127, wx.DefaultPosition, (190,40),
                                     wx.SL_HORIZONTAL | wx.SL_LABELS)
         self.txtKey = wx.StaticText(self.ctrlsPanel, -1, "Key", style= wx.ALIGN_RIGHT )
         self.inputKey = wx.TextCtrl(self.ctrlsPanel, -1, "", size=(30, 24), style=wx.TE_CENTER)
