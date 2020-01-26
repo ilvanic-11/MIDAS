@@ -12,7 +12,7 @@ sys.path.append( os.path.join( os.path.dirname(__file__), os.path.pardir ) )  #T
 from midas_scripts import musicode, midiart, midiart3D, music21funcs
 #import Mayavi2_Source_Tests
 #import g
-#import mayavi
+import mayavi
 from numpy import array
 import numpy as np
 import music21
@@ -31,11 +31,13 @@ from numpy import ogrid, sin
 
 # from traits.api import HasTraits, Instance
 # from traitsui.api import View, Item
+from tvtk.api import tvtk
+from tvtk.pyface.scene import Scene
 
 from mayavi.sources.api import ArraySource
 from mayavi.modules.api import IsoSurface
 
-# from mayavi.core.ui.api import SceneEditor, MlabSceneModel
+from mayavi.core.ui.api import SceneEditor, MlabSceneModel
 import wx
 from numpy import sqrt, sin, mgrid
 
@@ -160,113 +162,69 @@ class ActorViewer(HasTraits):
 #mlab.options.offscreen = True
 class Mayavi3idiView(HasTraits):
     scene3d = Instance(MlabSceneModel, ())
-    # view = View(Item('scene3d', editor=SceneEditor(scene_class=MayaviScene), resizable=True, show_label=True), resizable=True)
-    #print("VIEWER", type(view))
+    view = View(Item('scene3d', editor=SceneEditor(scene_class=Scene), resizable=True, show_label=True), resizable=True)
+
     def __init__(self):
         HasTraits.__init__(self)
         #animator = Mayavi3DAnimator()
-        self.scene3d.disable_render = True
-        print("Model INSTANCE", self.scene3d)
-        print("SCENE3D TRAITS", print(self.scene3d.traits))
-        #print("VIEWER", self.view)
+        #self.scene3d.disable_render = True
 
-        #self.scene3d.engine = awesome3idi.engine
-        # -1
         try:
             self.scene3d.engine = mayavi.engine
             self.engine = self.scene3d.engine
             # self.engine = MayaviView.scene.engine
         except Exception as e:
             print(e)
-            # from mayavi.api import Engine
-            #self.scene3d.engine = Engine()
             self.engine = self.scene3d.engine
             self.engine.start()
-            #self.engine = self.scene3d.engine
-        # self.engine = self.scene3d.engine
-        # self.engine.start()
-        print("Which Scene is Current HERE?", self.engine.current_scene.name)
-        print("SCENESLIST LENGTH:", len(self.engine.scenes))
-        if len(self.engine.scenes) == 1:
-            print("Which Scene is This????", self.engine.scenes[0].name)
-            print("And what is its TYPE?", type(self.engine.scenes[0]))
 
-            #self.engine = self.engine.scenes[0]
-            print("MLABSCENE MODEL ALL TRAIT NAMES (before new_scene):", self.engine.all_trait_names())
-            self.engine.new_scene()
-            #self.engine.scenes[0].scene.copy_traits(self.engine.scenes[1].scene)   #COPY TRAITS ATTEMPT --failed
-            print("SC_1 T_LEN\\Type", len(self.engine.scenes[0].scene.traits()), "Scene 1"), type(self.engine.scenes[0].scene)
-            print("SC_2 T_LEN\\Type", len(self.engine.scenes[1].scene.traits()), "Scene 2", type(self.engine.scenes[1].scene))
-            print("One More Print:", self.engine.scenes[0].scene)
-            self.engine.close_scene(self.engine.scenes[0])
-            print("Which Scene is Current?", self.engine.current_scene.name)
-        print("HAS SCENES:", self.engine.scenes)
-        print("SCENE3D Engine Type FUUUUUCK", type(self.engine))
+        # if len(self.engine.scenes) == 1:
+        #     self.engine.new_scene()
+        #     self.engine.close_scene(self.engine.scenes[0])
 
-        print("Which Scene is This???", self.engine.scenes[0].name)
-        print("And What is its Type???", self.engine.scenes[0])
-        print("GET VIEWER", self.engine.get_viewer(self.engine.scenes[0]))
-        print("MLABSCENEMODEL TRAITS:", self.engine.traits())
-
-        print("MLABS_M_TRAITSLISTLENGTH:", len(self.engine.traits()))
-        print("CORE SCENE TRAITS:", self.engine.scenes[0].traits())
-        print("ALL TRAITS, Implicit aannd Explicit:", self.engine.scenes[0].all_trait_names())
          ###ESTABLISH SCENE
-        print("SCENESLIST LENGTH AGAAAAIIIN:", len(self.engine.scenes))
+
         self.skene = self.engine.scenes[0]
-        print("Which??? Fuck", self.skene.name)
+
         ###Set Scene Background Color
         self.skene.scene.background = (0.0, 0.0, 0.0)
-        print(self.skene.scene.background)
-        print("SCENES[0].TYPE", type(self.skene.scene))
-        print("SCENES[0].TRAITS", self.skene.scene.traits())
-        print("LENGTH(SCENES[0].TRAITS)", len(self.skene.scene.traits()))
         self.skene.scene.movie_maker.record = False
-        # if self.skene.scene.camera:
-        #     print("HAS CAMERA")
-        # else:
-        #     print("THIS SCENE HAS NO CAMERA.")
 
 
-        # title_engine = str(self.engine)
-        #         # self.title_engine = str(type(self.engine))
-        #         # self.title_engine_dirs = str(dir(self.engine)[0])
-        #         # print(str(self.title_engine_dirs))
-        #         # -------------------------------------------
-        #         # scene.scene.light_manager = <tvtk.pyface.light_manager.LightManager object at 0x000002AC462F4BF8>
-        #         # engine.new_scene()
-        #self.execute_process()
 
+    @on_trait_change('scene3d.activated')
+    def create_3DMidiart(self):
 
-        SM_Midi = music21.converter.parse(r"C:\Users\Isaac's\Desktop\Neo Mp3s-Wavs-and-Midi\Game Midi Downloads\Spark4.mid")
-        SparkMidi1 = midiart3D.extract_xyz_coordinates_to_array(SM_Midi)
-        SparkMidiData = SparkMidi1.astype(float)
-        Points = midiart3D.get_points_from_ply(r"C:\Users\Isaac's\3D Objects\Structure Scans\Zach Bday\ZachPose5.ply")
-        Points = self.standard_reorientation(Points, 2)
-        Points = trim(Points, axis='y', trim=5)
-        Points = midiart3D.transform_points_by_axis(Points, positive_octant=True)
-        Points_Span = Points.max()
+        self.SM_Midi = music21.converter.parse(r".\Mayavi3D\Spark4.mid")
+        self.SparkMidi1 = midiart3D.extract_xyz_coordinates_to_array(self.SM_Midi)
+        self.SparkMidiData = self.SparkMidi1.astype(float)
+        self.Points = midiart3D.get_points_from_ply(r".\Mayavi3D\ZachPose5.ply")
+        self.Points = self.standard_reorientation(self.Points, 2)
+        self.Points = trim(self.Points, axis='y', trim=5)
+        self.Points = midiart3D.transform_points_by_axis(self.Points, positive_octant=True)
+        self.Points_Span = self.Points.max()
 
-        SM_Span = SparkMidiData.max()
-        print("TIME_SPAN", SM_Span)
-        self.insert_piano_grid_text_timeplane(SM_Span)
-        self.insert_array_data(SparkMidiData, color=(1, .5, 0), mode="sphere", scale_factor=1)
-        self.insert_array_data(Points, color=(1, 0, .5), mode="sphere", scale_factor=1)
-        self.insert_title("LICK MY FUCKING NINE", color=(0, .5, 1), size=1)
-        self.insert_note_text("FUUUUUUUUUUUUUUUUUUUUCK", scale=30)
+        self.SM_Span = self.SparkMidiData.max()
+        self.insert_piano_grid_text_timeplane(self.SM_Span)
+        self.insert_array_data(self.SparkMidiData, color=(1, .5, 0), mode="sphere", scale_factor=1)
+        self.insert_array_data(self.Points, color=(1, 0, .5), mode="sphere", scale_factor=1)
 
         #mlab.start_recording(ui=True)
         #@on_trait_change('scene3d.activated')
         #@mlab.show
-        self.scene3d.disable_render = False
+        #self.scene3d.disable_render = False
+        self.scene3d.mlab.view()
         def execute_process():
             self.establish_opening()
-            self.animate(160, SM_Span, i_div=8)
+            self.animate(160, self.SM_Span, i_div=8)
+
         execute_process()
+
+
         #self.scene3d.engine.scenes[0] = self.engine.scenes[0]
-    # #self.scene3d.engine.copy_traits(self.engine)
-    #     for i in range(0, 9, 1):
-    #         self.scene3d.engine.scenes[0].add_child(self.engine.scenes[0].children[i])
+    #   #self.scene3d.engine.copy_traits(self.engine)
+    #   for i in range(0, 9, 1):
+    #       self.scene3d.engine.scenes[0].add_child(self.engine.scenes[0].children[i])
 
 
     def standard_reorientation(self, Points, scale=1):
@@ -288,8 +246,6 @@ class Mayavi3idiView(HasTraits):
         # TODO Scaling needs to be done with respect to musical, i.e. a musical key, and within the grid's available space.
 
         return Points
-
-
 
     def insert_piano_grid_text_timeplane(self, length):
         from mayavi import mlab
@@ -380,7 +336,7 @@ class Mayavi3idiView(HasTraits):
 
     def establish_opening(self):
         scene = self.skene
-        scene.scene.x_minus_view()
+        #scene.scene.x_minus_view()
         self.image_plane_widget = self.engine.scenes[0].children[6].children[0].children[0]
         self.image_plane_widget.ipw.origin = array([0., 61.0834014, 61.0834014])
         self.image_plane_widget.ipw.point1 = array([0., 191.9165986, 61.0834014])
@@ -453,7 +409,7 @@ class Mayavi3idiView(HasTraits):
             bpm_delay = 10
             nano_delay = (60000000 / bpm / i_div)
 
-        @mlab.animate(delay=bpm_delay, ui=True)
+        @mlab.animate(delay=bpm_delay, ui=False)
         def animate_plane_scroll(x_length, delay):
             """
             Mlab animate's builtin delay has to be specified as an integer in milliseconds with a minimum of 10, and also could
