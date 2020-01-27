@@ -410,7 +410,7 @@ class PianoRoll(wx.grid.Grid, glr.GridWithLabelRenderersMixin):
             if type(n) is music21.chord.Chord:
                 for p in n.pitches:
                     y = int(self._cells_per_qrtrnote * n.offset)
-                    x = 128 - p.midi
+                    x = 127 - p.midi
                     size = int(self._cells_per_qrtrnote * n.duration.quarterLength)
                     if size < 1:
                         print("Note size is too small for current grid CellsPerNote.")
@@ -420,7 +420,7 @@ class PianoRoll(wx.grid.Grid, glr.GridWithLabelRenderersMixin):
                 # print(matrix)
             elif type(n) is music21.note.Note:
                 y = int(self._cells_per_qrtrnote * n.offset)
-                x = 128 - n.pitch.midi
+                x = 127 - n.pitch.midi
                 size =  int(self._cells_per_qrtrnote * n.duration.quarterLength)
                 if size < 1:
                     print("Note size is too small for current grid CellsPerNote.")

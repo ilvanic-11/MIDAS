@@ -1,3 +1,4 @@
+
 import sys, os
 from midas_scripts import musicode, midiart, midiart3D, music21funcs
 
@@ -12,11 +13,17 @@ ETSConfig.toolkit = 'wx'
 from mayavi import mlab
 from Mayavi3D import PianoDisplay
 
+
+
+
 from traits.api import HasTraits, Range, Instance, on_trait_change
 from traitsui.api import View, Item, HGroup
 from tvtk.pyface.scene_editor import SceneEditor
 from mayavi.tools.mlab_scene_model import MlabSceneModel
 from mayavi.core.ui.mayavi_scene import MayaviScene
+
+
+
 
 #mlab.options.offscreen = True
 class Mayavi3idiView(HasTraits):
@@ -51,14 +58,18 @@ class Mayavi3idiView(HasTraits):
         self.insert_array_data(self.SparkMidiData, color=(1, .5, 0), mode="sphere", scale_factor=1)
         self.insert_array_data(self.Points, color=(1, 0, .5), mode="sphere", scale_factor=1)
 
+        ###RECORD
         #mlab.start_recording(ui=True)
+
         #@mlab.show
         #self.scene3d.disable_render = False
 
         self.establish_opening()
         self.animate(160, self.SM_Span, i_div=8)
 
-
+        ###TITLE
+        self.insert_title("3-Dimensional Music", color=(1, 0, 1), opacity=.12, size=.75)
+        self.insert_note_text("The Midas 3idiArt Display", 0, 154, 0, color=(1, 1, 0), scale=10)
 
 
     def standard_reorientation(self, points, scale=1):
@@ -155,9 +166,9 @@ class Mayavi3idiView(HasTraits):
         ## def insert_image_data(self, imarray_2d, color=(0,0,0), mode="cube", scale_factor = 1):
 
     ###SCENE TITLE
-    def insert_title(self, title, color=(1, .5, 0), size=200):
+    def insert_title(self, text, color=(1, .5, 0), opacity=1.0, size=1):
 
-        mlab.title(text=title, color=color, size=size)
+        mlab.title(text=text, color=color, opacity=opacity, size=size)
 
         ###OPENING ANIMATION
         ###-----------------
