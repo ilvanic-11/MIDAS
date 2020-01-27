@@ -1,196 +1,38 @@
-####SHOWS A PIANO 3D GRID VIEW IN MAYAVI
-##IMPORTS
-from importlib import reload
-import sys
-import os
-#Append your path to allow importing of musicode.py
-#sys.path.append(r"C:\Users\Isaac's\PycharmProjects\musicode")
-sys.path.append( os.path.join( os.path.dirname(__file__), os.path.pardir ) )  #TODO Do abspath?
-
-#import musicode
-
+import sys, os
 from midas_scripts import musicode, midiart, midiart3D, music21funcs
-#import Mayavi2_Source_Tests
-#import g
+
 import mayavi
 from numpy import array
 import numpy as np
+
 import music21
-# from traits.etsconfig.api import ETSConfig
-# ETSConfig.toolkit = 'wx'
+
+from traits.etsconfig.api import ETSConfig
+ETSConfig.toolkit = 'wx'
 from mayavi import mlab
 from Mayavi3D import PianoDisplay
-#from Mayavi3D import Mayavi3idiArtAnimation
-#import vtk
-#import tvtk
-#g.mc = musicode.Musicode()
-#xpath = r"C:\Users\Isaac's\Desktop\Isaacs_Synth_Music_Source_Folder\FL\Workflow\9_Scribed_Musicode_Midi\\"
-#scratch_path = r"C:\Users\Isaac's\Desktop\Scratch\\"
 
-from numpy import ogrid, sin
-
-# from traits.api import HasTraits, Instance
-# from traitsui.api import View, Item
-from tvtk.api import tvtk
-from tvtk.pyface.scene import Scene
-
-from mayavi.sources.api import ArraySource
-from mayavi.modules.api import IsoSurface
-
-from mayavi.core.ui.api import SceneEditor, MlabSceneModel
-import wx
-from numpy import sqrt, sin, mgrid
-
-# Enthought imports.
-
-# from mayavi.tools.mlab_scene_model import MlabSceneModel
-# from mayavi.core.ui.mayavi_scene import MayaviScene
-#
-# from traits.api import HasTraits, Range, Instance, \
-#                     on_trait_change
-# from traitsui.api import View, Item, HGroup
-# from tvtk.pyface.scene_editor import SceneEditor
-
-
-#
-#
-# from numpy import linspace, pi, cos, sin
-
-
-
-from traits.api import HasTraits, Range, Instance, \
-                    on_trait_change
+from traits.api import HasTraits, Range, Instance, on_trait_change
 from traitsui.api import View, Item, HGroup
 from tvtk.pyface.scene_editor import SceneEditor
-from mayavi.tools.mlab_scene_model import \
-                    MlabSceneModel
+from mayavi.tools.mlab_scene_model import MlabSceneModel
 from mayavi.core.ui.mayavi_scene import MayaviScene
-from numpy import linspace, pi, cos, sin
-
-def curve(n_mer, n_long):
-    phi = linspace(0, 2*pi, 2000)
-    return [ cos(phi*n_mer) * (1 + 0.5*cos(n_long*phi)),
-            sin(phi*n_mer) * (1 + 0.5*cos(n_long*phi)),
-            0.5*sin(n_long*phi),
-            sin(phi*n_mer)]
-
-def trim(Points, axis='y', trim=0):
-    Points_Odict = midiart3D.get_planes_on_axis(Points, axis, set_it=True)
-
-    # Trim (Trim by index in the list. An in-place operation.)
-    [Points_Odict.pop(i) for i in list(Points_Odict.keys())[:trim]]
-
-    # Restore to a coords_array.
-    Restored_Points = midiart3D.restore_coords_array_from_ordered_dict(Points_Odict)
-    return Restored_Points
-
-class Visualization(HasTraits):
-    scene = Instance(MlabSceneModel, ())
-    meridional = Range(1, 30,  6)
-    transverse = Range(0, 30, 11)
-
-
-    def __init__(self):
-        # Do not forget to call the parent's __init__
-        HasTraits.__init__(self)
-        x, y, z, t = curve(self.meridional, self.transverse)
-        self.plot = self.scene.mlab.plot3d(x, y, z, t, colormap='Spectral')
-
-    @on_trait_change('meridional,transverse')
-    def update_plot(self):
-        x, y, z, t = curve(self.meridional, self.transverse)
-        self.plot.mlab_source.trait_set(x=x, y=y, z=z, scalars=t)
-
-
-    # the layout of the dialog created
-    view = View(Item('scene', editor=SceneEditor(scene_class=MayaviScene),
-                    height=250, width=300, show_label=False),
-                HGroup(
-                        '_', 'meridional', 'transverse',
-                    ),
-                )
-
-# visualization = Visualization()
-# visualization.configure_traits()
-
-
-class MayaviView(HasTraits):
-    scene = Instance(MlabSceneModel, ())
-            # The layout of the panel created by traits.
-    view = View(Item('scene', editor=SceneEditor(),
-                     resizable=True,
-                     show_label=False),
-                resizable=True)
-
-    def __init__(self):
-        HasTraits.__init__(self)
-        x, y, z = ogrid[-10:10:100j, -10:10:100j, -10:10:100j]
-        scalars = sin(x * y * z) / (x * y * z)
-        src = ArraySource(scalar_data=scalars)
-        self.scene.engine.add_source(src)
-        src.add_module(IsoSurface())
-
-class ActorViewer(HasTraits):
-    # The scene model.
-    scene = Instance(MlabSceneModel, ())
-
-    ######################
-    # Using 'scene_class=MayaviScene' adds a Mayavi icon to the toolbar,
-    # to pop up a dialog editing the pipeline.
-    view = View(Item(name='scene',
-                     editor=SceneEditor(scene_class=MayaviScene),
-                     show_label=False,
-                     resizable=True,
-                     height=500,
-                     width=500),
-                resizable=True
-                )
-
-    def __init__(self, **traits):
-        HasTraits.__init__(self, **traits)
-        self.generate_data()
-
-    def generate_data(self):
-        # Create some data
-        X, Y = mgrid[-2:2:100j, -2:2:100j]
-        R = 10 * sqrt(X ** 2 + Y ** 2)
-        Z = sin(R) / R
-
-        self.scene.mlab.surf(X, Y, Z, colormap='gist_earth')
-
 
 #mlab.options.offscreen = True
 class Mayavi3idiView(HasTraits):
     scene3d = Instance(MlabSceneModel, ())
-    view = View(Item('scene3d', editor=SceneEditor(scene_class=Scene), resizable=True, show_label=True), resizable=True)
+    view = View(Item('scene3d', editor=SceneEditor(scene_class=MayaviScene), resizable=True, show_label=True), resizable=True)
 
     def __init__(self):
         HasTraits.__init__(self)
-        #animator = Mayavi3DAnimator()
-        #self.scene3d.disable_render = True
 
-        try:
-            self.scene3d.engine = mayavi.engine
-            self.engine = self.scene3d.engine
-            # self.engine = MayaviView.scene.engine
-        except Exception as e:
-            print(e)
-            self.engine = self.scene3d.engine
-            self.engine.start()
-
-        # if len(self.engine.scenes) == 1:
-        #     self.engine.new_scene()
-        #     self.engine.close_scene(self.engine.scenes[0])
-
-         ###ESTABLISH SCENE
-
-        self.skene = self.engine.scenes[0]
+        self.engine = self.scene3d.engine
+        self.engine.start()
+        self.scene = self.engine.scenes[0]
 
         ###Set Scene Background Color
-        self.skene.scene.background = (0.0, 0.0, 0.0)
-        self.skene.scene.movie_maker.record = False
-
-
+        self.scene.scene.background = (0.0, 0.0, 0.0)
+        self.scene.scene.movie_maker.record = False
 
     @on_trait_change('scene3d.activated')
     def create_3DMidiart(self):
@@ -200,7 +42,7 @@ class Mayavi3idiView(HasTraits):
         self.SparkMidiData = self.SparkMidi1.astype(float)
         self.Points = midiart3D.get_points_from_ply(r".\Mayavi3D\ZachPose5.ply")
         self.Points = self.standard_reorientation(self.Points, 2)
-        self.Points = trim(self.Points, axis='y', trim=5)
+        self.Points = self.trim(self.Points, axis='y', trim=5)
         self.Points = midiart3D.transform_points_by_axis(self.Points, positive_octant=True)
         self.Points_Span = self.Points.max()
 
@@ -210,45 +52,38 @@ class Mayavi3idiView(HasTraits):
         self.insert_array_data(self.Points, color=(1, 0, .5), mode="sphere", scale_factor=1)
 
         #mlab.start_recording(ui=True)
-        #@on_trait_change('scene3d.activated')
         #@mlab.show
         #self.scene3d.disable_render = False
-        self.scene3d.mlab.view()
-        def execute_process():
-            self.establish_opening()
-            self.animate(160, self.SM_Span, i_div=8)
 
-        execute_process()
+        self.establish_opening()
+        self.animate(160, self.SM_Span, i_div=8)
 
 
-        #self.scene3d.engine.scenes[0] = self.engine.scenes[0]
-    #   #self.scene3d.engine.copy_traits(self.engine)
-    #   for i in range(0, 9, 1):
-    #       self.scene3d.engine.scenes[0].add_child(self.engine.scenes[0].children[i])
 
 
-    def standard_reorientation(self, Points, scale=1):
-        # The order is :
-        ##1. Rotation
-        ##2. Delete unecessary planes.
-        ##3. Rescale.
-        ##4. Transform.
-
+    def standard_reorientation(self, points, scale=1):
         # TODO Maximum rescaling check.
         # TODO scale_function?  Need check to avoid float values.
 
-        Points = midiart3D.transform_points_by_axis(Points, positive_octant=True)
-
-        Points = midiart3D.delete_redundant_points(Points, stray=False)
-
-        Points = Points * scale
+        points = midiart3D.transform_points_by_axis(points, positive_octant=True)
+        points = midiart3D.delete_redundant_points(points, stray=False)
+        points = points * scale
 
         # TODO Scaling needs to be done with respect to musical, i.e. a musical key, and within the grid's available space.
 
-        return Points
+        return points
+
+    def trim(self, points, axis='y', trim=0):
+        Points_Odict = midiart3D.get_planes_on_axis(points, axis, set_it=True)
+
+        # Trim (Trim by index in the list. An in-place operation.)
+        [Points_Odict.pop(i) for i in list(Points_Odict.keys())[:trim]]
+
+        # Restore to a coords_array.
+        Restored_Points = midiart3D.restore_coords_array_from_ordered_dict(Points_Odict)
+        return Restored_Points
 
     def insert_piano_grid_text_timeplane(self, length):
-        from mayavi import mlab
         ###Piano
         # MayaviPianoBlack = music21.converter.parse(r"C:\Users\Isaac's\Desktop\Neo Mp3s-Wavs-and-Midi\FL Midi Files\MidiPianoBlack.mid")
         # MayaviPianoWhite = music21.converter.parse(r"C:\Users\Isaac's\Desktop\Neo Mp3s-Wavs-and-Midi\FL Midi Files\MidiPianoWhite.mid")
@@ -304,21 +139,16 @@ class Mayavi3idiView(HasTraits):
         ###SELECT OBJECT
 
     def insert_music_data(self, in_stream, color=(0, 0, 0), mode="cube", scale_factor=1):
-        from mayavi import mlab
-        # mlab.points3d(GypsyData[:, 0], GypsyData[:, 1], GypsyData[:, 2], color=(1, .5, 0), mode="cube", scale_factor=1)
-        # mlab.points3d(SparkImageData[:, 0], SparkImageData[:, 1], SparkImageData[:, 2], color=(1, .5, 0), mode="cube", scale_factor=1)
         array_data = midiart3D.extract_xyz_coordinates_to_array(in_stream)
         # print(array_data)
         mlab.points3d(array_data[:, 0], array_data[:, 1], array_data[:, 2], color=color, mode=mode,
                       scale_factor=scale_factor)
 
     def insert_array_data(self, array_2d, color=(0, 0, 0), mode="cube", scale_factor=.25):
-        from mayavi import mlab
-        print(array_2d)
+        #print(array_2d)
         mlab.points3d(array_2d[:, 0], array_2d[:, 1], array_2d[:, 2], color=color, mode=mode, scale_factor=scale_factor)
 
     def insert_note_text(self, text, x=0, y=154, z=0, color=(0, 0, 1), scale=3):
-        from mayavi import mlab
         mlab.text3d(text=text, x=x, y=y, z=z, color=color, scale=scale)
 
         # TODO
@@ -335,7 +165,7 @@ class Mayavi3idiView(HasTraits):
         ##scene = engine.scenes[0]
 
     def establish_opening(self):
-        scene = self.skene
+        scene = self.scene
         #scene.scene.x_minus_view()
         self.image_plane_widget = self.engine.scenes[0].children[6].children[0].children[0]
         self.image_plane_widget.ipw.origin = array([0., 61.0834014, 61.0834014])
@@ -389,7 +219,6 @@ class Mayavi3idiView(HasTraits):
 
     ###DEFINE MUSIC ANIMATION
     def animate(self, time_length, bpm=None, i_div=4):
-        from mayavi import mlab
         """ I_div should be 2 or 4. Upon a division of greater than 4, say 8, the millisecond delay becomes so small,
         that it is almost not even read properly, producing undesired results.
         Animation function that gives the impression of rendering 3D music. Does not play music.
@@ -409,7 +238,7 @@ class Mayavi3idiView(HasTraits):
             bpm_delay = 10
             nano_delay = (60000000 / bpm / i_div)
 
-        @mlab.animate(delay=bpm_delay, ui=False)
+        @mlab.animate(delay=bpm_delay, ui=True)
         def animate_plane_scroll(x_length, delay):
             """
             Mlab animate's builtin delay has to be specified as an integer in milliseconds with a minimum of 10, and also could
@@ -434,113 +263,14 @@ class Mayavi3idiView(HasTraits):
         # mlab.animate(animate_plane_scroll, ms_delay, ui=True)
         # print(secs_delay)
         animate1 = animate_plane_scroll(int(time_length), int(nano_delay))
-        animate1.timer.Stop()
-        input("Press Enter.")
+        #animate1.timer.Stop()
+        print("Animate")
+        #input("Press Enter.")
         animate1.timer.Start()
 
         #mlab.figure()
-        # mlab.show()
+        #mlab.show()
 
-
-
-
-        # ##Acquire Data
-        # SM_Midi = music21.converter.parse(
-        #     r"C:\Users\Isaac's\Desktop\Neo Mp3s-Wavs-and-Midi\Game Midi Downloads\Spark4.mid")
-        # SparkMidi1 = midiart3D.extract_xyz_coordinates_to_array(SM_Midi)
-        # SparkMidiData = SparkMidi1.astype(float)
-        #
-        # Points = midiart3D.get_points_from_ply(r"C:\Users\Isaac's\3D Objects\Structure Scans\Zach Bday\ZachPose5.ply")
-        #
-        # # -2
-        # # ReOrient Data and possibly trim.
-        # Points = self.standard_reorientation(Points, 2)
-        #
-        # # -3
-        # # Trim
-        # Points = trim(Points, 'y', 5)
-        #
-        # # -4
-        # # Transformation
-        # Points = midiart3D.transform_points_by_axis(Points, positive_octant=True)
-        #
-        # ##Acquire Span(s)
-        # Points_Span = Points.max()
-        #
-        # SM_Span = SparkMidiData.max()
-        #
-        # # Render Animation Scene with grid, music data, and title.
-        # awesome3idi.insert_piano_grid_text_timeplane(SM_Span)
-        #
-        # ####---Data Insert
-        # # animator.insert_music_data(EagleMidi, color=(0, 1, 0), mode="cube", scale_factor=.75)
-        # # animator.insert_music_data(SparkImage, color=(0, 1, 0), mode="sphere", scale_factor=.75)
-        #
-        # ####---Data Insert
-        # # Ani2 = animator.insert_array_data(EarthData6, color=(0, 1, 0), mode="cube", scale_factor=1)
-        #
-        # ####---Data Insert
-        # Ani3 = awesome3idi.insert_array_data(SparkMidiData, color=(1, .5, 0), mode="sphere", scale_factor=1)
-        # Ani4 = awesome3idi.insert_array_data(Points, color=(1, 0, .5), mode="sphere", scale_factor=1)
-        #
-        # ####---Data Insert
-        # # Ani5 = animator.insert_array_data(LampTeddyData, color=(0, 1, 0), mode="cube", scale_factor=.5)
-        #
-        # # Title
-        # Ani6 = awesome3idi.insert_title("3iDiArt: Mesh", color=(1, .5, 0), size=50)
-        #
-        # awesome3idi.establish_opening()
-
-        # Animate.
-        #awesome3idi.animate(SM_Span, i_div=4)
-        # for i in range(0, 8, 1):
-        #      self.scene3d.engine.add_child(awesome3idi.engine.scenes[0].children[i])
-        #self.scene3d.engine = awesome3idi.engine
-
-        # -------------------------------------------------------------------------------
-
-
-    # animator = Mayavi3DAnimator()
-    #
-
-    # # Wx Code
-    # import wx
-    #
-    #
-class MainWindow(wx.Frame):
-
-    def __init__(self, parent, id):
-        wx.Frame.__init__(self, parent, id, 'Mayavi in a Wx notebook')
-        self.notebook = wx.aui.AuiNotebook(self, id=-1,
-                style=wx.aui.AUI_NB_TAB_SPLIT | wx.aui.AUI_NB_CLOSE_ON_ALL_TABS
-                        | wx.aui.AUI_NB_LEFT)
-
-        self.mayavi_view = MayaviView()
-
-        # The edit_traits method opens a first view of our 'MayaviView'
-        # object
-        self.control = self.mayavi_view.edit_traits(
-                        parent=self,
-                        kind='subpanel').control
-        self.notebook.AddPage(page=self.control, caption='Display 1')
-
-        self.mayavi_view2 = MayaviView()
-
-        # The second call to edit_traits opens a second view
-        self.control2 = self.mayavi_view2.edit_traits(
-                        parent=self,
-                        kind='subpanel').control
-        self.notebook.AddPage(page=self.control2, caption='Display 2')
-
-        sizer = wx.BoxSizer()
-        sizer.Add(self.notebook, 1, wx.EXPAND)
-        self.SetSizer(sizer)
-
-        self.Show(True)
 
 if __name__ == '__main__':
-    app = wx.App()
-    frame = MainWindow(None, wx.ID_ANY)
-    app.MainLoop()
-    a = ActorViewer()
-    a.configure_traits()
+    pass
