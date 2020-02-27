@@ -385,6 +385,12 @@ class PianoRoll(wx.grid.Grid, glr.GridWithLabelRenderersMixin):
         self.SetCellValue(row, col, val)
         self.SetCellSize(row, col, new_sy, new_sx)
 
+    # def SetCellValue(self, row, col, val):
+    #     super.SetCellValue(row, col, val)
+    #     layer = self.GetTopLevelParent().pianorollpanel.currentPage
+    #     if val == "1":
+    #         self.GetTopLevelParent().mayavi_view.points[col, row, layer] =  ###change here
+
 
     def StreamToGrid(self, in_stream):
         """
