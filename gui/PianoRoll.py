@@ -3,6 +3,7 @@ import wx.lib.plot
 import wx.grid
 import wx.lib.mixins.gridlabelrenderer as glr
 import music21
+import copy
 import numpy as np
 import math
 from midas_scripts import musicode, music21funcs
@@ -88,7 +89,10 @@ class PianoRoll(wx.grid.Grid, glr.GridWithLabelRenderersMixin):
         self.log = log
         self.stream = music21.stream.Stream()
 
+
         self.CreateGrid(NUM_TONES,512)
+
+
         for x in range(0, self.GetNumberCols()):
             for y in range(0, self.GetNumberRows()):
                 self.SetCellValue(y,x,"0")
@@ -341,8 +345,6 @@ class PianoRoll(wx.grid.Grid, glr.GridWithLabelRenderersMixin):
         evt.Skip()
 
     def EraseCell(self, row, col):
-        self.log.WriteText(f"EraseCell ({row}, {col}): " + self.print_cell_info(row, col))
-
         cur_span, cur_sy, cur_sx = self.GetCellSize(row, col)
         c = col
         while cur_span == wx.grid.Grid.CellSpan_Inside and c >= 0:
@@ -357,9 +359,6 @@ class PianoRoll(wx.grid.Grid, glr.GridWithLabelRenderersMixin):
 
 
     def DrawCell(self, val, row, col, new_sy, new_sx):
-
-        #self.log.WriteText("DrawCell: " + self.print_cell_info(row, col))
-
         cur_span, cur_sy, cur_sx = self.GetCellSize(row, col)
 
         if cur_span == wx.grid.Grid.CellSpan_Inside:
@@ -382,14 +381,32 @@ class PianoRoll(wx.grid.Grid, glr.GridWithLabelRenderersMixin):
                 return
             y += 1
 
+
         self.SetCellValue(row, col, val)
         self.SetCellSize(row, col, new_sy, new_sx)
 
-    # def SetCellValue(self, row, col, val):
-    #     super.SetCellValue(row, col, val)
-    #     layer = self.GetTopLevelParent().pianorollpanel.currentPage
-    #     if val == "1":
-    #         self.GetTopLevelParent().mayavi_view.points[col, row, layer] =  ###change here
+
+    def SetCellValue(self, row, col, val):
+        #print("SetCellValue")
+        super().SetCellValue(row, col, val)
+        try:
+
+            page = self.GetTopLevelParent().pianorollpanel.currentPage
+            print("try")
+            layer = self.GetTopLevelParent().pianorollpanel.pianorollNB.FindPage(page)
+            print(f" {col}, {row}, {layer}, {val}")
+
+            #add logic here if nparray isn't big enough
+            #print(self.GetTopLevelParent().mayavi_view.array3D)
+            dick = copy.deepcopy(self.GetTopLevelParent().mayavi_view.array3D)
+            dick[col, row, layer] = val
+            self.GetTopLevelParent().mayavi_view.array3D = dick
+            self.GetTopLevelParent().mayavi_view.ass = 1.5
+            print("good")
+        except Exception as e:
+            print(e)
+            pass
+
 
 
     def StreamToGrid(self, in_stream):
@@ -507,4 +524,4 @@ class PianoRollCellRenderer(wx.grid.GridCellRenderer):
             dc.SetBrush(wx.NullBrush)
             dc.DestroyClippingRegion()
 
-
+  

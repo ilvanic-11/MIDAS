@@ -148,6 +148,7 @@ class MainButtonsPanel(wx.Panel):
             self.GetTopLevelParent().pianorollpanel.currentPage.StreamToGrid(stream)
 
     def _OnM21ConverterParseDialogClosed(self, dialog, evt):
+        print("OnM21ConverterParseDialogClosed():")
         val = evt.GetReturnCode()
         print("Val %d: " % val)
         try:
@@ -406,11 +407,20 @@ class Music21ConverterParseDialog(wx.Dialog):
                  pos=wx.DefaultPosition, style=wx.DEFAULT_DIALOG_STYLE, name='MIDI Art 3D'):
         wx.Dialog.__init__(self)
         self.Create(parent, id, title, pos, size, style, name)
+
         #self.ctrlsPanel = wx.Panel(self, -1, wx.DefaultPosition, style=wx.BORDER_RAISED)
+
+
+
         self.btnLoadMidi = wx.Button(self, -1, "Load Midi")
         self.Bind(wx.EVT_BUTTON, self.OnLoadMidi, self.btnLoadMidi)
 
         btnsizer = wx.StdDialogButtonSizer()
+
+        # if wx.Platform != "__WXMSW__":
+        #btn = wx.ContextHelpButton(self)
+        # btnsizer.AddButton(btn)
+
         btn = wx.Button(self, wx.ID_OK)
         btn.SetDefault()
         btnsizer.AddButton(btn)
@@ -421,9 +431,11 @@ class Music21ConverterParseDialog(wx.Dialog):
         sizerMain = wx.BoxSizer(wx.VERTICAL)
         #sizerMain.Add(sizerHor, 30)
         sizerMain.Add(self.btnLoadMidi, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL, 20)
-        sizerMain.Add(btnsizer, 0, wx.ALIGN_CENTER_HORIZONTAL | wx.ALL, 1)
+
+        sizerMain.Add(btnsizer, 0, wx.ALIGN_CENTER_HORIZONTAL | wx.ALL, 1) #5
 
         #sizerCtrls = wx.BoxSizer(wx.VERTICAL)
+
 
         self.SetSizerAndFit(sizerMain)
 

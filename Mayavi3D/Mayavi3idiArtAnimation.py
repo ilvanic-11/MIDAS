@@ -48,6 +48,7 @@ class Mayavi3DAnimator():
         self.scene.scene.movie_maker.record = True   ###RECORD
         print("TYPE OF SCENE", self.scene)
         print("TYPE OF ENGINE", self.engine)
+
     def insert_piano_grid_text_timeplane(self, length):
         from mayavi import mlab
         ###Piano
@@ -187,6 +188,9 @@ class Mayavi3DAnimator():
         print("CHILDREN", self.engine.scenes[0].children)
         print("Children LIST length", len(self.engine.scenes[0].children))
         print("CHILDREN[0] CHILD", self.engine.scenes[0].children[0].children[0], type(self.engine.scenes[0].children[0].children[0],))
+
+
+
     ###DEFINE MUSIC ANIMATION
     def animate(self, time_length, bpm=None, i_div=2):
         from mayavi import mlab
@@ -285,158 +289,7 @@ def trim(Points, axis='y', trim=0):
     Restored_Points = midiart3D.restore_coords_array_from_ordered_dict(Points_Odict)
     return Restored_Points
 
-#Get Image into music21 Stream.
-
-#Get Midi into music21 Stream.
-
-
-####CALL AND DISPLAY
-# Call 3iDiArt Animator Class
-# -0
-animator = Mayavi3DAnimator()
-
-# -1
-##Acquire Data
-SM_Midi = music21.converter.parse(r"C:\Users\Isaac's\Desktop\Neo Mp3s-Wavs-and-Midi\Game Midi Downloads\Spark4.mid")
-SparkMidi1 = midiart3D.extract_xyz_coordinates_to_array(SM_Midi)
-SparkMidiData = SparkMidi1.astype(float)
-
-Points = midiart3D.get_points_from_ply(r"C:\Users\Isaac's\3D Objects\Structure Scans\Zach Bday\ZachPose5.ply")
-
-#-2
-#ReOrient Data and possibly trim.
-Points = animator.standard_reorientation(Points, 2)
-
-#-3
-#Trim
-Points = trim(Points, 'y', 5)
-
-#-4
-#Transformation
-Points = midiart3D.transform_points_by_axis(Points, positive_octant=True)
-
-##Acquire Span(s)
-Points_Span = Points.max()
-
-#SM_Span = SparkMidiData.max()
-SM_Span = SM_Midi.highestTime
-print(SM_Span)
-#Render Animation Scene with grid, music data, and title.
-animator.insert_piano_grid_text_timeplane(SM_Span)
-
-####---Data Insert
-#animator.insert_music_data(EagleMidi, color=(0, 1, 0), mode="cube", scale_factor=.75)
-#animator.insert_music_data(SparkImage, color=(0, 1, 0), mode="sphere", scale_factor=.75)
-
-####---Data Insert
-#Ani2 = animator.insert_array_data(EarthData6, color=(0, 1, 0), mode="cube", scale_factor=1)
-
-####---Data Insert
-Ani3 = animator.insert_array_data(SparkMidiData, color=(1, .5, 0), mode="sphere", scale_factor=1)
-print('ANI 3!!!', type(Ani3))
-# Ani4 = animator.insert_array_data(Points, color=(1, 0, .5), mode="sphere", scale_factor=1)
-# print('ANI 4!!!', type(Ani4))
-####---Data Insert
-#Ani5 = animator.insert_array_data(LampTeddyData, color=(0, 1, 0), mode="cube", scale_factor=.5)
-
-####---Data Insert
-Ani7 = animator.insert_music_data(music21.converter.parse(r"C:\Users\Isaac's\Desktop\Neo Mp3s-Wavs-and-Midi\BEATS.mid"), color=(0, 1, 0), mode="cube", scale_factor=.5)
-
-#Title
-Ani6 = animator.insert_title("3iDiArt: Mesh", color=(1, .5, 0), size=50)
-print('ANI 6!!!', type(Ani6))
-animator.establish_opening()
-
-#Animate.
-animator.animate(120, SM_Span, i_div=8)
-
-
-#def execute_animation():
 
 
 
-# ###CONSOLE USE!!
-# SM_Midi = music21.converter.parse(r"C:\Users\Isaac's\Desktop\Neo Mp3s-Wavs-and-Midi\Game Midi Downloads\Spark4.mid")
-# SparkMidi1 = midiart3D.extract_xyz_coordinates_to_array(SM_Midi)
-# SparkMidiData = SparkMidi1.astype(float)
-# Points = midiart3D.get_points_from_ply(r"C:\Users\Isaac's\3D Objects\Structure Scans\Zach Bday\ZachPose5.ply")
-# Points = Mayavi3idiArtAnimation.animator.standard_reorientation(Points, 2)
-# Points = trim(Points, 'y', 5)
-# Points = midiart3D.transform_points_by_axis(Points, positive_octant=True)
-# Points_Span = Points.max()
-# SM_Span = SparkMidiData.max()
 
-
-###FUCKING DOGSHIT
-
-# Necessary if ply acquired from NHS obj converter. NOT necessary if exported from Meshlab.
-# Points = midiart3D.rotate_array_points_about_axis(Points, "x", -90)
-
-# Points = midiart3D.rotate_array_points_about_axis(Points, "y", 90)
-
-#####SUMMON DATA FOR DISPLAY
-##EARTHDATA
-# from mayavi import mlab
-# from tvtk.api import tvtk
-# from tvtk.common import configure_input_data
-# earth = tvtk.EarthSource()
-# #v = mlab.figure()
-# earth_mapper = tvtk.PolyDataMapper()
-# configure_input_data(earth_mapper, earth.output)
-# earth.update()
-# EarthDataObject = earth.get_output_data_object(0)
-# EarthData1 = EarthDataObject.points.to_array()
-# ##Earth Resize
-# EarthData2 = EarthData1 * 100
-# EarthData3 = EarthData2 + 100
-# EarthData4 = EarthData3 / 2
-# EarthData5 = EarthData4.astype(int)
-# EarthData6 = EarthData5.astype(float)
-# # EarthData7 = midiart3D.rotate_array_points_about_axis(EarthData6, "y", 90)
-# EarthData8 = EarthData6 - 49.5
-# EarthData9 = midiart3D.rotate_array_points_about_axis(EarthData8, "y", 90)
-# EarthData10 = EarthData9 + 49.5
-# EarthStream = midiart3D.extract_xyz_coordinates_to_stream(EarthData10)
-# EarthTime = EarthStream.highestTime
-
-#Get Gypsy Data
-# GypsyMoon = music21.converter.parse(r"C:\Users\Isaac's\Desktop\Isaacs_Synth_Music_Source_Folder\FL\Workflow\9_Scribed_Musicode_Midi\Midi-Art Fun!\MoonBird-qrtr.mid")
-# GypsyData = midiart3D.extract_xyz_coordinates_to_array(GypsyMoon)
-# slit = np.argwhere(GypsyData<255)
-# np.insert(slit, 2, 90, axis=1)
-
-#Get Lamp Teddy Data
-#LampTeddyData = midiart3D.get_points_from_ply(r"C:\Users\Isaac's\3D Objects\Structure Scans\Model Lamp Teddy\LampTeddy3.ply")
-#LampTeddyMidi = midiart3D.extract_xyz_coordinates_to_stream(LampTeddyData)
-#LampTime = LampTeddyMidi.highestTime
-#LampTime = LampTeddyData.max()
-
-###Spark Mandrill Data
-##Image
-# SM_Image = music21.converter.parse(r"C:\Users\Isaac's\Desktop\Isaacs_Synth_Music_Source_Folder\FL\Workflow\9_Scribed_Musicode_Midi\Midi-Art Fun!\Rockman X\Spark Mandrill\SparkMandrill_ Chro_EndOffset.mid")
-# SparkImageData = midiart3D.extract_xyz_coordinates_to_array(SM_Image)
-##Midi
-# SM_Midi = music21.converter.parse(r"C:\Users\Isaac's\Desktop\Neo Mp3s-Wavs-and-Midi\Game Midi Downloads\Spark4.mid")
-# SparkMidi1 = midiart3D.extract_xyz_coordinates_to_array(SM_Midi)
-# SparkMidiData = SparkMidi1.astype(float)
-
-
-###Eagle Data
-# EagleMidiSong= music21.converter.parse(r"C:\Users\Isaac's\Desktop\Neo Mp3s-Wavs-and-Midi\Game Midi Downloads\storm-eagle-s-stage.mid")
-# EagleMSTime= EagleMidi.highestTime
-
-# ###Jacaranda Data
-# #Acquire .ply as a coords_array.
-# Jacaranda = midiart3D.get_points_from_ply(r"C:\Users\Isaac's\3D Objects\Structure Scans\Jacaranda\Jacaranda2.ply")     #This variable is lost in the next call: then, reestablish.
-#
-# #Upscale or downscale. (multiply or divide the coords_array via simple array math broadcasting)
-# JacarandaS = Jacaranda * 3
-#
-# #Rotate coords_array
-# JacarandaR = midiart3D.rotate_array_points_about_axis(JacarandaS, "x", -90)
-#
-# #Transform coords_array to center. (generally to center)
-# JacarandaT = midiart.transform_points_by_axis(JacarandaR,  positive_octant=True)
-#
-# #Length of 3idi display grid is determined by xmax or stream.highestTime, so all reorientation must happen before establishing.
-# JacarandaT_Time = JacarandaT.max()
