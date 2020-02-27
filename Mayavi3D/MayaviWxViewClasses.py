@@ -24,6 +24,10 @@ from traitsui.api import View, Item, HGroup
 from mayavi.core.ui.api import MlabSceneModel, SceneEditor
 from mayavi.tools.mlab_scene_model import MlabSceneModel
 from mayavi.core.ui.mayavi_scene import MayaviScene
+from traits.trait_types import Button
+from traits.trait_numeric import AbstractArray
+from traits.trait_types import Function
+from traits.trait_types import Method
 #-------------------------------------------------------------------------------
 def curve(n_mer, n_long):
     phi = linspace(0, 2*pi, 2000)
@@ -33,7 +37,7 @@ def curve(n_mer, n_long):
             sin(phi*n_mer)]
 
 def trim(Points, axis='y', trim=0):
-    Points_Odict = midiart3D.get_planes_on_axis(Points, axis, set_it=True)
+    Points_Odict = midiart3D.get_planes_on_axis(Points, axis, ordered=True)
 
     # Trim (Trim by index in the list. An in-place operation.)
     [Points_Odict.pop(i) for i in list(Points_Odict.keys())[:trim]]
@@ -64,13 +68,23 @@ class Visualization(HasTraits):
     scene = Instance(MlabSceneModel, ())
     meridional = Range(1, 30,  6)
     transverse = Range(0, 30, 11)
-
+    button = Button("Balls")
+    method = Method()
+    #self.points = AbstractArray #TODO Necessary to establish points here?
 
     def __init__(self):
         # Do not forget to call the parent's __init__
         HasTraits.__init__(self)
+        self.points = AbstractArray
         x, y, z, t = curve(self.meridional, self.transverse)
         self.plot = self.scene.mlab.plot3d(x, y, z, t, colormap='Spectral')
+        print("PLOT SOURCE", type(self.plot.mlab_source))
+        self.points1 = midiart3D.get_points_from_ply(r"C:\Users\Isaac's\Downloads\dodecahedron.ply")
+        self.points = self.points1
+        self.points2 = midiart3D.get_points_from_ply(r"C:\Users\Isaac's\Downloads\sphere.ply")
+        self.bird = self.scene.mlab.points3d(self.points1[:, 0], self.points1[:, 1], self.points1[:, 2],
+                                     color=(0.8666666666666667, 0.6549019607843137, 0.8392156862745098), mode='cube',
+                                     scale_factor=3)
 
     @on_trait_change('meridional,transverse')
     def update_plot(self):
@@ -78,12 +92,21 @@ class Visualization(HasTraits):
         self.plot.mlab_source.trait_set(x=x, y=y, z=z, scalars=t)
 
 
+    @on_trait_change('button')
+    def change_points(self):
+        if midiart.array_to_lists_of(self.points) ==  midiart.array_to_lists_of(self.points2):
+            self.points = self.points1
+        else:
+            self.points = self.points2
+        #x, y, z = sphera[:, 0], sphera[:, 1], sphera[:, 2]
+        self.bird.mlab_source.trait_set(points=self.points)
+
     # the layout of the dialog created
     view = View(Item('scene', editor=SceneEditor(scene_class=MayaviScene),
                     height=250, width=300, show_label=False),
                 HGroup(
                         '_', 'meridional', 'transverse',
-                    ),
+                    ), Item('button')
                 )
 
 class ActorViewer(HasTraits):
@@ -452,14 +475,14 @@ class MainWindow(wx.Frame):
         self.Show(True)
 
 if __name__ == '__main__':
-    asshat = Mayavi3idiView()
-    a = ActorViewer()
-    a.configure_traits()
+    #asshat = Mayavi3idiView()
+    #a = ActorViewer()
+    #a.configure_traits()
     visualization = Visualization()
     visualization.configure_traits()
-    app = wx.App()
-    frame = MainWindow(None, wx.ID_ANY)
-    app.MainLoop()
+    #app = wx.App()
+    #frame = MainWindow(None, wx.ID_ANY)
+    #app.MainLoop()
 
 
 

@@ -20,11 +20,8 @@ ETSConfig.toolkit = 'wx'
 from mayavi import mlab
 from Mayavi3D import PianoDisplay
 
-#from Mayavi3D import Mayavi3idiArtAnimation
-#import vtk
-#import tvtk
-#g.mc = musicode.Musicode()
-from numpy import ogrid, sin
+from gui import PianoRoll
+
 
 # from traits.api import HasTraits, Instance
 # from traitsui.api import View, Item
@@ -57,51 +54,71 @@ from tvtk.pyface.scene_editor import SceneEditor
 from mayavi.tools.mlab_scene_model import MlabSceneModel
 from mayavi.core.ui.mayavi_scene import MayaviScene
 
-from numpy import linspace, pi, cos, sin
+from traits.trait_types import Button
+from traits.trait_numeric import AbstractArray
+from traits.trait_types import Function
+#from traits.trait_types import Method
+from traits.trait_types import List
+from traits.trait_types import Any
 
-def trim(Points, axis='y', trim=0):
-    Points_Odict = midiart3D.get_planes_on_axis(Points, axis, set_it=True)
-
-    # Trim (Trim by index in the list. An in-place operation.)
-    [Points_Odict.pop(i) for i in list(Points_Odict.keys())[:trim]]
-
-    # Restore to a coords_array.
-    Restored_Points = midiart3D.restore_coords_array_from_ordered_dict(Points_Odict)
-    return Restored_Points
 
 
 #mlab.options.offscreen = True
 class Mayavi3idiView(HasTraits):
     scene3d = Instance(MlabSceneModel, ())
-    view = View(Item('scene3d', editor=SceneEditor(scene_class=MayaviScene), resizable=True, show_label=True), resizable=True)
+    button = Button("Balls")
+    pianolist = List()
+    grid_to_stream = Any()
+    stream_to_grid = Any()
+    view = View(Item('scene3d', editor=SceneEditor(scene_class=MayaviScene), resizable=True, show_label=True), Item('button'), resizable=True)
+    mayaviactor = Any()
 
     def __init__(self):
         HasTraits.__init__(self)
 
         self.engine = self.scene3d.engine
-        self.engine.start()
+        self.engine.start()  #TODO What does this do?
         self.scene = self.engine.scenes[0]
 
         ###Set Scene Background Color
         self.scene.scene.background = (0.0, 0.0, 0.0)
         self.scene.scene.movie_maker.record = False
 
+        #Trait Functions
+        #self.stream_to_grid = PianoRoll.PianoRoll.StreamToGrid(self)
+        #self.grid_to_stream = PianoRoll.PianoRoll.GridToStream
+        #self.pianolist =
+        print("GRID_TO_STREAM", type(self.grid_to_stream))
+        #print("BUTTON", type(self.button))
+
+        #READY-MADE POINTS
+        self.pointies = AbstractArray
+        self.points1 = midiart3D.get_points_from_ply(r"C:\Users\Isaac's\Downloads\dodecahedron.ply")
+        self.pointies = self.points1
+        self.points2 = midiart3D.get_points_from_ply(r"C:\Users\Isaac's\Downloads\sphere.ply")
+        self.points3 = np.array([[0, 0, 0]])
+
+
+
     @on_trait_change('scene3d.activated')
     def create_3DMidiart(self):
+        self.midi = music21.converter.parse(r".\Mayavi3D\Spark4.mid")
+        self.midi = midiart3D.extract_xyz_coordinates_to_array(self.midi)
+        self.midi = self.midi.astype(float)
 
-        self.SM_Midi = music21.converter.parse(r".\Mayavi3D\Spark4.mid")
-        self.SparkMidi1 = midiart3D.extract_xyz_coordinates_to_array(self.SM_Midi)
-        self.SparkMidiData = self.SparkMidi1.astype(float)
-        self.Points = midiart3D.get_points_from_ply(r".\Mayavi3D\ZachPose5.ply")
-        self.Points = self.standard_reorientation(self.Points, 2)
-        self.Points = self.trim(self.Points, axis='y', trim=5)
-        self.Points = midiart3D.transform_points_by_axis(self.Points, positive_octant=True)
-        self.Points_Span = self.Points.max()
+        self.points = midiart3D.get_points_from_ply(r".\Mayavi3D\ZachPose5.ply")
+        self.points = self.standard_reorientation(self.points, 2)
+        self.points = self.trim(self.points, axis='y', trim=5)
+        self.points = midiart3D.transform_points_by_axis(self.points, positive_octant=True)
 
-        self.SM_Span = self.SparkMidiData.max()
+        self.Points_Span = self.points.max()
+        self.SM_Span = self.midi.max()
         self.insert_piano_grid_text_timeplane(self.SM_Span)
-        self.insert_array_data(self.SparkMidiData, color=(1, .5, 0), mode="sphere", scale_factor=1)
-        self.insert_array_data(self.Points, color=(1, 0, .5), mode="sphere", scale_factor=1)
+
+        #Insert Actors into scene.
+        self.mididata = self.insert_array_data(self.midi, color=(1, .5, 0), mode="sphere", scale_factor=1)
+        self.arraydata = self.insert_array_data(self.points, color=(1, 0, .5), mode="sphere", scale_factor=1)
+
 
         ###RECORD
         #mlab.start_recording(ui=True)
@@ -129,6 +146,19 @@ class Mayavi3idiView(HasTraits):
     #       self.scene3d.engine.scenes[0].add_child(self.engine.scenes[0].children[i])
 
 
+        @on_trait_change('stream_to_grid', 'grid_to_stream')
+        def change_points(self):
+            if midiart.array_to_lists_of(self.pointies) ==  midiart.array_to_lists_of(self.points2):
+                self.pointies = self.points1
+            elif midiart.array_to_lists_of(self.pointies) == midiart.array_to_lists_of(self.points3):
+                self.pointies = self.points2
+            else:
+                self.pointies = self.points3
+            self.arraydata.mlab_source.trait_set(points=self.pointies)
+
+    # @on_trait_change('stream_to_grid', 'grid_to_stream')
+    # def update_3D_display(self):
+
 
     def standard_reorientation(self, points, scale=1):
         # TODO Maximum rescaling check.
@@ -143,7 +173,7 @@ class Mayavi3idiView(HasTraits):
         return points
 
     def trim(self, points, axis='y', trim=0):
-        Points_Odict = midiart3D.get_planes_on_axis(points, axis, set_it=True)
+        Points_Odict = midiart3D.get_planes_on_axis(points, axis, ordered=True)
 
         # Trim (Trim by index in the list. An in-place operation.)
         [Points_Odict.pop(i) for i in list(Points_Odict.keys())[:trim]]
@@ -187,7 +217,7 @@ class Mayavi3idiView(HasTraits):
         # GridText
         mlab.text3d(int(length), 0, 0, "X_Time-Rhythm-Duration.", color=(0, 1, 0), scale=4)
         mlab.text3d(0, 127, 0, "Y_Frequency-Pitch.", color=(0, 1, 0), scale=4)
-        mlab.text3d(0, 0, 127, "Z_Dynamics-Velocity.", color=(0, 1, 0), scale=4)
+        mlab.text3d(0, 0, 127, "Z_Dynamics-Velocity-Ensemble.", color=(0, 1, 0), scale=4)
 
         # Grid Frequency Midpoint
         # mlab.text3d(0, 64, 0, "<---Midpoint.", color=(1, 0, 1), scale=10)
@@ -206,16 +236,18 @@ class Mayavi3idiView(HasTraits):
                           transparent=True)
 
         ###SELECT OBJECT
-
+    #TODO Is this necessary??!?!
     def insert_music_data(self, in_stream, color=(0, 0, 0), mode="cube", scale_factor=1):
         array_data = midiart3D.extract_xyz_coordinates_to_array(in_stream)
         # print(array_data)
-        mlab.points3d(array_data[:, 0], array_data[:, 1], array_data[:, 2], color=color, mode=mode,
+        mlab_data = mlab.points3d(array_data[:, 0], array_data[:, 1], array_data[:, 2], color=color, mode=mode,
                       scale_factor=scale_factor)
+        return mlab_data
 
     def insert_array_data(self, array_2d, color=(0, 0, 0), mode="cube", scale_factor=.25):
         #print(array_2d)
-        mlab.points3d(array_2d[:, 0], array_2d[:, 1], array_2d[:, 2], color=color, mode=mode, scale_factor=scale_factor)
+        mlab_data = mlab.points3d(array_2d[:, 0], array_2d[:, 1], array_2d[:, 2], color=color, mode=mode, scale_factor=scale_factor)
+        return mlab_data
 
     def insert_note_text(self, text, x=0, y=154, z=0, color=(0, 0, 1), scale=3):
         mlab.text3d(text=text, x=x, y=y, z=z, color=color, scale=scale)

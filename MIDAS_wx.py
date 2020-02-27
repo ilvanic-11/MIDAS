@@ -10,6 +10,8 @@ from mayavi import mlab
 from mayavi import plugins
 from mayavi.plugins import envisage_engine
 from mayavi.api import Engine
+from traits.trait_types import Function
+from traits.trait_types import Method
 
 import os
 # explicitly importing these so pyInstaller works
@@ -75,20 +77,38 @@ class MainWindow(wx.Frame):
         self.topsplit = wx.SplitterWindow(self.main, wx.ID_ANY, style=wx.SP_3DSASH | wx.SP_BORDER)
         self.leftsplit = wx.SplitterWindow(self.topsplit, wx.ID_ANY, style=wx.SP_3DSASH | wx.SP_BORDER)
 
+
+
+        # self.pianorollview = PianoRollPanel.PianoRollPanel()
+        # self.pianorollpanel = self.pianorollview.edit_traits(
+        #     parent=self.basesplit,
+        #     kind='subpanel').control
+
         self.pyshellpanel = wx.py.shell.Shell(self.main)
         self.pianorollpanel = PianoRollPanel.PianoRollPanel(self.topsplit, self.log)
         self.mainbuttonspanel = MainButtons.MainButtonsPanel(self.leftsplit, self.log)
         self.statsdisplaypanel = StatsDisplay.StatsDisplayPanel(self.leftsplit, self.log)
 
-        # Use traits to create a panel, and use it as the content of this
-        # wx frame.
+
         self.mayavi_view = Mayavi3DWindow.Mayavi3idiView()
-        #self.mayavi_view.configure_traits()
+
+        #TRAIT the pianoroll pianos list to use as a trigger.
+        #Or TRAIT the pianoroll sister functions grid_to_stream and stream_to_grid
+
+
+
+        #self.mayavi_view.grid_to_stream = self.pianorollpanel.p
+
         self.mayavi_view_control_panel = self.mayavi_view.edit_traits(
             parent=self.basesplit,
             kind='subpanel').control
         print("CONTROL TYPE:", type( self.mayavi_view_control_panel))
         print("ENGINE:", self.mayavi_view.scene3d.engine)
+
+        self.mayavi_view.grid_to_stream = self.pianorollpanel.Piano_Roll.PianoRoll.GridToStream
+        # print("FUNCTION", type(self.mayavi_view.grid_to_stream))
+        self.mayavi_view.stream_to_grid = self.pianorollpanel.Piano_Roll.PianoRoll.StreamToGrid
+        self.mayavi_view.pianolist = self.pianorollpanel.pianorolls
 
         self.CreateStatusBar()
         self._set_properties()
@@ -143,6 +163,7 @@ if __name__ == '__main__':
     # splash = MySplashScreen()
     # splash.Show()
     app = wx.App()
+    print(type(app))
     frm = MainWindow(None, -1, "MIDAS")
 
     #frm.Show()
