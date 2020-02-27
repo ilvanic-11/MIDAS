@@ -84,20 +84,19 @@ class PianoRollPanel(wx.Panel):
         # print("OnMotion: Drawing=%d, " % self.pianorolls[self.currentPage].drawing)
 
         if evt.Dragging() and evt.LeftIsDown():
-
-            page_ = self.currentPage
-            x, y = page_.CalcUnscrolledPosition(evt.GetPosition())
-            row = page_.YToRow(y)
-            col = page_.XToCol(x)
-            (span, sx, sy) = page_.GetCellSize(row, col)
+            page = self.currentPage
+            x, y = page.CalcUnscrolledPosition(evt.GetPosition())
+            row = page.YToRow(y)
+            col = page.XToCol(x)
+            (span, sx, sy) = page.GetCellSize(row, col)
             # print(f"row={row},col={col}" + self.pianorolls[self.currentPage].print_cell_info(row,col))
 
-            if page_.drawing == 0:
-                if (page_.GetCellValue(row, col) == "1" or span == wx.grid.Grid.CellSpan_Inside):
-                    page_.EraseCell(row, col)
-            elif page_.drawing == 1:
-                if (page_.GetCellValue(row, col) == "0" and span != wx.grid.Grid.CellSpan_Inside):
-                    page_.DrawCell("1", row, col, 1, self.currentPage.draw_cell_size)
+            if page.drawing == 0:
+                if (page.GetCellValue(row, col) == "1" or span == wx.grid.Grid.CellSpan_Inside):
+                    page.EraseCell(row, col)
+            elif page.drawing == 1:
+                if (page.GetCellValue(row, col) == "0" and span != wx.grid.Grid.CellSpan_Inside):
+                    page.DrawCell("1", row, col, 1, self.currentPage.draw_cell_size)
 
             # print("x=%d, y=%d, row=%d, col=%d" % (x,y,row,col))
         evt.Skip()
