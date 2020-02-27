@@ -16,8 +16,9 @@ from Mayavi3D import PianoDisplay
 
 
 
-from traits.api import HasTraits, Range, Instance, on_trait_change
+from traits.api import HasTraits, Range, Instance, on_trait_change, Float
 from traitsui.api import View, Item, HGroup
+from traits.trait_numeric import Array
 from tvtk.pyface.scene_editor import SceneEditor
 from mayavi.tools.mlab_scene_model import MlabSceneModel
 from mayavi.core.ui.mayavi_scene import MayaviScene
@@ -28,11 +29,14 @@ from mayavi.core.ui.mayavi_scene import MayaviScene
 #mlab.options.offscreen = True
 class Mayavi3idiView(HasTraits):
     scene3d = Instance(MlabSceneModel, ())
+    points = Array(dtype=np.int)
+    array3D = Array(dtype=np.float, shape=(5000,127,127))
     view = View(Item('scene3d', editor=SceneEditor(scene_class=MayaviScene), resizable=True, show_label=True), resizable=True)
+    ass = Float
 
     def __init__(self):
         HasTraits.__init__(self)
-
+        self.on_trait_event(self.array3D_changed, 'array3D')
         self.engine = self.scene3d.engine
         self.engine.start()
         self.scene = self.engine.scenes[0]
@@ -47,17 +51,19 @@ class Mayavi3idiView(HasTraits):
         self.SM_Midi = music21.converter.parse(r".\Mayavi3D\Spark4.mid")
         self.SparkMidi1 = midiart3D.extract_xyz_coordinates_to_array(self.SM_Midi)
         self.SparkMidiData = self.SparkMidi1.astype(float)
-        self.Points = midiart3D.get_points_from_ply(r".\Mayavi3D\ZachPose5.ply")
-        self.Points = self.standard_reorientation(self.Points, 2)
-        self.Points = self.trim(self.Points, axis='y', trim=5)
-        self.Points = midiart3D.transform_points_by_axis(self.Points, positive_octant=True)
-        self.Points_Span = self.Points.max()
+        Points = midiart3D.get_points_from_ply(r".\Mayavi3D\ZachPose5.ply")
+        Points = self.standard_reorientation(Points, 2)
+        Points = self.trim(Points, axis='y', trim=5)
+        Points = midiart3D.transform_points_by_axis(Points, positive_octant=True)
+
+        self.Points_Span = Points.max()
 
         self.SM_Span = self.SparkMidiData.max()
         self.insert_piano_grid_text_timeplane(self.SM_Span)
         self.insert_array_data(self.SparkMidiData, color=(1, .5, 0), mode="sphere", scale_factor=1)
-        self.insert_array_data(self.Points, color=(1, 0, .5), mode="sphere", scale_factor=1)
+        self.model = self.insert_array_data(Points, color=(1, 0, .5), mode="sphere", scale_factor=1)
 
+        self.points = Points
         ###RECORD
         #mlab.start_recording(ui=True)
 
@@ -65,11 +71,83 @@ class Mayavi3idiView(HasTraits):
         #self.scene3d.disable_render = False
 
         self.establish_opening()
-        self.animate(160, self.SM_Span, i_div=8)
+        self.animate(160, self.SM_Span, i_div=2)
 
         ###TITLE
         self.insert_title("3-Dimensional Music", color=(1, 0, 1), opacity=.12, size=.75)
         self.insert_note_text("The Midas 3idiArt Display", 0, 154, 0, color=(1, 1, 0), scale=10)
+
+        ###DEFINE MUSIC ANIMATION
+
+    @on_trait_change('ass')
+    def ass_changed(self):
+    #def ass_changed(self):
+        print("ASS")
+
+
+    def array3D_changed(self):
+        print("array3D_changed")
+        self.points = np.argwhere(self.array3D >= 1)
+        #self.model = self.insert_array_data(self.points, color=(1, 0, .5), mode="sphere", scale_factor=1)
+
+    @on_trait_change('points')
+    def points_changed(self):
+        print("points_changed")
+        self.model.mlab_source.trait_set(points=self.points)
+
+    def insert_array_data(self, array_2d, color=(0, 0, 0), mode="cube", scale_factor=.25):
+        # print(array_2d)
+        return mlab.points3d(array_2d[:, 0], array_2d[:, 1], array_2d[:, 2], color=color, mode=mode,
+                             scale_factor=scale_factor)
+
+    def animate(self, time_length, bpm=None, i_div=4):
+        """ I_div should be 2 or 4. Upon a division of greater than 4, say 8, the millisecond delay becomes so small,
+		that it is almost not even read properly, producing undesired results.
+		Animation function that gives the impression of rendering 3D music. Does not play music.
+		:param time_length: Length of the piece to be rendered in the animation display: this determines the range of the animation.
+		:param bpm: Beats per minutes of the music as an integer: this allows for the calculation of the functions delay, and determines the speed of the animation scroll.
+		For best results, select your bpm from the following list: (1, 2, 3, 4, 5, 6, 8, 10, 12, 15, 16, 20, 24, 25, 30, 32, 40, 48, 50, 60, 75, 80, 96, 100, 120, 125, 150, 160, 200, 240, 250,
+		300, 375, 400, 480, 500, 600, 625, 750, 800, 1000, 1200, 1250, 1500, 1875, 2000, 2400, 2500, 3000, 3750, 4000,
+		5000, 6000, 7500, 10000, 12000, 15000, 20000, 30000, 60000.)
+		:param i_div: Number of planescrolls per second: this determines the fineness of your animation.
+		:return:
+		"""
+        import time
+        if bpm is None or 0:
+            bpm_delay = 100000
+            nano_delay = 0
+        else:
+            bpm_delay = 1
+            nano_delay = (60000000 / bpm / i_div)
+
+        @mlab.animate(delay=bpm_delay, ui=True)
+        def animate_plane_scroll(x_length, delay):
+            """
+			Mlab animate's builtin delay has to be specified as an integer in milliseconds with a minimum of 10, and also could
+			not be removed, so we subtracted .01 seconds (or 10 milliseconds) in a workaround delay of our own in order to compensate.
+			:param x_length: Length of the range of the animation plane along the x-axis. (See music21.stream.Stream.highestTime)
+			:param delay: Int in microseconds.
+			:return: N/A
+			"""
+            for i in np.arange(0, x_length * i_div, 1 / i_div):
+                # print("%f %d" % (i, time.time_ns()))
+                interval = delay
+                t = int(time.time() * 1000000) % (interval)
+                s = (interval - t)
+                time.sleep(s / 1000000)  # Increasing this number speeds up plane scroll.  - .003525  .0035   .0029775025
+                # print("timesleep:", (delay-.01))
+                # self.image_plane_widget.ipw.slice_index = int(round(i))
+                self.image_plane_widget.ipw.slice_position = i
+                yield
+
+        # mlab.start_recording()
+        # mlab.animate(animate_plane_scroll, ms_delay, ui=True)
+        # print(secs_delay)
+        #animate1 = animate_plane_scroll(int(time_length), int(nano_delay))
+        # animate1.timer.Stop()
+        print("Animate")
+        # input("Press Enter.")
+        #animate1.timer.Start()
 
 
     def standard_reorientation(self, points, scale=1):
@@ -155,9 +233,6 @@ class Mayavi3idiView(HasTraits):
         mlab.points3d(array_data[:, 0], array_data[:, 1], array_data[:, 2], color=color, mode=mode,
                       scale_factor=scale_factor)
 
-    def insert_array_data(self, array_2d, color=(0, 0, 0), mode="cube", scale_factor=.25):
-        #print(array_2d)
-        mlab.points3d(array_2d[:, 0], array_2d[:, 1], array_2d[:, 2], color=color, mode=mode, scale_factor=scale_factor)
 
     def insert_note_text(self, text, x=0, y=154, z=0, color=(0, 0, 1), scale=3):
         mlab.text3d(text=text, x=x, y=y, z=z, color=color, scale=scale)
@@ -165,7 +240,7 @@ class Mayavi3idiView(HasTraits):
         # TODO
         ## def insert_image_data(self, imarray_2d, color=(0,0,0), mode="cube", scale_factor = 1):
 
-    ###SCENE TITLE
+    ###SCENE TITLEd
     def insert_title(self, text, color=(1, .5, 0), opacity=1.0, size=1):
 
         mlab.title(text=text, color=color, opacity=opacity, size=size)
@@ -228,59 +303,7 @@ class Mayavi3idiView(HasTraits):
         scene.scene.camera.compute_view_plane_normal()
         scene.scene.render()
 
-    ###DEFINE MUSIC ANIMATION
-    def animate(self, time_length, bpm=None, i_div=4):
-        """ I_div should be 2 or 4. Upon a division of greater than 4, say 8, the millisecond delay becomes so small,
-        that it is almost not even read properly, producing undesired results.
-        Animation function that gives the impression of rendering 3D music. Does not play music.
-        :param time_length: Length of the piece to be rendered in the animation display: this determines the range of the animation.
-        :param bpm: Beats per minutes of the music as an integer: this allows for the calculation of the functions delay, and determines the speed of the animation scroll.
-        For best results, select your bpm from the following list: (1, 2, 3, 4, 5, 6, 8, 10, 12, 15, 16, 20, 24, 25, 30, 32, 40, 48, 50, 60, 75, 80, 96, 100, 120, 125, 150, 160, 200, 240, 250,
-        300, 375, 400, 480, 500, 600, 625, 750, 800, 1000, 1200, 1250, 1500, 1875, 2000, 2400, 2500, 3000, 3750, 4000,
-        5000, 6000, 7500, 10000, 12000, 15000, 20000, 30000, 60000.)
-        :param i_div: Number of planescrolls per second: this determines the fineness of your animation.
-        :return:
-        """
-        import time
-        if bpm is None or 0:
-            bpm_delay = 100000
-            nano_delay = 0
-        else:
-            bpm_delay = 10
-            nano_delay = (60000000 / bpm / i_div)
 
-        @mlab.animate(delay=bpm_delay, ui=True)
-        def animate_plane_scroll(x_length, delay):
-            """
-            Mlab animate's builtin delay has to be specified as an integer in milliseconds with a minimum of 10, and also could
-            not be removed, so we subtracted .01 seconds (or 10 milliseconds) in a workaround delay of our own in order to compensate.
-            :param x_length: Length of the range of the animation plane along the x-axis. (See music21.stream.Stream.highestTime)
-            :param delay: Int in microseconds.
-            :return: N/A
-            """
-            for i in np.arange(0, x_length * i_div, 1 / i_div):
-                # print("%f %d" % (i, time.time_ns()))
-                interval = delay
-                t = int(time.time() * 1000000) % (interval)
-                s = (interval - t)
-                time.sleep(
-                    s / 1000000)  # Increasing this number speeds up plane scroll.  - .003525  .0035   .0029775025
-                # print("timesleep:", (delay-.01))
-                # self.image_plane_widget.ipw.slice_index = int(round(i))
-                self.image_plane_widget.ipw.slice_position = i
-                yield
-
-        # mlab.start_recording()
-        # mlab.animate(animate_plane_scroll, ms_delay, ui=True)
-        # print(secs_delay)
-        animate1 = animate_plane_scroll(int(time_length), int(nano_delay))
-        #animate1.timer.Stop()
-        print("Animate")
-        #input("Press Enter.")
-        animate1.timer.Start()
-
-        #mlab.figure()
-        #mlab.show()
 
 
 if __name__ == '__main__':

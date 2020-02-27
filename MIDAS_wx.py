@@ -15,6 +15,7 @@ import os
 # explicitly importing these so pyInstaller works
 import wx._adv, wx._html, wx._xml, wx.py, time
 
+from traits.api import HasTraits
 
 loglevel = 1
 class Log():
@@ -81,14 +82,12 @@ class MainWindow(wx.Frame):
         self.statsdisplaypanel = StatsDisplay.StatsDisplayPanel(self.leftsplit, self.log)
 
         # Use traits to create a panel, and use it as the content of this
-        # wx frame.
         self.mayavi_view = Mayavi3DWindow.Mayavi3idiView()
-        #self.mayavi_view.configure_traits()
-        self.mayavi_view_control_panel = self.mayavi_view.edit_traits(
-            parent=self.basesplit,
-            kind='subpanel').control
-        print("CONTROL TYPE:", type( self.mayavi_view_control_panel))
-        print("ENGINE:", self.mayavi_view.scene3d.engine)
+        self.mayavi_view_control_panel = self.mayavi_view.edit_traits(parent=self.basesplit,kind='subpanel').control
+
+        # Uncomment this for blank 3D panel
+        #self.mayavi_view_control_panel = wx.Panel(self.basesplit)
+
 
         self.CreateStatusBar()
         self._set_properties()
@@ -101,15 +100,6 @@ class MainWindow(wx.Frame):
         self.Show(True)
 
 
-        # Layer_0 = self.pianorollpanel
-        # new_locals = locals()
-        # self.pyshellpanel.run('''new_locals = %s''' % new_locals)
-        # self.pyshellpanel.run('''Layer_0 = %s''' % new_locals['Layer_0'])
-        # print("Chiggy Wiggy Dir", dir())
-        # print("Chiggy Wiggy Locals", locals())
-
-        # @self.Show()
-        # def
 
     def _set_properties(self):
         self.SetTitle("MIDAS")
@@ -117,16 +107,20 @@ class MainWindow(wx.Frame):
         self.statsdisplaypanel.SetBackgroundColour("silver")
         self.mainbuttonspanel.SetBackgroundColour("green")
         self.main.SetBackgroundColour("black")
-        self.main.SetMinimumPaneSize(200)
-        self.topsplit.SetMinimumPaneSize(200)
-        self.leftsplit.SetMinimumPaneSize(150)
+        self.main.SetMinimumPaneSize(50)
+        self.topsplit.SetMinimumPaneSize(150)
+        self.leftsplit.SetMinimumPaneSize(200)
+        self.basesplit.SetMinimumPaneSize(50)
 
     def _do_layout(self):
         self.leftsplit.SplitHorizontally(self.mainbuttonspanel, self.statsdisplaypanel)
-        self.topsplit.SplitVertically(self.leftsplit, self.pianorollpanel )
+        self.topsplit.SplitVertically(self.leftsplit, self.pianorollpanel)
         self.main.SplitHorizontally(self.topsplit, self.pyshellpanel)
-        self.basesplit.SplitHorizontally(self.main, self.mayavi_view_control_panel,)
+        self.basesplit.SplitHorizontally(self.main, self.mayavi_view_control_panel)
         self.topsplit.SetSashPosition(200)
+        self.leftsplit.SetSashPosition(600)
+        self.main.SetSashPosition(900)
+        self.basesplit.SetSashPosition(1000)
         self.Layout()
 
 
