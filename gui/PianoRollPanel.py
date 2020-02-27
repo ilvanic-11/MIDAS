@@ -7,6 +7,8 @@ import numpy as np
 import math
 from midas_scripts import musicode, music21funcs
 from gui import PianoRoll
+from traits.api import HasTraits, on_trait_change
+from traits.trait_numeric import AbstractArray
 """ 
 PianoRollPanel
 Toolbar
@@ -20,13 +22,19 @@ wxNoteBook
 """
 
 
+
+
+
 class PianoRollPanel(wx.Panel):
     def __init__(self, parent, log):
+        #HasTraits.__init__(self)
         wx.Panel.__init__(self, parent, -1)
         self.log = log
 
         tb = self.SetupToolbar()
 
+        self.Piano_Roll = PianoRoll
+        print("VARIABLE PIANO ROLL", type(self.Piano_Roll))
         self.pianorollNB = wx.Notebook(self, -1, wx.DefaultPosition, wx.DefaultSize, style=wx.NB_LEFT|wx.NB_FIXEDWIDTH)
         self.pianorolls = list()
 
@@ -52,7 +60,8 @@ class PianoRollPanel(wx.Panel):
 
     def InsertNewPianoRoll(self, index):
         self.log.WriteText("InsertNewPianoRoll(): ")
-        pianoroll = PianoRoll.PianoRoll(self.pianorollNB, -1, wx.DefaultPosition, wx.DefaultSize, 0, f"Piano Roll {index}" , self.log)
+        pianoroll = self.Piano_Roll.PianoRoll(self.pianorollNB, -1, wx.DefaultPosition, wx.DefaultSize, 0, f"Piano Roll {index}" , self.log)
+
         self.pianorolls.insert(index, pianoroll)
         self.pianorollNB.InsertPage(index, pianoroll, str(index), select=True)
 
@@ -66,7 +75,10 @@ class PianoRollPanel(wx.Panel):
         self.pianorolls.pop(index-1)
         self.pianorollNB.DeletePage(index-1)
 
-
+    def DeleteAllPianoRolls(self):
+        self.log.WriteText("DeletePianoRoll(): ")
+        self.pianorolls.clear()
+        self.pianorollNB.DeleteAllPages()
 
     def OnMotion(self, evt):
         # print("OnMotion: Drawing=%d, " % self.pianorolls[self.currentPage].drawing)
@@ -149,7 +161,13 @@ class PianoRollPanel(wx.Panel):
         self.toolbar.AddTool(id_DeleteLayer, "", bmp_DeleteLayer, shortHelp="Delete Layer", kind=wx.ITEM_NORMAL)
         self.Bind(wx.EVT_TOOL, self.OnToolBarClick, id=id_DeleteLayer)
 
-        
+        id_DeleteAllLayers = 50
+        bmp_DeleteAllLayers = wx.ArtProvider.GetBitmap(wx.ART_DELETE, wx.ART_TOOLBAR, btn_size)
+        self.toolbar.AddTool(id_DeleteAllLayers, "", bmp_DeleteAllLayers, shortHelp="Delete All Layers", kind=wx.ITEM_NORMAL)
+        self.Bind(wx.EVT_TOOL, self.OnToolBarClick, id=id_DeleteAllLayers)
+
+
+
         self.toolbar.Realize()
         return self.toolbar
 
@@ -180,6 +198,9 @@ class PianoRollPanel(wx.Panel):
             self.InsertNewPianoRoll(len(self.pianorolls))
         elif event.GetId() == 40:
             self.DeletePianoRoll(len(self.pianorolls))
+        elif event.GetId() == 50:
+            self.DeleteAllPianoRolls()
+
 
     def OnSelectMode(self, event):
         print("OnSelectMode():")
@@ -192,7 +213,7 @@ class PianoRollPanel(wx.Panel):
         self.currentPage.UpdateStream()
         evt.Skip()
 
-    def print_cell_sizes(self):
+    def print_cell_sizes(self):  #TODO Redundant? Consider deleting this button.
         s = ""
         with open("test.txt", 'w') as f:
             for row in range(0, self.currentPage.GetNumberRows()):

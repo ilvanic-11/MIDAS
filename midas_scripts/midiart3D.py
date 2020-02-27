@@ -343,17 +343,17 @@ def delete_select_points( coords_array, choice_list):
 
 
 #3D-11.
-def get_planes_on_axis( coords_array, axis="z", set_it=False, clean=False):
+def get_planes_on_axis( coords_array, axis="z", ordered=False, clean=True):
     """
     This function acquires all the "planes" (2d instances of data) along a specified axis and puts them into an Ordered Dict. The order of the dict can be set.
     :param coords_array: Operand coords array.
     :param axis: Axis along which the planes will be derived.
-    :param set_it: If set_it=True, the data is set in order and duplicates are deleted.
-    :param clean: If true, redundant coords will be deleted.
+    :param ordered: If ordered=True, the planes are set in order chronological order, else they remain as found from original data.. #TODO More testing? Some examples seem not to be ordered correctly....
+    :param clean: If true, redundant\duplicate coords will be deleted.
     :return: An Ordered Dictionary.
     """
     if clean == True:
-        coords_array = delete_redundant_points(coords_array)
+        coords_array = delete_redundant_points(coords_array, stray=False) #TODO See if stray will still need to be true for scans.
     else:
         pass
     from midas_scripts import midiart
@@ -364,10 +364,11 @@ def get_planes_on_axis( coords_array, axis="z", set_it=False, clean=False):
         axis = 1
     else:
         axis = 0
-    axis_set = set(z for z in coords_array[:, axis].flatten())
+    axis_list = [z for z in coords_array[:, axis].flatten()]
     planes_dict = OrderedDict.fromkeys(i for i in coords_array[:, axis].flatten())
-    if set_it:
-        planes_dict = OrderedDict.fromkeys(i for i in axis_set)
+    if ordered:
+        axis_list.sort()
+        planes_dict = OrderedDict.fromkeys(i for i in axis_list)
     for i in planes_dict.keys():
         planes_list = list()
         for j in midiart.array_to_lists_of(coords_array, tupl=False):
@@ -476,7 +477,7 @@ def make_vtk_points_mesh( points):
 
 def BPM_to_FPS(bpm, fps):
     fps = (bpm * (bpm/60)) / 60
-    modulo = (bpm * fpb) % 60
+    modulo = (bpm * fps) % 60
     return fps, modulo
 
     # for i in range(51, 201, 1):
