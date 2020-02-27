@@ -1,7 +1,8 @@
 import wx
-from midas_scripts import musicode, midiart, music21funcs
+from midas_scripts import musicode, midiart, music21funcs, midiart3D
 import music21
 import cv2, numpy
+import numpy as np
 import os
 import subprocess
 from collections import OrderedDict
@@ -73,6 +74,8 @@ class MainButtonsPanel(wx.Panel):
         self.GetTopLevelParent().pianorollpanel.currentPage.ClearGrid()
         self.GetTopLevelParent().pianorollpanel.currentPage.stream = music21.stream.Stream()
 
+    # def OnDeleteAllPianoRolls(self, evt):
+    #     self.GetTopLevelParent().
 
     def OnUpdateStream(self,evt):
         self.GetTopLevelParent().pianorollpanel.currentPage.UpdateStream()
@@ -104,9 +107,10 @@ class MainButtonsPanel(wx.Panel):
             self._OnMusicodeDialogClosed(dialog, evt)
         elif type (dialog) is MIDIArtDialog:
             self._OnMIDIArtDialogClosed(dialog, evt)
-        elif type (dialog is Music21ConverterParseDialog):
+        elif type (dialog) is Music21ConverterParseDialog:
             self._OnM21ConverterParseDialogClosed(dialog, evt)
-
+        elif type (dialog) is MIDIArt3DDialog:
+            self._OnMIDIArt3DDialogClosed(dialog, evt)
         dialog.Destroy()
 
     def _OnMusicodeDialogClosed(self, dialog, evt):
@@ -156,6 +160,28 @@ class MainButtonsPanel(wx.Panel):
             stream = music21.converter.parse(dialog.midi)
             stream.show('txt')
             self.GetTopLevelParent().pianorollpanel.currentPage.StreamToGrid(stream)
+
+    def _OnMIDIArt3DDialogClosed(self, dialog, evt):
+        val = evt.GetReturnCode()
+        print("Val %d: " % val)
+        try:
+            btn = {wx.ID_OK: "OK",
+                   wx.ID_CANCEL: "Cancel"}[val]
+        except KeyError:
+            btn = '<unknown>'
+
+        if btn == "OK":
+            points = midiart3D.get_points_from_ply(dialog.ply)
+            planes_dict = midiart3D.get_planes_on_axis(points, 'z', ordered=True, clean=True)
+            #Delete the startup piano roll when loading ply.
+            try:
+                self.GetTopLevelParent().pianorollpanel.DeletePianoRoll(1)
+            except IndexError:
+                pass
+            index_list = [k for k in planes_dict.keys()]
+            for k in index_list:
+                self.GetTopLevelParent().pianorollpanel.InsertNewPianoRoll(int(index_list.index(k)))
+                self.GetTopLevelParent().pianorollpanel.currentPage.StreamToGrid(midiart3D.extract_xyz_coordinates_to_stream((np.array(planes_dict[k]))))
 
     def OnShowinFLStudio(self, evt):
         grid = self.GetTopLevelParent().pianorollpanel.currentPage
@@ -341,21 +367,50 @@ class MIDIArt3DDialog(wx.Dialog):
                  pos=wx.DefaultPosition, style=wx.DEFAULT_DIALOG_STYLE, name='MIDI Art 3D'):
         wx.Dialog.__init__(self)
         self.Create(parent, id, title, pos, size, style, name)
+        self.btnLoadPly = wx.Button(self, -1, "Load Point Cloud")
+        self.Bind(wx.EVT_BUTTON, self.OnLoadPly, self.btnLoadPly)
+
+        btnsizer = wx.StdDialogButtonSizer()
+        btn = wx.Button(self, wx.ID_OK)
+        btn.SetDefault()
+        btnsizer.AddButton(btn)
+        btn = wx.Button(self, wx.ID_CANCEL)
+        btnsizer.AddButton(btn)
+        btnsizer.Realize()
+
+        sizerMain = wx.BoxSizer(wx.VERTICAL)
+        # sizerMain.Add(sizerHor, 30)
+        sizerMain.Add(self.btnLoadPly, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL, 20)
+        sizerMain.Add(btnsizer, 0, wx.ALIGN_CENTER_HORIZONTAL | wx.ALL, 1)
+
+        self.SetSizerAndFit(sizerMain)
+
+    def OnLoadPly(self, evt):
+        with wx.FileDialog(self, "Open Ply file", wildcard="Ply files (*.ply)|*.ply",
+                           style=wx.FD_OPEN | wx.FD_FILE_MUST_EXIST) as fileDialog:
+
+            if fileDialog.ShowModal() == wx.ID_CANCEL:
+                return  # the user changed their mind
+
+            # Proceed loading the file chosen by the user
+            pathname = fileDialog.GetPath()
+            print(pathname)
+            try:
+                self.ply = pathname
+            except IOError:
+                wx.LogError("Cannot open file '%s'." % pathname)
+
 
 class Music21ConverterParseDialog(wx.Dialog):
     def __init__(self, parent, id, title, size=wx.DefaultSize,
                  pos=wx.DefaultPosition, style=wx.DEFAULT_DIALOG_STYLE, name='MIDI Art 3D'):
         wx.Dialog.__init__(self)
-        #self.midi = ""
         self.Create(parent, id, title, pos, size, style, name)
-        self.ctrlsPanel = wx.Panel(self, -1, wx.DefaultPosition, style=wx.BORDER_RAISED)
-        self.btnLoadMidi = wx.Button(self.ctrlsPanel, -1, "Load Midi")
+        #self.ctrlsPanel = wx.Panel(self, -1, wx.DefaultPosition, style=wx.BORDER_RAISED)
+        self.btnLoadMidi = wx.Button(self, -1, "Load Midi")
         self.Bind(wx.EVT_BUTTON, self.OnLoadMidi, self.btnLoadMidi)
 
         btnsizer = wx.StdDialogButtonSizer()
-        # if wx.Platform != "__WXMSW__":
-        btn = wx.ContextHelpButton(self)
-        btnsizer.AddButton(btn)
         btn = wx.Button(self, wx.ID_OK)
         btn.SetDefault()
         btnsizer.AddButton(btn)
@@ -365,12 +420,14 @@ class Music21ConverterParseDialog(wx.Dialog):
 
         sizerMain = wx.BoxSizer(wx.VERTICAL)
         #sizerMain.Add(sizerHor, 30)
-        sizerMain.Add(btnsizer, 0, wx.ALIGN_CENTER_HORIZONTAL | wx.ALL, 5)
+        sizerMain.Add(self.btnLoadMidi, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL, 20)
+        sizerMain.Add(btnsizer, 0, wx.ALIGN_CENTER_HORIZONTAL | wx.ALL, 1)
+
+        #sizerCtrls = wx.BoxSizer(wx.VERTICAL)
 
         self.SetSizerAndFit(sizerMain)
 
-        sizerCtrls = wx.BoxSizer(wx.VERTICAL)
-        sizerCtrls.Add(self.btnLoadMidi, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL, 20)
+
 
 
 
