@@ -148,6 +148,7 @@ class MainButtonsPanel(wx.Panel):
             self.GetTopLevelParent().pianorollpanel.currentPage.StreamToGrid(stream)
 
     def _OnM21ConverterParseDialogClosed(self, dialog, evt):
+        print("OnM21ConverterParseDialogClosed():")
         val = evt.GetReturnCode()
         print("Val %d: " % val)
         try:

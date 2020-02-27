@@ -352,30 +352,35 @@ def get_planes_on_axis( coords_array, axis="z", ordered=False, clean=True):
     :param clean: If true, redundant\duplicate coords will be deleted.
     :return: An Ordered Dictionary.
     """
+    from midas_scripts import midiart
+
     if clean == True:
         coords_array = delete_redundant_points(coords_array, stray=False) #TODO See if stray will still need to be true for scans.
     else:
         pass
-    from midas_scripts import midiart
+
     planes_list = list()
+
     if axis is "z":
         axis = 2
     elif axis is "y":
         axis = 1
     else:
         axis = 0
+
     axis_list = [z for z in coords_array[:, axis].flatten()]
     planes_dict = OrderedDict.fromkeys(i for i in coords_array[:, axis].flatten())
     if ordered:
         axis_list.sort()
         planes_dict = OrderedDict.fromkeys(i for i in axis_list)
+
     for i in planes_dict.keys():
         planes_list = list()
         for j in midiart.array_to_lists_of(coords_array, tupl=False):
             if j[axis] == i:
                 planes_list.append(j)
             planes_dict[i] = planes_list
-    print("Call for plane key by:")
+
     print(planes_dict.keys())
     print("Then use np.array on the value to reassert as numpy coordinate data.")
     return planes_dict
