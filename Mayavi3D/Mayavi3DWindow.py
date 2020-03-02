@@ -126,19 +126,6 @@ class Mayavi3idiView(HasTraits):
         self.title = self.insert_title("3-Dimensional Music", color=(1, 0, 1), height=.82, opacity=.12, size=.65)  ###Note: affected by basesplit sash position.
         #self.insert_note_text("3-Dimensional Music", 0, 164, 0, color=(1,0,1), opacity=.12, orient_to_camera=False, scale=30)
 
-        ##TRIAL
-    #@on_trait_change('grid_to_stream', 'stream_to_grid')  ##'points'  button
-    # def points_changed(self):
-    #     print("points_changed")
-    #     if midiart.array_to_lists_of(self.pointies) == midiart.array_to_lists_of(self.points2):
-    #         self.pointies = self.points1
-    #     elif midiart.array_to_lists_of(self.pointies) == midiart.array_to_lists_of(self.points3):
-    #         self.pointies = self.points2
-    #     else:
-    #         self.pointies = self.points3
-    #     # x, y, z = sphera[:, 0], sphera[:, 1], sphera[:, 2]
-    #     self.model.mlab_source.trait_set(points=self.pointies)
-
 
     ###DEFINE MUSIC ANIMATION
 
