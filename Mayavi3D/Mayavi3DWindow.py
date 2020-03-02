@@ -48,16 +48,16 @@ class Mayavi3idiView(HasTraits):
     # grid_to_stream = Function()
     # stream_to_grid = Function()
     points = Array(dtype=np.int)
-    array3D = Array(dtype=np.float, shape=(5000, 127, 127))
+    array3D = Array(dtype=np.float, shape=(5000, 128, 127))
     arraychangedflag = Int()
-    array3D_2 = Array(dtype=np.float, shape=(5000, 127, 127))
+
     view = View(Item('scene3d', editor=SceneEditor(scene_class=MayaviScene), resizable=True, show_label=False), resizable=True)
     ass = Float
     #button = Button()
 
     def __init__(self):
         HasTraits.__init__(self)
-        self.on_trait_event(self.array3D_changed, 'arraychangedflag')
+        #self.on_trait_event(self.array3D_changed, 'arraychangedflag')
 
         self.engine = self.scene3d.engine
         self.engine.start()  # TODO What does this do?
@@ -85,6 +85,18 @@ class Mayavi3idiView(HasTraits):
 
         #self.on_trait_event(self.points_changed(), ('grid_to_stream', 'stream_to_grid'))
 
+    def update_3Dpoints(self, row, col, val):
+        try:
+
+            page = self.GetTopLevelParent().pianorollpanel.currentPage
+            layer = self.GetTopLevelParent().pianorollpanel.pianorollNB.FindPage(page)
+            self.array3D[col, 127 - row, layer] = val
+
+
+
+        except Exception as e:
+            print(e)
+            pass
 
     @on_trait_change('scene3d.activated')
     def create_3DMidiart(self):
@@ -129,21 +141,17 @@ class Mayavi3idiView(HasTraits):
 
     ###DEFINE MUSIC ANIMATION
 
-    @on_trait_change('ass')
-    def ass_changed(self):
-        # def ass_changed(self):
-        print("ASS")
-
     ##WORKING INSTANCE
+    @on_trait_change('arraychangedflag')
     def array3D_changed(self):
         #print("array3D_changed")
         self.points = np.argwhere(self.array3D >= 1)
-        #self.model = self.insert_array_data(self.points, color=(1, 0, .5), mode="sphere", scale_factor=1)
-
-    @on_trait_change('points')
-    def points_changed(self):
-        #print("points_changed")
         self.model.mlab_source.trait_set(points=self.points)
+
+    #@on_trait_change('points')
+    #def points_changed(self):
+     #   #print("points_changed")
+       #
 
     def insert_array_data(self, array_2d, color=(0, 0, 0), mode="cube", scale_factor=.25):
         # print(array_2d)
