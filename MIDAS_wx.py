@@ -12,6 +12,7 @@ from mayavi.plugins import envisage_engine
 from mayavi.api import Engine
 from traits.trait_types import Function
 from traits.trait_types import Method
+import copy
 
 import os
 # explicitly importing these so pyInstaller works
@@ -85,6 +86,9 @@ class MainWindow(wx.Frame):
         #     parent=self.basesplit,
         #     kind='subpanel').control
 
+        self.mayavi_view = Mayavi3DWindow.Mayavi3idiView()
+        self.mayavi_view_control_panel = self.mayavi_view.edit_traits(parent=self.basesplit, kind='subpanel').control
+
         self.pyshellpanel = wx.py.shell.Shell(self.main)
         self.pianorollpanel = PianoRollPanel.PianoRollPanel(self.topsplit, self.log)
         self.mainbuttonspanel = MainButtons.MainButtonsPanel(self.leftsplit, self.log)
@@ -92,17 +96,18 @@ class MainWindow(wx.Frame):
 
 
         # Use traits to create a panel, and use it as the content of this
-        self.mayavi_view = Mayavi3DWindow.Mayavi3idiView()
-        self.mayavi_view_control_panel = self.mayavi_view.edit_traits(parent=self.basesplit,kind='subpanel').control
+
 
         # Uncomment this for blank 3D panel
         #self.mayavi_view_control_panel = wx.Panel(self.basesplit)
 
 
-        self.mayavi_view.grid_to_stream = self.pianorollpanel.Piano_Roll.PianoRoll.GridToStream
+        self.mayavi_view.grid_to_stream = copy.deepcopy(self.pianorollpanel.Piano_Roll.PianoRoll.GridToStream)
         # print("FUNCTION", type(self.mayavi_view.grid_to_stream))
-        self.mayavi_view.stream_to_grid = self.pianorollpanel.Piano_Roll.PianoRoll.StreamToGrid
+        self.mayavi_view.stream_to_grid = copy.deepcopy(self.pianorollpanel.Piano_Roll.PianoRoll.StreamToGrid)
         self.mayavi_view.pianolist = self.pianorollpanel.pianorolls
+
+        print("GRID_TO_STREAM2", type(self.mayavi_view.grid_to_stream))
 
         self.CreateStatusBar()
         self._set_properties()
@@ -135,7 +140,7 @@ class MainWindow(wx.Frame):
         self.topsplit.SetSashPosition(200)
         self.leftsplit.SetSashPosition(600)
         self.main.SetSashPosition(900)
-        self.basesplit.SetSashPosition(1000)
+        self.basesplit.SetSashPosition(300)  ###Affects 3D title insert.
         self.Layout()
 
 
