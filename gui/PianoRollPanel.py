@@ -210,6 +210,7 @@ class PianoRollPanel(wx.Panel):
     def OnMouseLeftUp(self, evt):
         self.log.WriteText("OnMouseLeftUp():")
         self.currentPage.UpdateStream()
+        self.GetTopLevelParent().mayavi_view.arraychangedflag += 1
         evt.Skip()
 
     def print_cell_sizes(self):  #TODO Redundant? Consider deleting this button.
