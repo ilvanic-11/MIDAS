@@ -40,6 +40,7 @@
 ###############################################################################
 
 import music21
+from music21 import *
 from midas_scripts import music21funcs
 from midas_scripts import midiart
 import numpy as np
@@ -140,7 +141,7 @@ def insert_instrument_into_parts( in_stream, midi_num=0):
     :return: stream
     """
     instru = music21.instrument.instrumentFromMidiProgram(midi_num)
-    for p in in_stream.getElementsByClass(stream.Part):
+    for p in in_stream.getElementsByClass(music21.stream.Part):
         p.insert(p.offset, instru)
     return in_stream
 

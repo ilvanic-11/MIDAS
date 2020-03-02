@@ -88,7 +88,7 @@ class PianoRoll(wx.grid.Grid, glr.GridWithLabelRenderersMixin):
         self.SetDefaultRenderer(PianoRollCellRenderer())
         self.log = log
         self.stream = music21.stream.Stream()
-
+        #self.dick = copy.deepcopy(self.GetTopLevelParent().mayavi_view.array3D_2)
 
         self.CreateGrid(NUM_TONES,512)
 
@@ -391,17 +391,20 @@ class PianoRoll(wx.grid.Grid, glr.GridWithLabelRenderersMixin):
         try:
 
             page = self.GetTopLevelParent().pianorollpanel.currentPage
-            print("try")
+            #print("try")
             layer = self.GetTopLevelParent().pianorollpanel.pianorollNB.FindPage(page)
             print(f" {col}, {row}, {layer}, {val}")
 
             #add logic here if nparray isn't big enough
             #print(self.GetTopLevelParent().mayavi_view.array3D)
-            dick = copy.deepcopy(self.GetTopLevelParent().mayavi_view.array3D)
-            dick[col, row, layer] = val
-            self.GetTopLevelParent().mayavi_view.array3D = dick
-            self.GetTopLevelParent().mayavi_view.ass = 1.5
-            print("good")
+
+            self.window3D = self.GetTopLevelParent().mayavi_view
+            self.window3D.array3D[col, 127-row, layer] = val
+            self.window3D.arraychangedflag +=1 #TODO Row and col are confusing, which is x and which is y?
+            self.GetTopLevelParent().mayavi_view.array3D = self.window3D.array3D
+
+            #self.GetTopLevelParent().mayavi_view.ass = 1.5
+            #print("good")
         except Exception as e:
             print(e)
             pass

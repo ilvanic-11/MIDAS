@@ -1,4 +1,3 @@
-
 import sys, os
 from midas_scripts import musicode, midiart, midiart3D, music21funcs
 
@@ -9,13 +8,12 @@ import numpy as np
 import music21
 
 from traits.etsconfig.api import ETSConfig
+
 ETSConfig.toolkit = 'wx'
 from mayavi import mlab
 from Mayavi3D import PianoDisplay
 from gui import PianoRoll
-
-
-
+import copy
 from traits.api import HasTraits, Range, Instance, on_trait_change, Float
 from traitsui.api import View, Item, HGroup
 from traits.trait_numeric import Array
@@ -25,66 +23,78 @@ from mayavi.core.ui.mayavi_scene import MayaviScene
 from traits.trait_types import Button
 from traits.trait_numeric import AbstractArray
 from traits.trait_types import Function
-#from traits.trait_types import Method
-from traits.trait_types import List
 from traits.trait_types import Any
+from traits.trait_types import Int
+from traits.trait_types import Str
 
 
-#mlab.options.offscreen = True
+# from traits.trait_types import Method
+# from traits.trait_types import List
+# from traits.trait_types import Any
+
+
+# mlab.options.offscreen = True
 class Mayavi3idiView(HasTraits):
     scene3d = Instance(MlabSceneModel, ())
-
+    # grid_to_stream = Function()
+    # stream_to_grid = Function()
     points = Array(dtype=np.int)
-    array3D = Array(dtype=np.float, shape=(5000,127,127))
-    view = View(Item('scene3d', editor=SceneEditor(scene_class=MayaviScene), resizable=True, show_label=True), resizable=True)
+    array3D = Array(dtype=np.float, shape=(5000, 127, 127))
+    arraychangedflag = Int()
+    array3D_2 = Array(dtype=np.float, shape=(5000, 127, 127))
+    view = View(Item('scene3d', editor=SceneEditor(scene_class=MayaviScene), resizable=True, show_label=False), resizable=True)
     ass = Float
-
+    #button = Button()
 
     def __init__(self):
         HasTraits.__init__(self)
-        self.on_trait_event(self.array3D_changed, 'array3D')
+        self.on_trait_event(self.array3D_changed, 'arraychangedflag')
+
         self.engine = self.scene3d.engine
-        self.engine.start()  #TODO What does this do?
+        self.engine.start()  # TODO What does this do?
         self.scene = self.engine.scenes[0]
 
         ###Set Scene Background Color
         self.scene.scene.background = (0.0, 0.0, 0.0)
         self.scene.scene.movie_maker.record = False
 
-        #Trait Functions
-        #self.stream_to_grid = PianoRoll.PianoRoll.StreamToGrid(self)
-        #self.grid_to_stream = PianoRoll.PianoRoll.GridToStream
-        #self.pianolist =
+        # Trait Functions
+        # self.stream_to_grid = PianoRoll.PianoRoll.StreamToGrid(self)
+        # self.grid_to_stream = PianoRoll.PianoRoll.GridToStream
+        # self.pianolist =
         #print("GRID_TO_STREAM", type(self.grid_to_stream))
-        #print("BUTTON", type(self.button))
+        # print("BUTTON", type(self.button))
 
-        #READY-MADE POINTS
-        self.pointies = AbstractArray
-        self.points1 = midiart3D.get_points_from_ply(r"C:\Users\Isaac's\Downloads\dodecahedron.ply")
-        self.pointies = self.points1
-        self.points2 = midiart3D.get_points_from_ply(r"C:\Users\Isaac's\Downloads\sphere.ply")
-        self.points3 = np.array([[0, 0, 0]])
+        # READY-MADE POINTS
+        # self.pointies = AbstractArray
+        # self.points1 = midiart3D.get_points_from_ply(r"C:\Users\Isaac's\Downloads\dodecahedron.ply")
+        # self.pointies = self.points1
+        # self.points2 = midiart3D.get_points_from_ply(r"C:\Users\Isaac's\Downloads\sphere.ply")
+        # self.points3 = np.array([[0, 0, 0]])
 
+        #self.on_trait_event(self.points_changed(), ('grid_to_stream', 'stream_to_grid'))
 
 
     @on_trait_change('scene3d.activated')
     def create_3DMidiart(self):
-        self.SM_Midi = music21.converter.parse(r".\Mayavi3D\Spark4.mid")
-        self.SparkMidi1 = midiart3D.extract_xyz_coordinates_to_array(self.SM_Midi)
-        self.SparkMidiData = self.SparkMidi1.astype(float)
-        Points = midiart3D.get_points_from_ply(r".\Mayavi3D\ZachPose5.ply")
-        Points = self.standard_reorientation(Points, 2)
-        Points = self.trim(Points, axis='y', trim=5)
-        Points = midiart3D.transform_points_by_axis(Points, positive_octant=True)
 
-        self.Points_Span = Points.max()
+        self.midi = music21.converter.parse(r".\resources\Spark4.mid")
+        self.midi = midiart3D.extract_xyz_coordinates_to_array(self.midi)
+        self.midi = self.midi.astype(float)
 
-        self.SM_Span = self.SparkMidiData.max()
+        self.Points = midiart3D.get_points_from_ply(r".\resources\sphere.ply")
+        self.Points = self.standard_reorientation(self.Points, 2)
+        self.Points = self.trim(self.Points, axis='y', trim=5)
+        self.Points = midiart3D.transform_points_by_axis(self.Points, positive_octant=True)
+
+        self.SM_Span = self.midi.max()
+        self.Points_Span = self.Points.max()
         self.insert_piano_grid_text_timeplane(self.SM_Span)
-        self.insert_array_data(self.SparkMidiData, color=(1, .5, 0), mode="sphere", scale_factor=1)
-        self.model = self.insert_array_data(Points, color=(1, 0, .5), mode="sphere", scale_factor=1)
 
-        self.points = Points
+        self.music = self.insert_array_data(self.midi, color=(1, .5, 0), mode="sphere", scale_factor=1)
+        self.model = self.insert_array_data(self.Points, color=(1, 0, .5), mode="sphere", scale_factor=1)
+
+        #self.points = self.Points
         ###RECORD
         # mlab.start_recording(ui=True)
 
@@ -94,26 +104,42 @@ class Mayavi3idiView(HasTraits):
         self.establish_opening()
         self.animate(160, self.SM_Span, i_div=2)
 
-        ###TITLE
-        self.insert_title("3-Dimensional Music", color=(1, 0, 1), opacity=.12, size=.75)
-        self.insert_note_text("The Midas 3idiArt Display", 0, 154, 0, color=(1, 1, 0), scale=10)
 
-        ###DEFINE MUSIC ANIMATION
+        ###TITLE #TODO FInish? Orient to sash of window? Something messed up.
+        self.insert_note_text("The Midas 3idiArt Display", 0, 137, 0, color=(1, 1, 0), orient_to_camera=True, scale=7)
+        self.title = self.insert_title("3-Dimensional Music", color=(1, 0, 1), height=.82, opacity=.12, size=.65)  ###Note: affected by basesplit sash position.
+        #self.insert_note_text("3-Dimensional Music", 0, 164, 0, color=(1,0,1), opacity=.12, orient_to_camera=False, scale=30)
+
+        ##TRIAL
+    #@on_trait_change('grid_to_stream', 'stream_to_grid')  ##'points'  button
+    # def points_changed(self):
+    #     print("points_changed")
+    #     if midiart.array_to_lists_of(self.pointies) == midiart.array_to_lists_of(self.points2):
+    #         self.pointies = self.points1
+    #     elif midiart.array_to_lists_of(self.pointies) == midiart.array_to_lists_of(self.points3):
+    #         self.pointies = self.points2
+    #     else:
+    #         self.pointies = self.points3
+    #     # x, y, z = sphera[:, 0], sphera[:, 1], sphera[:, 2]
+    #     self.model.mlab_source.trait_set(points=self.pointies)
+
+
+    ###DEFINE MUSIC ANIMATION
 
     @on_trait_change('ass')
     def ass_changed(self):
-    #def ass_changed(self):
+        # def ass_changed(self):
         print("ASS")
 
-
+    ##WORKING INSTANCE
     def array3D_changed(self):
-        print("array3D_changed")
+        #print("array3D_changed")
         self.points = np.argwhere(self.array3D >= 1)
         #self.model = self.insert_array_data(self.points, color=(1, 0, .5), mode="sphere", scale_factor=1)
 
     @on_trait_change('points')
     def points_changed(self):
-        print("points_changed")
+        #print("points_changed")
         self.model.mlab_source.trait_set(points=self.points)
 
     def insert_array_data(self, array_2d, color=(0, 0, 0), mode="cube", scale_factor=.25):
@@ -123,39 +149,40 @@ class Mayavi3idiView(HasTraits):
 
     def animate(self, time_length, bpm=None, i_div=4):
         """ I_div should be 2 or 4. Upon a division of greater than 4, say 8, the millisecond delay becomes so small,
-		that it is almost not even read properly, producing undesired results.
-		Animation function that gives the impression of rendering 3D music. Does not play music.
-		:param time_length: Length of the piece to be rendered in the animation display: this determines the range of the animation.
-		:param bpm: Beats per minutes of the music as an integer: this allows for the calculation of the functions delay, and determines the speed of the animation scroll.
-		For best results, select your bpm from the following list: (1, 2, 3, 4, 5, 6, 8, 10, 12, 15, 16, 20, 24, 25, 30, 32, 40, 48, 50, 60, 75, 80, 96, 100, 120, 125, 150, 160, 200, 240, 250,
-		300, 375, 400, 480, 500, 600, 625, 750, 800, 1000, 1200, 1250, 1500, 1875, 2000, 2400, 2500, 3000, 3750, 4000,
-		5000, 6000, 7500, 10000, 12000, 15000, 20000, 30000, 60000.)
-		:param i_div: Number of planescrolls per second: this determines the fineness of your animation.
-		:return:
-		"""
+        that it is almost not even read properly, producing undesired results.
+        Animation function that gives the impression of rendering 3D music. Does not play music.
+        :param time_length: Length of the piece to be rendered in the animation display: this determines the range of the animation.
+        :param bpm: Beats per minutes of the music as an integer: this allows for the calculation of the functions delay, and determines the speed of the animation scroll.
+        For best results, select your bpm from the following list: (1, 2, 3, 4, 5, 6, 8, 10, 12, 15, 16, 20, 24, 25, 30, 32, 40, 48, 50, 60, 75, 80, 96, 100, 120, 125, 150, 160, 200, 240, 250,
+        300, 375, 400, 480, 500, 600, 625, 750, 800, 1000, 1200, 1250, 1500, 1875, 2000, 2400, 2500, 3000, 3750, 4000,
+        5000, 6000, 7500, 10000, 12000, 15000, 20000, 30000, 60000.)
+        :param i_div: Number of planescrolls per second: this determines the fineness of your animation.
+        :return:
+        """
         import time
         if bpm is None or 0:
             bpm_delay = 100000
             nano_delay = 0
         else:
-            bpm_delay = 1
+            bpm_delay = 10
             nano_delay = (60000000 / bpm / i_div)
 
         @mlab.animate(delay=bpm_delay, ui=True)
         def animate_plane_scroll(x_length, delay):
             """
-			Mlab animate's builtin delay has to be specified as an integer in milliseconds with a minimum of 10, and also could
-			not be removed, so we subtracted .01 seconds (or 10 milliseconds) in a workaround delay of our own in order to compensate.
-			:param x_length: Length of the range of the animation plane along the x-axis. (See music21.stream.Stream.highestTime)
-			:param delay: Int in microseconds.
-			:return: N/A
-			"""
+            Mlab animate's builtin delay has to be specified as an integer in milliseconds with a minimum of 10, and also could
+            not be removed, so we subtracted .01 seconds (or 10 milliseconds) in a workaround delay of our own in order to compensate.
+            :param x_length: Length of the range of the animation plane along the x-axis. (See music21.stream.Stream.highestTime)
+            :param delay: Int in microseconds.
+            :return: N/A
+            """
             for i in np.arange(0, x_length * i_div, 1 / i_div):
                 # print("%f %d" % (i, time.time_ns()))
                 interval = delay
                 t = int(time.time() * 1000000) % (interval)
                 s = (interval - t)
-                time.sleep(s / 1000000)  # Increasing this number speeds up plane scroll.  - .003525  .0035   .0029775025
+                time.sleep(
+                    s / 1000000)  # Increasing this number speeds up plane scroll.  - .003525  .0035   .0029775025
                 # print("timesleep:", (delay-.01))
                 # self.image_plane_widget.ipw.slice_index = int(round(i))
                 self.image_plane_widget.ipw.slice_position = i
@@ -164,12 +191,12 @@ class Mayavi3idiView(HasTraits):
         # mlab.start_recording()
         # mlab.animate(animate_plane_scroll, ms_delay, ui=True)
         # print(secs_delay)
+        #animate_plane_scroll(int(time_length), int(nano_delay))
         #animate1 = animate_plane_scroll(int(time_length), int(nano_delay))
         # animate1.timer.Stop()
         print("Animate")
         # input("Press Enter.")
-        #animate1.timer.Start()
-
+        # animate1.timer.Start()
 
     def standard_reorientation(self, points, scale=1):
         # TODO Maximum rescaling check.
@@ -247,24 +274,25 @@ class Mayavi3idiView(HasTraits):
                           transparent=True)
 
         ###SELECT OBJECT
-    #TODO Is this necessary??!?!
+
+    # TODO Is this necessary??!?!
     def insert_music_data(self, in_stream, color=(0, 0, 0), mode="cube", scale_factor=1):
         array_data = midiart3D.extract_xyz_coordinates_to_array(in_stream)
         # print(array_data)
         mlab_data = mlab.points3d(array_data[:, 0], array_data[:, 1], array_data[:, 2], color=color, mode=mode,
-                      scale_factor=scale_factor)
+                                  scale_factor=scale_factor)
         return mlab_data
 
-    def insert_note_text(self, text, x=0, y=154, z=0, color=(0, 0, 1), scale=3):
-        mlab.text3d(text=text, x=x, y=y, z=z, color=color, scale=scale)
+    def insert_note_text(self, text, x=0, y=154, z=0, color=(0, 0, 1), opacity=1, orient_to_camera=True, scale=3):
+        mlab.text3d(text=text, x=x, y=y, z=z, color=color, opacity=opacity, orient_to_camera=orient_to_camera, scale=scale)
 
         # TODO
         ## def insert_image_data(self, imarray_2d, color=(0,0,0), mode="cube", scale_factor = 1):
 
     ###SCENE TITLEd
-    def insert_title(self, text, color=(1, .5, 0), opacity=1.0, size=1):
+    def insert_title(self, text, color=(1, .5, 0), height=.7, opacity=1.0, size=1):
 
-        mlab.title(text=text, color=color, opacity=opacity, size=size)
+        return mlab.title(text=text, color=color, height=height, opacity=opacity, size=size)
 
         ###OPENING ANIMATION
         ###-----------------
@@ -273,7 +301,7 @@ class Mayavi3idiView(HasTraits):
 
     def establish_opening(self):
         scene = self.scene
-        #scene.scene.x_minus_view()
+        # scene.scene.x_minus_view()
         self.image_plane_widget = self.engine.scenes[0].children[6].children[0].children[0]
         self.image_plane_widget.ipw.origin = array([0., 61.0834014, 61.0834014])
         self.image_plane_widget.ipw.point1 = array([0., 191.9165986, 61.0834014])
@@ -323,8 +351,6 @@ class Mayavi3idiView(HasTraits):
         scene.scene.camera.clipping_range = [210.11552421145498, 882.5056024983969]
         scene.scene.camera.compute_view_plane_normal()
         scene.scene.render()
-
-
 
 
 if __name__ == '__main__':
