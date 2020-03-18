@@ -28,17 +28,29 @@ from mayavi.tools.mlab_scene_model import MlabSceneModel
 from mayavi.core.ui.mayavi_scene import MayaviScene
 
 from traits.trait_types import Button
-from traits.trait_numeric import AbstractArray
-from traits.trait_types import Function
-from traits.trait_types import Any
+# from traits.trait_numeric import AbstractArray
+# from traits.trait_types import Function
+# from traits.trait_types import Any
 from traits.trait_types import Int
-from traits.trait_types import Str
-
-
+# from traits.trait_types import Str
+from mayavi.tools import animator
+import cv2
 # from traits.trait_types import Method
 # from traits.trait_types import List
-# from traits.trait_types import Any
+from traits.trait_types import Any
 
+#Attempt to put animator traits ui pop into our scene3d
+# import types
+# from functools import wraps
+# try:
+#     from decorator import decorator
+#     HAS_DECORATOR = True
+# except ImportError:
+#     HAS_DECORATOR = False
+#
+# from pyface.timer.api import Timer
+# from traits.api import Any, HasTraits, Button, Instance, Range
+# from traitsui.api import View, Group, Item
 
 
 # mlab.options.offscreen = True
@@ -51,9 +63,28 @@ class Mayavi3idiView(HasTraits):
     array3D = Array(dtype=np.float, shape=(5000, 128, 127))
     arraychangedflag = Int()
 
-    view = View(Item('scene3d', editor=SceneEditor(scene_class=MayaviScene), resizable=True, show_label=False), resizable=True)
     ass = Float
     #button = Button()
+
+    start = Button('Start Animation')
+    stop = Button('Stop Animation')
+    delay = Range(10, 100000, 500,
+                  desc='frequency with which timer is called')
+    # The internal timer we manage.
+    timer = Any
+
+    view = View(Item('scene3d', editor=SceneEditor(scene_class=MayaviScene), resizable=True, show_label=False),
+                resizable=True)
+
+#     Group(Item('start'),
+#           Item('stop'),
+#           show_labels=False),
+#     Item('_'),
+#     Item(name='delay'),
+#     title = 'Animation Controller',
+#     buttons = ['OK']
+#
+# ,
 
     def __init__(self):
         HasTraits.__init__(self)
@@ -82,28 +113,24 @@ class Mayavi3idiView(HasTraits):
         # self.pointies = self.points1
         # self.points2 = midiart3D.get_points_from_ply(r"C:\Users\Isaac's\Downloads\sphere.ply")
         # self.points3 = np.array([[0, 0, 0]])
-
         #self.on_trait_event(self.points_changed(), ('grid_to_stream', 'stream_to_grid'))
 
-    def update_3Dpoints(self, row, col, val):
-        try:
-
-            page = self.GetTopLevelParent().pianorollpanel.currentPage
-            layer = self.GetTopLevelParent().pianorollpanel.pianorollNB.FindPage(page)
-            self.array3D[col, 127 - row, layer] = val
-
-
-
-        except Exception as e:
-            print(e)
-            pass
 
     @on_trait_change('scene3d.activated')
-    def create_3DMidiart(self):
+    def create_3dmidiart(self):
 
         self.midi = music21.converter.parse(r".\Mayavi3D\Spark4.mid")
         self.midi = midiart3D.extract_xyz_coordinates_to_array(self.midi)
         self.midi = self.midi.astype(float)
+
+
+        #TODO These become buttons.
+        self.Points = midiart3D.get_points_from_ply(r".\resources\sphere.ply")
+        self.Points = self.standard_reorientation(self.Points, 1)
+        self.Points = self.trim(self.Points, axis='y', trim=5)
+        self.Points = midiart3D.transform_points_by_axis(self.Points, positive_octant=True)
+        print("Points", self.Points[:, 2])
+
 
 
         self.SM_Midi = music21.converter.parse(r".\Mayavi3D\Spark4.mid")
@@ -119,11 +146,14 @@ class Mayavi3idiView(HasTraits):
         self.SM_Span = self.midi.max()
         self.insert_piano_grid_text_timeplane(self.SM_Span)
 
-        self.insert_array_data(self.SparkMidiData, color=(1, .5, 0), mode="sphere", scale_factor=1)
-        self.model = self.insert_array_data(Points, color=(1, 0, .5), mode="sphere", scale_factor=1)
 
+        #ACTORS
+        self.music = self.insert_array_data(self.midi, color=(1, .5, 0), mode="sphere", scale_factor=1)
+        self.model = self.insert_array_data(self.Points, color=(1, 0, .5), mode="sphere", scale_factor=1)
+        clr_dict_list = midiart.get_color_palettes(r".\resources\color_palettes")
+        #self.double = (x, y) = midiart.separate_pixels_to_coords_by_color(cv2.imread(r".\resources\BobMandala.png"), 0, nn=True, display=False, clrs=clr_dict_list['75_crimso-11-1x'])
+        self.plane = self.establish_highlighter_plane(114, color=(1, 0, 0))
 
-        self.points = Points
 
         ###RECORD
         #mlab.start_recording(ui=True)
@@ -131,15 +161,22 @@ class Mayavi3idiView(HasTraits):
 
 
 
+        # @mlab.show
+        # self.scene3d.disable_render = False
+        self.insert_titles()
+
+        self.establish_opening()     #TODO Write in a pass statement for when calls to this function are made from within the program.
+        self.animate(160, self.SM_Span, i_div=2)
 
 
-        ###TITLE #TODO FInish? Orient to sash of window? Something messed up.
-        self.insert_note_text("The Midas 3idiArt Display", 0, 137, 0, color=(1, 1, 0), orient_to_camera=True, scale=7)
-        self.title = self.insert_title("3-Dimensional Music", color=(1, 0, 1), height=.82, opacity=.12, size=.65)  ###Note: affected by basesplit sash position.
+        self.insert_titles()
+
+
         #self.insert_note_text("3-Dimensional Music", 0, 164, 0, color=(1,0,1), opacity=.12, orient_to_camera=False, scale=30)
 
+    def del_mlab_actor(self, actor):
+        del(actor)
 
-    ###DEFINE MUSIC ANIMATION
 
     ##WORKING INSTANCE
     @on_trait_change('arraychangedflag')
@@ -150,14 +187,56 @@ class Mayavi3idiView(HasTraits):
 
     #@on_trait_change('points')
     #def points_changed(self):
-     #   #print("points_changed")
-       #
+        #print("points_changed")
+
+
+
+    ###TITLE
+    def insert_titles(self):
+        self.insert_note_text("The Midas 3idiArt Display", 0, 137, 0, color=(1, 1, 0), orient_to_camera=True,
+                              scale=7)
+        ###Note: affected by basesplit sash position.
+        self.title = self.insert_title("3-Dimensional Music", color=(1, 0, 1), height=.82, opacity=.12, size=.65)
+
 
     def insert_array_data(self, array_2d, color=(0, 0, 0), mode="cube", scale_factor=.25):
         # print(array_2d)
         return mlab.points3d(array_2d[:, 0], array_2d[:, 1], array_2d[:, 2], color=color, mode=mode,
                              scale_factor=scale_factor)
 
+    def establish_highlighter_plane(self, z_axis, color):
+        x1, y1, z1 = (0, 0, z_axis)  # | => pt1
+        x2, y2, z2 = (0, 127, z_axis)  # | => pt2
+        x3, y3, z3 = (127, 0, z_axis)  # | => pt3
+        x4, y4, z4 = (127, 127, z_axis)  # | => pt4
+        plane = mayavi.mlab.mesh([[x1, x2],
+                                 [x3, x4]],  # | => x coordinate
+
+                                  [[y1, y2],
+                                  [y3, y4]],  # | => y coordinate
+
+                                  [[z1, z2],
+                                  [z3, z4]],  # | => z coordinate
+
+                                  color=color, line_width=5.0, mode='sphere', opacity=.35,   #extent=(-50, 128, -50, 128, 114, 114)
+                                  scale_factor=1)  # black
+        return plane
+
+
+    def update_3Dpoints(self, row, col, val):
+        try:
+
+            page = self.GetTopLevelParent().pianorollpanel.currentPage
+            layer = self.GetTopLevelParent().pianorollpanel.pianorollNB.FindPage(page)
+            self.array3D[col, 127 - row, layer] = val
+
+
+
+        except Exception as e:
+            print(e)
+            pass
+
+    ###DEFINE MUSIC ANIMATION
     def animate(self, time_length, bpm=None, i_div=4):
         """ I_div should be 2 or 4. Upon a division of greater than 4, say 8, the millisecond delay becomes so small,
         that it is almost not even read properly, producing undesired results.
@@ -178,7 +257,7 @@ class Mayavi3idiView(HasTraits):
             bpm_delay = 10
             nano_delay = (60000000 / bpm / i_div)
 
-        @mlab.animate(delay=bpm_delay, ui=True)
+        @mayavi.tools.animator.animate(delay=bpm_delay, ui=True)   #@mlab.animate, same thing.
         def animate_plane_scroll(x_length, delay):
             """
             Mlab animate's builtin delay has to be specified as an integer in milliseconds with a minimum of 10, and also could
