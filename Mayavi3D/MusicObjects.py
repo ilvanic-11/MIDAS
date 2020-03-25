@@ -1312,6 +1312,7 @@ def PianoBlackNotes():
                             [3.5, 0., 4.],
                             [3.5, 127., 4.]])
     return pianoblack
+
 def PianoWhiteNotes():
     pianowhite = np.array([[0., 0., 8.],
                             [0., 2., 8.],
@@ -1922,3 +1923,50 @@ def PianoWhiteNotes():
                             [3.5, 125., 8.],
                             [3.5, 127., 8.]])
     return pianowhite
+
+def GrandStaffLines(z_value):
+    grandstaffpairs = [np.array([[  0,  43, z_value],
+        [127,  43, z_value]]), np.array([[  0,  47, z_value],
+        [127,  47, z_value]]), np.array([[  0,  50, z_value],
+        [127,  50, z_value]]), np.array([[  0,  53, z_value],
+        [127,  53, z_value]]), np.array([[  0,  57, z_value],
+        [127,  57, z_value]]), np.array([[  0,  64, z_value],
+        [127,  64, z_value]]), np.array([[  0,  67, z_value],
+        [127,  67, z_value]]), np.array([[  0,  71, z_value],
+        [127,  71, z_value]]), np.array([[  0,  74, z_value],
+        [127,  74, z_value]]), np.array([[  0,  77, z_value],
+        [127,  77, z_value]])]
+    return grandstaffpairs
+
+def GrandStaff(z_value):
+    grandstaff = np.array([[0, 43, z_value],
+           [127, 43, z_value],
+           [127, 47, z_value],
+           [0, 47, z_value],
+           [0, 50, z_value],
+           [127, 50, z_value],
+           [127, 53, z_value],
+           [0, 53, z_value],
+           [0, 57, z_value],
+           [127, 57, z_value],
+           [127, 64, z_value],
+           [0, 64, z_value],
+           [0, 67, z_value],
+           [127, 67, z_value],
+           [127, 71, z_value],
+           [0, 71, z_value],
+           [0, 74, z_value],
+           [127, 74, z_value],
+           [127, 77, z_value],
+           [0, 77, z_value]])
+    return grandstaff
+
+
+#TODO Treble Clef Object
+#TODO Bass Clef Object
+#TODO Tenor Clef Object
+
+#TODO!! MUSIC21 Object Symbols as Necessary
+
+#TODO Simple solution: def generate_glyph_from_image(img, scale):
+#Make sure to keep the bottom left corner note.
