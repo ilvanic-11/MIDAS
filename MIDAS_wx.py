@@ -114,12 +114,10 @@ class MainWindow(wx.Frame):
         print("ENGINE:", self.mayavi_view.scene3d.engine)
 
 
-        self.mayavi_view.grid_to_stream = copy.deepcopy(self.pianorollpanel.Piano_Roll.PianoRoll.GridToStream)
-        # print("FUNCTION", type(self.mayavi_view.grid_to_stream))
-        self.mayavi_view.stream_to_grid = copy.deepcopy(self.pianorollpanel.Piano_Roll.PianoRoll.StreamToGrid)
+
         self.mayavi_view.pianolist = self.pianorollpanel.pianorolls
 
-        print("GRID_TO_STREAM2", type(self.mayavi_view.grid_to_stream))
+
 
         self.CreateStatusBar()
         self._set_properties()

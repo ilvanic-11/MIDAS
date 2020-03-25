@@ -646,7 +646,7 @@ def transcribe_colored_image_to_midiart(img, granularity=1, connect=False, keych
 def transcribe_grayscale_image_to_midiart(img, granularity, connect, keychoice=None, note_pxl_value=255,
                                           output_path=None):
     """
-    This function is the commonly called transcribe function for creating musical images.
+    This function is the commonly called transcribe function for creating musical QR codes, but can be used for an image as well.
     :param img: A file path or numpy array of an image.
     :param granularity: quarterLength value that determines the offset and duration values of all the notes transcribed.
     :param connect: The contiguity feature. Notes are chopped by default. Connect=True connects adjacent notes contiguously.
@@ -1028,13 +1028,13 @@ def array_to_lists_of(coords_array, tupl=True):
 
 #MA-15.
 
-def separate_pixels_to_coords_by_color(image, z_value, nn=False, dimensionalize=None, display=False, clrs=None):
+def separate_pixels_to_coords_by_color(image_stream, z_value, nn=False, dimensionalize=None, display=False, clrs=None, stream=False):
     """
     This function takes an input image and returns an Ordered Dictionary of coordinate arrays separated by color value.
     It has the added options of displaying a mayavi mlab visualization and dimensionalizing it along the z axis from the
     starting point of z_value, a value between 0-127. Use of nearest neighbor functionality vastly expedites this process;
     see midiart.set_to_nn_colors().
-    :param image: Input image, either filepath, or cv2.imread(filepath)
+    :param image_stream: Input image, either filepath, or cv2.imread(filepath). If stream=True, input is treated as a stream.
     :param z_value: Z axis plane on which to place the image.
     :param nn: If true, sets colors in image to their nearest neighbors determined by the FL studio color palette or selected palette..
     :param dimensionalize: Value denoting space along z axis between separated parts.
@@ -1043,20 +1043,21 @@ def separate_pixels_to_coords_by_color(image, z_value, nn=False, dimensionalize=
     :return: Returns odict, an Ordered Dictionary of coordinates organized by color, and mlab_list, a list of variables
              corresponding to the mlab calls made if display=True
     """
-    if type(image) != numpy.ndarray:
-        cv2.imread(image)
+    if type(image_stream) != numpy.ndarray:
+        cv2.imread(image_stream)
 
-    #image = asshat3
+    # if stream:
+    #     im_stream = make_midi_from_colored_pixels
+
     if nn:
-        image = set_to_nn_colors(image, clrs)
+        image_stream = set_to_nn_colors(image_stream, clrs)
     else:
         pass
     clrs_list = list()
     mlab_list = list()
-    odict1 = OrderedDict()
-    for y in range(0, len(image)):
-            for x in range(0, len(image[y])):
-                clr = (tuple((image[y][x] / 255).flatten()))
+    for y in range(0, len(image_stream)):
+            for x in range(0, len(image_stream[y])):
+                clr = (tuple((image_stream[y][x] / 255).flatten()))
                 clrs_list.append(clr)
     odict1 = OrderedDict.fromkeys([i for i in clrs_list])
     print("Length:", len(odict1))
@@ -1064,9 +1065,9 @@ def separate_pixels_to_coords_by_color(image, z_value, nn=False, dimensionalize=
 
     for q in odict1.keys():
         clr_list = []
-        for y in range(0, len(image)):
-            for x in range(0, len(image[y])):
-                clr = (tuple((image[y][x] / 255).flatten()))
+        for y in range(0, len(image_stream)):
+            for x in range(0, len(image_stream[y])):
+                clr = (tuple((image_stream[y][x] / 255).flatten()))
                 if clr == q:
                     clr_list.append((x, 127-y))
                     odict1[q] = np.array(clr_list)
