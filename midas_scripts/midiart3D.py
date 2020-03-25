@@ -423,8 +423,8 @@ def restore_coords_array_from_ordered_dict(planes_odict):
 #3D-13.
 def transform_points_by_axis(coords_array, offset=0, axis='y', center_axis=False, positive_octant=False):
     """
-    This function move points in a point cloud in a + or - direction on a selected axis. If center_axis is true, object is moved to zero on that axis.
-    If center_all is true, all axis are
+    This function moves points in a point cloud in a + or - direction on a selected axis. If center_axis is true, object is moved to zero on that axis.
+    If positive_octant is true, all axes are centered in the positive octant. Operates inPlace.
     :param coords_array: 2D numpy array of coordinates.
     :param axis: Axis of "x", "y", and "z" in the manner of a Euclidian grid.
     :param offset: Value for points to be moved on an axis.
@@ -443,8 +443,8 @@ def transform_points_by_axis(coords_array, offset=0, axis='y', center_axis=False
     elif axis == "z":
         ax = 2
     else:
-        return None
         print("No axis selected. Either you're centering, or have variable input error.")
+        return None
     axis_array = coords_array[:, ax]
     if center_axis:
         coords_array[:, ax] = axis_array - axis_array.min()
