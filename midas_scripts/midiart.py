@@ -1096,6 +1096,6 @@ def get_color_palettes(mypath):
         dict = {}
         k = cv2.imread(j)
         for i, x in enumerate(k[0]):
-            dict[i+1] = x
+            dict[i+1] = tuple(x)
         dict_list[name] = dict
     return dict_list
