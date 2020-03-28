@@ -34,7 +34,7 @@ class PianoRollPanel(wx.Panel):
         tb = self.SetupToolbar()
 
         self.Piano_Roll = PianoRoll
-        print("VARIABLE PIANO ROLL", type(self.Piano_Roll))
+
         self.pianorollNB = wx.Notebook(self, -1, wx.DefaultPosition, wx.DefaultSize, style=wx.NB_LEFT|wx.NB_FIXEDWIDTH)
         self.pianorolls = list()
 

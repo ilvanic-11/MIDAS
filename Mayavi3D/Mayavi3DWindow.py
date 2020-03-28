@@ -93,7 +93,6 @@ class Mayavi3idiView(HasTraits):
         self.clr_dict_list = midiart.get_color_palettes(r".\resources\color_palettes")
 
         self.mlab_calls = []  #TODO Note: mlab.clf() in the pyshell does not clear this list.
-
         self.text3d_calls = []
         self.text3d_default_positions = []
 
@@ -117,8 +116,11 @@ class Mayavi3idiView(HasTraits):
 
 
         #TODO These become buttons.
-        self.Points = midiart3D.get_points_from_ply(r".\resources\sphere.ply")
-        self.Points = self.standard_reorientation(self.Points, 1)
+        #self.Points = midiart3D.get_points_from_ply(r".\resources\sphere.ply")
+        self.Points = MusicObjects.Earth()
+        self.Points = self.standard_reorientation(self.Points, 1.3)
+        self.Points = np.asarray(self.Points, dtype=np.int64)
+        self.Points = np.asarray(self.Points, dtype=np.float64)
         self.Points = self.trim(self.Points, axis='y', trim=0)
         self.Points = midiart3D.transform_points_by_axis(self.Points, positive_octant=True)
         print("Points", self.Points[:, 2])
@@ -132,13 +134,14 @@ class Mayavi3idiView(HasTraits):
 
         #ACTOR EXAMPLES
         self.music = self.insert_music_data(self.midi, color=(1, .5, 0), mode="sphere", scale_factor=1)
-        self.model = self.insert_array_data(self.Points, color=(1, 0, .5), mode="sphere", scale_factor=1)
-        self.text = self.insert_text_data("Script-Ease", "Music, Musicode, Midiart, 3idiArt, Music21, Midas", color=(0, .5, 1), mode='2dtriangle', scale_factor=2)
-        #self.double = (x, y) = midiart.separate_pixels_to_coords_by_color(cv2.imread(r"C:\Users\Isaac's\Desktop\PicPick AutoSave-T\Image 793.png"), 0,
-             #                               nn=True, display=False, clrs=self.clr_dict_list['61_zxarne-5-2-1x'])
+        self.model = self.insert_array_data(self.Points, color=(0, 0, 1), mode="sphere", scale_factor=2.5)
+        self.text = self.insert_text_data("Script-Ease", "Music, Musicode, Midiart, 3idiArt, Music21, Midas", color=(0, .5, 1), mode='arrow', scale_factor=2)
+        random.randint(0, 88)
+        self.double = (x, y) = midiart.separate_pixels_to_coords_by_color(cv2.imread(r".\resources\BobMandala.png"), 0,
+                                    nn=True, display=False, clrs=self.clr_dict_list['72_naji-16-1x'])
 
         #Highlighter Plane
-        self.plane = self.establish_highlighter_plane(114, color=(0, 1, 0))
+        self.plane = self.establish_highlighter_plane(114, color=(0, 1, 0), length=self.SM_Span)
 
         #self.points = self.Points
 
@@ -199,20 +202,12 @@ class Mayavi3idiView(HasTraits):
         self.mlab_calls.append(mlab_data)
         return mlab_data
 
-    def establish_highlighter_plane(self, z_axis, color, grandstaff=True):
+    def establish_highlighter_plane(self, z_axis, color, grandstaff=True, length=127):
         x1, y1, z1 = (0, 0, z_axis)  # | => pt1
         x2, y2, z2 = (0, 127, z_axis)  # | => pt2
-        x3, y3, z3 = (127, 0, z_axis)  # | => pt3
-        x4, y4, z4 = (127, 127, z_axis)  # | => pt4
-        linebox = np.vstack(((0, 0, z_axis),
-                         (0, 127, z_axis),
-                         (127, 127, z_axis),
-                         (127, 0, z_axis),
-                         (0, 0, z_axis),  #*
-                         (0, 127, z_axis),
-                         (127, 127, z_axis),
-                         (127, 0, z_axis),
-                         (0, 0, z_axis)))  #*Points repeated for a visual compensation, i.e overlap.
+        x3, y3, z3 = (length, 0, z_axis)  # | => pt3
+        x4, y4, z4 = (length, 127, z_axis)  # | => pt4
+        linebox = MusicObjects.LineSquare(length=length, z_axis=z_axis)
         plane = mayavi.mlab.mesh([[x1, x2],
                                  [x3, x4]],  # | => x coordinate
 
@@ -222,26 +217,40 @@ class Mayavi3idiView(HasTraits):
                                   [[z1, z2],
                                   [z3, z4]],  # | => z coordinate
 
-                                  color=color, line_width=5.0, mode='sphere', opacity=.28,   #extent=(-50, 128, -50, 128, 114, 114)
+                                  color=color, line_width=5.0, mode='sphere', opacity=.25,   #extent=(-50, 128, -50, 128, 114, 114)
                                   scale_factor=1, tube_radius=None)  # black
         self.mlab_calls.append(plane)
 
         plane_edges = mayavi.mlab.plot3d(linebox[:, 0], linebox[:, 1], linebox[:, 2]+.25,
-                                         color=(1,1,1), line_width=2.5, opacity=.5, tube_radius=None)
+                                         color=(1,1,1), line_width=2.5, opacity=.35, tube_radius=None)
         self.mlab_calls.append(plane_edges)
 
         if grandstaff:
-            k = MusicObjects.GrandStaff(z_value=z_axis)
+            stafflines = MusicObjects.GrandStaff(z_value=z_axis, length=length)
+            gclef = MusicObjects.create_glyph(r".\resources\TrebleClef.png", y_shift=59, z_value = z_axis)
+            fclef = MusicObjects.create_glyph(r".\resources\BassClef.png", y_shift=44.3,  z_value = z_axis)
             #for j in grandstaff:
-            gscalls = mlab.plot3d(k[:, 0], k[:, 1], k[:, 2], color=(0,1,0), opacity=.65, tube_radius=None)
-            self.mlab_calls.append(gscalls)
+            self.gscalls = mlab.plot3d(stafflines[:, 0], stafflines[:, 1], stafflines[:, 2], color=(0,1,0), opacity=.65, tube_radius=None)
+            self.gclef_call = mlab.points3d(gclef[:, 0], gclef[:, 1], gclef[:, 2], color=(0,1,0), mode='cube', opacity=.015, scale_factor=.25)
+            self.fclef_call = mlab.points3d(fclef[:, 0], fclef[:, 1], fclef[:, 2], color=(0,1,0), mode='cube', opacity=.015, scale_factor=.25)
+            self.mlab_calls.append(self.gscalls)
+            self.mlab_calls.append(self.gclef_call)
+            self.mlab_calls.append(self.fclef_call)
+            #self.gclef_call.actor.actor.position = np.array([0, 59, 0])
+            #self.fclef_call.actor.actor.position = np.array([0, 44.3, 0])
         return plane
 
-    def set_z_to_single_value(self, index, value):
-        coords_array = self.mlab_calls[index].mlab_source.points
-        coords_array_z = coords_array[:, 2]
-        coords_array[:, 2] = np.full((len(coords_array_z), 1), value)[:, 0]
-        self.mlab_calls[index].mlab_source.points = coords_array
+    def set_z_to_single_value(self, coords, value, index=None):
+        if index is None:
+            coords_array = coords
+            coords_array_z = coords[:, 2]
+            coords[:, 2] = np.full((len(coords_array_z), 1), value)[:, 0]
+            return coords_array
+        else:
+            coords_array = self.mlab_calls[index].mlab_source.points
+            coords_array_z = coords_array[:, 2]
+            coords_array[:, 2] = np.full((len(coords_array_z), 1), value)[:, 0]
+            self.mlab_calls[index].mlab_source.points = coords_array
         return coords_array
 
     def set_actor_positions(self, pos=np.array([0,0,0]), all=False, rando=False):
