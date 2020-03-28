@@ -20,11 +20,6 @@ wxNoteBook
 
 
 """
-
-
-
-
-
 class PianoRollPanel(wx.Panel):
     def __init__(self, parent, log):
         #HasTraits.__init__(self)
@@ -34,13 +29,10 @@ class PianoRollPanel(wx.Panel):
         tb = self.SetupToolbar()
 
         self.Piano_Roll = PianoRoll
-        print("VARIABLE PIANO ROLL", type(self.Piano_Roll))
         self.pianorollNB = wx.Notebook(self, -1, wx.DefaultPosition, wx.DefaultSize, style=wx.NB_LEFT|wx.NB_FIXEDWIDTH)
         self.pianorolls = list()
 
         self.InsertNewPianoRoll(0)
-        print(self.pianorolls[0])
-        print(type(self.pianorolls[0]))
         self.currentPage = self.pianorolls[self.pianorollNB.GetSelection()]
 
         self.pianorolls[0].GetGridWindow().Bind(wx.EVT_MOTION, self.OnMotion)
@@ -60,7 +52,7 @@ class PianoRollPanel(wx.Panel):
 
     def InsertNewPianoRoll(self, index):
         self.log.WriteText("InsertNewPianoRoll(): ")
-        pianoroll = self.Piano_Roll.PianoRoll(self.pianorollNB, -1, wx.DefaultPosition, wx.DefaultSize, 0, f"Piano Roll {index}" , self.log)
+        pianoroll = self.Piano_Roll.PianoRoll(self.pianorollNB, index, -1, wx.DefaultPosition, wx.DefaultSize, 0, f"Piano Roll {index}" , self.log)
 
         self.pianorolls.insert(index, pianoroll)
         self.pianorollNB.InsertPage(index, pianoroll, str(index), select=True)
@@ -209,7 +201,7 @@ class PianoRollPanel(wx.Panel):
 
     def OnMouseLeftUp(self, evt):
         self.log.WriteText("OnMouseLeftUp():")
-        self.currentPage.UpdateStream()
+        #self.currentPage.UpdateStream()
         self.GetTopLevelParent().mayavi_view.arraychangedflag += 1
         evt.Skip()
 
