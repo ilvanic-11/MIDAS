@@ -64,17 +64,12 @@ class MainWindow(wx.Frame):
                  size=wx.DefaultSize, style=wx.DEFAULT_FRAME_STYLE):
         wx.Frame.__init__(self, parent, ID, title, pos, size, style)
 
+        self.mainpanel = wx.Panel(self,-1)
         self.log = Log()
 
         self.SetSize((1400, 900))  #TODO Optimize for users screen resolution.
 
-        # self.main = wx.SplitterWindow(self, wx.ID_ANY, style=wx.SP_3DSASH | wx.SP_BORDER)
-        # self.topsplit = wx.SplitterWindow(self.main, wx.ID_ANY, style=wx.SP_3DSASH | wx.SP_BORDER)
-        # self.leftsplit = wx.SplitterWindow(self.topsplit, wx.ID_ANY, style=wx.SP_3DSASH | wx.SP_BORDER)
-
-
-        ##For 3idiAnimator setup.
-        self.basesplit = wx.SplitterWindow(self, wx.ID_ANY, style=wx.SP_3DSASH | wx.SP_BORDER)
+        self.basesplit = wx.SplitterWindow(self.mainpanel, wx.ID_ANY, style=wx.SP_3DSASH | wx.SP_BORDER)
         self.main = wx.SplitterWindow(self.basesplit, wx.ID_ANY, style=wx.SP_3DSASH | wx.SP_BORDER)
         self.topsplit = wx.SplitterWindow(self.main, wx.ID_ANY, style=wx.SP_3DSASH | wx.SP_BORDER)
         self.leftsplit = wx.SplitterWindow(self.topsplit, wx.ID_ANY, style=wx.SP_3DSASH | wx.SP_BORDER)
@@ -93,7 +88,9 @@ class MainWindow(wx.Frame):
         self.pianorollpanel = PianoRollPanel.PianoRollPanel(self.topsplit, self.log)
         self.mainbuttonspanel = MainButtons.MainButtonsPanel(self.leftsplit, self.log)
         self.statsdisplaypanel = StatsDisplay.StatsDisplayPanel(self.leftsplit, self.log)
-
+        sizer = wx.BoxSizer(wx.VERTICAL)
+        sizer.Add(self.basesplit, 1, wx.EXPAND)
+        self.mainpanel.SetSizerAndFit(sizer)
 
 
         # Use traits to create a panel, and use it as the content of this
@@ -115,21 +112,48 @@ class MainWindow(wx.Frame):
 
 
 
-        self.mayavi_view.pianolist = self.pianorollpanel.pianorolls
 
+        #self.mayavi_view.grid_to_stream = copy.deepcopy(self.pianorollpanel.Piano_Roll.PianoRoll.GridToStream)
+        # print("FUNCTION", type(self.mayavi_view.grid_to_stream))
+       # self.mayavi_view.stream_to_grid = copy.deepcopy(self.pianorollpanel.Piano_Roll.PianoRoll.StreamToGrid)
+       # self.mayavi_view.pianolist = self.pianorollpanel.pianorolls
+#
+        #print("GRID_TO_STREAM2", type(self.mayavi_view.grid_to_stream))
 
 
         self.CreateStatusBar()
         self._set_properties()
         self._do_layout()
 
-        self.Maximize(True)
+
+        #self.Maximize(True)
+
         self.pyshellpanel.run('''exec(open(str(os.getcwd()) + "\\\\resources\\\\" + "Midas_Startup_Configs.py").read())''')
         self.pyshellpanel.run('''intermediary_path''')
         #self.mayavi_view_control_panel.configure_traits()
+        
+        self.mainpanel.Bind(wx.EVT_CHAR_HOOK, self.OnKeyDown)
         self.Show(True)
+        self.mainpanel.SetFocus()
+        #sizer.Layout()
 
-
+    def OnKeyDown(self, event):
+        #DDprint("OnKeyDown(): {}".format(chr(event.GetUnicodeKey())))
+        if event.GetUnicodeKey() == ord('D'):
+            if event.ShiftDown():
+                #TopSashUp
+                self.main.SetSashPosition(self.main.GetSashPosition() - 30)
+            elif event.ControlDown():
+                #TopSashDown
+                self.main.SetSashPosition(self.main.GetSashPosition() + 30)
+        elif event.GetUnicodeKey() == ord('G'):
+            if event.ShiftDown():
+                #BottomSashUp
+                self.basesplit.SetSashPosition(self.basesplit.GetSashPosition() - 25)
+            elif event.ControlDown():
+                #BottomSashDown
+                self.basesplit.SetSashPosition(self.basesplit.GetSashPosition() + 25)
+        event.Skip()
 
     def _set_properties(self):
         self.SetTitle("MIDAS")
@@ -151,6 +175,7 @@ class MainWindow(wx.Frame):
         self.leftsplit.SetSashPosition(600)
         self.main.SetSashPosition(900)
         self.basesplit.SetSashPosition(300)  ###Affects 3D title insert.
+        self.mainpanel.Layout()
         self.Layout()
 
 
