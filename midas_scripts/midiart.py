@@ -380,6 +380,7 @@ def strip_midi_by_chords(in_stream, directory):
     """
         Function for stripping columns of notes that comprise a music21.stream.Stream into a list of streams with those
     same columns of notes, i.e vertical strips of notes.
+    
     :param in_stream:
     :param directory:
     :return:
@@ -999,7 +1000,7 @@ def separate_pixels_to_coords_by_color(image, z_value, nn=False, dimensionalize=
                 clr = (tuple((image[y][x] / 255).flatten()))
                 clrs_list.append(clr)
     odict1 = OrderedDict.fromkeys([i for i in clrs_list])
-    print("Length:", len(odict1))
+    #print("Length:", len(odict1))
     #Up to here is fast.
 
     for q in odict1.keys():
@@ -1015,7 +1016,6 @@ def separate_pixels_to_coords_by_color(image, z_value, nn=False, dimensionalize=
         # color = list(q).reverse()
     for r in odict1.keys():
         odict1[r] = np.hstack((odict1[r], np.full((len(odict1[r][:, 0]), 1), z_value)))
-        #print("Penis:", odict1[r])
         actor = mlab.points3d(odict1[r][:, 0], odict1[r][:, 1], odict1[r][:, 2], color=(r[-1], r[-2], r[-3]), mode='cube', scale_factor=1)
         mlab_list.append(actor)
         if dimensionalize is not None:
