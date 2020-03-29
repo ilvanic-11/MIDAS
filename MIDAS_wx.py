@@ -82,10 +82,10 @@ class MainWindow(wx.Frame):
         self.musicode = musicode.Musicode()
 
 
-        self.mayaviview = Mayavi3DWindow.Mayavi3idiView()
+        self.mayavi_view = Mayavi3DWindow.Mayavi3idiView()
 
 
-        self.mayaviviewpanel = self.mayaviview.edit_traits(parent=self.basesplit, kind='subpanel').control
+        self.mayaviviewpanel = self.mayavi_view.edit_traits(parent=self.basesplit, kind='subpanel').control
         self.pyshellpanel = wx.py.crust.Crust(self.main, startupScript=str(os.getcwd() + "\\\\resources\\\\" + "Midas_Startup_Configs.py"))
 
 
@@ -343,6 +343,7 @@ if __name__ == '__main__':
 
 
 
-    #frm.mayaviview.configure_traits()
+    #frm.mayavi_view.configure_traits()
+
    # mlab.show()
 
