@@ -116,7 +116,7 @@ class MainWindow(wx.Frame):
         self.pyshellpanel.run('''exec(open(str(os.getcwd()) + "\\\\resources\\\\" + "Midas_Startup_Configs.py").read())''')
         self.pyshellpanel.run('''intermediary_path''')
         #self.mayavi_view_control_panel.configure_traits()
-        
+
         self.mainpanel.Bind(wx.EVT_CHAR_HOOK, self.OnKeyDown)
         self.Show(True)
         self.mainpanel.SetFocus()
@@ -134,10 +134,10 @@ class MainWindow(wx.Frame):
         elif event.GetUnicodeKey() == ord('G'):
             if event.ShiftDown():
                 #BottomSashUp
-                self.basesplit.SetSashPosition(self.basesplit.GetSashPosition() - 25)
+                self.basesplit.SetSashPosition(self.basesplit.GetSashPosition() - 30)
             elif event.ControlDown():
                 #BottomSashDown
-                self.basesplit.SetSashPosition(self.basesplit.GetSashPosition() + 25)
+                self.basesplit.SetSashPosition(self.basesplit.GetSashPosition() + 30)
         event.Skip()
 
     def _set_properties(self):
