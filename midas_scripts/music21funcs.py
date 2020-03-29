@@ -812,6 +812,13 @@ def make_musicode(in_stream, musicode_name, shorthand, full_path=None):
 
 #M21-8.
 def change_midi_channels_to_one_channel(midi_file, channel=1):
+    """
+    This function takes a midi file on input and changes the "channel"
+    property of every track in midi_file to a user-selected value between 1 and 16. This operation occurs in place.
+    :param midi_file: Midi file input.
+    :param channel: User selected channel value.
+    :return: midi_file
+    """
 
     a_file = music21.midi.MidiFile()
     a_file.open(midi_file, attrib="rb")
@@ -825,8 +832,20 @@ def change_midi_channels_to_one_channel(midi_file, channel=1):
 
 
 #M21-9.
-def split_midi_channels(midi_file, file_path, name, to_file=False):
+def split_midi_channels(midi_file, directory, name, to_file=False):
+    """This function uses music21 and takes a midi file on input and separates* all the "channels" of the midi file into
+    either parts in a stream, or a directory of written mid files, one midi file for each said "channel." The files\\parts
+    are also conveniently named by the channel.
 
+    *Note-- When loading a midi_file created from midiart.make_midi_from_pixels, a midi image, this can be a slow process.
+
+    :param midi_file: Midi .mid file to be split.
+    :param directory: Folder to which new output midi files will be saved.
+    :param name: Name of all the files with addends "_1", "_2"....etc. appended to each. (i.e. midi_file_1.mid, midi_file_2.mid....)
+    :param to_file: If true, writes files to the selected directory. If false, splits the midi to named parts in a stream
+    where the part.Name property of these parts equals the channel value.
+    :return: Midi .mid files written to directory OR a stream with parts separated and named by channel.
+    """
     ##Read Midi File
     a_file = music21.midi.MidiFile()
     a_file.open(midi_file, attrib="rb")
@@ -872,12 +891,12 @@ def split_midi_channels(midi_file, file_path, name, to_file=False):
         for v in a_stream:
             final_midis = music21.midi.MidiFile()
             print("Changed partname:", v.partName)
-            v.write("mid", file_path + "\\" + name + "_" + "%s" % v.partName + ".mid")
-            final_midis.open(file_path + "\\" + name + "_" + "%s" % v.partName + ".mid", attrib='rb')
+            v.write("mid", directory + "\\" + name + "_" + "%s" % v.partName + ".mid")
+            final_midis.open(directory + "\\" + name + "_" + "%s" % v.partName + ".mid", attrib='rb')
             final_midis.read()
             final_midis.tracks[0].setChannel(v.partName)
             final_midis.close()
-            final_midis.open(file_path + "\\" + name + "_" + "%s" % v.partName + ".mid", attrib='wb')
+            final_midis.open(directory + "\\" + name + "_" + "%s" % v.partName + ".mid", attrib='wb')
             final_midis.write()
     else:
         return a_stream

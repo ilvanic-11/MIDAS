@@ -99,20 +99,12 @@ class MainWindow(wx.Frame):
         #self.mayavi_view_control_panel = wx.Panel(self.basesplit)
 
 
-        #self.mayavi_view.grid_to_stream = copy.deepcopy(self.pianorollpanel.Piano_Roll.PianoRoll.GridToStream)
-        # print("FUNCTION", type(self.mayavi_view.grid_to_stream))
-       # self.mayavi_view.stream_to_grid = copy.deepcopy(self.pianorollpanel.Piano_Roll.PianoRoll.StreamToGrid)
-       # self.mayavi_view.pianolist = self.pianorollpanel.pianorolls
-#
-        #print("GRID_TO_STREAM2", type(self.mayavi_view.grid_to_stream))
 
         self.CreateStatusBar()
         self._set_properties()
         self._do_layout()
 
-
-        #self.Maximize(True)
-
+        self.Maximize(True)
         self.pyshellpanel.run('''exec(open(str(os.getcwd()) + "\\\\resources\\\\" + "Midas_Startup_Configs.py").read())''')
         self.pyshellpanel.run('''intermediary_path''')
         #self.mayavi_view_control_panel.configure_traits()
@@ -176,12 +168,12 @@ if __name__ == '__main__':
     # time.sleep(5)
     # splash = MySplashScreen()
     # splash.Show()
-    app = wx.App()
-    print(type(app))
+    Midas = wx.App()
+    print(type(Midas))
     frm = MainWindow(None, -1, "MIDAS")
 
     #frm.Show()
     # time.sleep(1.2)
-    app.MainLoop()
+    Midas.MainLoop()
     #frm.mayavi_view.configure_traits()
    # mlab.show()
