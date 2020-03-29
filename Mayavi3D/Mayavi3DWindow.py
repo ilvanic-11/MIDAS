@@ -68,6 +68,9 @@ class Mayavi3idiView(HasTraits):
         # Colors Imports
         ###Set Scene Background Color
         self.scene.scene.background = (0.0, 0.0, 0.0)
+        self.scene.scene.movie_maker.record = False
+
+        #Imports Colors
         self.clr_dict_list = midiart.get_color_palettes(r".\resources\color_palettes")
         self.default_color_palette = midiart.FLStudioColors
 
@@ -106,9 +109,9 @@ class Mayavi3idiView(HasTraits):
 
         self.SM_Span = self.midi.highestTime
         self.grid3d_span = self.SM_Span
-
         self.Points_Span = self.Points.max()
-        self.insert_piano_grid_text_timeplane(self.SM_Span)  #TODO REFACTOR THIS?
+        self.insert_piano_grid_text_timeplane(self.SM_Span)
+        #TODO REFACTOR THIS?
 
         ###SELECT OBJECT
 
@@ -131,7 +134,7 @@ class Mayavi3idiView(HasTraits):
         #self.insert_titles()     ##I had a 2nd call for a work session where I lost the camera. I may not need this now...
         self.establish_opening()     #TODO Write in a pass statement for when calls to this function are made from within the program; camera issue. Now Redundant?
         self.animate(160, self.SM_Span, i_div=2)
-        print("Animate")
+        #print("Animate")
 
         #Animator Instance. Instantiated upon the invocation of self.animate after which the animation is immediately stopped here.
         #self.animate1._stop_fired() #TODO Redundant. _stop_fired() now called within Animate after invocation of animate_plane_scroll.
@@ -226,7 +229,7 @@ class Mayavi3idiView(HasTraits):
         x2, y2, z2 = (0, 127, z_axis)  # | => pt2
         x3, y3, z3 = (length, 0, z_axis)  # | => pt3
         x4, y4, z4 = (length, 127, z_axis)  # | => pt4
-        linebox = MusicObjects.line_square(length=length, z_axis=z_axis)
+        linebox = MusicObjects.LineSquare(length=length, z_axis=z_axis)
         plane = mayavi.mlab.mesh([[x1, x2],
                                  [x3, x4]],  # | => x coordinate
 

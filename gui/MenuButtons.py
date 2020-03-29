@@ -302,7 +302,7 @@ class CustomMenuBar(wx.MenuBar):
 
     def OnExportMovie(self, event):
         print("This fucker works.")
-        mayaviview = self.GetTopLevelParent().mayaviview
+        mayaviview = self.GetTopLevelParent().mayavi_view
         movie_maker = mayaviview.engine.scenes[0].scene.movie_maker
         length = (mayaviview.grid3d_span)
         bpm_speed = self.GetTopLevelParent().mayaviview.bpm + 60
@@ -313,8 +313,8 @@ class CustomMenuBar(wx.MenuBar):
         print("# of Measures:", length/4)   #Measures assumed to be in '4/4' time. #TODO Fix.
         print("# of Frames:", (length *i_div))
 
-        #mayaviview.volume_slice.remove()
-        #mayaviview.insert_volume_slice(length)
+        #mayavi_view.volume_slice.remove()
+        #mayavi_view.insert_volume_slice(length)
         if movie_maker.record is False:
             movie_maker.record = True
         mayaviview.animate(length, bpm_speed, i_div, sleep = 0)
@@ -616,7 +616,7 @@ class CustomMenuBar(wx.MenuBar):
                    wx.ID_CANCEL: "Cancel"}[val]
         except KeyError:
             btn = '<unknown>'
-        #self.GetTopLevelParent().mayaviview
+        #self.GetTopLevelParent().mayavi_view
         if btn == "OK":
             if dialog.input_span.GetLineText(0) == None:
                 pass

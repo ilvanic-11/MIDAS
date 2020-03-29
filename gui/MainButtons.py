@@ -210,7 +210,7 @@ class MainButtonsPanel(wx.Panel):
                    wx.ID_CANCEL: "Cancel"}[val]
         except KeyError:
             btn = '<unknown>'
-        #self.GetTopLevelParent().mayaviview
+        #self.GetTopLevelParent().mayavi_view
         if btn == "OK":
             try:
                 ply = dialog.ply
