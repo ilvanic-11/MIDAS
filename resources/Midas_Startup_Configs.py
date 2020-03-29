@@ -1,7 +1,7 @@
 from importlib import reload
 print("Imported function", reload)
 from traits.etsconfig.api import ETSConfig
-ETSConfig.toolkit = 'wx'
+#ETSConfig.toolkit = 'wx'
 import mayavi
 print("Imported", mayavi)
 from mayavi import mlab

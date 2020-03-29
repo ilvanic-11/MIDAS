@@ -7,7 +7,7 @@ from midas_scripts import musicode, midiart, midiart3D, music21funcs
 from numpy import array
 import numpy as np
 import music21
-from Mayavi3D import PianoDisplay
+from Mayavi3D import MusicObjects
 from traits.etsconfig.api import ETSConfig
 ETSConfig.toolkit = 'wx'
 from numpy import ogrid, sin
@@ -245,8 +245,8 @@ class Mayavi3idiView(HasTraits):
         # #Acquire Piano Numpy Coordinates
         # PianoBlackXYZ = midiart3D.extract_xyz_coordinates_to_array(MayaviPianoBlack)
         # PianoWhiteXYZ = midiart3D.extract_xyz_coordinates_to_array(MayaviPianoWhite)
-        PianoBlackNotes = PianoDisplay.PianoBlackNotes()
-        PianoWhiteNotes = PianoDisplay.PianoWhiteNotes()
+        PianoBlackNotes = MusicObjects.PianoBlackNotes()
+        PianoWhiteNotes = MusicObjects.PianoWhiteNotes()
         # Render Piano
         mlab.points3d(PianoBlackNotes[:, 0], PianoBlackNotes[:, 1], (PianoBlackNotes[:, 2] / 4), color=(0, 0, 0),
                       mode='cube', scale_factor=1)

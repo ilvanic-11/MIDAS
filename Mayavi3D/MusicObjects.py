@@ -1,5 +1,5 @@
 import numpy as np
-
+import cv2
 def PianoBlackNotes():
     pianoblack = np.array([[0., 127., 12.],
                             [0., 126., 12.],
@@ -1312,6 +1312,7 @@ def PianoBlackNotes():
                             [3.5, 0., 4.],
                             [3.5, 127., 4.]])
     return pianoblack
+
 def PianoWhiteNotes():
     pianowhite = np.array([[0., 0., 8.],
                             [0., 2., 8.],
@@ -1922,3 +1923,95 @@ def PianoWhiteNotes():
                             [3.5, 125., 8.],
                             [3.5, 127., 8.]])
     return pianowhite
+
+def GrandStaffLines(z_value=127, length=127):
+    grandstaffpairs = [np.array([[  0,  43, z_value],
+        [length,  43, z_value]]), np.array([[  0,  47, z_value],
+        [length,  47, z_value]]), np.array([[  0,  50, z_value],
+        [length,  50, z_value]]), np.array([[  0,  53, z_value],
+        [length,  53, z_value]]), np.array([[  0,  57, z_value],
+        [length,  57, z_value]]), np.array([[  0,  64, z_value],
+        [length,  64, z_value]]), np.array([[  0,  67, z_value],
+        [length,  67, z_value]]), np.array([[  0,  71, z_value],
+        [length,  71, z_value]]), np.array([[  0,  74, z_value],
+        [length,  74, z_value]]), np.array([[  0,  77, z_value],
+        [length,  77, z_value]])]
+    return grandstaffpairs
+
+def GrandStaff(z_value, length=127):
+    grandstaff = np.array([[0, 43, z_value],
+           [length, 43, z_value],
+           [length, 47, z_value],
+           [0, 47, z_value],
+           [0, 50, z_value],
+           [length, 50, z_value],
+           [length, 53, z_value],
+           [0, 53, z_value],
+           [0, 57, z_value],
+           [length, 57, z_value],
+           [length, 64, z_value],
+           [0, 64, z_value],
+           [0, 67, z_value],
+           [length, 67, z_value],
+           [length, 71, z_value],
+           [0, 71, z_value],
+           [0, 74, z_value],
+           [length, 74, z_value],
+           [length, 77, z_value],
+           [0, 77, z_value]])
+    return grandstaff
+
+def LineSquare(length, z_axis):
+    linesquare = np.vstack(((0, 0, z_axis),
+                         (0, 127, z_axis),
+                         (length, 127, z_axis),
+                         (length, 0, z_axis),
+                         (0, 0, z_axis),  # *
+                         (0, 127, z_axis),
+                         (length, 127, z_axis),
+                         (length, 0, z_axis),
+                         (0, 0, z_axis)))  # *Points repeated for a visual compensation, i.e overlap.
+    return linesquare
+
+def create_glyph(image_array, x_stretch=1, y_shift=0, z_value=127, downscale=21.12):
+    if type(image_array) != np.ndarray: # Can use directory of image file.
+        image_array = cv2.imread(image_array)
+    listy = []
+    print("IMRAY LEN:", len(image_array))
+    for y in range(0, len(image_array)):
+        for x in range(0, len(image_array[y])):
+            if tuple((image_array[y][x]).flatten()) != (255, 255, 255):
+                coord = np.array([(x/downscale)*x_stretch, ((len(image_array)-y)/downscale)+y_shift, z_value])
+                listy.append(coord)
+    glyph_array = np.vstack(([i for i in listy]))
+    return glyph_array
+
+#Used for Test.
+def Earth():
+    from tvtk.api import tvtk
+    from tvtk.common import configure_input_data
+    earth = tvtk.EarthSource()
+    #v = mlab.figure()
+    earth_mapper = tvtk.PolyDataMapper()
+    configure_input_data(earth_mapper, earth.output)
+    earth.update()
+    EarthDataObject = earth.get_output_data_object(0)
+    EarthData1 = EarthDataObject.points.to_array()
+    ##Earth Resize
+    EarthData2 = EarthData1 * 100
+    EarthData3 = EarthData2 + 100
+    EarthData4 = EarthData3 / 2
+    EarthData5 = EarthData4.astype(int)
+    EarthData6 = EarthData5.astype(float)
+    return EarthData6
+
+#TODO Treble Clef Object
+#TODO Bass Clef Object
+#TODO Tenor Clef Object
+#TODO Brace Object
+#TODO Measure Lines Object
+
+
+#TODO!! MUSIC21 Object Symbols as Necessary
+
+#Make sure to keep the bottom left corner note.

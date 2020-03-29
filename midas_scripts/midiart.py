@@ -47,7 +47,13 @@ import fractions
 import copy
 from midas_scripts import music21funcs
 import numpy
-
+import mayavi
+from mayavi import mlab
+from collections import OrderedDict
+import os
+##Color Pallettes
+#------------------------
+##--------------------------------------------
 FLStudioColors = {
     1: (158, 209, 165),  # "Green"),
     2: (159, 211, 186),  # "Pale Green"),
@@ -195,7 +201,7 @@ def make_midi_from_colored_pixels(pixels, granularity, connect=False, colors=Non
     # out_stream.show('txt')
     return out_stream
 
-
+#TODO I don't like the word "grayscale" here. It should just be "black and white," as this function is used mainly for QR codes.
 def make_midi_from_grayscale_pixels(pixels, granularity, connect=False, note_pxl_value=255):
     """
     Make midi picture
@@ -335,7 +341,9 @@ def set_to_nn_colors(im_array, clrs=None):
     """
     if clrs == None:
         clrs = FLStudioColors
-    else:
+    elif type(clrs) == dict:
+        clrs = clrs
+    else:   #If not a dict, but a list of 16 color tuples generated randomly
         l_clrs = array_to_lists_of(clrs)
         clrs = dict.fromkeys(b for b in range(len(l_clrs)))
         for cr in range(0, len(l_clrs)):
@@ -627,6 +635,7 @@ def transcribe_colored_image_to_midiart(img, granularity=1, connect=False, keych
 
     img_nn = set_to_nn_colors(img, colors)
     s = make_midi_from_colored_pixels(img_nn, granularity, connect, colors)
+    print("Stream Created.")
     filter_notes_by_key(s, keychoice, in_place=True)
     if output_path is not None:
         set_parts_to_midi_channels(s, output_path)
@@ -637,7 +646,7 @@ def transcribe_colored_image_to_midiart(img, granularity=1, connect=False, keych
 def transcribe_grayscale_image_to_midiart(img, granularity, connect, keychoice=None, note_pxl_value=255,
                                           output_path=None):
     """
-    This function is the commonly called transcribe function for creating musical images.
+    This function is the commonly called transcribe function for creating musical QR codes, but can be used for an image as well.
     :param img: A file path or numpy array of an image.
     :param granularity: quarterLength value that determines the offset and duration values of all the notes transcribed.
     :param connect: The contiguity feature. Notes are chopped by default. Connect=True connects adjacent notes contiguously.
@@ -664,7 +673,7 @@ def transcribe_grayscale_image_to_midiart(img, granularity, connect, keychoice=N
         img = cv2.resize(img, (width, height), cv2.INTER_AREA)
 
     s = make_midi_from_grayscale_pixels(img, granularity, connect, note_pxl_value)
-
+    print("Stream Created.")
     filter_notes_by_key(s, keychoice, in_place=True)
 
     if output_path is not None:
@@ -941,7 +950,7 @@ def reconstruct_image_sections(array_list):
 # TODO Test this function.
 def lists_of_to_array(lizt, dim=2):
     """
-    Sister function of array_to_lists_of().
+    Lists_of_to_array() is the sister function of array_to_lists_of().
     Takes coordinate lists (2D numpy arrays) or color lists of cv2.imreads (3D arrays) and turns them
     back into numpy arrays with the appropriate shape and ndim.
     More advanced use may use more dimensions. This is not supported yet.
@@ -978,10 +987,10 @@ def lists_of_to_array(lizt, dim=2):
 # TODO Test this function.
 def array_to_lists_of(coords_array, tupl=True):
     """
-    Sister function of lists_of_to_array().
-    This function turns numpy arrays into a list of coordinate lists\tuples or color lists\tuples.
+    Array_to_lists_of() is the sister function of lists_of_to_array().
+    It is a conversion function that turns numpy arrays into a list of coordinate lists\\tuples or color lists\\tuples.
     This functionality is contingent upon the input arrays ndim.
-    Useful for compare calls requiring numpy data without wanting to use .any() or .all()...among other uses.
+    Useful for compare calls between numpy data without wanting to use .any() or .all(), among other uses.
 
     :param coords_array: Input 2D coordinate array or cv2.imread 3D array of color tuples. (i.e. a picture)
     :param tupl: Determines whether or not you want the parent list populated with the data as lists or tuples.
@@ -1016,3 +1025,77 @@ def array_to_lists_of(coords_array, tupl=True):
     else:
         print("Suggested ndim should be 2 or three.")
         return None
+
+#MA-15.
+
+def separate_pixels_to_coords_by_color(image_stream, z_value, nn=False, dimensionalize=None, display=False, clrs=None, stream=False):
+    """
+    This function takes an input image and returns an Ordered Dictionary of coordinate arrays separated by color value.
+    It has the added options of displaying a mayavi mlab visualization and dimensionalizing it along the z axis from the
+    starting point of z_value, a value between 0-127. Use of nearest neighbor functionality vastly expedites this process;
+    see midiart.set_to_nn_colors().
+    :param image_stream: Input image, either filepath, or cv2.imread(filepath). If stream=True, input is treated as a stream.
+    :param z_value: Z axis plane on which to place the image.
+    :param nn: If true, sets colors in image to their nearest neighbors determined by the FL studio color palette or selected palette..
+    :param dimensionalize: Value denoting space along z axis between separated parts.
+    :param display: Displays a standard mayavi mlab visualization of image.
+    :param clrs: 16-colors palette to use. FL studio colors used by default when None.
+    :return: Returns odict, an Ordered Dictionary of coordinates organized by color, and mlab_list, a list of variables
+             corresponding to the mlab calls made if display=True
+    """
+    if type(image_stream) != numpy.ndarray:
+        cv2.imread(image_stream)
+
+    # if stream:
+    #     im_stream = make_midi_from_colored_pixels
+
+    if nn:
+        image_stream = set_to_nn_colors(image_stream, clrs)
+    else:
+        pass
+    clrs_list = list()
+    mlab_list = list()
+    for y in range(0, len(image_stream)):
+            for x in range(0, len(image_stream[y])):
+                clr = (tuple((image_stream[y][x] / 255).flatten()))
+                clrs_list.append(clr)
+    odict1 = OrderedDict.fromkeys([i for i in clrs_list])
+    print("Length:", len(odict1))
+    #Up to here is fast.
+
+    for q in odict1.keys():
+        clr_list = []
+        for y in range(0, len(image_stream)):
+            for x in range(0, len(image_stream[y])):
+                clr = (tuple((image_stream[y][x] / 255).flatten()))
+                if clr == q:
+                    clr_list.append((x, 127-y))
+                    odict1[q] = np.array(clr_list)
+                    #arglist.append([j for j in odict1.keys()])
+        #r = np.array(odict1[q])
+        # color = list(q).reverse()
+    for r in odict1.keys():
+        odict1[r] = np.hstack((odict1[r], np.full((len(odict1[r][:, 0]), 1), z_value)))
+        print("Penis:", odict1[r])
+        actor = mlab.points3d(odict1[r][:, 0], odict1[r][:, 1], odict1[r][:, 2], color=(r[-1], r[-2], r[-3]), mode='cube', scale_factor=1)
+        mlab_list.append(actor)
+        if dimensionalize is not None:
+            z_value += dimensionalize
+    if display:
+        mlab.show()
+        return odict1, mlab_list
+    else:
+        return odict1, mlab_list
+
+#MA-16
+def get_color_palettes(mypath):
+    files = [os.path.join(mypath, f) for f in os.listdir(mypath) if os.path.isfile(os.path.join(mypath, f))]
+    dict_list = {}
+    for j in files:
+        name = os.path.splitext(os.path.basename(j))[0]
+        dict = {}
+        k = cv2.imread(j)
+        for i, x in enumerate(k[0]):
+            dict[i+1] = tuple(x)
+        dict_list[name] = dict
+    return dict_list
