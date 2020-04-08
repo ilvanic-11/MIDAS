@@ -1,6 +1,6 @@
 import numpy as np
 import cv2
-def PianoBlackNotes():
+def piano_black_notes():
     pianoblack = np.array([[0., 127., 12.],
                             [0., 126., 12.],
                             [0., 123., 12.],
@@ -1313,7 +1313,7 @@ def PianoBlackNotes():
                             [3.5, 127., 4.]])
     return pianoblack
 
-def PianoWhiteNotes():
+def piano_white_notes():
     pianowhite = np.array([[0., 0., 8.],
                             [0., 2., 8.],
                             [0., 4., 8.],
@@ -1924,7 +1924,7 @@ def PianoWhiteNotes():
                             [3.5, 127., 8.]])
     return pianowhite
 
-def GrandStaffLines(z_value=127, length=127):
+def grand_staff_lines(z_value=127, length=127):
     grandstaffpairs = [np.array([[  0,  43, z_value],
         [length,  43, z_value]]), np.array([[  0,  47, z_value],
         [length,  47, z_value]]), np.array([[  0,  50, z_value],
@@ -1938,7 +1938,7 @@ def GrandStaffLines(z_value=127, length=127):
         [length,  77, z_value]])]
     return grandstaffpairs
 
-def GrandStaff(z_value, length=127):
+def grand_staff(z_value, length=127):
     grandstaff = np.array([[0, 43, z_value],
            [length, 43, z_value],
            [length, 47, z_value],
@@ -1961,7 +1961,7 @@ def GrandStaff(z_value, length=127):
            [0, 77, z_value]])
     return grandstaff
 
-def LineSquare(length, z_axis):
+def line_square(length, z_axis):
     linesquare = np.vstack(((0, 0, z_axis),
                          (0, 127, z_axis),
                          (length, 127, z_axis),
@@ -1987,7 +1987,7 @@ def create_glyph(image_array, x_stretch=1, y_shift=0, z_value=127, downscale=21.
     return glyph_array
 
 #Used for Test.
-def Earth():
+def earth():
     from tvtk.api import tvtk
     from tvtk.common import configure_input_data
     earth = tvtk.EarthSource()

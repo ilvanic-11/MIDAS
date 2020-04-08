@@ -37,6 +37,8 @@ import re
 print("Imported", re)
 import copy
 print("Imported", copy)
+import inspect
+print("Imported", inspect)
 
 ###Main path.
 script = "Midas_Startup_Configs.py"
@@ -66,8 +68,8 @@ print("----Welcome to MIDAS, the Music-Intermediary Digital Art Suite.----")
 print('\n')
 print('     Using knowledge and techniques of python, music21, numpy, opencv-python, open3d, vtk, and mayavi, this gui toolkit provides a musical engineer \n'
       'with the ability to transform text, images, and point clouds into musical data for composing, production and visualization purposes. \n'
-      'MIDAS incorporates strong musicological analyses displays as well as grants the user the ability to rapidly manipulate their musical data via input\output methods \n'
-      'to and from other programs such as MuseScore, FL Studio, NotePad++, Word, Paint\PicPick, and even Blender. \n'
+      'MIDAS incorporates strong musicological analyses displays as well as grants the user the ability to rapidly manipulate their musical data via \n'
+      'a unique, simple user interface and input\output methods to and from other programs such as MuseScore, FL Studio, NotePad++, Word, Paint\PicPick, and even Blender. \n'
       'The MIDAS installation possesses a path called "intermediary_path" assigned as a variable, and this path is the traffic hub for said data manipulation; the transformation and manipulation \n'
       'of all files and data that go through this toolkit ideally will use the "intermediary_path".\n'
       'This path is established for ease of using this embedded python interpreter and it can be assigned as an output for all your other programs.\n\n'

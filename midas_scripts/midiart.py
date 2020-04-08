@@ -100,7 +100,7 @@ FLStudioMayaviColors = {
 
 def filter_notes_by_key(stream, key, in_place=True):
     """
-    Removes notes from a stream, if they are not pitches that are part of the given key)
+    Removes notes from a stream, if they are not pitches that are part of the given key.
     :param stream: the input stream to operate on
     :param key: music21.key.Key object for the chosen key
     :param in_place: boolean to either operate directly on the input stream or return a deepcopy
@@ -1028,13 +1028,13 @@ def array_to_lists_of(coords_array, tupl=True):
 
 #MA-15.
 
-def separate_pixels_to_coords_by_color(image_stream, z_value, nn=False, dimensionalize=None, display=False, clrs=None, stream=False):
+def separate_pixels_to_coords_by_color(image, z_value, nn=False, dimensionalize=None, display=False, clrs=None, stream=False):
     """
-    This function takes an input image and returns an Ordered Dictionary of coordinate arrays separated by color value.
-    It has the added options of displaying a mayavi mlab visualization and dimensionalizing it along the z axis from the
-    starting point of z_value, a value between 0-127. Use of nearest neighbor functionality vastly expedites this process;
-    see midiart.set_to_nn_colors().
-    :param image_stream: Input image, either filepath, or cv2.imread(filepath). If stream=True, input is treated as a stream.
+    Created for testing purposes, this function takes an input image and returns an Ordered Dictionary of coordinate arrays 
+    separated by color value. It has the added options of displaying a mayavi mlab visualization and dimensionalizing it 
+    along the z axis from the starting point of z_value, a value between 0-127. Use of nearest neighbor functionality 
+    vastly expedites this process; see midiart.set_to_nn_colors().
+    :param image: Input image, either filepath, or cv2.imread(filepath). If stream=True, input is treated as a stream.
     :param z_value: Z axis plane on which to place the image.
     :param nn: If true, sets colors in image to their nearest neighbors determined by the FL studio color palette or selected palette..
     :param dimensionalize: Value denoting space along z axis between separated parts.
@@ -1043,21 +1043,21 @@ def separate_pixels_to_coords_by_color(image_stream, z_value, nn=False, dimensio
     :return: Returns odict, an Ordered Dictionary of coordinates organized by color, and mlab_list, a list of variables
              corresponding to the mlab calls made if display=True
     """
-    if type(image_stream) != numpy.ndarray:
-        cv2.imread(image_stream)
+    if type(image) != numpy.ndarray:
+        cv2.imread(image)
 
     # if stream:
     #     im_stream = make_midi_from_colored_pixels
 
     if nn:
-        image_stream = set_to_nn_colors(image_stream, clrs)
+        image = set_to_nn_colors(image, clrs)
     else:
         pass
     clrs_list = list()
     mlab_list = list()
-    for y in range(0, len(image_stream)):
-            for x in range(0, len(image_stream[y])):
-                clr = (tuple((image_stream[y][x] / 255).flatten()))
+    for y in range(0, len(image)):
+            for x in range(0, len(image[y])):
+                clr = (tuple((image[y][x] / 255).flatten()))
                 clrs_list.append(clr)
     odict1 = OrderedDict.fromkeys([i for i in clrs_list])
     print("Length:", len(odict1))
@@ -1065,9 +1065,9 @@ def separate_pixels_to_coords_by_color(image_stream, z_value, nn=False, dimensio
 
     for q in odict1.keys():
         clr_list = []
-        for y in range(0, len(image_stream)):
-            for x in range(0, len(image_stream[y])):
-                clr = (tuple((image_stream[y][x] / 255).flatten()))
+        for y in range(0, len(image)):
+            for x in range(0, len(image[y])):
+                clr = (tuple((image[y][x] / 255).flatten()))
                 if clr == q:
                     clr_list.append((x, 127-y))
                     odict1[q] = np.array(clr_list)
@@ -1076,7 +1076,7 @@ def separate_pixels_to_coords_by_color(image_stream, z_value, nn=False, dimensio
         # color = list(q).reverse()
     for r in odict1.keys():
         odict1[r] = np.hstack((odict1[r], np.full((len(odict1[r][:, 0]), 1), z_value)))
-        print("Penis:", odict1[r])
+        #print("Penis:", odict1[r])
         actor = mlab.points3d(odict1[r][:, 0], odict1[r][:, 1], odict1[r][:, 2], color=(r[-1], r[-2], r[-3]), mode='cube', scale_factor=1)
         mlab_list.append(actor)
         if dimensionalize is not None:
@@ -1088,7 +1088,15 @@ def separate_pixels_to_coords_by_color(image_stream, z_value, nn=False, dimensio
         return odict1, mlab_list
 
 #MA-16
-def get_color_palettes(mypath):
+def get_color_palettes(mypath=None):
+    """This function creates a dictionary of dictionaries of colors derived from Midas's color_palettes folder.
+    Can specify another folder of colors if desired. The colors in the desired folder should be .jpgs or .pngs of 1x16
+    pixels of different colors.
+    :param mypath: Should generally be ...\Midas\resources\color_palettes folder.
+    :return: A dictionary of dictionaries of color tuples.
+    """
+    if mypath is None:
+        mypath = r".\Midas\resources\color_palettes\\"
     files = [os.path.join(mypath, f) for f in os.listdir(mypath) if os.path.isfile(os.path.join(mypath, f))]
     dict_list = {}
     for j in files:
