@@ -84,7 +84,7 @@ class MainButtonsPanel(wx.Panel):
         self.GetTopLevelParent().pianorollpanel.currentPage.stream.show('txt')
 
     def OnMusic21ConverterParseDialog(self, evt):
-        dlg = Music21ConverterParseDialog(self, -1, "Parse Midi")
+        dlg = Music21ConverterParseDialog(self, -1, "       music21.converter.parse")
         dlg.ShowWindowModal()
 
     def OnMusicodeDialog(self, evt):
@@ -410,9 +410,8 @@ class Music21ConverterParseDialog(wx.Dialog):
 
         #self.ctrlsPanel = wx.Panel(self, -1, wx.DefaultPosition, style=wx.BORDER_RAISED)
 
+        self.btnLoadMidi = wx.Button(self, -1, "Load Midi\\Score")
 
-
-        self.btnLoadMidi = wx.Button(self, -1, "Load Midi")
         self.Bind(wx.EVT_BUTTON, self.OnLoadMidi, self.btnLoadMidi)
 
         btnsizer = wx.StdDialogButtonSizer()

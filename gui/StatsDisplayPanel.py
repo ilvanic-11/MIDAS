@@ -1,6 +1,8 @@
 import wx
 import wx.richtext as rt
-from midas_scripts import musicode, midiart, music21funcs
+from midas_scripts import music21funcs
+#musicode, midiart
+
 
 class StatsDisplayPanel(wx.Panel):
     def __init__(self, parent, log):

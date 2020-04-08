@@ -7,7 +7,7 @@ from midas_scripts import musicode, midiart, midiart3D, music21funcs
 from numpy import array
 import numpy as np
 import music21
-from Mayavi3D import MusicObjects
+from mayavi3D import MusicObjects
 from traits.etsconfig.api import ETSConfig
 ETSConfig.toolkit = 'wx'
 from numpy import ogrid, sin
@@ -245,8 +245,8 @@ class Mayavi3idiView(HasTraits):
         # #Acquire Piano Numpy Coordinates
         # PianoBlackXYZ = midiart3D.extract_xyz_coordinates_to_array(MayaviPianoBlack)
         # PianoWhiteXYZ = midiart3D.extract_xyz_coordinates_to_array(MayaviPianoWhite)
-        PianoBlackNotes = MusicObjects.PianoBlackNotes()
-        PianoWhiteNotes = MusicObjects.PianoWhiteNotes()
+        PianoBlackNotes = MusicObjects.piano_black_notes()
+        PianoWhiteNotes = MusicObjects.piano_white_notes()
         # Render Piano
         mlab.points3d(PianoBlackNotes[:, 0], PianoBlackNotes[:, 1], (PianoBlackNotes[:, 2] / 4), color=(0, 0, 0),
                       mode='cube', scale_factor=1)
@@ -442,11 +442,11 @@ class MainWindow(wx.Frame):
                 style=wx.aui.AUI_NB_TAB_SPLIT | wx.aui.AUI_NB_CLOSE_ON_ALL_TABS
                         | wx.aui.AUI_NB_LEFT)
 
-        self.mayavi_view = MayaviView()
+        self.mayaviview = MayaviView()
 
         # The edit_traits method opens a first view of our 'MayaviView'
         # object
-        self.control = self.mayavi_view.edit_traits(
+        self.control = self.mayaviview.edit_traits(
                         parent=self,
                         kind='subpanel').control
         self.notebook.AddPage(page=self.control, caption='Display 1')
