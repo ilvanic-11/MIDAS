@@ -63,12 +63,13 @@ class Mayavi3idiView(HasTraits):
     view = View(Item('scene3d', editor=SceneEditor(scene_class=MayaviScene), resizable=True, show_label=False),
                 resizable=True)
 
-    def __init__(self):
+    def __init__(self, parent):
         HasTraits.__init__(self)
         #self.on_trait_event(self.array3D_changed, 'arraychangedflag')
 
 
         #Mayavi Engine and Scenes
+        self.parent = parent
         self.engine = self.scene3d.engine
         self.engine.start()  # TODO What does this do?
         self.scene = self.engine.scenes[0]   #TODO Refactor the name of this variable? (self.scene?)
@@ -189,6 +190,11 @@ class Mayavi3idiView(HasTraits):
         #print("array3D_changed")
         self.points = np.argwhere(self.array3D >= 1)
         self.model.mlab_source.trait_set(points=self.points)
+        self.parent.pianorollpanel.zplanesctrlpanel.ZPlanesListBox.UpdateFilter()
+        
+    #@on_trait_change('points')
+    #def points_changed(self):
+        #print("points_changed")
 
 
     def insert_array_data(self, array_2d, color=(0., 0., 0.), mode="cube", scale_factor=.25):

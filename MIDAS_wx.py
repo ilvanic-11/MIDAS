@@ -24,14 +24,10 @@ from traits.api import HasTraits
 from midas_scripts import musicode
 
 
-loglevel = 1
-class Log():
-    """
-    Temporary stupid logging to console.  Can add more later.
-    """
-    def WriteText(self, str):
-        if (loglevel > 0):
-            print(str)
+import logging
+logFormatter = '%(asctime)s - %(levelname)s - %(name)s - %(message)s'
+logging.basicConfig(format=logFormatter, level=logging.DEBUG, filename=r"./log.txt")
+
 
 class MySplashScreen(SplashScreen):
     def __init__(self):
@@ -64,13 +60,14 @@ class MySplashScreen(SplashScreen):
        #f wx.CallAfter(frame.ShowTip)
 
 class MainWindow(wx.Frame):
+    log = logging.getLogger(__name__)
+    
     def __init__(self, parent, id, title, pos=wx.DefaultPosition,
                  size=wx.DefaultSize, style=wx.DEFAULT_FRAME_STYLE):
         wx.Frame.__init__(self, parent, id, title, pos, size, style)
 
         self.mainpanel = wx.Panel(self,-1)
-        self.log = Log()
-
+       
         self.SetSize((1400, 900))  #TODO Optimize for users screen resolution.
 
         self.basesplit = wx.SplitterWindow(self.mainpanel, wx.ID_ANY, style=wx.SP_3DSASH | wx.SP_BORDER)
@@ -82,10 +79,8 @@ class MainWindow(wx.Frame):
         self.musicode = musicode.Musicode()
 
 
-        self.mayavi_view = Mayavi3DWindow.Mayavi3idiView()
-
-
-        self.mayaviviewpanel = self.mayavi_view.edit_traits(parent=self.basesplit, kind='subpanel').control
+        self.mayavi_view = Mayavi3DWindow.Mayavi3idiView(self)
+        self.mayavi_view_control_panel = self.mayavi_view.edit_traits(parent=self.basesplit, kind='subpanel').control
         self.pyshellpanel = wx.py.crust.Crust(self.main, startupScript=str(os.getcwd() + "\\\\resources\\\\" + "Midas_Startup_Configs.py"))
 
 
@@ -243,7 +238,6 @@ class MainWindow(wx.Frame):
         self.Show(True)
         self.SetFocus()
 
-
     #Comprehensive Menu Bind Functions
     def _bind_musicode_tools(self):
         binding = 1000
@@ -280,20 +274,19 @@ class MainWindow(wx.Frame):
     def OnKeyDown(self, event):
         #DDprint("OnKeyDown(): {}".format(chr(event.GetUnicodeKey())))
         if event.GetUnicodeKey() == ord('D'):
-            if event.ShiftDown():
+            if event.AltDown():
                 #TopSashUp
-                #self.mayaviviewpanel.SetFocus()
-                self.main.SetSashPosition(self.main.GetSashPosition() - 150)
+                self.main.SetSashPosition(self.main.GetSashPosition() - 48)
             elif event.ControlDown():
                 #TopSashDown
-                self.main.SetSashPosition(self.main.GetSashPosition() + 150)
+                self.main.SetSashPosition(self.main.GetSashPosition() + 48)
         elif event.GetUnicodeKey() == ord('G'):
-            if event.ShiftDown():
+            if event.AltDown():
                 #BottomSashUp
-                self.basesplit.SetSashPosition(self.basesplit.GetSashPosition() - 150)
+                self.basesplit.SetSashPosition(self.basesplit.GetSashPosition() - 48)
             elif event.ControlDown():
                 #BottomSashDown
-                self.basesplit.SetSashPosition(self.basesplit.GetSashPosition() + 150)
+                self.basesplit.SetSashPosition(self.basesplit.GetSashPosition() + 48)
         event.Skip()
 
 
@@ -312,7 +305,7 @@ class MainWindow(wx.Frame):
         self.leftsplit.SplitHorizontally(self.mainbuttonspanel, self.statsdisplaypanel)
         self.topsplit.SplitVertically(self.leftsplit, self.pianorollpanel)
         self.main.SplitHorizontally(self.topsplit, self.pyshellpanel)
-        self.basesplit.SplitHorizontally(self.main, self.mayaviviewpanel)
+        self.basesplit.SplitHorizontally(self.main, self.mayavi_view_control_panel)
         self.topsplit.SetSashPosition(200)
         self.leftsplit.SetSashPosition(600)
         self.main.SetSashPosition(900)
