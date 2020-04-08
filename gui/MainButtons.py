@@ -117,9 +117,6 @@ class MainButtonsPanel(wx.Panel):
             self._OnM21ConverterParseDialogClosed(dialog, evt)
         elif type (dialog) is MIDIArt3DDialog:
             self._OnMIDIArt3DDialogClosed(dialog, evt)
-
-
-
         dialog.Destroy()
 
     def _OnMusicodeDialogClosed(self, dialog, evt):
@@ -313,8 +310,6 @@ class MusicodeDialog(wx.Dialog):
 
         sizer.Add(btnsizer, 0, wx.ALIGN_CENTER_HORIZONTAL|wx.ALL, 5)
 
-        # self.SetSizer(sizer2)
-        # sizer2.Fit(self)
         self.SetSizer(sizer)
         sizer.Fit(self)
 
