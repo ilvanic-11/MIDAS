@@ -7,6 +7,7 @@ import copy
 import numpy as np
 import math
 from midas_scripts import musicode, music21funcs
+import wx.lib.dragscroller
 
 """ 
 PianoRollPanel
@@ -89,17 +90,17 @@ class PianoRollDataTable(wx.grid.GridTableBase):
         self.z = z
 
     def GetNumberCols(self):
-        print("GetNumberCols(): {}".format(self.parent.GetTopLevelParent().mayavi_view.array3D.shape[0]))
-        return self.parent.GetTopLevelParent().mayavi_view.array3D.shape[0]
+        print("GetNumberCols(): {}".format(self.parent.GetTopLevelParent().mayaviview.array3D.shape[0]))
+        return self.parent.GetTopLevelParent().mayaviview.array3D.shape[0]
 
     def GetNumberRows(self):
-        print("GetNumberCols(): {}".format(self.parent.GetTopLevelParent().mayavi_view.array3D.shape[1]))
-        return self.parent.GetTopLevelParent().mayavi_view.array3D.shape[1]
+        print("GetNumberCols(): {}".format(self.parent.GetTopLevelParent().mayaviview.array3D.shape[1]))
+        return self.parent.GetTopLevelParent().mayaviview.array3D.shape[1]
 
     def GetValue(self,row,col):
         #z = self.GetTopLevelParent().pianorollpanel.currentPage
         #z = 0
-        value = str(int(self.parent.GetTopLevelParent().mayavi_view.array3D[col][127-row][self.z]))
+        value = str(int(self.parent.GetTopLevelParent().mayaviview.array3D[col][127-row][self.z]))
        # print(f"GetValue({col},{row}) = {value}")
         return value
 
@@ -108,7 +109,7 @@ class PianoRollDataTable(wx.grid.GridTableBase):
         #z = self.parent.GetTopLevelParent().pianorollpanel.currentPage
         print(f"SetValue(({col},{row},{self.z}) val={value} ")
         #z = 0
-        self.parent.GetTopLevelParent().mayavi_view.array3D[col][127-row][self.z] = int(value)
+        self.parent.GetTopLevelParent().mayaviview.array3D[col][127-row][self.z] = int(value)
 
 # Main Class for the PianoRoll, based on wx.Grid
 class PianoRoll(wx.grid.Grid, glr.GridWithLabelRenderersMixin):
@@ -128,6 +129,13 @@ class PianoRoll(wx.grid.Grid, glr.GridWithLabelRenderersMixin):
 
         self.SetTable(self._table,True)
 
+        #ATTEMPT at drag scroll.
+        self.scroller = wx.lib.dragscroller.DragScroller(self)
+        self.Bind(wx.EVT_RIGHT_DOWN, self.OnRightDown)
+        self.Bind(wx.EVT_RIGHT_UP, self.OnRightUp)
+
+
+
         glr.GridWithLabelRenderersMixin.__init__(self)
         # self.SetDefaultEditor(wx.grid.GridCellBoolEditor())
         self.SetDefaultRenderer(PianoRollCellRenderer())
@@ -137,6 +145,12 @@ class PianoRoll(wx.grid.Grid, glr.GridWithLabelRenderersMixin):
         self.max_y = 400  # max zoom-in
 
         self.zoom_interval = 4
+
+        print("ScrollLineX", self.GetScrollLineX())
+        print("ScrollLineY", self.GetScrollLineY())
+        self.SetScrollLineX(30)
+        self.SetScrollLineY(30)
+
 
         self.drawing = 1 # Used for click and drag to draw notes
 
@@ -180,6 +194,17 @@ class PianoRoll(wx.grid.Grid, glr.GridWithLabelRenderersMixin):
        # self.Bind(wx.grid.EVT_GRID_CELL_CHANGED, self.OnCellChanged)
         self.Bind(wx.EVT_MOUSEWHEEL, self.OnMouseWheel)
 
+
+    #Used with attempt on right click dragscrolling.
+    def OnRightDown(self, event):
+        print(event)
+        self.scroller.Start(event.GetPosition())
+
+    def OnRightUp(self, event):
+        self.scroller.Stop()
+
+
+
     def DrawColumnLabels(self):
         # Set up column labels to have measure numbers and stuff
         for i in range(self.NumberCols):
@@ -204,9 +229,9 @@ class PianoRoll(wx.grid.Grid, glr.GridWithLabelRenderersMixin):
         for x in range(0, self.GetNumberCols()):
             for y in range(0, self.GetNumberRows()):
                 self.SetCellValue(y,x,"0")
-                self.GetTopLevelParent().mayavi_view.array3D[x, 127 - y, layer] = 0
+                self.GetTopLevelParent().mayaviview.array3D[x, 127 - y, layer] = 0
         self.ResetGridCellSizes()
-        self.GetTopLevelParent().mayavi_view.arraychangedflag += 1
+        self.GetTopLevelParent().mayaviview.arraychangedflag += 1
 
     def ChangeCellsPerQrtrNote(self, newvalue):
         if newvalue == self._cells_per_qrtrnote:
@@ -404,7 +429,7 @@ class PianoRoll(wx.grid.Grid, glr.GridWithLabelRenderersMixin):
         page = self.GetTopLevelParent().pianorollpanel.currentPage
         layer = self.GetTopLevelParent().pianorollpanel.pianorollNB.FindPage(page)
 
-        self.GetTopLevelParent().mayavi_view.array3D[c, 127 - row, layer] = 0
+        self.GetTopLevelParent().mayaviview.array3D[c, 127 - row, layer] = 0
 
 
     def DrawCell(self, val, row, col, new_sy, new_sx):
@@ -437,7 +462,7 @@ class PianoRoll(wx.grid.Grid, glr.GridWithLabelRenderersMixin):
         print(f"  {row},{col} = {val}")
         #self._table.SetValue(row, 127-col, val)
         self.SetCellValue(row, col, val)
-        #self.GetTopLevelParent().mayavi_view.array3D[x, 127 - y, layer] = 1
+        #self.GetTopLevelParent().mayaviview.array3D[x, 127 - y, layer] = 1
         self.SetCellSize(row, col, new_sy, new_sx)
 
 
@@ -476,7 +501,7 @@ class PianoRoll(wx.grid.Grid, glr.GridWithLabelRenderersMixin):
                         print("Note size is too small for current grid CellsPerNote.")
                     else:
                         self._table.SetValue(x, y, "1")
-                        self.GetTopLevelParent().mayavi_view.array3D[y, 127 - x, layer] = 1
+                        self.GetTopLevelParent().mayaviview.array3D[y, 127 - x, layer] = 1
                         self.SetCellSize(x, y, 1, size)
                 # print(matrix)
             elif type(n) is music21.note.Note:
@@ -487,12 +512,12 @@ class PianoRoll(wx.grid.Grid, glr.GridWithLabelRenderersMixin):
                     print("Note size is too small for current grid CellsPerNote.")
                 else:
                     self._table.SetValue(x, y, "1")
-                    self.GetTopLevelParent().mayavi_view.array3D[y, 127 - x, layer] = 1
+                    self.GetTopLevelParent().mayaviview.array3D[y, 127 - x, layer] = 1
                     self.SetCellSize(x, y, 1, size)
 
         # print(matrix)
 
-        self.GetTopLevelParent().mayavi_view.arraychangedflag += 1
+        self.GetTopLevelParent().mayaviview.arraychangedflag += 1
         self.stream = in_stream
 
 
@@ -530,7 +555,7 @@ class PianoRoll(wx.grid.Grid, glr.GridWithLabelRenderersMixin):
         s.makeMeasures(inPlace=True)
         self.stream = s
         s.show('txt')
-        self.GetTopLevelParent().mayavi_view.arraychangedflag += 1
+        self.GetTopLevelParent().mayaviview.arraychangedflag += 1
         return s
 
 
