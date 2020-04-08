@@ -9,6 +9,7 @@ from midas_scripts import musicode, music21funcs
 from gui import PianoRoll
 from traits.api import HasTraits, on_trait_change
 from traits.trait_numeric import AbstractArray
+
 """ 
 PianoRollPanel
 Toolbar
@@ -27,25 +28,31 @@ class PianoRollPanel(wx.Panel):
         self.log = log
 
         tb = self.SetupToolbar()
-
         self.Piano_Roll = PianoRoll
 
 
         self.pianorollNB = wx.Notebook(self, -1, wx.DefaultPosition, wx.DefaultSize, style=wx.NB_LEFT|wx.NB_FIXEDWIDTH)
         self.pianorolls = list()
 
+
         self.InsertNewPianoRoll(0)
         self.currentPage = self.pianorolls[self.pianorollNB.GetSelection()]
+
 
         self.pianorolls[0].GetGridWindow().Bind(wx.EVT_MOTION, self.OnMotion)
         self.pianorolls[0].GetGridWindow().Bind(wx.EVT_LEFT_UP, self.OnMouseLeftUp)
 
+
         self.Bind(wx.EVT_NOTEBOOK_PAGE_CHANGED, self.OnPageChanged)
+
+
 
         mainSizer = wx.BoxSizer(wx.VERTICAL)
         mainSizer.Add(tb, 0, wx.ALL | wx.ALIGN_LEFT | wx.EXPAND, 4)
         mainSizer.Add(self.pianorollNB, 1, wx.EXPAND)
         self.SetSizer(mainSizer)
+
+
 
     def OnPageChanged(self, evt):
         self.currentPage = self.pianorolls[self.pianorollNB.GetSelection()]
@@ -69,7 +76,7 @@ class PianoRollPanel(wx.Panel):
         self.pianorolls.pop(index-1)
         self.pianorollNB.DeletePage(index-1)
 
-    def DeleteAllPianoRolls(self):
+    def DeleteAllPianoRolls(self): #TODO Notebook is gone, so needs rewriting.
         self.log.WriteText("DeletePianoRoll(): ")
         self.pianorolls.clear()
         self.pianorollNB.DeleteAllPages()
@@ -204,7 +211,7 @@ class PianoRollPanel(wx.Panel):
     def OnMouseLeftUp(self, evt):
         self.log.WriteText("OnMouseLeftUp():")
         #self.currentPage.UpdateStream()
-        self.GetTopLevelParent().mayavi_view.arraychangedflag += 1
+        self.GetTopLevelParent().mayaviview.arraychangedflag += 1
         evt.Skip()
 
     def print_cell_sizes(self):  #TODO Redundant? Consider deleting this button.

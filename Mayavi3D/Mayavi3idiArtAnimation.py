@@ -15,7 +15,7 @@ from midas_scripts import musicode, midiart, midiart3D, music21funcs
 ##import mayavi
 from numpy import array
 import numpy as np
-from Mayavi3D import MusicObjects
+from mayavi3D import MusicObjects
 import music21
 # from traits.etsconfig.api import ETSConfig
 # ETSConfig.toolkit = 'wx'
@@ -57,8 +57,8 @@ class Mayavi3DAnimator():
         # #Acquire Piano Numpy Coordinates
         # PianoBlackXYZ = midiart3D.extract_xyz_coordinates_to_array(MayaviPianoBlack)
         # PianoWhiteXYZ = midiart3D.extract_xyz_coordinates_to_array(MayaviPianoWhite)
-        PianoBlackNotes = MusicObjects.PianoBlackNotes()      ###Data for the piano, imported from a separate module.
-        PianoWhiteNotes = MusicObjects.PianoWhiteNotes()
+        PianoBlackNotes = MusicObjects.piano_black_notes()      ###Data for the piano, imported from a separate module.
+        PianoWhiteNotes = MusicObjects.piano_white_notes()
         print(type(PianoBlackNotes))
         print(type(PianoWhiteNotes))
         #Render Piano

@@ -18,7 +18,8 @@ from mayavi.components import actor
 from mayavi.sources import array_source
 from mayavi.core import module_manager
 #from mayavi.modules import image_plane_widget
-from Mayavi3D import MusicObjects
+
+from mayavi3D import MusicObjects
 
 from gui import PianoRoll
 
@@ -85,7 +86,7 @@ class Mayavi3idiView(HasTraits):
 #     title = 'Animation Controller',
 #     buttons = ['OK']
 #
-# ,
+#
 
     def __init__(self):
         HasTraits.__init__(self)
@@ -97,7 +98,7 @@ class Mayavi3idiView(HasTraits):
 
         ###Set Scene Background Color
         self.scene.scene.background = (0.0, 0.0, 0.0)
-        self.scene.scene.movie_maker.record = False
+
 
 
         #Imports Colors
@@ -107,6 +108,7 @@ class Mayavi3idiView(HasTraits):
         self.text3d_calls = []
         self.text3d_default_positions = []
 
+        self.highlighter_calls = []
 
         # Trait Functions
         # print("BUTTON", type(self.button))
@@ -124,7 +126,6 @@ class Mayavi3idiView(HasTraits):
     @on_trait_change('scene3d.activated')
     def create_3dmidiart(self):
 
-
         self.midi = music21.converter.parse(r".\resources\Spark4.mid")
         #self.midi = midiart3D.extract_xyz_coordinates_to_array(self.midi)
 
@@ -133,13 +134,13 @@ class Mayavi3idiView(HasTraits):
 
         #TODO These become buttons.
         #self.Points = midiart3D.get_points_from_ply(r".\resources\sphere.ply")
-        self.Points = MusicObjects.Earth()
+        self.Points = MusicObjects.earth()
         self.Points = self.standard_reorientation(self.Points, 1.3)
         self.Points = np.asarray(self.Points, dtype=np.int64)
         self.Points = np.asarray(self.Points, dtype=np.float64)
         self.Points = self.trim(self.Points, axis='y', trim=0)
         self.Points = midiart3D.transform_points_by_axis(self.Points, positive_octant=True)
-        print("Points", self.Points[:, 2])
+        #print("Points", self.Points[:, 2])
 
 
 
@@ -153,10 +154,10 @@ class Mayavi3idiView(HasTraits):
         self.music = self.insert_music_data(self.midi, color=(1, .5, 0), mode="sphere", scale_factor=1)
 
         self.model = self.insert_array_data(self.Points, color=(0, 0, 1), mode="sphere", scale_factor=2.5)
-        self.text = self.insert_text_data("Script-Ease", "Music, Musicode, Midiart, 3idiArt, Music21, Midas", color=(0, .5, 1), mode='arrow', scale_factor=2)
+        self.text = self.insert_text_data("Script-Ease", "AaBbCcDdEeFfGgHhIiJjKkLlMmNnOoPpQqRrSsTtUuVvWwXxYyZz         ?,;':-.!\"()[]/   0123456789", color=(0, .5, 1), mode='arrow', scale_factor=2)
         random.randint(0, 88)
         self.double = (x, y) = midiart.separate_pixels_to_coords_by_color(cv2.imread(r".\resources\BobMandala.png"), 0,
-                                    nn=True, display=False, clrs=self.clr_dict_list['72_naji-16-1x'])
+                                    nn=True, display=False, clrs=self.clr_dict_list['75_crimso-11-1x'])
 
 
         #Highlighter Plane
@@ -166,23 +167,29 @@ class Mayavi3idiView(HasTraits):
         #self.points = self.Points
 
 
-        ###RECORD
-        #mlab.start_recording(ui=True)
-
-
-
-
         # @mlab.show
         # self.scene3d.disable_render = False
-
 
         #self.insert_titles()     ##I had a 2nd call for a work session where I lost the camera. I may not need this now...
         self.establish_opening()     #TODO Write in a pass statement for when calls to this function are made from within the program; camera issue.
         self.animate(160, self.SM_Span, i_div=2)
+        print("Animate")
+
+        #Animator Instance. Instantiated upon the invocation of self.animate after which the animation is immediately stopped here.
+        self.animate1._stop_fired()
+        print("Animation Stopped")
+
+        #Movie Recording
+        self.scene.scene.movie_maker.record = False
+
+        ###RECORD python Scripts
+        #mlab.start_recording(ui=True)
 
 
         self.insert_titles()
         #self.insert_note_text("3-Dimensional Music", 0, 164, 0, color=(1,0,1), opacity=.12, orient_to_camera=False, scale=30)
+
+
 
     def del_mlab_actor(self, actor): #TODO Write from scenes[0].children stuff. In progress....
         del(actor)
@@ -210,7 +217,7 @@ class Mayavi3idiView(HasTraits):
 
 
     # TODO Is this necessary??!?!
-    def insert_music_data(self, in_stream, color=(0., 0., 0.), mode="cube", scale_factor=1):
+    def insert_music_data(self, in_stream, color=(0., 0., 0.), mode="cube", name=None, scale_factor=1):
         array_data = midiart3D.extract_xyz_coordinates_to_array(in_stream)
         array_data = array_data.astype(float)
         # print(array_data)
@@ -219,7 +226,7 @@ class Mayavi3idiView(HasTraits):
         self.mlab_calls.append(mlab_data)
         return mlab_data
 
-    def insert_text_data(self, mc, text, color=(0., 0., 0.), mode="cube", scale_factor=1):
+    def insert_text_data(self, mc, text, color=(0., 0., 0.), mode="cube", name=None, scale_factor=1):
         text_stream = musicode.mc.translate(mc, text)
         text_array = midiart3D.extract_xyz_coordinates_to_array(text_stream)
         mlab_data = mlab.points3d(text_array[:, 0], text_array[:, 1], text_array[:, 2], color=color, mode=mode,
@@ -232,7 +239,7 @@ class Mayavi3idiView(HasTraits):
         x2, y2, z2 = (0, 127, z_axis)  # | => pt2
         x3, y3, z3 = (length, 0, z_axis)  # | => pt3
         x4, y4, z4 = (length, 127, z_axis)  # | => pt4
-        linebox = MusicObjects.LineSquare(length=length, z_axis=z_axis)
+        linebox = MusicObjects.line_square(length=length, z_axis=z_axis)
         plane = mayavi.mlab.mesh([[x1, x2],
                                  [x3, x4]],  # | => x coordinate
 
@@ -245,13 +252,13 @@ class Mayavi3idiView(HasTraits):
                                   color=color, line_width=5.0, mode='sphere', opacity=.25,   #extent=(-50, 128, -50, 128, 114, 114)
                                   scale_factor=1, tube_radius=None)  # black
         self.mlab_calls.append(plane)
-
+        self.highlighter_calls.append(plane)
         plane_edges = mayavi.mlab.plot3d(linebox[:, 0], linebox[:, 1], linebox[:, 2]+.25,
                                          color=(1,1,1), line_width=2.5, opacity=.35, tube_radius=None)
         self.mlab_calls.append(plane_edges)
-
+        self.highlighter_calls.append(plane_edges)
         if grandstaff:
-            stafflines = MusicObjects.GrandStaff(z_value=z_axis, length=length)
+            stafflines = MusicObjects.grand_staff(z_value=z_axis, length=length)
             gclef = MusicObjects.create_glyph(r".\resources\TrebleClef.png", y_shift=59, z_value = z_axis)
             fclef = MusicObjects.create_glyph(r".\resources\BassClef.png", y_shift=44.3,  z_value = z_axis)
             #for j in grandstaff:
@@ -259,8 +266,11 @@ class Mayavi3idiView(HasTraits):
             self.gclef_call = mlab.points3d(gclef[:, 0], gclef[:, 1], gclef[:, 2], color=(0,1,0), mode='cube', opacity=.015, scale_factor=.25)
             self.fclef_call = mlab.points3d(fclef[:, 0], fclef[:, 1], fclef[:, 2], color=(0,1,0), mode='cube', opacity=.015, scale_factor=.25)
             self.mlab_calls.append(self.gscalls)
+            self.highlighter_calls.append(self.gscalls)
             self.mlab_calls.append(self.gclef_call)
+            self.highlighter_calls.append(self.gclef_call)
             self.mlab_calls.append(self.fclef_call)
+            self.highlighter_calls.append(self.fclef_call)
             #self.gclef_call.actor.actor.position = np.array([0, 59, 0])
             #self.fclef_call.actor.actor.position = np.array([0, 44.3, 0])
         return plane
@@ -278,7 +288,7 @@ class Mayavi3idiView(HasTraits):
             self.mlab_calls[index].mlab_source.points = coords_array
         return coords_array
 
-    def set_actor_positions(self, pos=np.array([0,0,0]), all=False, rando=False):
+    def set_actor_positions(self, pos=np.array([0,0,0]), actors=None, rando=False):
 
         def random_position():
             list1 = list()
@@ -288,7 +298,7 @@ class Mayavi3idiView(HasTraits):
             pos = np.asarray(list1, dtype=np.float64)
             return pos
 
-        if all:
+        if actors == 'all':
             for vtk_data_source in self.scene3d.engine.scenes[0].children:
                 if rando is True:
                     pos = random_position()
@@ -307,11 +317,16 @@ class Mayavi3idiView(HasTraits):
                             pass   #k.actor.position = pos
 
                     #print("SECONDCHILD:", vtk_data_source.children[0].ch   ildren[0])
-        else:
+        elif actors == 'music':
             for i in self.mlab_calls:
                 if rando is True:
                     pos = random_position()
                 i.actor.actor.position = pos
+        # elif actors == 'highlighter':
+        #     for j in self.highlighter_calls:
+        #         j.actor.actor.position = ####Current Actor's Current Z-Plane's Position
+
+
 
     def set_text_positions(self, pos=np.array([0, 0, 0]), default=True, rando=False):
 
@@ -334,12 +349,12 @@ class Mayavi3idiView(HasTraits):
             for n in range(0, len(self.text3d_calls)):
                 self.text3d_calls[n].actor.actor.position = pos
     ##Randomize
-    # Midas.GetTopWindow().mayavi_view.set_actor_positions(all=True, rando=True)
-    # Midas.GetTopWindow().mayavi_view.set_text_positions(default=False, rando=True)
+    # Midas.GetTopWindow().mayaviview.set_actor_positions(actors='music', rando=True)
+    # Midas.GetTopWindow().mayaviview.set_text_positions(default=False, rando=True)
 
     ##Default
-    # Midas.GetTopWindow().mayavi_view.set_actor_positions(all=True)
-    # Midas.GetTopWindow().mayavi_view.set_text_positions(default=True, rando=False)
+    # Midas.GetTopWindow().mayaviview.set_actor_positions(all=True)
+    # Midas.GetTopWindow().mayaviview.set_text_positions(default=True, rando=False)
 
     def update_3Dpoints(self, row, col, val):
         try:
@@ -375,7 +390,7 @@ class Mayavi3idiView(HasTraits):
             bpm_delay = 10
             nano_delay = (60000000 / bpm / i_div)
 
-        @mayavi.tools.animator.animate(delay=bpm_delay, ui=True)   #@mlab.animate, same thing.
+        @mayavi.tools.animator.animate(delay=bpm_delay, ui=False)   #@mlab.animate, same thing.
         def animate_plane_scroll(x_length, delay):
             """
             Mlab animate's builtin delay has to be specified as an integer in milliseconds with a minimum of 10, and also could
@@ -400,13 +415,17 @@ class Mayavi3idiView(HasTraits):
         # mlab.animate(animate_plane_scroll, ms_delay, ui=True)
         # print(secs_delay)
         #animate_plane_scroll(int(time_length), int(nano_delay))
-        #animate1 = animate_plane_scroll(int(time_length), int(nano_delay))
-        # animate1.timer.Stop()
+
+        self.animate1 = animate_plane_scroll(int(time_length), int(nano_delay))
+        #self.animate1._stop_fired()
         print("Animate")
+
+        # animate1.timer.Stop()
         # input("Press Enter.")
         # animate1.timer.Start()
 
-    def standard_reorientation(self, points, scale=1):
+
+    def standard_reorientation(self, points, scale=1.):
         # TODO Maximum rescaling check.
         # TODO scale_function?  Need check to avoid float values.
 
@@ -435,8 +454,8 @@ class Mayavi3idiView(HasTraits):
         # #Acquire Piano Numpy Coordinates
         # PianoBlackXYZ = midiart3D.extract_xyz_coordinates_to_array(MayaviPianoBlack)
         # PianoWhiteXYZ = midiart3D.extract_xyz_coordinates_to_array(MayaviPianoWhite)
-        PianoBlackNotes = MusicObjects.PianoBlackNotes()
-        PianoWhiteNotes = MusicObjects.PianoWhiteNotes()
+        PianoBlackNotes = MusicObjects.piano_black_notes()
+        PianoWhiteNotes = MusicObjects.piano_white_notes()
         # Render Piano
         mlab.points3d(PianoBlackNotes[:, 0], PianoBlackNotes[:, 1], (PianoBlackNotes[:, 2] / 4), color=(0, 0, 0),
                       mode='cube', scale_factor=1)
