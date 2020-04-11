@@ -652,7 +652,7 @@ def transcribe_grayscale_image_to_midiart(img, granularity, connect, keychoice=N
     :param connect: The contiguity feature. Notes are chopped by default. Connect=True connects adjacent notes contiguously.
     :param keychoice: The key of the piece, specified as a string (i.e. "C" for C Major or "C#m" for C Sharp Minor)
     :param note_pxl_value: When not dealing clrs, images are converted to having black and white pixels.
-                        A value of 255 or 0 will determine what of those pixels from the image will be turned into note
+                        A value of 255 or 0 will determine what of those pixels from the image will be turned into notes.
     :param output_path: Directory to which output will be written, specified as a string.
 
     :return: Returns a music21.stream.Stream() object.
