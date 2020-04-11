@@ -88,7 +88,7 @@ class MainButtonsPanel(wx.Panel):
         dlg.ShowWindowModal()
 
     def OnMusicodeDialog(self, evt):
-        dlg = MusicodeDialog(self, -1, "Create Musicode")
+        dlg = MusicodeDialog(self, -1, "Summon Musicode")
         dlg.ShowWindowModal()
     
     def OnMIDIArtDialog(self, evt):
@@ -120,10 +120,19 @@ class MainButtonsPanel(wx.Panel):
                    wx.ID_CANCEL: "Cancel"}[val]
         except KeyError:
             btn = '<unknown>'
-        if btn == "OK":
-            stream = musicode.mc.translate(
+        if dialog.createMusicode.GetValue() is True and btn == "OK":
+            print("DialogCheck:", dialog.createMusicode.GetValue())
+            stream = self.GetTopLevelParent().pianorollpanel.currentPage.GridToStream()  # TODO Change to currentActor's currentZplane upon completion.
+            self.GetTopLevelParent().musicode.make_musicode(stream, "User_Generated", 'ug', filepath=None,
+                                     selection=str(dialog.inputTxt.GetLineText(0)), write=False, timeSig=None)
+            self.GetTopLevelParent().pianorollpanel.currentPage.ClearGrid()
+            #print("DialogCheck:", dialog.createMusicode.GetValue())
+        elif dialog.createMusicode.GetValue() is False and btn == "OK":
+            print("DialogCheck:", dialog.createMusicode.GetValue())
+            stream = self.GetTopLevelParent().musicode.translate(
                 dialog.rdbtnMusicodeChoice.GetString(dialog.rdbtnMusicodeChoice.GetSelection()),
                 dialog.inputTxt.GetLineText(0))
+            print("LINETEXT:", dialog.inputTxt.GetLineText(0))
             self.GetTopLevelParent().pianorollpanel.currentPage.StreamToGrid(stream)
 
 
@@ -138,14 +147,27 @@ class MainButtonsPanel(wx.Panel):
             btn = '<unknown>'
 
         if btn == "OK":
-            pixels = dialog.edges
-            print (pixels)
+            pixels = dialog.img     #2D array (2D of only on\off values.)
+            pixels2 = dialog.img2   #3D array (2D of color tuples)
+            pixels_resized = dialog.resizedImg
+            print("PIXELS")
+            print("PIXELS_RESIZED:", pixels, type(pixels))
             print("pixels shape", numpy.shape(pixels))
+            if dialog.EdgesCheck:
+                edges = cv2.Canny(pixels_resized, 100, 200)
+                stream = midiart.make_midi_from_grayscale_pixels(edges, 0.125, True,  note_pxl_value=255)   ##dialog.inputKey.GetValue(), , colors=False
+                stream.show('txt')
+                self.GetTopLevelParent().pianorollpanel.currentPage.StreamToGrid(stream)
 
-            stream = midiart.make_midi_from_grayscale_pixels(pixels, 0.125, True,  note_pxl_value=255)   ##dialog.inputKey.GetValue(), , colors=False
-            stream.show('txt')
+            elif dialog.ColorsCheck:
+                #TODO Display in grid upon completion of Actors\Z-Planes classes.
+                stream = midiart.transcribe_colored_image_to_midiart(pixels2, .125, connect=False, keychoice=None, colors=None, output_path=None)
+                self.GetTopLevelParent().pianorollpanel.currentPage.StreamToGrid(stream)
 
-            self.GetTopLevelParent().pianorollpanel.currentPage.StreamToGrid(stream)
+            elif dialog.QRCheck:
+                stream = midiart.make_midi_from_grayscale_pixels(pixels_resized, .125, False, note_pxl_value=0)
+                self.GetTopLevelParent().pianorollpanel.currentPage.StreamToGrid(stream)
+
 
     def _OnM21ConverterParseDialogClosed(self, dialog, evt):
         print("OnM21ConverterParseDialogClosed():")
@@ -215,12 +237,22 @@ class MusicodeDialog(wx.Dialog):
 
         sizer = wx.BoxSizer(wx.VERTICAL)
 
+        self.createMusicode= wx.CheckBox(self, -1, "Create Musicode")
+
+        #self.createMusicodeChecked = self.createMusicode.IsChecked()
+
         self.inputTxt = wx.TextCtrl(self, -1, "", size=(250,-1))
+
+        #self.inputTxt2 = wx.TextCtrl(self, -1, "", size=(250,-1))
+
+        self.musicodesList = sorted(list(musicode.mc.shorthand.keys()))
+        self.musicodesList.append('User_Generated')
 
         self.rdbtnMusicodeChoice = wx.RadioBox(self, -1, "Musicode Choice",
                                             wx.DefaultPosition, wx.DefaultSize,
-                                            sorted(list(musicode.mc.shorthand.keys())),
+                                            self.musicodesList,
                                             2, wx.RA_SPECIFY_COLS)
+        #self.userMusicodeChoice = wx.RadioBox(self, -1, "")
 
         sizer.Add(self.inputTxt,0, wx.ALL|wx.ALIGN_CENTER_HORIZONTAL, 20)
         sizer.Add(self.rdbtnMusicodeChoice,0, wx.ALL|wx.ALIGN_CENTER_HORIZONTAL, 20)
@@ -255,7 +287,13 @@ class MIDIArtDialog(wx.Dialog):
         self.ctrlsPanel = wx.Panel(self, -1, wx.DefaultPosition, style=wx.BORDER_RAISED)
         self.imgPreviewPanel = wx.Panel(self, -1, wx.DefaultPosition, (400, 400), style=wx.BORDER_RAISED)
         self.displayImage = None
+
         self.btnLoadImage = wx.Button(self.ctrlsPanel, -1, "Load Image")
+
+        self.chbxEdges = wx.CheckBox(self.ctrlsPanel, -1, "Edges")
+        self.chbxColorImage = wx.CheckBox(self.ctrlsPanel, -1, "Color Image")
+        self.chbxQRCode = wx.CheckBox(self.ctrlsPanel, -1, "QR Code")
+
 
         self.sldrHeight = wx.Slider(self.ctrlsPanel, -1, 127, 1, 127, wx.DefaultPosition, (190,40),
                                     wx.SL_HORIZONTAL | wx.SL_LABELS)
@@ -284,8 +322,12 @@ class MIDIArtDialog(wx.Dialog):
 
         #Sizers
         sizerCtrls = wx.BoxSizer(wx.VERTICAL)
+        sizerCtrls.Add(self.chbxEdges, 0, wx.ALL  | wx.ALIGN_LEFT, 10)
+        sizerCtrls.Add(self.chbxColorImage, 0, wx.ALL  | wx.ALIGN_CENTER_HORIZONTAL, 10)
+        sizerCtrls.Add(self.chbxQRCode, 0, wx.ALL  | wx.ALIGN_RIGHT, 10)
         sizerCtrls.Add(self.btnLoadImage, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL, 20)
         sizerCtrls.Add(self.sldrHeight, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL, 20)
+
 
         keysizer = wx.BoxSizer(wx.HORIZONTAL)
         keysizer.Add(self.txtKey, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL, 20)
@@ -328,6 +370,10 @@ class MIDIArtDialog(wx.Dialog):
             pathname = fileDialog.GetPath()
             try:
                 self.img = cv2.imread(pathname, 0)
+                self.img2 = cv2.imread(pathname)
+                self.EdgesCheck = self.chbxEdges.IsChecked()
+                self.ColorsCheck = self.chbxColorImage.IsChecked()
+                self.QRCheck = self.chbxQRCode.IsChecked()
                 self.UpdatePreview()
             except IOError:
                 wx.LogError("Cannot open file '%s'." % pathname)
@@ -351,9 +397,9 @@ class MIDIArtDialog(wx.Dialog):
         height = int(self.sldrHeight.GetValue())
         width = int(height / len(self.img) * len(self.img[0]))
 
-        resizedImg = cv2.resize(self.img, (width, height), cv2.INTER_AREA)
-        self.edges = cv2.Canny(resizedImg, 100, 200)
-        self.previewImg = cv2.resize(self.edges, (self.pixScaler*width, height), cv2.INTER_AREA)
+        self.resizedImg = cv2.resize(self.img, (width, height), cv2.INTER_AREA)
+
+        self.previewImg = cv2.resize(self.resizedImg, (self.pixScaler*width, height), cv2.INTER_AREA)
         rgb = cv2.cvtColor(self.previewImg, cv2.COLOR_GRAY2RGB)
 
         #print("self.edges.shape=", self.edges.shape)
