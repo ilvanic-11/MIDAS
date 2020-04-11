@@ -35,10 +35,21 @@ import os
 import random
 #from midas_scripts import music21funcs
 from midas_scripts import music21funcs
-class Musicode():
+from collections import OrderedDict
+from traits.api import HasTraits
+from traits.trait_types import Any
+import shutil
 
+
+class Musicode():
+	#user_stream = Any
 	def __init__(self):
+		self.userCreated = music21.stream.Part()
+		#print("userCreated on Init:", self.userCreated)
 		self._setup_midi_dictionaries()
+		## The function "make_musicode" appends to this and allows the user to translate from it.
+		# An instantiation of musicode.Musicode() occurs in the MIDAS_wx.py init.
+
 
 	set_path = r"musicode_libraries"
 	absFilePath = os.path.dirname(os.path.abspath(set_path))
@@ -88,6 +99,7 @@ class Musicode():
 				 "Splyce"         : splyce_dict,
 				 "Baud-Onkadonk_X" : boX_dict,
 				 "Baud-Onkadonk_Y" : boY_dict,
+
 				}
 
 	def add_to_dict(self, char, musicode, full_path_to_file):
@@ -365,12 +377,25 @@ class Musicode():
 		:param string: The string text to translate
 		:return: music21 stream containing the translated text.
 		"""
-		s = music21.stream.Part()
-		num = 0
-		for c in string:
-			new_measure = self._translate_letter(c, musicode, num)
-			s.append(new_measure)
-			num = num + 1
+		if musicode != "User_Generated":		#When you use "User_Selected" as a musicode choice,
+			s = music21.stream.Part()			#you can only use the measures you've created using make_musicode.
+			num = 0
+			for c in string:
+				new_measure = self._translate_letter(c, musicode, num)
+				s.append(new_measure)
+				num = num + 1
+		elif musicode == "User_Generated":
+			s = music21.stream.Part()
+			num = 0
+			for c in string:
+				new_measure = self._translate_letter(c, musicode, num)
+				print(new_measure)
+				s.append(new_measure)
+				num = num + 1
+
+		#else:
+			#for c in string:
+
 		return s
 
 	#UA-2.
@@ -409,26 +434,49 @@ class Musicode():
 		return s
 
 	#UA-3.
-	def _translate_letter(self, c, musicode, num):
+	def _translate_letter(self, c, musicode, num = None):
 		"""
 		Translates a single "letter" string into a selected musicode.
-		:param c:
-		:param musicode:
-		:param num:
+		:param c: A single string instance. (i.e  "y" or "!")
+		:param musicode: The desired Musicode to be called.
+		:param num: The measure's measureNumber.
 		:return:
 		"""
-		new_measure = music21.stream.Measure()
+		#new_measure = music21.stream.Measure()
 		# m.show('txt')
 		# print("letter:" + c + "\n")
 
-		rt = (self.dictionaries[musicode].get(c))
-		if rt:
-			new_measure = copy.deepcopy(rt)
-		else:
-			new_measure = copy.deepcopy(self.dictionaries[musicode].get(" "))
-		new_measure.number = num
-		return new_measure
+		if musicode == "User_Generated":
+			#self.dictionaries.update(User_Generated=self.userCreated)
+			print("C:", c)
+			print("Here")
+			#print("Here 2:", self.userCreated)
+			#self.userCreated.show()
+			for measure in self.userCreated:
+				#print("How bout here?")
+				#print("User_Created:", self.userCreated.show('txt'))
+				element_wrapper = measure[-1]
+				if type(element_wrapper) == music21.note.Rest:
+					element_wrapper = measure[-2]
+				if type(element_wrapper) == music21.bar.Barline:
+					element_wrapper = measure[-3]
+				if element_wrapper.obj == c:
+					new_measure = copy.deepcopy(measure)
+					#print("New_Measure:", new_measure)
+					return new_measure
+				elif element_wrapper.obj not in c:
+					print("Your user-generated musicode does not have this '%s' string character:" % c)
 
+
+		elif musicode != "User_Generated":
+			#self.dictionaries.update(User_Generated=self.userCreated)
+			rt = (self.dictionaries[musicode].get(c))
+			if rt:
+				new_measure = copy.deepcopy(rt)
+			else:
+				new_measure = copy.deepcopy(self.dictionaries[musicode].get(" "))
+			new_measure.number = num
+			return new_measure
 	#UA-4.
 	def translate_each_letter_to_random_musicode(self, text):
 		"""
@@ -524,6 +572,192 @@ class Musicode():
 		s.makeMeasures()
 		return s
 
+	# M21-7.
+	def make_musicode(self, in_stream, musicode_name, shorthand, filepath=None, selection=None, write=True, timeSig='4/4'):
+		"""
+		This function take a string and an input stream with equal lengths (number of measures equals number of string characters)
+		 and conjoins them to create a user-generated assingment of musicodes to be called by said string character.
+		 Choice included to write to file and to provide a selection. Selection should ideally match input stream, although
+		 creativity is highly encouraged!
+
+		:param in_stream: Operand music21.stream.Stream() object with musicode data in measures to be written to file.
+		:param musicode_name: The name of your user-created and designed 'musicode' to be generated from said stream of measures.
+		:param shorthand: The abbreviation for your musicode. (i.e, The builtin musicode "Animuse" uses the shorthand 'am'.)
+		:param filepath: If this is none, the musicode will be saved in the ...\\Midas\resources\musicode_libraries folder.
+		:param selection: If none, select is automaticall the Latin_Script established as--
+		 #Latin_Script = '''AaBbCcDdEeFfGgHhIiJjKkLlMmNnOoPpQqRrSsTtUuVvWwXxYyZz  ?,;\':-.!\"()[]/  0123456789'''
+		:param write: If true, directories are established appropriately and function writes to them accordingly.
+		:param timeSig: Determines the time signature for the measures of your new musicode. Primarily affects measure length. 
+		:return: Returns a stream containing your musicode with its assigned element wrappers for quick acces.
+		"""
+		# Establish operating data.
+		Latin_Script = '''AaBbCcDdEeFfGgHhIiJjKkLlMmNnOoPpQqRrSsTtUuVvWwXxYyZz  ?,;\':-.!\"()[]/  0123456789'''
+		# Latin_Script = ['A', 'a', 'B', 'b', 'C', 'c', 'D', 'd', 'E', 'e', 'F', 'f', 'G', 'g', 'H', 'h', 'I', 'i', 'J', 'j', 'K', 'k', 'L', 'l', 'M', 'm', 'N', 'n', 'O', 'o', 'P', 'p', 'Q', 'q', 'R', 'r', 'S', 's', 'T', 't', 'U', 'u', 'V', 'v', 'W', 'w', 'X', 'x', 'Y', 'y', 'Z', 'z', ' ', ' ', ('questionmark'), ('comma'), ('semicolon'), ('singlequotationmark'), ('colon'), ('hyphen'), ('period'), ('exclamationmark'),
+		#               ('doublequotationmark'), ('openparenthesis'), ('closeparenthesis'), ('openbracket'), ('closebracket'), ('forwardslash'), ' ', ' ',  '0', '1', '2', '3', '4', '5', '6', '7', '8', '9']
+		print(Latin_Script)
+		Punct_Workaround = OrderedDict.fromkeys(([j for j in '''?,;\':-.!\"()[]/''']))
+		Punct_Symbols = '''?,;\':-.!\"()[]/'''
+		Punct_Names = ['questionmark', 'comma', 'semicolon', 'singlequotationmark', 'colon', 'hyphen', 'period',
+					   'exclamationmark',
+					   'doublequotationmark', 'openparenthesis', 'closeparenthesis', 'openbracket', 'closebracket',
+					   'forwardslash']
+		for l in range(0, len(Punct_Symbols)):
+			Punct_Workaround[Punct_Symbols[l]] = Punct_Names[l]
+		print("Punct_Dict:", Punct_Workaround)
+
+		# User selection condition check.
+		if selection is not None:   		##NOTE: If your selection is None, this code assumes that you are
+			selection = selection	#creating a musicode FOR EVERY character in the Latin_Script.
+		elif selection is None:
+			selection = Latin_Script
+		print("User Selection:", selection)
+
+		#Critical: Selection == in_stream Length Check:
+		# if len(selection) != len(in_stream):
+		# 	print("Your selected string assignement does not match the length of your created musicode.")
+		# 	return None
+
+		#Establish local function(s):
+		def create_directories():
+			if os.path.exists(full_new_musicode_path) is False:
+				os.mkdir(full_new_musicode_path)
+			os.mkdir(full_new_musicode_path + "\\" + shorthand + "_" + "Uppercase\\")
+			os.mkdir(full_new_musicode_path + "\\" + shorthand + "_" + "Lowercase\\")
+			os.mkdir(full_new_musicode_path + "\\" + shorthand + "_" + "Numbers\\")
+			os.mkdir(full_new_musicode_path + "\\" + shorthand + "_" + "Punctuation\\")
+
+
+		# Establish Writing Path Name
+		if write is not False:
+			set_path = r"musicode_libraries\\"  # TODO Should resources be named something else? Regardless, this relative path is set.
+			if filepath is None:  #Then we write to the r".\Midas\resources\musicode_libraries\ folder.
+				filepath = set_path
+				absFilePath = os.path.dirname(os.path.abspath(set_path))
+				resource_path = absFilePath + "\\resources\\" + filepath
+				if os.path.exists(resource_path + musicode_name + "\\\\") is True:  #Catch for fileexists error. Remove and rewrite, since will be commonly called.
+					shutil.rmtree(resource_path + musicode_name + "\\\\", ignore_errors=True)  #Caution with this?
+				os.mkdir(resource_path + musicode_name + "\\\\")  # TODO What should we do if directory already exists? Overwrite?
+				full_new_musicode_path = resource_path + musicode_name + "\\\\"
+				create_directories()		#* Create Directories within Path since write and file_path are true, and we're writing to it.
+			# print(resource_path + musicode_name + "\\")
+			# print(full_new_musicode_path)
+			else:  ##This block executes to save to specified fullpath.
+				full_new_musicode_path = filepath
+				create_directories()        #Create directories...*
+		else:
+			pass
+		#Assert for measures.
+		if in_stream.hasMeasures() is False:
+			in_stream.makeMeasures(inPlace=True)
+		assert in_stream.hasMeasures(), "There are no measures in this stream. Call 'in_stream.makeMeasures().'"
+		assert in_stream[0].isMeasure, "This first index is not a music21.stream.Measure() object."
+
+		# and write to established directories:
+		print("Selection Length:", len(selection))
+		print("HERE:", selection)
+
+		#Latin_Stream Assign with appropriate element wrappers assigned to measures.
+		latin_elwrap_list = []
+		latin_measures_list =[]
+		for j in range(0, len(Latin_Script)):  #Has len 80: j will be an iteration of measures, since we just established them.
+			k = music21.ElementWrapper(obj=str(Latin_Script[j]))
+			if k.obj in selection:  #Acquires them in order of iteration over selection.
+				latin_elwrap_list.append(k)
+		#assert len(latin_elwrap_list) == len(selection), "Elementwrapper list and selection not equal."
+		for el in range(0, len(selection)):
+			# Append measures of the new musicode stream with a music21.ElementWrapper containing
+			# the symbols name as it's .obj as a string.
+			if latin_elwrap_list[el].obj in selection:
+				in_stream[el].append(latin_elwrap_list[el])
+				latin_measures_list.append(in_stream[el])
+
+
+		#We now have our measures with the correct element-wrapped string character in them.
+
+
+		# Make a TimeSignature object. Does not get appended to a stream.
+		time = music21.meter.TimeSignature(str(timeSig))
+		#new_stream.append(timeSig)
+
+		#Make new stream with measures derived from selection:
+		new_stream = music21.stream.Stream()
+
+		# Note: The default last element of a measure after stream.makeMeasures()
+		# is a barline, so workarounds were done.
+		print("In_STREAM:")
+		in_stream.show('txt')
+		for l in latin_measures_list:
+			element_wrapper = l[-1]  # Last element in each measure
+			if type(element_wrapper) == music21.bar.Barline:
+				element_wrapper = l[-2]
+			elif type(element_wrapper) == music21.note.Rest: #Check against newly added rests.
+				element_wrapper = l[-3]
+			if element_wrapper.obj in selection:  #Selection check for new_measure.
+				new_stream.append(l)
+				print("Measure Number", l.measureNumber)
+				print("Measure\\ElementWrapper", l, element_wrapper)
+			# wrapper_list.append(stringz)
+
+		print("NEW_STREAM:")
+		new_stream.show('txt')
+
+		# new_stream.makeMeasures(inPlace=True)  #NOTE: makeMeasures destroys Elementwrappers??
+		#Handle incomplete measure\gaps issue with added rests and
+		#Reset measures in new_stream, rewriting its measure numbers in the process, just in case.
+		for m in range(0, len(new_stream)):
+			new_stream[m].number = m + 1
+			music21funcs.fill_measure_end_gaps(new_stream[m], time, inPlace=True)
+
+		print("New_Stream After Rests added:")
+		new_stream.show('txt')
+
+		print("NS Length:", len(new_stream))
+
+		for j in range(0, len(selection)):
+			# new_stream[j].append(wrapper_list[j])
+			element_wrapper = new_stream[j][-1]  # The last element in each measure.
+			if type(element_wrapper) == music21.note.Rest:
+				element_wrapper = new_stream[j][-2]
+			if type(element_wrapper) == music21.bar.Barline:
+				element_wrapper = new_stream[j][-3]
+			# print(new_stream[j].measureNumber, stringz.obj)
+			print("X", [new_stream[j]])
+			# A check against writing empty measures and whether to write at all.
+			if element_wrapper.obj is not ' ' and write is not False:
+				if new_stream[j].hasElementOfClass(music21.note.Note) or new_stream[j].hasElementOfClass(
+						music21.chord.Chord):
+					if element_wrapper.obj.islower() and element_wrapper.obj not in Punct_Names:
+						new_stream[j].write("mid",
+											full_new_musicode_path + "\\" + shorthand + "_" + "Lowercase\\" + "musicode" + "_" + shorthand + "_" + str(
+												element_wrapper.obj) + ".mid")
+					elif element_wrapper.obj in Punct_Names or element_wrapper.obj in Punct_Symbols:
+						new_stream[j].write("mid",
+											full_new_musicode_path + "\\" + shorthand + "_" + "Punctuation\\" + "musicode" + "_" + shorthand + "_" + str(
+												Punct_Workaround[element_wrapper.obj]) + ".mid")
+					elif element_wrapper.obj.isupper():
+						new_stream[j].write("mid",
+											full_new_musicode_path + "\\" + shorthand + "_" + "Uppercase\\" + "musicode" + "_" + shorthand + "_" + str(
+												element_wrapper.obj) + ".mid")
+					elif element_wrapper.obj.isdigit():
+						new_stream[j].write("mid",
+											full_new_musicode_path + "\\" + shorthand + "_" + "Numbers\\" + "musicode" + "_" + shorthand + "_" + str(
+												element_wrapper.obj) + ".mid")
+				else:
+					pass
+				# print(j, stringz.obj)
+
+		# Account for the " " space string manually, so user is encouraged not to set a musicode for a space.
+		# Append "space_measure to user-generated musicode.
+		space_wrapper = music21.ElementWrapper(obj=" ")
+		space_measure = music21.stream.Measure()
+		d1 = music21.duration.Duration(time.barDuration.quarterLength) #Correct rest duration for different timesigs  scenarios.
+		rest = music21.note.Rest()
+		rest.duration = d1
+		space_measure.append(rest)
+		space_measure.append(space_wrapper)
+		new_stream.append(copy.deepcopy(space_measure))
+		self.userCreated = new_stream
+		return new_stream
 
 	#UA-6.
 		#def change_musicode( in_stream, musicode_sh?):
