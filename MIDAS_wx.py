@@ -21,6 +21,7 @@ import os
 import wx._adv, wx._html, wx._xml, wx.py, time
 
 from traits.api import HasTraits
+from midas_scripts import musicode
 
 loglevel = 1
 class Log():
@@ -78,8 +79,9 @@ class MainWindow(wx.Frame):
 
 
 
-
+        self.musicode = musicode.Musicode()
         self.mayaviview = Mayavi3DWindow.Mayavi3idiView()
+
 
         self.mayaviviewpanel = self.mayaviview.edit_traits(parent=self.basesplit, kind='subpanel').control
         self.pyshellpanel = wx.py.crust.Crust(self.main, startupScript=str(os.getcwd() + "\\\\resources\\\\" + "Midas_Startup_Configs.py"))
@@ -188,7 +190,7 @@ class MainWindow(wx.Frame):
         item = wx.MenuItem(menu5, 500, "&Search-Help\tCtrl++Shift+S")    #, "This one has an icon"
         #TODO Use a search bar with help(), inspect.getdoc, and for j in inspect.getmembers: print(j[0], j[1])
 
-        item.SetBitmap(images.Smiles.GetBitmap())
+        #item.SetBitmap(images.Smiles.GetBitmap())
         menu5.Append(item)
 
         # menuitemwithbmp = wx.MenuItem(menu5, wx.ID_ANY, "Submenu with Bitmap")
@@ -255,6 +257,7 @@ class MainWindow(wx.Frame):
         if event.GetUnicodeKey() == ord('D'):
             if event.ShiftDown():
                 #TopSashUp
+                #self.mayaviviewpanel.SetFocus()
                 self.main.SetSashPosition(self.main.GetSashPosition() - 150)
             elif event.ControlDown():
                 #TopSashDown

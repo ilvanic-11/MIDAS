@@ -74,6 +74,7 @@ import random
 import numpy as np
 import math
 import fractions
+from midas_scripts import musicode
 from collections import OrderedDict
 
 ##TRANSPOSE_FUNCTIONS
@@ -784,113 +785,8 @@ def change_velocities_by_duration(in_stream, dur_choice=None, vel_choice=None):
     print("Velocities are now: ", new_vel_list)
     return in_stream
 
+
 #M21-7.
-def make_musicode(in_stream, musicode_name, shorthand, filepath=None, selection = None):
-    """
-
-    :param in_stream: Operand music21.stream.Stream() object with musicode data in measures to be written to file.
-    :param musicode_name: The name of your user-created and designed 'musicode' to be generated from said stream of measures.
-    :param shorthand: The abbreviation for your musicode. (i.e, The builtin musicode "Animuse" uses the shorthand 'am'.)
-    :param filepath: If this is none, the musicode will be saved in the ...\\Midas\resources\musicode_libraries folder.
-    :return: None.
-    """
-    #Establish operating data.
-    Latin_Script = '''AaBbCcDdEeFfGgHhIiJjKkLlMmNnOoPpQqRrSsTtUuVvWwXxYyZz  ?,;\':-.!\"()[]/  0123456789'''
-    #Latin_Script = ['A', 'a', 'B', 'b', 'C', 'c', 'D', 'd', 'E', 'e', 'F', 'f', 'G', 'g', 'H', 'h', 'I', 'i', 'J', 'j', 'K', 'k', 'L', 'l', 'M', 'm', 'N', 'n', 'O', 'o', 'P', 'p', 'Q', 'q', 'R', 'r', 'S', 's', 'T', 't', 'U', 'u', 'V', 'v', 'W', 'w', 'X', 'x', 'Y', 'y', 'Z', 'z', ' ', ' ', ('questionmark'), ('comma'), ('semicolon'), ('singlequotationmark'), ('colon'), ('hyphen'), ('period'), ('exclamationmark'),
-    #               ('doublequotationmark'), ('openparenthesis'), ('closeparenthesis'), ('openbracket'), ('closebracket'), ('forwardslash'), ' ', ' ',  '0', '1', '2', '3', '4', '5', '6', '7', '8', '9']
-    print(Latin_Script)
-    Punct_Workaround = OrderedDict.fromkeys(([j for j in '''?,;\':-.!\"()[]/''']))
-    Punct_Symbols = '''?,;\':-.!\"()[]/'''
-    Punct_Names = ['questionmark', 'comma', 'semicolon', 'singlequotationmark', 'colon', 'hyphen', 'period', 'exclamationmark',
-                 'doublequotationmark', 'openparenthesis', 'closeparenthesis', 'openbracket', 'closebracket', 'forwardslash']
-    for l in range(0, len(Punct_Symbols)):
-        Punct_Workaround[Punct_Symbols[l]] = Punct_Names[l]
-    print("Punct_Dict:", Punct_Workaround)
-
-    #User selection condition check.
-
-    if selection is None:
-        selection = Latin_Script
-
-    #Establish Path Name
-    set_path = r"musicode_libraries\\"       #TODO Should resources be named something else? Regardless, this relative path is set.
-    if filepath is None:
-        filepath = set_path
-        absFilePath = os.path.dirname(os.path.abspath(set_path))
-        resource_path = absFilePath + "\\resources\\" + filepath
-        os.mkdir(resource_path + musicode_name + "\\\\")    #TODO What should we do if directory already exists?
-        full_new_musicode_path = resource_path + musicode_name + "\\\\"
-        #print(resource_path + musicode_name + "\\")
-        #print(full_new_musicode_path)
-    else:   ##This block executes to save to specified fullpath.
-        full_new_musicode_path = filepath
-
-    #Create Directories within Path
-    if os.path.exists(full_new_musicode_path) is False:
-        os.mkdir(full_new_musicode_path)
-    os.mkdir(full_new_musicode_path + "\\" + shorthand + "_" + "Uppercase\\")
-    os.mkdir(full_new_musicode_path + "\\" + shorthand + "_" + "Lowercase\\")
-    os.mkdir(full_new_musicode_path + "\\" + shorthand + "_" + "Numbers\\")
-    os.mkdir(full_new_musicode_path + "\\" + shorthand + "_" + "Punctuation\\")
-    if in_stream.hasMeasures() is False:
-        in_stream.makeMeasures(inPlace=True)
-
-    assert in_stream.hasMeasures(), "There are no measures in this stream. Call 'in_stream.makeMeasures().'"
-    assert in_stream[0].isMeasure, "This first index is not a music21.stream.Measure() object."
-
-    #Assign Element wrapper with appropriate name to measures within musicode stream
-    #and write to established directories:
-
-    for j in range(0, len(Latin_Script)):   #j will be an iteration of measures, since we just established them.
-        k = music21.ElementWrapper(obj=str(Latin_Script[j]))
-         #Append measures of the new musicode stream with a music21.ElementWrapper containing
-         #the symbols name as it's object as a string.
-        in_stream[j].append(k)
-
-    #Make a new stream with measures derived from selection:
-    #wrapper_list = []
-    new_stream = music21.stream.Stream()
-    for l in in_stream:
-        stringz = l[-1]   #Last element in each measure
-        if type(stringz) == music21.bar.Barline:
-            stringz = l[-2]
-        if stringz.obj in selection:
-            new_stream.append(l)
-            print("Measure Number", l.measureNumber)
-            #wrapper_list.append(stringz)
-    #Reset measures in new_stream, rewriting its measure numbers in the process, just in case.
-    #for s in new_stream:
-
-    #new_stream.makeMeasures(inPlace=True)  #NOTE: makeMeasures destroys Elementwrappers.
-    print("NS Length:", len(new_stream))
-    for j in new_stream:
-        print(j, j[-1])
-
-    #Note: The default last element of a measure after stream.makeMeasures()
-    #is a barline; two workarounds here.
-
-    for j in range(0, len(selection)):
-        #new_stream[j].append(wrapper_list[j])
-        stringz = new_stream[j][-1]    #The last element in each measure.
-        if type(stringz) == music21.bar.Barline:
-            stringz = new_stream[j][-2]
-        #print(new_stream[j].measureNumber, stringz.obj)
-        print("X", [new_stream[j]])
-        # A check against writing empty measures.
-        if stringz.obj is not ' ':
-            if new_stream[j].hasElementOfClass(music21.note.Note) or new_stream[j].hasElementOfClass(music21.chord.Chord):
-                if stringz.obj.islower() and stringz.obj not in Punct_Names:
-                    new_stream[j].write("mid",  full_new_musicode_path + "\\" + shorthand + "_" + "Lowercase\\" + "musicode" + "_" + shorthand + "_" + str(stringz.obj) + ".mid")
-                elif stringz.obj in Punct_Names or stringz.obj in Punct_Symbols:
-                    new_stream[j].write("mid",  full_new_musicode_path + "\\" + shorthand + "_" + "Punctuation\\" + "musicode" + "_" + shorthand + "_" + str(Punct_Workaround[stringz.obj]) + ".mid")
-                elif stringz.obj.isupper():
-                    new_stream[j].write("mid",  full_new_musicode_path + "\\" + shorthand + "_" + "Uppercase\\" + "musicode" + "_" + shorthand + "_" + str(stringz.obj) + ".mid")
-                elif stringz.obj.isdigit():
-                    new_stream[j].write("mid",  full_new_musicode_path + "\\" + shorthand + "_" + "Numbers\\" + "musicode" + "_" + shorthand + "_" + str(stringz.obj) + ".mid")
-                #print(j, stringz.obj)
-    return new_stream
-
-#M21-8.
 def change_midi_channels_to_one_channel(midi_file, channel=1):
     """
     This function takes a midi file on input and changes the "channel"
@@ -911,7 +807,7 @@ def change_midi_channels_to_one_channel(midi_file, channel=1):
     a_file.close()
 
 
-#M21-9.
+#M21-8.
 def split_midi_channels(midi_file, directory, name, to_file=False):
     """This function uses music21 and takes a midi file on input and separates* all the "channels" of the midi file into
     either parts in a stream, or a directory of written mid files, one midi file for each said "channel." The files\\parts
@@ -986,7 +882,7 @@ def split_midi_channels(midi_file, directory, name, to_file=False):
     else:
         return parse_stream
 
-# M21-1.
+# M21-9.
 def print_chords_in_piece(in_stream):
     """Use .flat and .makeMeasures to acquire appropriate callable stream
     :param in_stream:
@@ -1012,6 +908,7 @@ def print_chords_in_piece(in_stream):
     return ret_str
 # a_headers = [n for n in a_file.tracks if not n.hasNotes()]   ## Unnecessary because of midi.MidiFile()
 
+# M21-10.
 def print_show_streamtxt(in_stream):
     filename = "Temp_Stream_Print.txt"
     set_path = r"intermediary_path"
@@ -1024,6 +921,7 @@ def print_show_streamtxt(in_stream):
     in_stream.show('txt')
     return ret_str
 
+# M21-11.
 def print_midi_data(in_stream):
     filename = "Temp_Midi.mid"
     set_path = r"intermediary_path"
@@ -1037,6 +935,76 @@ def print_midi_data(in_stream):
     midistring = str(midiFile)
     midiFile.close()
     return midistring
+
+#M21-
+def fill_measure_end_gaps(measure, timeSig=None, inPlace=True):
+    """
+        This function takes a music21.stream.measure as input and fills in empty "duration" gaps at the
+    beginning AND\OR end of a measure. It does not operate on empty gaps "in-between" notes or elements in a measure.
+    :param measure: A music21.stream.Measure object, with or without a time Signature object.
+    :param timeSig: The time signature specifier, this can be a string as '4/4' or a music21.meter.TimeSignature() object.
+                    Time signature value will default to '4/4' if not specified.
+    :param inPlace: If true, returns same input measure, else returns a deepcopy.
+    :return: measure or copy.deepcopy(measure)
+    """
+
+    #A check against multiple timeSignatures within measure.
+    time_list = []
+    for i in measure.flat.getElementsByClass(music21.meter.TimeSignature):
+        time_list.append(i)
+    if len(time_list) == 1:
+        print("You have zero or more than one time signature object in this measure."
+              "/n If zero, input timeSig will be used.")
+
+    #timeSig input Checks.
+    if timeSig is None and measure.flat.hasElementOfClass(music21.meter.TimeSignature):
+        timeSig = [i for i in measure.flat.getElementsByClass(music21.meter.TimeSignature)][0]
+    elif type(timeSig) is str:  #If specified as a string, create a music21.meter.TimeSignature object from that string.
+        timeSig = music21.meter.TimeSignature(timeSig)
+    else:   #If none specified.
+        timeSig = music21.meter.TimeSignature('4/4')
+
+
+    new_measure = copy.deepcopy(measure)
+    r1_set = None
+    r2_set = None
+    for i in range(0, 1):
+        # Operation 1 -- Ends
+        if measure.highestTime != timeSig.barDuration.quarterLength:
+            d1 = music21.duration.Duration(timeSig.barDuration.quarterLength - measure.highestTime)
+            r1 = music21.note.Rest()
+            r1.duration = d1
+            r1_set = r1
+        #Operation 2 -- Beginnings
+        if measure.lowestOffset != 0:
+            d2 = music21.duration.Duration(measure.lowestOffset - 0)
+            r2 = music21.note.Rest()
+            r2.duration = d2
+            r2_set = r2
+        if inPlace is True:
+            if r1_set is not None:
+                measure.append(r1_set)
+            else:
+                pass
+            if r2_set is not None:
+                measure.insert(0, r2_set)
+            else:
+                pass
+            return measure
+        elif inPlace is False:
+            if r1_set is not None:
+                new_measure.append(r1_set)
+            else:
+                pass
+            if r2_set is not None:
+                new_measure.insert(0, r2_set)
+            else:
+                pass
+            return new_measure
+
+
+
+
 
 #M21-. TODO
 #def music21.clash.Clash? Khord? Vhord? Music21 object for housing multiple notes with different velocities at the same offset.
