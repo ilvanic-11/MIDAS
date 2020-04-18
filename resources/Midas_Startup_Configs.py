@@ -1,3 +1,4 @@
+import time
 from importlib import reload
 print("Imported function", reload)
 from traits.etsconfig.api import ETSConfig
@@ -39,6 +40,8 @@ import copy
 print("Imported", copy)
 import inspect
 print("Imported", inspect)
+import pydoc
+print("Imported", pydoc)
 
 ###Main path.
 script = "Midas_Startup_Configs.py"
@@ -92,6 +95,8 @@ midas_test.append(n2)
 midas_test.append(n3)
 midas_test.append(chord1)
 midas_test.append(chord2)
+
+
 
 
 ##Call

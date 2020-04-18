@@ -1002,6 +1002,17 @@ def fill_measure_end_gaps(measure, timeSig=None, inPlace=True):
                 pass
             return new_measure
 
+def empty_measure(timeSig):
+    time = music21.meter.TimeSignature(timeSig)
+    space_wrapper = music21.ElementWrapper(obj=" ")
+    space_measure = music21.stream.Measure()
+    d1 = music21.duration.Duration(time.barDuration.quarterLength) #Correct rest duration for different timesigs  scenarios.
+    rest = music21.note.Rest()
+    rest.duration = d1
+    space_measure.append(rest)
+    space_measure.append(space_wrapper)
+    return space_measure
+
 
 
 
