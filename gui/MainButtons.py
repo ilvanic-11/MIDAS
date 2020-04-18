@@ -1,6 +1,8 @@
 import wx
 from midas_scripts import musicode, midiart, music21funcs, midiart3D
+from gui import Preferences
 import music21
+from mayavi import mlab
 import cv2, numpy
 import numpy as np
 import os
@@ -30,13 +32,13 @@ class MainButtonsPanel(wx.Panel):
         sizer.Add(btn_MIDIart3D, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL, 10)
         self.Bind(wx.EVT_BUTTON, self.OnMIDIArt3DDialog, btn_MIDIart3D)
 
-        btn_show_in_FLStudio = wx.Button(self, -1, "Show in FLStudio")
-        sizer.Add(btn_show_in_FLStudio, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL, 10)
-        self.Bind(wx.EVT_BUTTON, self.OnShowinFLStudio, btn_show_in_FLStudio)
+        # btn_show_in_FLStudio = wx.Button(self, -1, "Show in FLStudio")
+        # sizer.Add(btn_show_in_FLStudio, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL, 10)
+        # self.Bind(wx.EVT_BUTTON, self.OnShowinFLStudio, btn_show_in_FLStudio)
 
-        btn_show_in_MuseScore = wx.Button(self, -1, "Show in MuseScore")
-        sizer.Add(btn_show_in_MuseScore, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL, 10)
-        self.Bind(wx.EVT_BUTTON, self.OnShowinMuseScore, btn_show_in_MuseScore)
+        # btn_show_in_MuseScore = wx.Button(self, -1, "Show in MuseScore")
+        # sizer.Add(btn_show_in_MuseScore, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL, 10)
+        # self.Bind(wx.EVT_BUTTON, self.OnShowinMuseScore, btn_show_in_MuseScore)
 
         # btn_show_stream_txt = wx.Button(self, -1, "Show Stream Text")
         # sizer.Add(btn_show_stream_txt, 0, wx.ALL|wx.ALIGN_CENTER_HORIZONTAL, 10)
@@ -64,6 +66,10 @@ class MainButtonsPanel(wx.Panel):
 
         self.Bind(wx.EVT_WINDOW_MODAL_DIALOG_CLOSED, self.OnDialogClosed)
 
+        #Update user-generated name.
+        # self.mc_dialog = MusicodeDialog()
+        # self.mc_dialog.user_named = self.GetTopLevelParent().musicode.musicode_name
+
     def OnGridToStream(self, evt):
         self.GetTopLevelParent().pianorollpanel.currentPage.GridToStream()
 
@@ -88,7 +94,7 @@ class MainButtonsPanel(wx.Panel):
         dlg.ShowWindowModal()
 
     def OnMusicodeDialog(self, evt):
-        dlg = MusicodeDialog(self, -1, "Summon Musicode")
+        dlg = MusicodeDialog(self, -1, "Musicode")
         dlg.ShowWindowModal()
     
     def OnMIDIArtDialog(self, evt):
@@ -96,7 +102,7 @@ class MainButtonsPanel(wx.Panel):
         dlg.ShowWindowModal()
 
     def OnMIDIArt3DDialog(self, evt):
-        dlg = MIDIArt3DDialog(self, -1, "Display MIDIArt3D")
+        dlg = MIDIArt3DDialog(self, -1, "Create 3D MIDIArt")
         dlg.ShowWindowModal()
 
     def OnDialogClosed(self, evt):
@@ -111,6 +117,9 @@ class MainButtonsPanel(wx.Panel):
             self._OnM21ConverterParseDialogClosed(dialog, evt)
         elif type (dialog) is MIDIArt3DDialog:
             self._OnMIDIArt3DDialogClosed(dialog, evt)
+
+
+
         dialog.Destroy()
 
     def _OnMusicodeDialogClosed(self, dialog, evt):
@@ -120,15 +129,24 @@ class MainButtonsPanel(wx.Panel):
                    wx.ID_CANCEL: "Cancel"}[val]
         except KeyError:
             btn = '<unknown>'
-        if dialog.createMusicode.GetValue() is True and btn == "OK":
-            print("DialogCheck:", dialog.createMusicode.GetValue())
+        #Variables..
+        # musicode_name = self.GetTopLevelParent().musicode.musicode_name
+        # shorthand_name = self.GetTopLevelParent().musicode.sh
+        musicode_name = dialog.input_mcname.GetLineText(0)
+        if dialog.input_mcname.GetLineText(0) == "" or None:
+            musicode_name = "User_Generated"
+        shorthand_name = dialog.input_sh.GetLineText(0)
+        if dialog.input_sh.GetLineText(0) == "" or None:
+            shorthand_name = "ug"
+        if dialog.create_musicode.GetValue() is True and btn == "OK":
+            print("DialogCheck:", dialog.create_musicode.GetValue())
             stream = self.GetTopLevelParent().pianorollpanel.currentPage.GridToStream()  # TODO Change to currentActor's currentZplane upon completion.
-            self.GetTopLevelParent().musicode.make_musicode(stream, "User_Generated", 'ug', filepath=None,
+            self.GetTopLevelParent().musicode.make_musicode(stream, musicode_name, shorthand_name, filepath=None,
                                      selection=str(dialog.inputTxt.GetLineText(0)), write=False, timeSig=None)
             self.GetTopLevelParent().pianorollpanel.currentPage.ClearGrid()
             #print("DialogCheck:", dialog.createMusicode.GetValue())
-        elif dialog.createMusicode.GetValue() is False and btn == "OK":
-            print("DialogCheck:", dialog.createMusicode.GetValue())
+        elif dialog.create_musicode.GetValue() is False and btn == "OK":
+            print("DialogCheck:", dialog.create_musicode.GetValue())
             stream = self.GetTopLevelParent().musicode.translate(
                 dialog.rdbtnMusicodeChoice.GetString(dialog.rdbtnMusicodeChoice.GetSelection()),
                 dialog.inputTxt.GetLineText(0))
@@ -192,39 +210,26 @@ class MainButtonsPanel(wx.Panel):
                    wx.ID_CANCEL: "Cancel"}[val]
         except KeyError:
             btn = '<unknown>'
-
+        #self.GetTopLevelParent().mayaviview
         if btn == "OK":
-            points = midiart3D.get_points_from_ply(dialog.ply)
-            planes_dict = midiart3D.get_planes_on_axis(points, 'z', ordered=True, clean=True)
-            #Delete the startup piano roll when loading ply.
             try:
-                self.GetTopLevelParent().pianorollpanel.DeletePianoRoll(1)
-            except IndexError:
-                pass
-            index_list = [k for k in planes_dict.keys()]
-            for k in index_list:
-                self.GetTopLevelParent().pianorollpanel.InsertNewPianoRoll(int(index_list.index(k)))
-                self.GetTopLevelParent().pianorollpanel.currentPage.StreamToGrid(midiart3D.extract_xyz_coordinates_to_stream((np.array(planes_dict[k]))))
+                ply = dialog.ply
+            except AttributeError:
+                ply = None
+            if ply is not None:
+                points = midiart3D.get_points_from_ply(dialog.ply)
+                planes_dict = midiart3D.get_planes_on_axis(points, 'z', ordered=True, clean=True)
+                #Delete the startup piano roll when loading ply.
+                try:
+                    self.GetTopLevelParent().pianorollpanel.DeletePianoRoll(1)
+                except IndexError:
+                    pass
+                index_list = [k for k in planes_dict.keys()]
+                for k in index_list:
+                    self.GetTopLevelParent().pianorollpanel.InsertNewPianoRoll(int(index_list.index(k)))
+                    self.GetTopLevelParent().pianorollpanel.currentPage.StreamToGrid(midiart3D.extract_xyz_coordinates_to_stream((np.array(planes_dict[k]))))
 
-    def OnShowinFLStudio(self, evt):
-        grid = self.GetTopLevelParent().pianorollpanel.currentPage
 
-
-        # s = music21funcs.matrix_to_stream(matrix, True, self.GetTopLevelParent().pianorollpanel.currentPage.pix_note_size)
-        s = self.GetTopLevelParent().pianorollpanel.currentPage.stream
-        s.show('txt')
-
-        s.write("mid", os.getcwd() + os.sep + "MIDAS_temp.mid")
-        print("\"C:\Program Files (x86)\Image-Line\FL Studio 12\FL64.exe\" \"" + os.getcwd() + os.sep + "MIDAS_temp.mid\"")
-        subprocess.Popen([r"C:\Program Files (x86)\Image-Line\FL Studio 20\FL64.exe", os.getcwd() + os.sep + "MIDAS_temp.mid"])
-
-    def OnShowinMuseScore(self, evt):
-        s = self.GetTopLevelParent().pianorollpanel.currentPage.stream
-        s.show('txt')
-
-        s.write("mid", os.getcwd() + os.sep + "MIDAS_temp.mid")
-        print("\"C:\Program Files\MuseScore 3\bin\MuseScore3.exe\" \"" + os.getcwd() + os.sep + "MIDAS_temp.mid\"")
-        subprocess.Popen([r"C:\Program Files\MuseScore 3\bin\MuseScore3.exe", os.getcwd() + os.sep + "MIDAS_temp.mid"])
         #r"C:\Program Files\MuseScore 3\bin\MuseScore3.exe"
 
 
@@ -235,27 +240,62 @@ class MusicodeDialog(wx.Dialog):
         wx.Dialog.__init__(self)
         self.Create(parent, id, title, pos, size, style, name)
 
-        sizer = wx.BoxSizer(wx.VERTICAL)
+        #MODE
+        self.translate_musicode = wx.CheckBox(self, -1, "Translate Musicode")
+        self.create_musicode = wx.CheckBox(self, -1, "Create Musicode")
 
-        self.createMusicode= wx.CheckBox(self, -1, "Create Musicode")
+        self.create_musicode.SetValue(True)  ##Set to translate at the ready by default.
 
-        #self.createMusicodeChecked = self.createMusicode.IsChecked()
+        #Musicode name.
+        self.name_static = wx.StaticText(self, -1, "Musicode Name",     style=wx.ALIGN_RIGHT)
+        self.input_mcname = wx.TextCtrl(self, -1, "", size=(90, -1), style=wx.TE_CENTER)
 
-        self.inputTxt = wx.TextCtrl(self, -1, "", size=(250,-1))
+        #Shorthand variable name.
+        self.sh_static = wx.StaticText(self, -1, "Shorthand", style=wx.ALIGN_RIGHT)
+        self.input_sh = wx.TextCtrl(self, -1, "", size=(30, -1), style=wx.TE_CENTER)
 
         #self.inputTxt2 = wx.TextCtrl(self, -1, "", size=(250,-1))
 
-        self.musicodesList = sorted(list(musicode.mc.shorthand.keys()))
-        self.musicodesList.append('User_Generated')
+        self.user_named = super().GetParent().GetTopLevelParent().musicode.musicode_name  #Thith is the coolest thing I have ever theen.
+        print("User_Named:", self.user_named)
 
+        self.musicodesList = sorted(list(musicode.mc.shorthand.keys()))
+        self.musicodesList.append(self.user_named)
+
+
+        self.inputTxt = wx.TextCtrl(self, -1, "", size=(250,-1), name="Translate\\Create")
         self.rdbtnMusicodeChoice = wx.RadioBox(self, -1, "Musicode Choice",
                                             wx.DefaultPosition, wx.DefaultSize,
                                             self.musicodesList,
                                             2, wx.RA_SPECIFY_COLS)
         #self.userMusicodeChoice = wx.RadioBox(self, -1, "")
 
+        #Bindings.
+        self.Bind(wx.EVT_CHECKBOX, self.OnPolarizeCheckboxes)
+
+        #Sizers
+        sizer = wx.BoxSizer(wx.VERTICAL)
+        sizer2 = wx.BoxSizer(wx.HORIZONTAL)
+        sizer3 = wx.BoxSizer(wx.HORIZONTAL)
+        sizer4 = wx.BoxSizer(wx.HORIZONTAL)
+
+        #Sizer adds.
+        sizer2.Add(self.translate_musicode, 0, wx.ALL | wx.ALIGN_TOP, 20)
+        sizer2.Add(self.create_musicode, 0, wx.ALL | wx.ALIGN_TOP, 20)
+
+        sizer3.Add(self.name_static, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL, 20)
+        sizer3.Add(self.input_mcname, 0, wx.ALL | wx.ALIGN_RIGHT, 20)
+
+        sizer4.Add(self.sh_static, 0, wx.ALL | wx.ALIGN_LEFT, 20)
+        sizer4.Add(self.input_sh, 0, wx.ALL | wx.ALIGN_CENTER, 20)
+
+        sizer.Add(sizer2, 0, wx.ALL | wx.ALIGN_TOP, 20)
+        sizer.Add(sizer3, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL, 20)
+        sizer.Add(sizer4, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL, 20)
+
         sizer.Add(self.inputTxt,0, wx.ALL|wx.ALIGN_CENTER_HORIZONTAL, 20)
         sizer.Add(self.rdbtnMusicodeChoice,0, wx.ALL|wx.ALIGN_CENTER_HORIZONTAL, 20)
+
 
         btnsizer = wx.StdDialogButtonSizer()
 
@@ -271,10 +311,28 @@ class MusicodeDialog(wx.Dialog):
         btnsizer.AddButton(btn)
         btnsizer.Realize()
 
-        sizer.Add(btnsizer, 0, wx.ALIGN_CENTER_VERTICAL|wx.ALL, 5)
+        sizer.Add(btnsizer, 0, wx.ALIGN_CENTER_HORIZONTAL|wx.ALL, 5)
 
+        # self.SetSizer(sizer2)
+        # sizer2.Fit(self)
         self.SetSizer(sizer)
         sizer.Fit(self)
+
+    #TODO Needs work.
+    def OnPolarizeCheckboxes(self, event):
+        if self.create_musicode.IsChecked(): #Click on other one...
+            self.translate_musicode.SetValue(not self.create_musicode.IsChecked())
+
+        elif self.translate_musicode.IsChecked():  #True by default.
+            #self.translate_musicode.SetValue(not self.translate_musicode.IsChecked()) #
+            self.create_musicode.SetValue(not self.translate_musicode.IsChecked())
+            #pass
+
+
+        # elif self.translate_musicode.GetValue() is False:
+        #     self.create_musicode.SetValue(True)
+        # elif self.create_musicode.GetValue() is False:
+        #     self.translate_musicode.SetValue(True)
 
 
 class MIDIArtDialog(wx.Dialog):
@@ -354,7 +412,7 @@ class MIDIArtDialog(wx.Dialog):
 
         sizerMain = wx.BoxSizer(wx.VERTICAL )
         sizerMain.Add(sizerHor, 30)
-        sizerMain.Add(btnsizer, 0, wx.ALIGN_CENTER_HORIZONTAL | wx.ALL, 5)
+        sizerMain.Add(btnsizer, 0, wx.ALIGN_CENTER_HORIZONTAL | wx.ALL, 20)
 
         self.SetSizerAndFit(sizerMain)
 
@@ -414,8 +472,13 @@ class MIDIArt3DDialog(wx.Dialog):
                  pos=wx.DefaultPosition, style=wx.DEFAULT_DIALOG_STYLE, name='MIDI Art 3D'):
         wx.Dialog.__init__(self)
         self.Create(parent, id, title, pos, size, style, name)
+
+        #LoadPly
         self.btnLoadPly = wx.Button(self, -1, "Load Point Cloud")
         self.Bind(wx.EVT_BUTTON, self.OnLoadPly, self.btnLoadPly)
+        #Redraw MayaviView
+        self.btnRedrawMayaviView = wx.Button(self, -1, "Redraw Mayavi Figure")
+        self.Bind(wx.EVT_BUTTON, self.On3DDisplayRedraw, self.btnRedrawMayaviView)
 
         btnsizer = wx.StdDialogButtonSizer()
         btn = wx.Button(self, wx.ID_OK)
@@ -427,7 +490,9 @@ class MIDIArt3DDialog(wx.Dialog):
 
         sizerMain = wx.BoxSizer(wx.VERTICAL)
         # sizerMain.Add(sizerHor, 30)
+
         sizerMain.Add(self.btnLoadPly, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL, 20)
+        sizerMain.Add(self.btnRedrawMayaviView, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL, 20)
         sizerMain.Add(btnsizer, 0, wx.ALIGN_CENTER_HORIZONTAL | wx.ALL, 1)
 
         self.SetSizerAndFit(sizerMain)
@@ -446,6 +511,10 @@ class MIDIArt3DDialog(wx.Dialog):
                 self.ply = pathname
             except IOError:
                 wx.LogError("Cannot open file '%s'." % pathname)
+
+
+    def On3DDisplayRedraw(self, evt):
+        super().GetParent().GetTopLevelParent().mayaviview.redraw_mayaviview()
 
 
 class Music21ConverterParseDialog(wx.Dialog):

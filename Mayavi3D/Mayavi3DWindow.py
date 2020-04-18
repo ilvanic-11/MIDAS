@@ -1,15 +1,17 @@
 import sys, os
 from midas_scripts import musicode, midiart, midiart3D, music21funcs
 
+from traits.etsconfig.api import ETSConfig
+ETSConfig.toolkit = 'wx'
+
 import mayavi
 from numpy import array
 import numpy as np
 import random
 import music21
 
-from traits.etsconfig.api import ETSConfig
 
-ETSConfig.toolkit = 'wx'
+
 from mayavi import mlab, modules, sources, core, components
 from mayavi.components import actor
 from mayavi.sources import array_source
@@ -24,7 +26,7 @@ from traits.trait_numeric import Array
 from tvtk.pyface.scene_editor import SceneEditor
 from mayavi.tools.mlab_scene_model import MlabSceneModel
 from mayavi.core.ui.mayavi_scene import MayaviScene
-from traits.trait_types import Button
+#from traits.trait_types import Button
 # from traits.trait_numeric import AbstractArray
 # from traits.trait_types import Function
 # from traits.trait_types import Any
@@ -36,80 +38,56 @@ import cv2
 # from traits.trait_types import List
 from traits.trait_types import Any
 
-#Attempt to put animator traits ui pop into our scene3d
-# import types
-# from functools import wraps
-# try:
-#     from decorator import decorator
-#     HAS_DECORATOR = True
-# except ImportError:
-#     HAS_DECORATOR = False
-#
-# from pyface.timer.api import Timer
-# from traits.api import Any, HasTraits, Button, Instance, Range
-# from traitsui.api import View, Group, Item
 
 # mlab.options.offscreen = True
 class Mayavi3idiView(HasTraits):
     scene3d = Instance(MlabSceneModel, ())
     points = Array(dtype=np.int)
-    array3D = Array(dtype=np.float, shape=(5000, 128, 127))
+    array3D = Array(dtype=np.float, shape=(5000, 128, 127))   #TODO Make the numpy range (1000000, 1000000, 1000000)? And then a note for the workable volume being (Any, 127, 127).
     arraychangedflag = Int()
     ass = Float
     #button = Button()
     view = View(Item('scene3d', editor=SceneEditor(scene_class=MayaviScene), resizable=True, show_label=False),
                 resizable=True)
 
-#TRAITSUI Shit for hack animation ui attempt.
-#     start = Button('Start Animation')
-#     stop = Button('Stop Animation')
-#     delay = Range(10, 100000, 500,
-#                   desc='frequency with which timer is called')
-#     # The internal timer we manage.
-#     timer = Any
-#     Group(Item('start'),
-#           Item('stop'),
-#           show_labels=False),
-#     Item('_'),
-#     Item(name='delay'),
-#     title = 'Animation Controller',
-#     buttons = ['OK']
-#
-#
-
     def __init__(self):
         HasTraits.__init__(self)
         #self.on_trait_event(self.array3D_changed, 'arraychangedflag')
 
+
+        #Mayavi Engine and Scenes
         self.engine = self.scene3d.engine
         self.engine.start()  # TODO What does this do?
         self.scene = self.engine.scenes[0]   #TODO Refactor the name of this variable? (self.scene?)
 
+        # Common Scene Properties
+        self.grid3d_span = 127  # For right now.
+        self.bpm = 90  # TODO Set based on music21.tempo.Metronome object.
+        self.i_div = 2
+
+        # Colors Imports
         ###Set Scene Background Color
         self.scene.scene.background = (0.0, 0.0, 0.0)
-
-
-        #Imports Colors
         self.clr_dict_list = midiart.get_color_palettes(r".\resources\color_palettes")
+        self.default_color_palette = midiart.FLStudioColors
 
+        #TODO Should this be in main MIDAS_wx? Should be in preferences. Yes.
+
+        #Grid Construct
         self.mlab_calls = []  #TODO Note: mlab.clf() in the pyshell does not clear this list.
         self.text3d_calls = []
         self.text3d_default_positions = []
         self.highlighter_calls = []
-        # Trait Functions
-        # print("BUTTON", type(self.button))
+        self.volume_slice = None
 
-        # READY-MADE POINTS
-        # self.pointies = AbstractArray
-        # self.points1 = midiart3D.get_points_from_ply(r"C:\Users\Isaac's\Downloads\dodecahedron.ply")
-        # self.pointies = self.points1
-        # self.points2 = midiart3D.get_points_from_ply(r"C:\Users\Isaac's\Downloads\sphere.ply")
-        # self.points3 = np.array([[0, 0, 0]])
-        #self.on_trait_event(self.points_changed(), ('grid_to_stream', 'stream_to_grid'))
+
+
+
+
 
 
     @on_trait_change('scene3d.activated')
-    def create_3dmidiart(self):
+    def create_3dmidiart_display(self):
         self.midi = music21.converter.parse(r".\resources\Spark4.mid")
         #self.midi = midiart3D.extract_xyz_coordinates_to_array(self.midi)
 
@@ -126,18 +104,20 @@ class Mayavi3idiView(HasTraits):
 
 
         self.SM_Span = self.midi.highestTime
+        self.grid3d_span = self.SM_Span
+
         self.Points_Span = self.Points.max()
-        self.insert_piano_grid_text_timeplane(self.SM_Span)
+        self.insert_piano_grid_text_timeplane(self.SM_Span)  #TODO REFACTOR THIS?
 
         ###SELECT OBJECT
 
         #ACTOR EXAMPLES
-        self.music = self.insert_music_data(self.midi, color=(1, .5, 0), mode="sphere", scale_factor=1)
-        self.model = self.insert_array_data(self.Points, color=(0, 0, 1), mode="sphere", scale_factor=2.5)
-        self.text = self.insert_text_data("Script-Ease", "AaBbCcDdEeFfGgHhIiJjKkLlMmNnOoPpQqRrSsTtUuVvWwXxYyZz         ?,;':-.!\"()[]/   0123456789", color=(0, .5, 1), mode='arrow', scale_factor=2)
-        random.randint(0, 88)
-        self.double = (x, y) = midiart.separate_pixels_to_coords_by_color(cv2.imread(r".\resources\BobMandala.png"), 0,
-                                    nn=True, display=False, clrs=self.clr_dict_list['75_crimso-11-1x'])
+        #self.music = self.insert_music_data(self.midi, color=(1, .5, 0), mode="sphere", scale_factor=1)
+        #self.model = self.insert_array_data(self.Points, color=(0, 0, 1), mode="sphere", scale_factor=2.5)
+        #self.text = self.insert_text_data("Script-Ease", "AaBbCcDdEeFfGgHhIiJjKkLlMmNnOoPpQqRrSsTtUuVvWwXxYyZz         ?,;':-.!\"()[]/   0123456789", color=(0, .5, 1), mode='arrow', scale_factor=2)
+        #random.randint(0, 88)
+        #self.double = (x, y) = midiart.separate_pixels_to_coords_by_color(cv2.imread(r".\resources\BobMandala.png"), 0,
+        #                            nn=True, display=False, clrs=self.clr_dict_list['75_crimso-11-1x'])
 
         #Highlighter Plane
         self.plane = self.establish_highlighter_plane(114, color=(0, 1, 0), length=self.SM_Span)
@@ -148,16 +128,17 @@ class Mayavi3idiView(HasTraits):
         # self.scene3d.disable_render = False
 
         #self.insert_titles()     ##I had a 2nd call for a work session where I lost the camera. I may not need this now...
-        self.establish_opening()     #TODO Write in a pass statement for when calls to this function are made from within the program; camera issue.
+        self.establish_opening()     #TODO Write in a pass statement for when calls to this function are made from within the program; camera issue. Now Redundant?
         self.animate(160, self.SM_Span, i_div=2)
         print("Animate")
 
         #Animator Instance. Instantiated upon the invocation of self.animate after which the animation is immediately stopped here.
-        self.animate1._stop_fired()
-        print("Animation Stopped")
+        #self.animate1._stop_fired() #TODO Redundant. _stop_fired() now called within Animate after invocation of animate_plane_scroll.
+        #print("Animation Stopped")
 
         #Movie Recording
         self.scene.scene.movie_maker.record = False
+        self.scene.scene.movie_maker.directory =r".\resources\intermediary_path\recorded_frames"
 
         ###RECORD python Scripts
         #mlab.start_recording(ui=True)
@@ -166,9 +147,9 @@ class Mayavi3idiView(HasTraits):
         #self.insert_note_text("3-Dimensional Music", 0, 164, 0, color=(1,0,1), opacity=.12, orient_to_camera=False, scale=30)
 
 
-
-    def del_mlab_actor(self, actor): #TODO Write from scenes[0].children stuff. In progress....
-        del(actor)
+    def remove_mlab_actor(self, actor_child): #TODO Write from scenes[0].children stuff. CHECK--Use child.remove()
+        actor_child.remove()  #Must be an actor_child found in scene3d.engine.scenes[0].children. Use subscript for it.
+        #TODO Create version of this to call for the actor by its "name" trait.
 
 
     ##WORKING INSTANCE
@@ -178,21 +159,15 @@ class Mayavi3idiView(HasTraits):
         self.points = np.argwhere(self.array3D >= 1)
         self.model.mlab_source.trait_set(points=self.points)
 
-    #@on_trait_change('points')
-    #def points_changed(self):
-        #print("points_changed")
-
 
     def insert_array_data(self, array_2d, color=(0., 0., 0.), mode="cube", scale_factor=.25):
         # print(array_2d)
-
         mlab_data = mlab.points3d(array_2d[:, 0], array_2d[:, 1], array_2d[:, 2], color=color, mode=mode,
                              scale_factor=scale_factor)
         self.mlab_calls.append(mlab_data)
         return mlab_data
 
 
-    # TODO Is this necessary??!?!
     def insert_music_data(self, in_stream, color=(0., 0., 0.), mode="cube", name=None, scale_factor=1):
         array_data = midiart3D.extract_xyz_coordinates_to_array(in_stream)
         array_data = array_data.astype(float)
@@ -202,6 +177,7 @@ class Mayavi3idiView(HasTraits):
         self.mlab_calls.append(mlab_data)
         return mlab_data
 
+
     def insert_text_data(self, mc, text, color=(0., 0., 0.), mode="cube", name=None, scale_factor=1):
         text_stream = musicode.mc.translate(mc, text)
         text_array = midiart3D.extract_xyz_coordinates_to_array(text_stream)
@@ -209,6 +185,40 @@ class Mayavi3idiView(HasTraits):
                                   scale_factor=scale_factor)
         self.mlab_calls.append(mlab_data)
         return mlab_data
+
+
+    def insert_volume_slice(self, length=127):
+        # Time_ScrollPlane
+        # x,y,z = np.mgrid[0:127, 0:127, 0:127]
+        if self.grid3d_span is not None:
+            length = self.grid3d_span
+        else:
+            length = length
+        xh, yh, zh = np.mgrid[0:int(length), 0:254, 0:254]
+        # Scalars_1 = (x+y+z)
+        Scalars_2 = np.zeros((int(length), 254, 254))
+        # xtent = np.array([0, 127, 0, 127, 0, 127])
+        self.image_plane_widget = mlab.volume_slice(xh, yh, zh, Scalars_2, opacity=.7, plane_opacity=.7, plane_orientation='x_axes',
+                          transparent=True)
+        #if self.volume_slice is not None:
+        self.volume_slice = self.image_plane_widget.parent.parent
+        print(self.image_plane_widget)
+        self.image_plane_widget.ipw.origin = array([0., 0., 0.])
+        self.image_plane_widget.ipw.point1 = array([0.0, 127., 0.0])
+        self.image_plane_widget.ipw.point2 = array([0.0, 0.0, 127.])
+        self.image_plane_widget.ipw.slice_position = 1
+        self.image_plane_widget.ipw.slice_position = 0
+        return self.volume_slice
+
+
+    def reset_volume_slice(self, length=127):
+        if self.grid3d_span is not None:
+            length = self.grid3d_span
+        else:
+            length = length
+        self.volume_slice.remove()
+        self.insert_volume_slice(length)
+
 
     def establish_highlighter_plane(self, z_axis, color, grandstaff=True, length=127):
         x1, y1, z1 = (0, 0, z_axis)  # | => pt1
@@ -227,11 +237,11 @@ class Mayavi3idiView(HasTraits):
 
                                   color=color, line_width=5.0, mode='sphere', opacity=.25,   #extent=(-50, 128, -50, 128, 114, 114)
                                   scale_factor=1, tube_radius=None)  # black
-        self.mlab_calls.append(plane)
+        #self.mlab_calls.append(plane)
         self.highlighter_calls.append(plane)
         plane_edges = mayavi.mlab.plot3d(linebox[:, 0], linebox[:, 1], linebox[:, 2]+.25,
                                          color=(1,1,1), line_width=2.5, opacity=.35, tube_radius=None)
-        self.mlab_calls.append(plane_edges)
+        #self.mlab_calls.append(plane_edges)
         self.highlighter_calls.append(plane_edges)
         if grandstaff:
             stafflines = MusicObjects.grand_staff(z_value=z_axis, length=length)
@@ -241,15 +251,16 @@ class Mayavi3idiView(HasTraits):
             self.gscalls = mlab.plot3d(stafflines[:, 0], stafflines[:, 1], stafflines[:, 2], color=(0,1,0), opacity=.65, tube_radius=None)
             self.gclef_call = mlab.points3d(gclef[:, 0], gclef[:, 1], gclef[:, 2], color=(0,1,0), mode='cube', opacity=.015, scale_factor=.25)
             self.fclef_call = mlab.points3d(fclef[:, 0], fclef[:, 1], fclef[:, 2], color=(0,1,0), mode='cube', opacity=.015, scale_factor=.25)
-            self.mlab_calls.append(self.gscalls)
+            #self.mlab_calls.append(self.gscalls)
             self.highlighter_calls.append(self.gscalls)
-            self.mlab_calls.append(self.gclef_call)
+            #self.mlab_calls.append(self.gclef_call)
             self.highlighter_calls.append(self.gclef_call)
-            self.mlab_calls.append(self.fclef_call)
+            #self.mlab_calls.append(self.fclef_call)
             self.highlighter_calls.append(self.fclef_call)
             #self.gclef_call.actor.actor.position = np.array([0, 59, 0])
             #self.fclef_call.actor.actor.position = np.array([0, 44.3, 0])
         return plane
+
 
     def set_z_to_single_value(self, coords, value, index=None):
         if index is None:
@@ -264,7 +275,8 @@ class Mayavi3idiView(HasTraits):
             self.mlab_calls[index].mlab_source.points = coords_array
         return coords_array
 
-    def set_actor_positions(self, pos=np.array([0,0,0]), actors=None, rando=False):
+
+    def set_actor_positions(self, position=np.array([0,0,0]), actors=None, rando=False):
 
         def random_position():
             list1 = list()
@@ -278,6 +290,8 @@ class Mayavi3idiView(HasTraits):
             for vtk_data_source in self.scene3d.engine.scenes[0].children:
                 if rando is True:
                     pos = random_position()
+                else:
+                    pos = position
                 print("VTKDATA TYPE:", type(vtk_data_source))
                 if isinstance(vtk_data_source, type(mayavi.sources.array_source.ArraySource())):
                     vtk_data_source.children[0].children[0].ipw.slice_position = 0
@@ -297,14 +311,67 @@ class Mayavi3idiView(HasTraits):
             for i in self.mlab_calls:
                 if rando is True:
                     pos = random_position()
+                else:
+                    pos = position
                 i.actor.actor.position = pos
-        # elif actors == 'highlighter':
-        #     for j in self.highlighter_calls:
-        #         j.actor.actor.position = ####Current Actor's Current Z-Plane's Position
 
+        elif actors == 'highlighter':
+            for j in self.highlighter_calls:
+                if rando is True:
+                    pos = random_position()
+                else:
+                    pos = position
+                j.actor.actor.position = pos ####Current Actor's Current Z-Plane's Position
 
+    def set_actor_orientations(self, orientation=np.array([0,0,0]), actors=None, rando=False):
+
+        def random_orientation():
+            list1 = list()
+            for i in range(0, 3, 1):
+                i = random.randint(-357, 357)
+                list1.append(i)
+            ori = np.asarray(list1, dtype=np.float64)
+            return ori
+
+        if actors == 'all':
+            for vtk_data_source in self.scene3d.engine.scenes[0].children:
+                if rando is True:
+                    ori = random_orientation()
+                else:
+                    ori = orientation
+                print("VTKDATA TYPE:", type(vtk_data_source))
+                if isinstance(vtk_data_source, type(mayavi.sources.array_source.ArraySource())):
+                    vtk_data_source.children[0].children[0].ipw.slice_position = 0
+
+                elif type(vtk_data_source.children[0].children[0]) is not type(mayavi.core.module_manager.ModuleManager()):
+                    vtk_data_source.children[0].children[0].actor.actor.orientation = ori
+
+                elif isinstance(vtk_data_source.children[0].children[0], type(mayavi.core.module_manager.ModuleManager())):
+                    for k in vtk_data_source.children[0].children[0].children:
+                        if isinstance(k.actor, mayavi.components.actor.Actor):
+                            k.actor.actor.orientation = ori
+                        else:
+                            pass   #k.actor.position = pos
+
+                    #print("SECONDCHILD:", vtk_data_source.children[0].ch   ildren[0])
+        elif actors == 'music':
+            for i in self.mlab_calls:
+                if rando is True:
+                    ori = random_orientation()
+                else:
+                    ori = orientation
+                i.actor.actor.orientation = ori
+
+        elif actors == 'highlighter':
+            for j in self.highlighter_calls:
+                if rando is True:
+                    ori = random_orientation()
+                else:
+                    ori = orientation
+                j.actor.actor.orientation = ori ####Current Actor's Current Z-Plane's Position
 
     def set_text_positions(self, pos=np.array([0, 0, 0]), default=True, rando=False):
+
 
         def random_position():
             list1 = list()
@@ -324,29 +391,26 @@ class Mayavi3idiView(HasTraits):
         elif rando and default is False:
             for n in range(0, len(self.text3d_calls)):
                 self.text3d_calls[n].actor.actor.position = pos
-    ##Randomize
-    # Midas.GetTopWindow().mayaviview.set_actor_positions(actors='music', rando=True)
-    # Midas.GetTopWindow().mayaviview.set_text_positions(default=False, rando=True)
 
-    ##Default
-    # Midas.GetTopWindow().mayaviview.set_actor_positions(all=True)
-    # Midas.GetTopWindow().mayaviview.set_text_positions(default=True, rando=False)
+
+    def redraw_mayaviview(self):
+        mlab.clf()
+        self.create_3dmidiart_display()
+
 
     def update_3Dpoints(self, row, col, val):
         try:
-
             page = self.GetTopLevelParent().pianorollpanel.currentPage
             layer = self.GetTopLevelParent().pianorollpanel.pianorollNB.FindPage(page)
             self.array3D[col, 127 - row, layer] = val
-
-
-
         except Exception as e:
             print(e)
             pass
 
+
     ###DEFINE MUSIC ANIMATION
-    def animate(self, time_length, bpm=None, i_div=4):
+    def animate(self, time_length, bpm=None, i_div=4, sleep=None):
+        #TODO Re-doc this.
         """ I_div should be 2 or 4. Upon a division of greater than 4, say 8, the millisecond delay becomes so small,
         that it is almost not even read properly, producing undesired results.
         Animation function that gives the impression of rendering 3D music. Does not play music.
@@ -367,7 +431,7 @@ class Mayavi3idiView(HasTraits):
             nano_delay = (60000000 / bpm / i_div)
 
         @mayavi.tools.animator.animate(delay=bpm_delay, ui=False)   #@mlab.animate, same thing.
-        def animate_plane_scroll(x_length, delay):
+        def animate_plane_scroll(x_length, delay, sleep=sleep):
             """
             Mlab animate's builtin delay has to be specified as an integer in milliseconds with a minimum of 10, and also could
             not be removed, so we subtracted .01 seconds (or 10 milliseconds) in a workaround delay of our own in order to compensate.
@@ -375,25 +439,45 @@ class Mayavi3idiView(HasTraits):
             :param delay: Int in microseconds.
             :return: N/A
             """
-            for i in np.arange(0, x_length * i_div, 1 / i_div):
+            #The "1" in this range is a compensation value. For some unknown reason, the correct range is not being fully animated.
+            # It's always 2 i range values off (which is 8 iterations if i_div is 4 because we're incrementing at fractional step values.
+            # The desired range is still x_length, we just made it go a little over that to make darn sure the whole range is captured.
+            for i in np.arange(0, (x_length + 1), 1/i_div):
                 # print("%f %d" % (i, time.time_ns()))
                 interval = delay
                 t = int(time.time() * 1000000) % (interval)
                 s = (interval - t)
-                time.sleep(
-                    s / 1000000)  # Increasing this number speeds up plane scroll.  - .003525  .0035   .0029775025
+                if sleep is None:
+                    sleep = s / 1000000
+                else:
+                    sleep = 0
+                time.sleep(sleep)  # Increasing this number speeds up plane scroll.  - .003525  .0035   .0029775025
+
                 # print("timesleep:", (delay-.01))
                 # self.image_plane_widget.ipw.slice_index = int(round(i))
-                self.image_plane_widget.ipw.slice_position = i
-                yield
+                print(i)
+                print(i == x_length * i_div)
+                #print("Frame:", i)
+                #j = self.image_plane_widget.ipw.slice_position - 1
+                if i == x_length:   #Because we animate ACROSS our desired range max, we make sure that this condition is met.
+                    #Destroy the volume_slice and rebuild it at the end of the animating generator function.
+                    self.reset_volume_slice(self.grid3d_span)
+                    #pass
+                    return i, print("True")
+                else:
+                    self.image_plane_widget.ipw.slice_position = i    ###/i_div
 
+                    yield ###print(i)
+
+        #Leave for now.
         # mlab.start_recording()
         # mlab.animate(animate_plane_scroll, ms_delay, ui=True)
         # print(secs_delay)
         #animate_plane_scroll(int(time_length), int(nano_delay))
 
         self.animate1 = animate_plane_scroll(int(time_length), int(nano_delay))
-        #self.animate1._stop_fired()
+        self.animate1._stop_fired()
+        #self.i_list = [i for i in self.animate1]
         print("Animate")
 
         # animate1.timer.Stop()
@@ -404,14 +488,15 @@ class Mayavi3idiView(HasTraits):
     def standard_reorientation(self, points, scale=1.):
         # TODO Maximum rescaling check.
         # TODO scale_function?  Need check to avoid float values.
+        # TODO Scaling needs to be done with respect to musical, i.e. a musical key, and within the grid's available space.
+
+        #TODO MAJOR: There is a 'scale' trait within an mlab actor. Use this for scaling? (it scales the size of points up as well..)
 
         points = midiart3D.transform_points_by_axis(points, positive_octant=True)
         points = midiart3D.delete_redundant_points(points, stray=False)
         points = points * scale
-
-        # TODO Scaling needs to be done with respect to musical, i.e. a musical key, and within the grid's available space.
-
         return points
+
 
     def trim(self, points, axis='y', trim=0):
         Points_Odict = midiart3D.get_planes_on_axis(points, axis, ordered=True)
@@ -422,6 +507,7 @@ class Mayavi3idiView(HasTraits):
         # Restore to a coords_array.
         Restored_Points = midiart3D.restore_coords_array_from_ordered_dict(Points_Odict)
         return Restored_Points
+
 
     def insert_piano_grid_text_timeplane(self, length):
         ###Piano
@@ -470,17 +556,12 @@ class Mayavi3idiView(HasTraits):
 
         # Add Measure Number Text to X Axis
         for i, m in enumerate(range(0, int(length), 4)):
-            measures = mlab.text3d(m, 0, -2, str(i), color=(1, 1, 0), scale=1.65)
+            measures = mlab.text3d(m, 0, -2, str(i+1), color=(1, 1, 0), scale=1.65)
             self.text3d_calls.append(measures)
             self.text3d_default_positions.append(measures.actor.actor.position)
-        # Time_ScrollPlane
-        # x,y,z = np.mgrid[0:127, 0:127, 0:127]
-        xh, yh, zh = np.mgrid[0:int(length), 0:254, 0:254]
-        # Scalars_1 = (x+y+z)
-        Scalars_2 = np.zeros((int(length), 254, 254))
-        # xtent = np.array([0, 127, 0, 127, 0, 127])
-        mlab.volume_slice(xh, yh, zh, Scalars_2, opacity=.7, plane_opacity=.7, plane_orientation='x_axes',
-                          transparent=True)
+
+        self.volume_slice = self.insert_volume_slice(length)
+
 
     ###TITLES and NOTE inserts.
     def insert_note_text(self, text, x=0, y=154, z=0, color=(0, 0, 1), opacity=1, orient_to_camera=True, scale=3):
@@ -490,14 +571,11 @@ class Mayavi3idiView(HasTraits):
         # TODO
         ## def insert_image_data(self, imarray_2d, color=(0,0,0), mode="cube", scale_factor = 1):
 
+
     ###SCENE TITLEd
     def insert_title(self, text, color=(1, .5, 0), height=.7, opacity=1.0, size=1):
         return mlab.title(text=text, color=color, height=height, opacity=opacity, size=size)
 
-        ###OPENING ANIMATION
-        ###-----------------
-        ###Script Widget Shrink and Initial Camera Angle
-        ##scene = engine.scenes[0]
 
     #Leave this here for now.
     def insert_titles(self):
@@ -506,52 +584,21 @@ class Mayavi3idiView(HasTraits):
         ###Note: affected by basesplit sash position.
         self.title = self.insert_title("3-Dimensional Music", color=(1, 0, 1), height=.82, opacity=.12, size=.65)
 
+
+    ###OPENING ANIMATION
+    ###-----------------
+    ###Script Widget Shrink and Initial Camera Angle
     def establish_opening(self):
         scene = self.scene
         # scene.scene.x_minus_view()
         self.image_plane_widget = self.engine.scenes[0].children[6].children[0].children[0]
         print("IPW TYPE:", type(self.image_plane_widget))
-        self.image_plane_widget.ipw.origin = array([0., 61.0834014, 61.0834014])
-        self.image_plane_widget.ipw.point1 = array([0., 191.9165986, 61.0834014])
-        self.image_plane_widget.ipw.point2 = array([0., 61.0834014, 191.9165986])
-        self.image_plane_widget.ipw.origin = array([0., 61.0834014, 61.0834014])
-        self.image_plane_widget.ipw.point1 = array([0., 191.9165986, 61.0834014])
-        self.image_plane_widget.ipw.point2 = array([0., 61.0834014, 191.9165986])
-        self.image_plane_widget.ipw.origin = array([0., -0.08159137, -0.08159137])
-        self.image_plane_widget.ipw.point1 = array([0.00000000e+00, 1.30751606e+02, -8.15913691e-02])
-        self.image_plane_widget.ipw.point2 = array([0.00000000e+00, -8.15913691e-02, 1.30751606e+02])
-        self.image_plane_widget.ipw.origin = array([0., -0.08159137, -0.08159137])
-        self.image_plane_widget.ipw.point1 = array([0.00000000e+00, 1.30751606e+02, -8.15913691e-02])
-        self.image_plane_widget.ipw.point2 = array([0.00000000e+00, -8.15913691e-02, 1.30751606e+02])
+        self.image_plane_widget.ipw.origin = array([0., 0.0, 0.0])
+        self.image_plane_widget.ipw.point1 = array([0.0, 127., 0.0])
+        self.image_plane_widget.ipw.point2 = array([0.0, 0.0, 127.])
+        self.image_plane_widget.ipw.slice_position = 1      #These calls eliminate those "white lines" created in the
+        self.image_plane_widget.ipw.slice_position = 0      #construction and repositioning of the volume_slice.
         scene.scene.z_plus_view()
-        scene.scene.camera.position = [-201.04834404780013, 218.73207704519143, 691.9206335681282]
-        scene.scene.camera.focal_point = [165.35402886721414, 64.41148341088073, 58.87512414905907]
-        scene.scene.camera.view_angle = 30.0
-        scene.scene.camera.view_up = [0.0708887660270095, 0.977771522682754, -0.1973262077926211]
-        scene.scene.camera.clipping_range = [427.34240240330246, 1152.4000330423432]
-        scene.scene.camera.compute_view_plane_normal()
-        scene.scene.render()
-        scene.scene.camera.position = [-233.62298945718277, 202.27617754671678, 677.0781885058548]
-        scene.scene.camera.focal_point = [132.7793834578315, 47.95558391240606, 44.03267908678528]
-        scene.scene.camera.view_angle = 30.0
-        scene.scene.camera.view_up = [0.0708887660270095, 0.977771522682754, -0.1973262077926211]
-        scene.scene.camera.clipping_range = [427.34240240330246, 1152.4000330423432]
-        scene.scene.camera.compute_view_plane_normal()
-        scene.scene.render()
-        scene.scene.camera.position = [-170.032494984329, 175.49326460191904, 567.2107860446939]
-        scene.scene.camera.focal_point = [132.7793834578315, 47.95558391240606, 44.03267908678528]
-        scene.scene.camera.view_angle = 30.0
-        scene.scene.camera.view_up = [0.0708887660270095, 0.977771522682754, -0.1973262077926211]
-        scene.scene.camera.clipping_range = [298.9018858281444, 1020.716069078924]
-        scene.scene.camera.compute_view_plane_normal()
-        scene.scene.render()
-        scene.scene.camera.position = [-117.4783673208135, 153.35862580456552, 476.41127987844527]
-        scene.scene.camera.focal_point = [132.7793834578315, 47.95558391240606, 44.03267908678528]
-        scene.scene.camera.view_angle = 30.0
-        scene.scene.camera.view_up = [0.0708887660270095, 0.977771522682754, -0.1973262077926211]
-        scene.scene.camera.clipping_range = [192.7526985759473, 911.8863467951057]
-        scene.scene.camera.compute_view_plane_normal()
-        scene.scene.render()
         scene.scene.camera.position = [-75.6380940108963, 154.49428308844531, 497.79655837964555]
         scene.scene.camera.focal_point = [132.7793834578315, 47.95558391240606, 44.03267908678528]
         scene.scene.camera.view_angle = 30.0
