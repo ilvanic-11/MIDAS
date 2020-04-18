@@ -1,7 +1,7 @@
 import wx
 from traits.etsconfig.api import ETSConfig
 ETSConfig.toolkit = 'wx'
-from gui import MainButtons, StatsDisplayPanel, PianoRollPanel,Musical_Matrix_Rain
+from gui import MenuButtons, MainButtons, StatsDisplayPanel, PianoRollPanel,Musical_Matrix_Rain,Preferences
 from wx.adv import SplashScreen as SplashScreen
 #from mayavi3D import Mayavi3idiArtAnimation
 from mayavi3D import Mayavi3DWindow
@@ -22,6 +22,7 @@ import wx._adv, wx._html, wx._xml, wx.py, time
 
 from traits.api import HasTraits
 from midas_scripts import musicode
+
 
 loglevel = 1
 class Log():
@@ -63,9 +64,9 @@ class MySplashScreen(SplashScreen):
        #f wx.CallAfter(frame.ShowTip)
 
 class MainWindow(wx.Frame):
-    def __init__(self, parent, ID, title, pos=wx.DefaultPosition,
+    def __init__(self, parent, id, title, pos=wx.DefaultPosition,
                  size=wx.DefaultSize, style=wx.DEFAULT_FRAME_STYLE):
-        wx.Frame.__init__(self, parent, ID, title, pos, size, style)
+        wx.Frame.__init__(self, parent, id, title, pos, size, style)
 
         self.mainpanel = wx.Panel(self,-1)
         self.log = Log()
@@ -78,13 +79,17 @@ class MainWindow(wx.Frame):
         self.leftsplit = wx.SplitterWindow(self.topsplit, wx.ID_ANY, style=wx.SP_3DSASH | wx.SP_BORDER)
 
 
-
         self.musicode = musicode.Musicode()
+
+
         self.mayaviview = Mayavi3DWindow.Mayavi3idiView()
 
 
         self.mayaviviewpanel = self.mayaviview.edit_traits(parent=self.basesplit, kind='subpanel').control
         self.pyshellpanel = wx.py.crust.Crust(self.main, startupScript=str(os.getcwd() + "\\\\resources\\\\" + "Midas_Startup_Configs.py"))
+
+
+
         self.pianorollpanel = PianoRollPanel.PianoRollPanel(self.topsplit, self.log)
         self.mainbuttonspanel = MainButtons.MainButtonsPanel(self.leftsplit, self.log)
         self.statsdisplaypanel = StatsDisplayPanel.StatsDisplayPanel(self.leftsplit, self.log)
@@ -112,148 +117,132 @@ class MainWindow(wx.Frame):
         self.SetSize((640, 480))
         self.Bind(wx.EVT_CLOSE, self.OnCloseWindow)
 
-
         # Prepare the menu bar
-        menuBar = wx.MenuBar()
+        self.menuBar = MenuButtons.CustomMenuBar()
 
-        # 1st menu from left
-        menu1 = wx.Menu()
-        menu1.Append(101, "&New Session\tCtrl+Shift+N", "This the text in the Statusbar")  #TODO Saved Midas States
-        menu1.Append(102, "&Open Session\tCtrl+O", "Open Slutsame")
-        menu1.Append(103, "&Save Session\tCtrl+S", "You may select Earth too")
-        menu1.Append(104, "&Save Session As\tCtrl+Shift+S")
-        menu1.Append(105, "&Import...\tCtrl+I")
-        menu1.Append(106, "&Import Directory\tCtrl+Shift+I")
-        menu1.Append(105, "&Export...\tCtrl+E")  #Current Actor
-        menu1.Append(106, "&Export Directory\tCtrl+Shift+E") #All Actors
-        menu1.Append(107, "&Export Musicode\tCtrl+Shift+M") #All Actors
-        menu1.Append(108, "&Export Movie\tCtrl+Alt+E") #All Actors
-        menu1.Append(109, "&Preferences\tCtrl+P")
-        menu1.Append(110, "&Intermediary Path\t")   #The Default Save path for all files. Found in resources.
-        menu1.AppendSeparator()
-        menu1.Append(104, "&Exit", "Close this frame")
-        # Add menu to the menu bar
-        menuBar.Append(menu1, "&File")
 
-        # 2nd menu from left
-        menu2 = wx.Menu()
-        menu2.Append(201, "Undo\tCtrl+Z")
-        menu2.Append(202, "Redo\tCtrl+Y")
-        menu2.Append(203, "Cut\tCtrl+X")
-        menu2.Append(204, "Copy\tCtrl+C")
-        menu2.Append(205, "Paste\tCtrl+V")
-        menu2.Append(206, "History")
-        # a submenu in the 2nd menu
-        #submenu = wx.Menu()
-        #submenu.Append(2031, "Lanthanium")
-        #submenu.Append(2032, "Cerium")
-        #submenu.Append(2033, "Praseodymium")
-        #menu2.Append(203, "Lanthanides", submenu)
-        # Append 2nd menu
-        menuBar.Append(menu2, "&Edit")
+        # TODO Use a search bar with help(), inspect.getdoc, and for j in inspect.getmembers: print(j[0], j[1])
+        ##Notes for creating a dynamic user help system.
+        # In conjuction with the status bar, Use python's help(), inspect.getdocs(object) and\or
+        # -->for i in inspect.getmembers(object):
+        # --->   print(i[0], "  ", i[1])
 
-        menu3 = wx.Menu()
-        # Radio items
-        menu3.Append(301, "Show in DAW", "a Python shell using wxPython as GUI", wx.ITEM_RADIO)
-        menu3.Append(302, "Show in Musescore", "a simple Python shell using wxPython as GUI", wx.ITEM_RADIO)
-        menu3.Append(303, "Show in Word Processor", "a Python shell using tcl/tk as GUI", wx.ITEM_RADIO)
-        menu3.Append(304, "Show in PicPick\Paint", "a Python shell using tcl/tk as GUI", wx.ITEM_RADIO)
-        menu3.Append(305, "Show in Meshlab", "a simple Python shell using wxPython as GUI", wx.ITEM_RADIO)
-        menu3.Append(306, "Show in Blender", "a simple Python shell using wxPython as GUI", wx.ITEM_RADIO)
-        menu3.AppendSeparator()
-        menu3.Append(307, "Scene3d_1?", "", wx.ITEM_NORMAL)
-        menu3.Append(308, "project2", "", wx.ITEM_NORMAL)
-        menuBar.Append(menu3, "&Show")
 
-        menu4 = wx.Menu()
-        # Check menu items
-        menu4.Append(401, "Musicode")
-        menu4.Append(402, "Midiart")
-        menu4.Append(403, "3iDiart")
-        menu4.Append(404, "Music21Funcs")
-        menu7 = wx.Menu()
-        menu8 = wx.Menu()
-        menu9 = wx.Menu()
-        menu4.Append(405, "Current ActorList to Shell", menu7)    #Dict of coords_arrays or Stream with parts(we're dealing with multiple actors for colors...)
-        menu4.Append(406, "Current Actor to Shell", menu8)
-        menu4.Append(407, "Current Z-Plane to Shell", menu9)
+        ###Menu Button Bindings
+        ##wx Restriction ---    Note: To respond to a menu selection, provide a handler for wx.EVT_MENU
+        # in the frame that contains the menu bar.
 
-        menu7.Append(700, "As Music21 Stream with Parts")
-        menu7.Append(701, "As Dictionary of Points")
-        menu8.Append(800, "As Music21 Stream")
-        menu8.Append(801, "As Numpy Points")
-        menu9.Append(900, "As Music21 Stream")
-        menu9.Append(901, "As Numpy Points")
-        menuBar.Append(menu4, "&Tools")
+        # File
+        #Note -- Conflicting\Double ids will cause the function call to fail\not exist.
+        self.Bind(wx.EVT_MENU, self.menuBar.OnNewSession, id=101)
+        self.Bind(wx.EVT_MENU, self.menuBar.OnOpenSession, id=102)
+        self.Bind(wx.EVT_MENU, self.menuBar.OnSaveSession, id=103)
+        self.Bind(wx.EVT_MENU, self.menuBar.OnSaveSessionAs, id=104)
+        self.Bind(wx.EVT_MENU, self.menuBar.OnImport, id=105)
+        self.Bind(wx.EVT_MENU, self.menuBar.OnImportDirectory, id=106)
+        self.Bind(wx.EVT_MENU, self.menuBar.OnExport, id=107)
+        self.Bind(wx.EVT_MENU, self.menuBar.OnExportAsDirectory, id=108)
+        self.Bind(wx.EVT_MENU, self.menuBar.OnExportMusicode, id=109)
+        self.Bind(wx.EVT_MENU, self.menuBar.OnExportMovie, id=110)
+        self.Bind(wx.EVT_MENU, self.menuBar.OnPreferences, id=111)
+        # Preferences Dialog bind.
+        self.Bind(wx.EVT_WINDOW_MODAL_DIALOG_CLOSED, self.menuBar._OnPrefDialogCloser)
 
-        menu5 = wx.Menu()
-        # Show how to put an icon in the menu item
-        item = wx.MenuItem(menu5, 500, "&Search-Help\tCtrl++Shift+S")    #, "This one has an icon"
-        #TODO Use a search bar with help(), inspect.getdoc, and for j in inspect.getmembers: print(j[0], j[1])
+        self.Bind(wx.EVT_MENU, self.menuBar.OnIntermediaryPath, id=112)
+        self.Bind(wx.EVT_MENU, self.menuBar.OnExit, id=113)
 
-        #item.SetBitmap(images.Smiles.GetBitmap())
-        menu5.Append(item)
+        # Edit
+        self.Bind(wx.EVT_MENU, self.menuBar.OnUndo, id=201)
+        self.Bind(wx.EVT_MENU, self.menuBar.OnRedo, id=202)
+        self.Bind(wx.EVT_MENU, self.menuBar.OnCut, id=203)
+        self.Bind(wx.EVT_MENU, self.menuBar.OnCopy, id=204)
+        self.Bind(wx.EVT_MENU, self.menuBar.OnPaste, id=205)
+        self.Bind(wx.EVT_MENU, self.menuBar.OnHistory, id=206)
 
-        # menuitemwithbmp = wx.MenuItem(menu5, wx.ID_ANY, "Submenu with Bitmap")
-        # # Show how to change the background colour of the menu item
-        # menuitemwithbmp.SetBackgroundColour(wx.YELLOW)
-        # # Show how to change the menu item's text colour
-        # menuitemwithbmp.SetTextColour(wx.BLUE)
-        # # Show how to change the menu item's font
-        # menuitemwithbmp.SetFont(wx.Font(10, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_BOLD, False, ''))
-        # submenu = wx.Menu(style=wx.MENU_TEAROFF)
-        # submenu.Append(wx.MenuItem(menu5, wx.ID_ANY, "Woot!"))
-        # menuitemwithbmp.SetBitmap(images.book.GetBitmap())
-        # menuitemwithbmp.SetSubMenu(submenu)
-        # menu5.Append(menuitemwithbmp)
+        # Show
+        self.Bind(wx.EVT_MENU, self.menuBar.OnShowInDAW, id=301)
+        self.Bind(wx.EVT_MENU, self.menuBar.OnShowInMuseScore, id=302)
+        self.Bind(wx.EVT_MENU, self.menuBar.OnShowInWordProcessor, id=303)
+        self.Bind(wx.EVT_MENU, self.menuBar.OnShowInPaint, id=304)
+        self.Bind(wx.EVT_MENU, self.menuBar.OnShowInMeshlab, id=305)
+        self.Bind(wx.EVT_MENU, self.menuBar.OnShowInBlender, id=306)
 
-        # Shortcuts
-        menu5.Append(501, "About Midas...")
-        menu5.AppendSeparator()
-        menu5.Append(502, "Licensing\tShift+H")
-        menu5.AppendSeparator()
-        menu6 = wx.Menu()
-        menu5.Append(503, "Documentation", menu6)
-        menu6.Append(601, "Music21")
-        menu6.Append(602, "Mayavi")
-        menu6.Append(603, "Numpy")
-        menu6.Append(604, "Sympy")
-        menu6.Append(605, "Open3D")
-        menu6.Append(606, "Open-CVPython")
-        menu6.Append(607, "VTK")
-        menu6.Append(608, "TVTK")
-        #menu6.Append(601, "Midas Homepage")
-        menu5.Append(504, "Midas Homepage")
-        menu5.Append(505, "The Magic Hammer Homepage")
-        menu5.Append(506, "Tutorials")
-        menu5.Append(507, "Community")
-        menu5.Append(508, "Google Search")
-        menu5.Append(509, "Check for Updates...")
-        menu5.Append(510, "Credits.")
-        menuBar.Append(menu5, "&Help")
+        self.Bind(wx.EVT_MENU, self.menuBar.OnScene3d_1, id=307)
+        self.Bind(wx.EVT_MENU, self.menuBar.OnProject2, id=308)
 
-        self.SetMenuBar(menuBar)
-        #self.CreateStatusBar()
+        # Tools
+        self.Bind(wx.EVT_MENU, self.menuBar.OnMusicode, id=401)
+        self.Bind(wx.EVT_MENU, self.menuBar.OnMidiart, id=402)
+        self.Bind(wx.EVT_MENU, self.menuBar.On3iDiart, id=403)
+        self.Bind(wx.EVT_MENU, self.menuBar.OnMusic21Funcs, id=404)
+
+        #Submenus...
+        # self.Bind(wx.EVT_MENUself.menuBar.f.OnCurrentActorListToShell, id=405)
+        # self.Bind(wx.EVT_MENUself.menuBar.f.OnCurrentActorToShell, id=406)
+        # self.Bind(wx.EVT_MENUself.menuBar.f.OnCurrentZplaneToShell, id=407)
+
+        # Submenu #TODO Might have to do additional work for different cases.....(i.e the multi-actor color image import)
+        self.Bind(wx.EVT_MENU, self.menuBar.OnAsMusic21StreamWithParts, id=700)
+        self.Bind(wx.EVT_MENU, self.menuBar.OnAsDictionaryOfPoints, id=701)
+        self.Bind(wx.EVT_MENU, self.menuBar.OnAsMusic21Stream,
+                  id=800)  # Caself.menuBar. same function be bound to two different buttons?
+        self.Bind(wx.EVT_MENU, self.menuBar.OnAsNumpyPoints, id=801)
+        self.Bind(wx.EVT_MENU, self.menuBar.OnAsMusic21Stream, id=900)
+        self.Bind(wx.EVT_MENU, self.menuBar.OnAsNumpyPoints, id=901)
+
+        # Help
+        self.Bind(wx.EVT_MENU, self.menuBar.OnSearchHelp, id=500)
+        self.Bind(wx.EVT_MENU, self.menuBar.OnAboutMidas, id=501)
+        self.Bind(wx.EVT_MENU, self.menuBar.OnLicensing, id=502)
+        #self.Bind(wx.EVT_MENU, self.menuBar.OnDocumentation, id=503)  #This leads to a submenu.
+        self.Bind(wx.EVT_MENU, self.menuBar.OnMidasHomepage, id=504)
+        self.Bind(wx.EVT_MENU, self.menuBar.OnTheMagicHammerHomepage, id=505)
+        self.Bind(wx.EVT_MENU, self.menuBar.OnTutorials, id=506)
+        self.Bind(wx.EVT_MENU, self.menuBar.OnCommunity, id=507)
+        self.Bind(wx.EVT_MENU, self.menuBar.OnGoogleSearch, id=508)
+        self.Bind(wx.EVT_MENU, self.menuBar.OnCheckForUpdates, id=509)
+        self.Bind(wx.EVT_MENU, self.menuBar.OnCredits, id=510)
+
+        # Documentation Submenu
+        self.Bind(wx.EVT_MENU, self.menuBar.OnMusic21, id=601)
+        self.Bind(wx.EVT_MENU, self.menuBar.OnMayavi, id=602)
+        self.Bind(wx.EVT_MENU, self.menuBar.OnNumpy, id=603)
+        self.Bind(wx.EVT_MENU, self.menuBar.OnSympy, id=604)
+        self.Bind(wx.EVT_MENU, self.menuBar.OnOpen3D, id=605)
+        self.Bind(wx.EVT_MENU, self.menuBar.OnOpenCVPython, id=606)
+        self.Bind(wx.EVT_MENU, self.menuBar.OnVTK, id=607)
+        self.Bind(wx.EVT_MENU, self.menuBar.OnTVTK, id=608)
+
+
+        self.SetMenuBar(self.menuBar)
+        # self.CreateStatusBar()
         self._set_properties()
         self._do_layout()
 
+        #Maxes main window.
         self.Maximize(True)
-        #pyshell
-        #self.pyshellpanel.run('''exec(open(str(os.getcwd()) + "\\\\resources\\\\" + "Midas_Startup_Configs.py").read())''')
-        #self.pyshellpanel.run('''intermediary_path''')
+
+
+        # Pyshell Resplit on Init
+        self.pyshellpanel.Unsplit(self.pyshellpanel.Window2)
+        # self.pyshellpanel.AddChild(self.pyshellpanel.notebook)
+        self.pyshellpanel.SplitVertically(self.pyshellpanel.Window1, self.pyshellpanel.notebook, sashPosition=980)
+        self.pyshellpanel.SetSashPosition(980, redraw=False)
 
 
 
         self.mainpanel.Bind(wx.EVT_CHAR_HOOK, self.OnKeyDown)
         self.Show(True)
         self.SetFocus()
-        #sizer.Layout()
 
+
+    #StatusBarClose
     def OnCloseWindow(self, event):
         self.statusbar.timer.Stop()
         del self.statusbar.timer
         self.Destroy()
 
+    #Sash Hotkey
     def OnKeyDown(self, event):
         #DDprint("OnKeyDown(): {}".format(chr(event.GetUnicodeKey())))
         if event.GetUnicodeKey() == ord('D'):
@@ -272,6 +261,7 @@ class MainWindow(wx.Frame):
                 #BottomSashDown
                 self.basesplit.SetSashPosition(self.basesplit.GetSashPosition() + 150)
         event.Skip()
+
 
     def _set_properties(self):
         self.SetTitle("MIDAS")
@@ -300,8 +290,6 @@ class MainWindow(wx.Frame):
 
 
 
-
-
 if __name__ == '__main__':
     # When this module is run (not imported) then create the app, the
     # frame, show it, and start the event loop.
@@ -309,13 +297,17 @@ if __name__ == '__main__':
     # time.sleep(5)
     # splash = MySplashScreen()
     # splash.Show()
-    Midas = wx.App()
-    print(type(Midas))
+    app = wx.App()
+    print(type(app))
     frm = MainWindow(None, -1, "MIDAS")
-
+    Midas = app.GetTopWindow()
     #frm.Show()
     # time.sleep(1.2)
-    Midas.MainLoop()
+
+    app.MainLoop()
+
+
+
 
     #frm.mayaviview.configure_traits()
    # mlab.show()

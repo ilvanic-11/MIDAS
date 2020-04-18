@@ -107,7 +107,7 @@ class PianoRollDataTable(wx.grid.GridTableBase):
     def SetValue(self,row,col,value):
 
         #z = self.parent.GetTopLevelParent().pianorollpanel.currentPage
-        print(f"SetValue(({col},{row},{self.z}) val={value} ")
+        #print(f"SetValue(({col},{row},{self.z}) val={value} ")
         #z = 0
         self.parent.GetTopLevelParent().mayaviview.array3D[col][127-row][self.z] = int(value)
 
