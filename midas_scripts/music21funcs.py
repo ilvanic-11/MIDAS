@@ -85,13 +85,15 @@ from collections import OrderedDict
 #Tr-1.
 def transpose_measure( in_stream, measure_number, degree):
     """
-    Use mList = [i for i in in_stream.getElementsByClass(stream.Measure) for indexing reference.
+        Use mList = [i for i in in_stream.getElementsByClass(stream.Measure) for indexing reference.
     This function transposes a selected measure by a selected generic degree. (i.e 2 will transpose everything up to it's 2nd.)
     Octave is irrelevant in this function. Was mainly created for practice.
-    :param stream: stream to loop through
-    :param measureNumber: Number of the measure to transpose
-    :param degree: Integer degree (or interval) to transpose to. (i.e. (CEG) with a degree of 3 will transpose to (EGB))
-    :return: Occurs in place. Returns nothing.
+
+    :param stream:          stream to loop through
+    :param measureNumber:   Number of the measure to transpose
+    :param degree:          Integer degree (or interval) to transpose to. (i.e. (CEG) with a degree of 3 will transpose
+                            to (EGB))
+    :return:                Occurs in place. Returns nothing.
     """
     new_stream = music21.stream.Stream()
     measures = in_stream.getElementsByClass(music21.stream.Measure)
@@ -105,16 +107,16 @@ def transpose_measure( in_stream, measure_number, degree):
                 p.transpose(i, inPlace=True)
         else:
             n.pitch.transpose(i, inPlace=True)
-    # 	new_stream.insert(n.offset, copy.deepcopy(n))
-    # return new_stream
+
 
 #Tr-2.
 def transpose_all_measures_by_random( in_stream):
     """
-    Transposes all Measures in the music21 stream by a random interval 1-7
+        Transposes all Measures in the music21 stream by a random interval 1-7
     Currently only transposes up in pitch.
-    :params stream:  the music21 stream to perform transposing in
-    :return:
+
+    :params stream:     The music21 stream in which to perform transposing.
+    :return:            Returns a modified copy.deepcopy of in_stream.
     """
     s=copy.deepcopy(in_stream)
     for m in s.getElementsByClass(music21.stream.Measure):
@@ -133,12 +135,15 @@ def transpose_all_measures_by_random( in_stream):
 #Tr-3.
 def transpose_measures_by_letters( in_stream, letters, degree):
     """
-    This transposes measures by a user-defined selection of "letters" (i.e. ("i", "L", "O", "p", "e", "t" "1", "0")
-    where the letters themselves ARE the musicode measure to be transposed. (musicode letter translations are by default one measure in length.)
-    :param in_stream: Translated musicode through which to loop.
-    :param letter: All instances of single letter/letters/lists of letters to be transposed. 0 does not equal root C.
-    :param degree: Degree of transposition.
-    :return:
+        This transposes measures by a user-defined selection of "letters" (i.e. ("i", "L", "O", "p", "e", "t" "1", "0")
+    where the letters themselves ARE the musicode measure to be transposed. (musicode letter translations are by default
+    one measure in length.)
+
+    :param in_stream:   Translated musicode through which to loop.
+    :param letter:      All instances of single letter/letters/lists of letters to be transposed.
+                        0 does not equal root C.
+    :param degree:      Degree of transposition.
+    :return:            Operates in place, returns none.
     """
     measures = in_stream.getElementsByClass(music21.stream.Measure)
     for m in measures:
@@ -156,12 +161,13 @@ def transpose_measures_by_letters( in_stream, letters, degree):
 #Tr-4.
 def transpose_notes_by_random( in_stream, measure_range_low, measure_range_high, interval_lower_limit, interval_upper_limit):
     """
-    Transposes all Measures in the music21 stream by a random interval 1-7.
-    Currently only transposes up in pitch. #TODO Expand.
-    :params stream:  the music21 stream to perform transposing in
-    :measure_num: the number of the measure in the stream where transposing will be done
-    :interval_lower_limit:  lower limit of how far the random transpose can go
-    :interval_upper_limit:  upper limit of how far the random transpose can go
+        Transposes all Measures in the music21 stream by a random interval 1-7. Currently only transposes up in pitch.
+        #TODO Expand.
+
+    :params stream:         The music21 stream in which to perform transposing.
+    :measure_num:           The number of the measure in the stream where transposing will occur.
+    :interval_lower_limit:  Lower limit of how far the random transpose can go.
+    :interval_upper_limit:  Upper limit of how far the random transpose can go.
     :return:
     """
     for m in in_stream.getElementsByClass(music21.stream.Measure):
@@ -182,12 +188,13 @@ def transpose_notes_by_random( in_stream, measure_range_low, measure_range_high,
 #Tr-5.
 def transpose_chord_in_key(in_chord, int_num, key):
     """
-    This function takes a chord and a key and transposes the chord according to the key.
-    :param in_chord: User-introduced chord.
-    :param intv_num: Generic interval(i.e 3=third, 7=seventh, etc.)
-    :param key: Key to be specified.
-    :param octave: Octave to be specified by an Int.
-    :return: Returns ch = music21.chord.Chord(modified in_chord)
+        This function takes a chord and a key and transposes the chord according to the key.
+
+    :param in_chord:    User-introduced chord.
+    :param intv_num:    Generic interval(i.e 3=third, 7=seventh, etc.)
+    :param key:         Key to be specified.
+    :param octave:      Octave to be specified by an Int.
+    :return:            Returns ch = music21.chord.Chord(modified in_chord)
     """
     i = music21.interval.GenericInterval(int_num)
     ch = music21.chord.Chord()
@@ -206,13 +213,14 @@ def transpose_chord_in_key(in_chord, int_num, key):
 #M-1.
 def alter_measure_offset( in_stream, range_l, range_h, offset_number):
     """
-    Alters all music21 object offsets in selected measure or range of measures.
+        Alters all music21 object offsets in selected measure or range of measures.
     Calls makeMeasures(,inPlace=True) before finalizing.
-    :param in_stream: Translated Musicode.
-    :param range_l: Starting measure number to edit.
-    :param range_h: Ending measure number up to which to edit.
-    :param offset_number: Offset in quarter notes. (1 = One quarternote, Negative numbers and fractions are allowed.)
-    :return: Stream
+
+    :param in_stream:       Translated Musicode.
+    :param range_l:         Starting measure number to edit.
+    :param range_h:         Ending measure number up to which to edit.
+    :param offset_number:   Offset in quarter notes. (1 = One quarternote, Negative numbers and fractions are allowed.)
+    :return:                Stream
     """
     for m in in_stream.getElementsByClass(music21.stream.Measure):
         if (m.number >= range_l and m.number <= range_h):
@@ -224,12 +232,14 @@ def alter_measure_offset( in_stream, range_l, range_h, offset_number):
 #M-2.
 def alter_measure_duration( in_stream, range_l, range_h, duration_len):
     """
-    Alters all object durations in selected measures or range of measures.
-    :param in_stream: Translated Musicode.
-    :param range_l: Starting measure number to edit.
-    :param range_h: Ending measure number up to which to edit.
-    :param duration_len: Duration in quarterlength. (1 = one quarter note. Can do many division smaller than a quarter note. Negative numbers are allowed.)
-    :return: Stream
+        Alters all object durations in selected measures or range of measures.
+
+    :param in_stream:       Translated Musicode.
+    :param range_l:         Starting measure number to edit.
+    :param range_h:         Ending measure number up to which to edit.
+    :param duration_len:    Duration in quarterlength. (1 = one quarter note. Can do many division smaller than a
+                            quarter note. Negative numbers are allowed.)
+    :return:                Stream.
     """
     for m in in_stream.getElementsByClass(music21.stream.Measure):
         if (m.number >= range_l and m.number <= range_h):
@@ -242,12 +252,15 @@ def alter_measure_duration( in_stream, range_l, range_h, duration_len):
 #M-3. TODO NEEDS FIXING!!
 def stretch_by_measure( in_stream, range_l, range_h, ratio, stretchDurations=True):
     """
+        For every measure in a range range_l to range_h in a music21.stream.Stream, proportionally stretch the offsets
+    of each note in those measures. Option added to stretch the durations of those notes in the same manner. Used in
+    align_musicode_with_melody().
 
-    :param in_stream:
-    :param range_l:
-    :param range_h:
-    :param ratio:
-    :return:
+    :param in_stream:   Operand stream.
+    :param range_l:     Low limit of selected range.
+    :param range_h:     High limit of selected range.
+    :param ratio:       Ratio value for stretching. 2 doubles. .5 cuts in half.
+    :return:            Operates in place, returns in_stream.
     """
     print("Ratio=")
     print(ratio)
@@ -291,14 +304,17 @@ def stretch_by_measure( in_stream, range_l, range_h, ratio, stretchDurations=Tru
 
     return in_stream
 
+
+
 #M-4.
 def arpeggiate_chords_in_stream( in_stream, stepsize=1, ascending=True):
     """
-    This iterates for the stream.chord.Chord objects and turns them into arpeggiated
+        This iterates for the stream.chord.Chord objects and turns them into arpeggiated
     instances of the chord with the same notes, but different offsets.
-    :param in_stream: In-stream.
-    :param stepsize: Stepsise factor of arpeggiation of notes in found chords.
-    :return: in_stream
+
+    :param in_stream:   In-stream.
+    :param stepsize:    Stepsise factor of arpeggiation of notes in found chords.
+    :return:            in_stream
     """
     s = notafy(in_stream).flat
     newstream= music21.stream.Stream()
@@ -332,10 +348,12 @@ def arpeggiate_chords_in_stream( in_stream, stepsize=1, ascending=True):
 #M-6.
 def chop_up_notes(in_stream, offset_interval):
     """
-    This function takes an in_stream and evenly dices all of the notes in it. The offset interval determines the size of this dicing.
-    :param in_stream: Operand music21.stream object.
-    :param offset_interval: Size of chopped up notes.
-    :return: New music21.stream object. (part, score, stream, voice etc.)
+        This function takes an in_stream and evenly dices all of the notes in it. The offset interval determines the
+    size of this dicing.
+
+    :param in_stream:           Operand music21.stream object.
+    :param offset_interval:     Size of chopped up notes.
+    :return:                    New music21.stream object. (part, score, stream, voice etc.)
     """
     new_stream = music21.stream.Stream()
     for n in in_stream.flat.notes:
@@ -360,11 +378,13 @@ def chop_up_notes(in_stream, offset_interval):
 
 # M-7.
 def merge_contiguous_notes(in_stream ):
-    """This function takes a stream of noticeably "chopped up notes" (see sister function) and reconnects or "glues"
+    """
+        This function takes a stream of noticeably "chopped up notes" (see sister function) and reconnects or "glues"
     those notes (back) together in a contiguous manner.
-    :param in_stream: input stream
-    :param max_note_size: maximum note size to make when combining contiguous notes in quarterlength
-    :return: new stream
+
+    :param in_stream:       input stream
+    :param max_note_size:   maximum note size to make when combining contiguous notes in quarterlength
+    :return:                new stream
     """
     import numpy as np
     new_stream = music21.stream.Stream()
@@ -384,10 +404,12 @@ def merge_contiguous_notes(in_stream ):
 #Syn-1.
 def set_chord_octave(in_chord, octave):
     """
-    Sets the octaves of chords. Some music21 chords don't have octaves, so a simple call helps sometimes.
-    :param in_chord: Chord object with pitches.
-    :param octave: Octave of pitches in chord.
-    :return: in_chord
+        Sets the octaves of chords. Some music21 chords don't have octaves, so a simple call helps sometimes.
+
+    :param in_chord:    Chord object with pitches.
+    :param octave:      Octave of pitches in chord.
+    :return:            in_chord
+
     "NOTE: Only works well for triads and sevenths, chord bigger than one octave will not need this."
     """
     for p in in_chord.pitches:
@@ -398,12 +420,13 @@ def set_chord_octave(in_chord, octave):
 #Syn-2.
 def make_chords_from_notes(in_stream, in_chord, inv):
     """
-    For singular notes in a music21 stream, this function takes those notes and turns them into chords with that note
-    forming the 'root' of the new chord.
-    :param in_stream: Stream with notes for changing.
-    :param in_chord: Chord called to replace note.
-    :param inv: Chord's inversion, if any.
-    :return:
+        For singular notes in a music21 stream, this function takes those notes and turns them into chords with that
+    note forming the 'root' of the new chord.
+
+    :param in_stream:   Stream with notes for changing.
+    :param in_chord:    Chord called to replace note.
+    :param inv:         Chord's inversion, if any.
+    :return:            Operates in place, returns in_stream.
     """
     for m in in_stream.getElementsByClass(music21.stream.Measure):
         for n in m.flat.notes:
@@ -427,10 +450,11 @@ def make_chords_from_notes(in_stream, in_chord, inv):
 #Syn-3.
 def make_chords_from_notes_2(in_stream, in_chord, inv):
     """
-    Same as make_chords_from_notes, albeit written slightly different.
-    :param in_stream: Stream with notes for changing.
-    :param in_chord: Chord called to replace note.
-    :param inv: Chord's inversion, if any.
+        Same as make_chords_from_notes, albeit written slightly different.
+
+    :param in_stream:   Stream with notes for changing.
+    :param in_chord:    Chord called to replace note.
+    :param inv:         Chord's inversion, if any.
     :return:
     """
     for m in in_stream.getElementsByClass(music21.stream.Measure):
@@ -454,6 +478,18 @@ def make_chords_from_notes_2(in_stream, in_chord, inv):
 
 #Syn-4.
 def make_notes_from_string_of_numbers(in_string, keychoice=None, note_length = 1):
+    """
+        This function takes a string of numbers on input and makes music21 notes from each of them individually where
+    the music.note.Note().pitch.midi value is set equal that digit.
+
+    #TODO NEEDS Finishing. The range of possible pitch values is only within a single octave at present. (i.e. The--
+    #TODO --handling of 10 = A, 11=B, 12=C for higher base numbers should equal a pitch higher than one octave)
+
+    :param in_string:
+    :param keychoice:
+    :param note_length:
+    :return:
+    """
     if keychoice == "":
         keychoice = None
         keysig = None
@@ -489,13 +525,20 @@ def make_notes_from_string_of_numbers(in_string, keychoice=None, note_length = 1
 #Syn-5.
 def fibonacci_to_music(range_l, range_h, scale_mode, base, note_length = 1, spaces=False):   ### ###chords=True
     """
-    :param range_l: Starting low range value for fibonacci function.
-    :param range_h Ending high range value for fibonacci function.
-    :param scale_mode: Cm for C minor scale E for E major scale, None for Chromatic, this sets the scale mode of pitches to which to assign acquired numbers from this function.
-    :param base: The mathematical base of the numbers acquired; after acquisition, they will be concatenated, varying the number of notes created and the range of pitches allowed.
-    :param note_length: The rhythmic density of the notes created, specified by music21's quarterLength property.
-    :param spaces: If true, space are place between each fibonacci number.
-    :return:
+        This function takes a range of fibonacci numbers(acquired from music21funcs.fibonacci_range_mm()) and provides
+    an option to change the base of this range of fib numbers. Then, from this new range of new-base fib numbers, for
+    every individual digit we create a music21.note.Note() with the digit itself as the note's pitch. (Executed in
+    music21funcs.make_notes_from_string_of_numbers()).
+
+    :param range_l:         Starting low range value for fibonacci function.
+    :param range_h:         Ending high range value for fibonacci function.
+    :param scale_mode:      Cm for C minor scale E for E major scale, None for Chromatic, this sets the scale mode of
+                            pitches to which to assign acquired numbers from this function.
+    :param base:            The mathematical base of the numbers acquired; after acquisition, they will be concatenated,
+                            varying the number of notes created and the range of pitches allowed.
+    :param note_length:     The rhythmic density of the notes created, specified by music21's quarterLength property.
+    :param spaces:          If true, space are place between each fibonacci number.
+    :return:                A new "fibonacci" stream.
     """
 
     fibonacci_array = fibonacci_range_mm(range_l, range_h)
@@ -511,12 +554,16 @@ def fibonacci_to_music(range_l, range_h, scale_mode, base, note_length = 1, spac
 #Syn-6.
 def array_to_music(list_array, scale_mode, base, note_length = 1, spaces=False):    ###chords=True
     """
-    Same as fibonacci_to_array, only this function allows a user-specified or random input of numbers
-    :param list_array: Numpy 1D array of numbers, can be int or float.
-    :param scale_mode: Cm for C minor scale E for E major scale, None for Chromatic, this sets the scale mode of pitches to which to assign acquired numbers from this function.
-    :param base: The mathematical base of the numbers acquired; after acquisition, they will be concatenated, varying the number of notes created and the range of pitches allowed.
-    :param note_length: The rhythmic density of the notes created, specified by music21's quarterLength property.
-    :return:
+        This function performs similiar to fibonacci_to_array, only this function allows a user-specified or random
+    input of numbers instead of just the fibonacci range. The base is still able to be changed.
+
+    :param list_array:      Numpy 1D array of numbers, can be int or float.
+    :param scale_mode:      Cm for C minor scale E for E major scale, None for Chromatic, this sets the scale mode of
+                            pitches to which to assign acquired numbers from this function.
+    :param base:            The mathematical base of the numbers acquired; after acquisition, they will be concatenated,
+                            varying the number of notes created and the range of pitches allowed.
+    :param note_length:     The rhythmic density of the notes created, specified by music21's quarterLength property.
+    :return:                Returns a music21.stream.Stream.
     """
 
     array = np.array(list_array)
@@ -537,11 +584,18 @@ def array_to_music(list_array, scale_mode, base, note_length = 1, spaces=False):
     out_stream = make_notes_from_string_of_numbers(fin_list, keychoice=scale_mode, note_length=note_length)
     return out_stream
 
-#Syn-
 
+#Syn-
 def base10toN(num, base):
-    """Change ``num'' to given base
-    Upto base 36 is supported."""
+    """
+        This functions changes a ``num'' number to given base. Up to base 36 is supported.
+    #TODO Make able to support floats.
+
+    :param num:     Operand int.
+    :param base:    Base to which to be changed.
+    :return:        Returns a string. #TODO Should be int? float?
+    """
+
     converted_string, modstring = "", ""
     currentnum = num
     if not 1 < base < 37:
@@ -556,6 +610,14 @@ def base10toN(num, base):
 
 #Syn-
 def fibonacci_range_mm(l, h):
+    """
+        This function returns all the numbers in the fibonacci sequence from specified low range (l) to high range (h).
+
+    :param l:   Low end of range.
+    :param h:   High end of range.
+    :return:    numpy.array
+    """
+
     n = np.arange(l, h)
     sqrt5 = np.sqrt(5)
     phi = (1 + sqrt5)/2
@@ -564,21 +626,7 @@ def fibonacci_range_mm(l, h):
     print("Fibonacci", fibonacci)
     return fibonacci
 
-        # if len(fibonacci) > 91:
-        #     return fibonacci2
-        # else:
-        #     return fibonacci
- # def Fibonacci(n):
-    #     if n < 0:
-    #         print("Incorrect input")
-    #         # First Fibonacci number is 0
-    #     elif n == 1:
-    #         return 0
-    #     # Second Fibonacci number is 1
-    #     elif n == 2:
-    #         return 1
-    #     else:
-    #         return Fibonacci(n - 1) + Fibonacci(n - 2)
+
 ##MUSIC21_FUNCTIONS\CLASSES (NEW, for later)
 # --------------------------------------
 # -----------------------------------------------------------------------
@@ -588,19 +636,21 @@ def fibonacci_range_mm(l, h):
 #TODO Needs fixing.
 def delete_redundant_notes( in_stream, greatest_dur=False):
     """
-    This function takes all the notes of a music21 stream and deletes redundant notes of the same pitch at the
-    same offset while allowing the user to chose which duplicate note to keep based on duration.quarterLength.
-    The method here uses in_stream.getElementsByOffset, python's min() and max() functions, the "set" feature of an ordered dict,
-    and some nested setting and getting that loops over music21 streams.
-    :param in_stream: Stream with notes.
-    :param greatest_dur: Boolean determing whether to choose the duplicate note(s) with longest duration or the shortest.
-    :return: new_stream. Returns a new music21 stream with just notes.
-    """
+        This function takes all the notes of a music21 stream and deletes redundant notes of the same pitch at the
+    same offset while allowing the user to chose which duplicate note to keep based on duration.quarterLength. The
+    method here uses in_stream.getElementsByOffset, python's min() and max() functions, the "set" feature of an ordered
+    dict, and some nested setting and getting that loops over music21 streams.
 
+    :param in_stream:       Stream with notes.
+    :param greatest_dur:    Boolean determing whether to choose the duplicate note(s) with longest duration or the
+                            shortest.
+    :return: new_stream.    Returns a new music21 stream with just notes.
+    """
 
     #notes_list is a list of lists of notes found at the offets of our iteration.
 
-    #First, we eliminate chord objects notafy(), a function that basically flattens chords(all chord objects become respective note objects).
+    #First, we eliminate chord objects with notafy(), a function that basically flattens chords(all chord objects become
+    #respective note objects).
     #This way, we are working with just notes in a stream.
 
     # A stream with just note objects, no chord objects.
@@ -643,34 +693,14 @@ def delete_redundant_notes( in_stream, greatest_dur=False):
     return new_stream
 
 
-    #del (new_stream)
-    #greatest_dur = False
-
-    # elements_list.append(set_list)
-
-    #For those sets, make them ordered dicts for later to pair with notes as values.
-    # for m in elements_list:
-    # 	ord_dict = OrderedDict.fromkeys(n for n in m)
-    # 	list_of_dicts.append(ord_dict)
-    #
-    # for r in offsets:
-    # 	note_list = list()
-    # 	for t in list_of_dicts:
-    # 		for o in notafied_stream.flat.getElementsByOffset(r):
-    # 			note_list.append(o)
-    #
-    #
-    # 	for y in ord_dict.keys():
-    # 		if o.pitch.ps == y:
-    # 			ord_dict[y] = o
-
 #M21-2.
 def notafy( in_stream):
     """
-    Returns a copy of the in_stream but with all 'chord' objects replaced with
+        Returns a copy of the in_stream but with all 'chord' objects replaced with
     separate 'note' objects for each note in the chord. Basically, it is a chord.flatten() function.
-    :param in_stream: Operand stream.
-    :return: new_stream
+
+    :param in_stream:   Operand stream.
+    :return:            new_stream
     """
     new_stream = music21.stream.Stream()
     for i in in_stream.flat.getElementsByClass(["Chord", "Note"]):
@@ -695,11 +725,12 @@ def notafy( in_stream):
 #M21-3.
 def separate_notes_to_parts_by_velocity( in_stream):
     """
-    This function is required for extract_XYZ_coordinates_to_stream. It separates all the notes of a stream into parts
-    with "part.partsName"s set equal to all the possible velocities of in_stream. This allows for the separation of those
-    notes with those velocities into those specified parts within the stream.
-    :param in_stream: Stream to be modified.
-    :return: Stream with parts.
+        This function is required for extract_XYZ_coordinates_to_stream. It separates all the notes of a stream into
+    parts with "part.partsName"s set equal to all the possible velocities of in_stream. This allows for the separation
+    of those notes with those particular velocities into the same-named specified parts within the stream.
+
+    :param in_stream:   Stream to be modified.
+    :return:            Stream with parts.
     """
     part_stream = music21.stream.Stream()
     velocity_list = list()
@@ -736,10 +767,11 @@ def separate_notes_to_parts_by_velocity( in_stream):
 #M21-4.
 def set_stream_velocities( in_stream, vel):
     """
-    Simple call for setting the velocites in a stream. Here for reference.
-    :param in_stream: Operand stream.
-    :param vel: Value to which to set stream note velocites.
-    :return: In_stream. Operates in place.
+        Simple call for setting the all the velocites in a stream to a single value.
+
+    :param in_stream:   Operand stream.
+    :param vel:         Value to which to set stream note velocites.
+    :return:            In_stream. Operates in place.
     """
     for i in in_stream.flat.notes:
         i.volume.velocity = vel
@@ -747,15 +779,15 @@ def set_stream_velocities( in_stream, vel):
 
 #M21-5. #TODO Needs revision. What purpose does this serve? Must len(volume_list) be == len([o for o in in_stream.flat.notes])?
 def change_velocities_by_rangelist(in_stream, volume_list):
-    # volume_list = list()
-    # for i in range(vel_l, vel_h, vel_s):
-    #     volume_list.append(i)
-    # print('vol_list', volume_list)
     """
-    Changes the
-    :param in_stream:
+        Changes the velocities of notes in a stream as input to the values found in a user-specified volume list. Using
+    subscripting it would be equivalent to in_stream-note[0].volume.velocity = volume_list[0] for the entire range. If
+    the length of the volume_list is less then the length of the range of notes, the remaining notes velocities are set
+    to zero. #TODO Change this?
+
+    :param in_stream:   Operand stream.
     :param volume_list: Use range(0, desired velocity limited)
-    :return:
+    :return:            Operates in place, returns in_stream.
     """
     v = 0
     for o in in_stream.flat.notes:
@@ -768,6 +800,15 @@ def change_velocities_by_rangelist(in_stream, volume_list):
 
 #M21-6.
 def change_velocities_by_duration(in_stream, dur_choice=None, vel_choice=None):
+    """
+        For every note in a stream with a selected duration, this function changes those notes' velocity to the specified
+    velocity choice 'vel_choice'.
+
+    :param in_stream:   Operand stream.
+    :param dur_choice:  Choice of duration value. #TODO Would a range of durations be better in a workflow?
+    :param vel_choice:  Choice of velocity value.
+    :return:            Operates in place, returns in_stream.
+    """
     #Create a set of duration choices.
     duration_list = list()
     vel_list = list()
@@ -789,11 +830,12 @@ def change_velocities_by_duration(in_stream, dur_choice=None, vel_choice=None):
 #M21-7.
 def change_midi_channels_to_one_channel(midi_file, channel=1):
     """
-    This function takes a midi file on input and changes the "channel"
+        This function takes a midi file on input and changes the "channel"
     property of every track in midi_file to a user-selected value between 1 and 16. This operation occurs in place.
-    :param midi_file: Midi file input.
-    :param channel: User selected channel value.
-    :return: midi_file
+
+    :param midi_file:   Midi file input.
+    :param channel:     User selected channel value.
+    :return:            midi_file
     """
 
     a_file = music21.midi.MidiFile()
@@ -809,19 +851,22 @@ def change_midi_channels_to_one_channel(midi_file, channel=1):
 
 #M21-8.
 def split_midi_channels(midi_file, directory, name, to_file=False):
-    """This function uses music21 and takes a midi file on input and separates* all the "channels" of the midi file into
-    either parts in a stream, or a directory of written mid files, one midi file for each said "channel." The files\\parts
-    are also conveniently named by the channel.
+    """
+        This function uses music21 and takes a midi file on input and separates* all the "channels" of the midi file
+    into either parts in a stream, or a directory of written mid files, one midi file for each said "channel." The
+    files\\parts are also conveniently named by the channel.
 
     *Note-- When loading a midi_file created from midiart.make_midi_from_pixels, a midi image, this can be a slow process.
 
-    :param midi_file: Midi .mid file to be split.
-    :param directory: Folder to which new output midi files will be saved.
-    :param name: Name of all the files with addends "_1", "_2"....etc. appended to each. (i.e. midi_file_1.mid, midi_file_2.mid....)
-    :param to_file: If true, writes files to the selected directory. If false, splits the midi to named parts in a stream
-    where the part.Name property of these parts equals the channel value.
-    :return: Midi .mid files written to directory OR a stream with parts separated and named by channel.
+    :param midi_file:   Midi .mid file to be split.
+    :param directory:   Folder to which new output midi files will be saved.
+    :param name:        Name of all the files with addends "_1", "_2"....etc. appended to each.
+                        (i.e. midi_file_1.mid, midi_file_2.mid....)
+    :param to_file:     If true, writes files to the selected directory. If false, splits the midi to named parts in a
+                        stream where the part.Name property of these parts equals the channel value.
+    :return:            Midi .mid files written to directory OR a stream with parts separated and named by channel.
     """
+
     ##Read Midi File
     a_file = music21.midi.MidiFile()
     a_file.open(midi_file, attrib="rb")
@@ -852,14 +897,6 @@ def split_midi_channels(midi_file, directory, name, to_file=False):
     for s in a_stream:
         print("First Partname", s.partName)
 
-
-    # for t in note_tracks:
-    #     print("Notetrack Channel:", t.getChannels())
-
-    # for h in note_tracks_channels:
-    #     for i in a_stream:
-    #         i.partName = h
-
     for z in range(0, len(index_list)):
         parse_stream[z].partName = note_tracks_channels[z]
 
@@ -884,9 +921,10 @@ def split_midi_channels(midi_file, directory, name, to_file=False):
 
 # M21-9.
 def print_chords_in_piece(in_stream):
-    """Use .flat and .makeMeasures to acquire appropriate callable stream
-    :param in_stream:
-    :return:
+    """
+        Use .flat and .makeMeasures to acquire appropriate callable stream
+    :param in_stream:   Operand music21.stream.Stream().
+    :return:            String.
     """
     ret_str = ""
     s = in_stream.chordify().flat.makeMeasures()
@@ -908,8 +946,16 @@ def print_chords_in_piece(in_stream):
     return ret_str
 # a_headers = [n for n in a_file.tracks if not n.hasNotes()]   ## Unnecessary because of midi.MidiFile()
 
+
 # M21-10.
 def print_show_streamtxt(in_stream):
+    """
+        This function creates and returns a string from the .show() method of the in_stream
+
+    :param in_stream:   Operand stream.
+    :return:            String.
+    """
+
     filename = "Temp_Stream_Print.txt"
     set_path = r"intermediary_path"
     absFilePath = os.path.dirname(os.path.abspath(set_path))
@@ -923,6 +969,13 @@ def print_show_streamtxt(in_stream):
 
 # M21-11.
 def print_midi_data(in_stream):
+    """
+        This function takes a stream, converts it to a midifile using music21.midi.MidiFile(), and then returns all the
+    read midi messages as a string.
+
+    :param in_stream:   Operand stream.
+    :return:            String.
+    """
     filename = "Temp_Midi.mid"
     set_path = r"intermediary_path"
     absFilePath = os.path.dirname(os.path.abspath(set_path))
@@ -941,11 +994,12 @@ def fill_measure_end_gaps(measure, timeSig=None, inPlace=True):
     """
         This function takes a music21.stream.measure as input and fills in empty "duration" gaps at the
     beginning AND\OR end of a measure. It does not operate on empty gaps "in-between" notes or elements in a measure.
-    :param measure: A music21.stream.Measure object, with or without a time Signature object.
-    :param timeSig: The time signature specifier, this can be a string as '4/4' or a music21.meter.TimeSignature() object.
-                    Time signature value will default to '4/4' if not specified.
-    :param inPlace: If true, returns same input measure, else returns a deepcopy.
-    :return: measure or copy.deepcopy(measure)
+
+    :param measure:     A music21.stream.Measure object, with or without a time Signature object.
+    :param timeSig:     The time signature specifier, this can be a string as '4/4' or a music21.meter.TimeSignature()
+                        object. Time signature value will default to '4/4' if not specified.
+    :param inPlace:     If true, returns same input measure, else returns a deepcopy.
+    :return:            measure or copy.deepcopy(measure)
     """
 
     #A check against multiple timeSignatures within measure.
@@ -1003,6 +1057,14 @@ def fill_measure_end_gaps(measure, timeSig=None, inPlace=True):
             return new_measure
 
 def empty_measure(timeSig):
+    """
+        This simple call creates an empty measure whose entire duration is filled with a rest object and which possesses
+    a music21.ElementWrapper(obj =" ") with string " " as its object. Used for musicode purposes when calling for a
+    space in a musicode translation.
+
+    :param timeSig:     String indicating the time signature denoted as '4/4', '3/4', etc.
+    :return:            Returns the created empty measure.
+    """
     time = music21.meter.TimeSignature(timeSig)
     space_wrapper = music21.ElementWrapper(obj=" ")
     space_measure = music21.stream.Measure()
@@ -1029,20 +1091,19 @@ def empty_measure(timeSig):
 #GUI-1.
 def stream_to_matrix(in_stream, cells_per_qrtrnote=4):
     """
-    Converts a music21 stream into a 2D numpy array of shape (x, 128) where x is the highestTime of the stream.
+        Converts a music21 stream into a 2D numpy array of shape (x, 128) where x is the highestTime of the stream.
 
     The piano roll grid indexes beginning at the top left, e.g.:
     [ (0,0) (1,0) (2,0) (3,0) ... ]
     | (0,1) (1,1) (2,1) (3,1) ... |
     | (0,2) (1,2) (2,2) (3,2) ... |
     | (0,3) (1,3) (2,3) (3,3) ... |
-
     but midi pitches begin at 0 for the low C0 note and go up the piano roll.
     So the y index of the matrix will be subtracted from 128.
 
     :param in_stream: 			music21.Stream object
-    :param cell_note_size:  note duration that each cell/pixel represents
-    :return: 				np.array
+    :param cell_note_size:      note duration that each cell/pixel represents
+    :return: 				    np.array
     """
 
     #helper function
@@ -1070,7 +1131,7 @@ def stream_to_matrix(in_stream, cells_per_qrtrnote=4):
 #GUI-2.
 def matrix_to_stream(matrix, connect=True, cells_per_qrtrnote=4):
     """
-    Converts an npArray of shape (x,128) into a music21 stream.
+        Converts an npArray of shape (x,128) into a music21 stream.
     x-axis is note offsets and durations
     y index is midi pitches
 
@@ -1079,14 +1140,13 @@ def matrix_to_stream(matrix, connect=True, cells_per_qrtrnote=4):
     | (0,1) (1,1) (2,1) (3,1) ... |
     | (0,2) (1,2) (2,2) (3,2) ... |
     | (0,3) (1,3) (2,3) (3,3) ... |
-
     but midi pitches begin at 0 for the low C0 note and go up the piano roll.
     So the y index of the matrix will be subtracted from 128.
 
-    :param matrix: 	npArray of shape (x, 128) with only possible values of 1 and 0.
-    :param connect:  Connect adjacent cells of the matrix into a single longer note in the stream
+    :param matrix: 	            npArray of shape (x, 128) with only possible values of 1 and 0.
+    :param connect:             Connect adjacent cells of the matrix into a single longer note in the stream
     :param cells_per_qrtrnote:  number of pixels/cells per quarter note
-    :return: music21 stream
+    :return:                    music21 stream
     """
     s = music21.stream.Stream()
     for x in range(0, matrix.shape[0]):

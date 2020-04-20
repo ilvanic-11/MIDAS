@@ -42,7 +42,7 @@ import shutil
 
 
 class Musicode():
-	#user_stream = Any
+
 	def __init__(self):
 		self.user_Created = music21.stream.Part()
 		self.musicode_name = "User_Generated"
@@ -127,7 +127,7 @@ class Musicode():
 
 	def add_to_dict(self, char, musicode, full_path_to_file):
 		"""
-		Making this function public in case someone wants to modify the dicts
+			This function is made public in case someone wants to modify the dicts.
 		:param dict:
 		:param full_path_to_file:
 		:return:
@@ -395,10 +395,12 @@ class Musicode():
 	#UA-1.
 	def translate(self, musicode, string):
 		"""
-		Translates a string into a selected musicode.
-		:param musicode: The musicode to translate into
-		:param string: The string text to translate
-		:return: music21 stream containing the translated text.
+
+			Translates a string into a selected musicode.
+
+		:param musicode: 	The musicode to translate into
+		:param string: 		The string text to translate
+		:return: 			music21 stream containing the translated text.
 		"""
 		if musicode != self.musicode_name:		#When you use "User_Selected" as a musicode choice,
 			s = music21.stream.Part()			#you can only use the measures you've created using make_musicode.
@@ -424,9 +426,10 @@ class Musicode():
 	#UA-2.
 	def translate_from_text_file(self, musicode, file_name):
 		"""
-		Translates input from a text file.
-		:param text: the file name
-		:return: stream
+			Translates input from a text file.
+
+		:param text: 	The file name.
+		:return: 		Stream.
 		"""
 		# TODO: Find a way to add option to split each line of text into a different midi track
 
@@ -459,10 +462,12 @@ class Musicode():
 	#UA-3.
 	def _translate_letter(self, c, musicode, num = None):
 		"""
-		Translates a single "letter" string into a selected musicode.
-		:param c: A single string instance. (i.e  "y" or "!")
-		:param musicode: The desired Musicode to be called.
-		:param num: The measure's measureNumber.
+			Translates a single "letter" string into a selected musicode. Adapted to user-generated musicode from the
+		make_musicode() function.
+
+		:param c: 			A single string instance. (i.e  "y" or "!")
+		:param musicode: 	The desired Musicode to be called.
+		:param num: 		The measure's measureNumber.
 		:return:
 		"""
 		#new_measure = music21.stream.Measure()
@@ -503,9 +508,10 @@ class Musicode():
 	#UA-4.
 	def translate_each_letter_to_random_musicode(self, text):
 		"""
-		Translates the text into a stream where each letter is a random Musicode.
-		:param text: The text to be translated.
-		:return: stream
+			Translates the text into a stream where each letter is a random Musicode.
+
+		:param text: 	The text to be translated.
+		:return: 		Stream.
 		"""
 		s = music21.stream.Part()
 		num = 0
@@ -522,13 +528,17 @@ class Musicode():
 	def align_musicode_with_melody(self, melody_stream, musicode_stream, keysig=None):
 		"""
 
-		This function takes a composed melody and intertwines it with a translated instance of musicode. See picture. #TODO figure out pictures with doc strings.
-		In the alignment process, spaces are ignored.
-		The number of >>>melody_stream.flat.notes must match the number of musicode_stream.getElementsByClass(stream.Measure).
+			This function takes a composed melody and intertwines it with a translated instance of musicode. See picture
+		#TODO figure out pictures with doc strings. In the alignment process, spaces are ignored.
+		The number of melody_stream.flat.notes must match the number of musicode_stream.getElementsByClass(-
+		--stream.Measure).
 
-		:param melody_stream: The selected melody for alignment. Generally acquired from a composed instance of midi converted with converter.parse.
-		:param musicode_stream: The text to be aligned with the melody. Acquired from musicode.mc.translate("Musicode", "String")
-		:return: New music21.stream.Stream object of aligned melody stream.     #TODO The keyAware transpostion of the letters in the measures needs work with respect to bass and root of chords.
+		:param melody_stream: 	The selected melody for alignment. Generally acquired from a composed instance of midi
+								converted with converter.parse.
+		:param musicode_stream: The text to be aligned with the melody. Acquired from musicode.mc.translate("Musicode",
+								"String")
+		:return: 				New music21.stream.Stream object of aligned melody stream.
+		#TODO The keyAware transpostion of the letters in the measures needs work with respect to bass and root of chords.
 		"""
 
 		if type(melody_stream) == music21.stream.Score:
