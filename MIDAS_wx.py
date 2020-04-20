@@ -203,6 +203,7 @@ class MainWindow(wx.Frame):
         self.Bind(wx.EVT_MENU, self.menuBar.OnCredits, id=510)
 
         # Documentation Submenu
+        self.Bind(wx.EVT_MENU, self.menuBar.OnPython, id=600)
         self.Bind(wx.EVT_MENU, self.menuBar.OnMusic21, id=601)
         self.Bind(wx.EVT_MENU, self.menuBar.OnMayavi, id=602)
         self.Bind(wx.EVT_MENU, self.menuBar.OnNumpy, id=603)
@@ -212,6 +213,13 @@ class MainWindow(wx.Frame):
         self.Bind(wx.EVT_MENU, self.menuBar.OnVTK, id=607)
         self.Bind(wx.EVT_MENU, self.menuBar.OnTVTK, id=608)
 
+        # Tools Menu Comprehensive Bind Functions
+        #0self.Bind(wx.EVT_MENU, self.menuBar.OnToolSelection, id=1100)
+
+        self._bind_musicode_tools()
+        self._bind_midiart_tools()
+        self._bind_midiart3D_tools()
+        self._bind_music21funcs_tools()
 
         self.SetMenuBar(self.menuBar)
         # self.CreateStatusBar()
@@ -223,7 +231,7 @@ class MainWindow(wx.Frame):
 
 
         # Pyshell Resplit on Init
-        self.pyshellpanel.Unsplit(self.pyshellpanel.Window2)
+        self.pyshellpanel.Unsplit(self.pyshellpanel.Window2)  #Actually, it can be read, because this works.
         # self.pyshellpanel.AddChild(self.pyshellpanel.notebook)
         self.pyshellpanel.SplitVertically(self.pyshellpanel.Window1, self.pyshellpanel.notebook, sashPosition=980)
         self.pyshellpanel.SetSashPosition(980, redraw=False)
@@ -232,6 +240,32 @@ class MainWindow(wx.Frame):
         self.mainpanel.Bind(wx.EVT_CHAR_HOOK, self.OnKeyDown)
         self.Show(True)
         self.SetFocus()
+
+
+    #Comprehensive Menu Bind Functions
+    def _bind_musicode_tools(self):
+        binding = 1000
+        for i in range(0, len(self.menuBar.musicodetools.MenuItems)):
+            self.Bind(wx.EVT_MENU, self.menuBar.OnToolSelection, id=binding)
+            binding += 1
+
+    def _bind_midiart_tools(self):
+        binding = 1100
+        for i in self.menuBar.midiarttools.MenuItems:
+            self.Bind(wx.EVT_MENU, self.menuBar.OnToolSelection, id=binding)
+            binding += 1
+
+    def _bind_midiart3D_tools(self):
+        binding = 1200
+        for i in self.menuBar.midiart3Dtools.MenuItems:
+            self.Bind(wx.EVT_MENU, self.menuBar.OnToolSelection, id=binding)
+            binding += 1
+
+    def _bind_music21funcs_tools(self):
+        binding = 1300
+        for i in self.menuBar.music21funcstools.MenuItems:
+            self.Bind(wx.EVT_MENU, self.menuBar.OnToolSelection, id=binding)
+            binding += 1
 
 
     #StatusBarClose

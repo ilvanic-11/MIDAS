@@ -71,6 +71,7 @@ class Mayavi3idiView(HasTraits):
         self.clr_dict_list = midiart.get_color_palettes(r".\resources\color_palettes")
         self.default_color_palette = midiart.FLStudioColors
 
+
         #TODO Should this be in main MIDAS_wx? Should be in preferences. Yes.
 
         #Grid Construct
