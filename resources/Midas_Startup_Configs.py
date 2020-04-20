@@ -67,15 +67,21 @@ else:
 
 print("Successfully imported all paths.")
 print('\n')
-print("----Welcome to MIDAS, the Music-Intermediary Digital Art Suite.----")
+print("----Welcome to MIDAS, the MIDI-Intermediary Digital Art Suite.----")
+print('\n')
+print("----Your Visual Music GUI and Toolkit.----")
 print('\n')
 print('     Using knowledge and techniques of python, music21, numpy, opencv-python, open3d, vtk, and mayavi, this gui toolkit provides a musical engineer \n'
       'with the ability to transform text, images, and point clouds into musical data for composing, production and visualization purposes. \n'
       'MIDAS incorporates strong musicological analyses displays as well as grants the user the ability to rapidly manipulate their musical data via \n'
-      'a unique, simple user interface and input\output methods to and from other programs such as MuseScore, FL Studio, NotePad++, Word, Paint\PicPick, and even Blender. \n'
-      'The MIDAS installation possesses a path called "intermediary_path" assigned as a variable, and this path is the traffic hub for said data manipulation; the transformation and manipulation \n'
-      'of all files and data that go through this toolkit ideally will use the "intermediary_path".\n'
-      'This path is established for ease of using this embedded python interpreter and it can be assigned as an output for all your other programs.\n\n'
+      'a unique, simple user interface and input\output methods to and from other programs such as FL Studio, MuseScore, NotePad++, Word, Paint\PicPick, Meshlab, and even Blender. \n'
+      '     The MIDAS installation possesses a path called "intermediary_path" assigned as a variable, and this path is the traffic hub for said data manipulation; the transformation and manipulation \n'
+      'of all files and data that go through this toolkit ideally will use the "intermediary_path". This path is established for ease of using this embedded \n'
+      'python interpreter and it can be assigned as an output for all your other programs. \n'
+      '     Since Midas focuses heavily on musical data, it\'s primary input\\output filetype is a .mid midi file. Midas does possess the ability, however, \n' 
+      'to do input and output of .txt, .jpg, .png, and .ply file types. Using all these in conjunction with intermediary_path and Midas\'s tools, creativity via rapid development and production \n'
+      'of Visual Music is now in your hands.  \n\n'
+      
       '----We hope you enjoy MIDAS.----')
 print('\n')
 
