@@ -3,48 +3,67 @@ import subprocess
 import os
 import shutil
 import time
-import music21
 import wx.richtext as rt
 import pprint
 import pydoc
 import inspect
-
-from midas_scripts import music21funcs
 from gui import Preferences
 import wx.lib.filebrowsebutton as filebrowse
+
+
+#Imports for the help feature:
+#TODO Better way to do this for the HelpDialog()
+import mayavi
+import music21
+import open3d
+import cv2
+import numpy
+import sympy
+import vtk
+import tvtk
+from midas_scripts import music21funcs, midiart, midiart3D, musicode
+
+
 class CustomMenuBar(wx.MenuBar):
 
     def __init__(self):
         super().__init__(style=0)
+
+        #A help dialog instance
+        self.helper = HelpDialog(self, -1, "Help Window")
+
+        #TODO Do this?
+        #self.preferences = Preferences.PreferencesDialog()
+
         #wx.Frame.__init__(self, parent, id, 'Playing with menus', size=(500, 250))
 
         # File
-        menu1 = wx.Menu()
-        menu1.Append(101, "&New Session\tCtrl+Shift+N", "This the text in the Statusbar")  # TODO Saved Midas States
-        menu1.Append(102, "&Open Session\tCtrl+O", "Open Slutsame")
-        menu1.Append(103, "&Save Session\tCtrl+S", "You may select Earth too")
-        menu1.Append(104, "&Save Session As\tCtrl+Shift+S")
-        menu1.Append(105, "&Import...\tCtrl+I")
-        menu1.Append(106, "&Import Directory\tCtrl+Shift+I")
-        menu1.Append(107, "&Export...\tCtrl+E")  # Current Actor
-        menu1.Append(108, "&Export As Directory\tCtrl+Shift+E")  # All Actors
-        menu1.Append(109, "&Export Musicode\tCtrl+Shift+M")  # All Actors
-        menu1.Append(110, "&Export Movie\tCtrl+Alt+E")  # All Actors
-        menu1.Append(111, "&Preferences\tCtrl+P")
-        menu1.Append(112, "&Intermediary Path\t")  # The Default Save path for all files. Found in resources.
-        menu1.AppendSeparator()
-        menu1.Append(113, "&Exit", "Close this frame")
+        self.filemenu = wx.Menu()
+        self.filemenu.Append(101, "&New Session\tCtrl+Shift+N", "This the text in the Statusbar")  # TODO Saved Midas States
+        self.filemenu.Append(102, "&Open Session\tCtrl+O", "Open Slutsame")
+        self.filemenu.Append(103, "&Save Session\tCtrl+S", "You may select Earth too")
+        self.filemenu.Append(104, "&Save Session As\tCtrl+Shift+S")
+        self.filemenu.Append(105, "&Import...\tCtrl+I")
+        self.filemenu.Append(106, "&Import Directory\tCtrl+Shift+I")
+        self.filemenu.Append(107, "&Export...\tCtrl+E")  # Current Actor
+        self.filemenu.Append(108, "&Export As Directory\tCtrl+Shift+E")  # All Actors
+        self.filemenu.Append(109, "&Export Musicode\tCtrl+Shift+M")  # All Actors
+        self.filemenu.Append(110, "&Export Movie\tCtrl+Alt+E")  # All Actors
+        self.filemenu.Append(111, "&Preferences\tCtrl+P")
+        self.filemenu.Append(112, "&Intermediary Path\t")  # The Default Save path for all files. Found in resources.
+        self.filemenu.AppendSeparator()
+        self.filemenu.Append(113, "&Exit", "Close this frame")
         # Add menu to the menu bar
-        self.Append(menu1, "&File")
+        self.Append(self.filemenu, "&File")
 
         # Edit
-        menu2 = wx.Menu()
-        menu2.Append(201, "Undo\tCtrl+Z")
-        menu2.Append(202, "Redo\tCtrl+Y")
-        menu2.Append(203, "Cut\tCtrl+X")
-        menu2.Append(204, "Copy\tCtrl+C")
-        menu2.Append(205, "Paste\tCtrl+V")
-        menu2.Append(206, "History")
+        self.editmenu = wx.Menu()
+        self.editmenu.Append(201, "Undo\tCtrl+Z")
+        self.editmenu.Append(202, "Redo\tCtrl+Y")
+        self.editmenu.Append(203, "Cut\tCtrl+X")
+        self.editmenu.Append(204, "Copy\tCtrl+C")
+        self.editmenu.Append(205, "Paste\tCtrl+V")
+        self.editmenu.Append(206, "History")
         # a submenu in the 2nd menu
         # submenu = wx.Menu()
         # submenu.Append(2031, "Lanthanium")
@@ -52,36 +71,49 @@ class CustomMenuBar(wx.MenuBar):
         # submenu.Append(2033, "Praseodymium")
         # menu2.Append(203, "Lanthanides", submenu)
         # Append 2nd menu
-        self.Append(menu2, "&Edit")
+        self.Append(self.editmenu, "&Edit")
 
         # Show
-        menu3 = wx.Menu()
+        self.showmenu = wx.Menu()
         # Radio items
-        menu3.Append(301, "Show in DAW")  ###, wx.ITEM_RADIO, "a Python shell using wxPython as GUI"
-        menu3.Append(302, "Show in Musescore", "a simple Python shell using wxPython as GUI")    ###, wx.ITEM_RADIO)
-        menu3.Append(303, "Show in Word Processor", "a Python shell using tcl/tk as GUI")    ###, wx.ITEM_RADIO)
-        menu3.Append(304, "Show in PicPick\Paint", "a Python shell using tcl/tk as GUI")    ###, wx.ITEM_RADIO)
-        menu3.Append(305, "Show in Meshlab", "a simple Python shell using wxPython as GUI")    ###, wx.ITEM_RADIO)
-        menu3.Append(306, "Show in Blender", "a simple Python shell using wxPython as GUI")     ###, wx.ITEM_RADIO)
-        menu3.AppendSeparator()
-        menu3.Append(307, "Scene3d_1?", "", wx.ITEM_NORMAL)
-        menu3.Append(308, "project2", "", wx.ITEM_NORMAL)
-        self.Append(menu3, "&Show")
+        self.showmenu.Append(301, "Show in DAW")  ###, wx.ITEM_RADIO, "a Python shell using wxPython as GUI"
+        self.showmenu.Append(302, "Show in Musescore", "a simple Python shell using wxPython as GUI")    ###, wx.ITEM_RADIO)
+        self.showmenu.Append(303, "Show in Word Processor", "a Python shell using tcl/tk as GUI")    ###, wx.ITEM_RADIO)
+        self.showmenu.Append(304, "Show in PicPick\Paint", "a Python shell using tcl/tk as GUI")    ###, wx.ITEM_RADIO)
+        self.showmenu.Append(305, "Show in Meshlab", "a simple Python shell using wxPython as GUI")    ###, wx.ITEM_RADIO)
+        self.showmenu.Append(306, "Show in Blender", "a simple Python shell using wxPython as GUI")     ###, wx.ITEM_RADIO)
+        self.showmenu.AppendSeparator()
+        self.showmenu.Append(307, "Scene3d_1?", "", wx.ITEM_NORMAL)
+        self.showmenu.Append(308, "project2", "", wx.ITEM_NORMAL)
+        self.Append(self.showmenu, "&Show")
 
         # Tools
-        menu4 = wx.Menu()
+        self.toolsmenu = wx.Menu()
         # Check menu items
-        menu4.Append(401, "Musicode")
-        menu4.Append(402, "Midiart")
-        menu4.Append(403, "3iDiart")
-        menu4.Append(404, "Music21Funcs")
+        self.musicodetools = wx.Menu()
+        self.toolsmenu.Append(401, "Musicode", self.musicodetools)
+        self._append_musicode_tools()
+
+        self.midiarttools = wx.Menu()
+        self.toolsmenu.Append(402, "Midiart", self.midiarttools)
+        self._append_midiart_tools()
+
+        self.midiart3Dtools = wx.Menu()
+        self.toolsmenu.Append(403, "3iDiart", self.midiart3Dtools)
+        self._append_midiart3D_tools()
+
+        self.music21funcstools = wx.Menu()
+        self.toolsmenu.Append(404, "Music21Funcs", self.music21funcstools)
+        self._append_music21funcs_tools()
+
         menu7 = wx.Menu()
         menu8 = wx.Menu()
         menu9 = wx.Menu()
-        menu4.Append(405, "Current ActorList to Shell",
-                     menu7)  # Dict of coords_arrays or Stream with parts(we're dealing with multiple actors for colors...)
-        menu4.Append(406, "Current Actor to Shell", menu8)
-        menu4.Append(407, "Current Z-Plane to Shell", menu9)
+        self.toolsmenu.Append(405, "Current ActorList to Shell", menu7)
+
+        # Dict of coords_arrays or Stream with parts(we're dealing with multiple actors for colors...)
+        self.toolsmenu.Append(406, "Current Actor to Shell", menu8)
+        self.toolsmenu.Append(407, "Current Z-Plane to Shell", menu9)
 
         menu7.Append(700, "As Music21 Stream with Parts")
         menu7.Append(701, "As Dictionary of Points")
@@ -91,7 +123,7 @@ class CustomMenuBar(wx.MenuBar):
 
         menu9.Append(900, "As Music21 Stream")
         menu9.Append(901, "As Numpy Points")
-        self.Append(menu4, "&Tools")
+        self.Append(self.toolsmenu, "&Tools")
 
         # Help
         helpmenu = wx.Menu()
@@ -105,6 +137,7 @@ class CustomMenuBar(wx.MenuBar):
         helpmenu.Append(503, "Documentation", docsubmenu)
 
         #Documentation Submenu
+        docsubmenu.Append(600, "Python")
         docsubmenu.Append(601, "Music21")
         docsubmenu.Append(602, "Mayavi")
         docsubmenu.Append(603, "Numpy")
@@ -123,6 +156,50 @@ class CustomMenuBar(wx.MenuBar):
         helpmenu.Append(509, "Check for Updates...")
         helpmenu.Append(510, "Credits.")
         self.Append(helpmenu, "&Help")
+
+    #Test
+    def OnToolSelection(self, event):
+        print(event.Id)
+        print("ass ass ass ass")
+        dlg = Preferences.ToolsDialog(self, -1, "Midas Dynamic Tool")
+        dlg.func_id = event.Id
+        #Generate custom tool-based layout here.
+        dlg._generate_layout(event.Id)
+        dlg.ShowWindowModal()
+
+    #def OnToolClose(
+
+    #Everytime a new function is added to one of the midas_scripts, it automatically is appended to it's appropriate
+    #tools submenu.
+
+    # #Menu Comprehensive Append Functions --In MIDAS_wx.py, see #Menu Comprehensive Bind Functions
+    def _append_musicode_tools(self):
+        mcode_ids = 1000
+        self.musicode_list = [o for o in inspect.getmembers(musicode.Musicode) if inspect.isfunction(o[1])]
+        for func in self.musicode_list:
+            self.musicodetools.Append(mcode_ids, func[0])
+            mcode_ids += 1
+
+    def _append_midiart_tools(self):
+        mcode_ids = 1100
+        self.midiart_list = [o for o in inspect.getmembers(midiart) if inspect.isfunction(o[1])]
+        for func in self.midiart_list:
+            self.midiarttools.Append(mcode_ids, func[0])
+            mcode_ids += 1
+
+    def _append_midiart3D_tools(self):
+        mcode_ids = 1200
+        self.midiart3D_list = [o for o in inspect.getmembers(midiart3D) if inspect.isfunction(o[1])]
+        for func in self.midiart3D_list:
+            self.midiart3Dtools.Append(mcode_ids, func[0])
+            mcode_ids += 1
+
+    def _append_music21funcs_tools(self):
+        mcode_ids = 1300
+        self.music21funcs_list = [o for o in inspect.getmembers(music21funcs) if inspect.isfunction(o[1])]
+        for func in self.music21funcs_list:
+            self.music21funcstools.Append(mcode_ids, func[0])
+            mcode_ids += 1
 
     # #File Buttons Defined
     def OnNewSession(self, event):
@@ -226,15 +303,16 @@ class CustomMenuBar(wx.MenuBar):
     def OnExportMovie(self, event):
         print("This fucker works.")
         mayaviview = self.GetTopLevelParent().mayaviview
-
-
         movie_maker = mayaviview.engine.scenes[0].scene.movie_maker
         length = (mayaviview.grid3d_span)
-        print("Length of Grid:", mayaviview.grid3d_span)
         bpm_speed = self.GetTopLevelParent().mayaviview.bpm + 60
-        print("BPM:", bpm_speed)
         i_div = mayaviview.i_div
+
+        print("# Grid Length:", mayaviview.grid3d_span)
+        print("BPM:", bpm_speed)
+        print("# of Measures:", length/4)   #Measures assumed to be in '4/4' time. #TODO Fix.
         print("# of Frames:", (length *i_div))
+
         #mayaviview.volume_slice.remove()
         #mayaviview.insert_volume_slice(length)
         if movie_maker.record is False:
@@ -246,7 +324,7 @@ class CustomMenuBar(wx.MenuBar):
         #TODO set movie_maker back False in animate function after loop completes.
         if mayaviview.image_plane_widget.ipw.slice_position == 0.0:
             movie_maker.record = False
-        print("In Blender, set FPS to:", ((bpm_speed * (i_div/4) /60)))
+        print("In Blender, set FPS to:", midiart3D.BPM_to_FPS(bpm_speed, i_div)) ##((bpm_speed * (i_div/4) /60)))
         pass
 
 
@@ -441,7 +519,7 @@ class CustomMenuBar(wx.MenuBar):
 
 
     def OnSearchHelp(self, event):
-        dlg = HelpDialog(self, -1, "Midas's Search\\Help")
+        dlg = self.helper
         dlg.ShowWindowModal()
 
 
@@ -486,8 +564,10 @@ class CustomMenuBar(wx.MenuBar):
     def OnCredits(self, event):
         pass
 
-        # Documentation Submenu
 
+    # Documentation Submenu
+    def OnPython(self, event):
+        wx.LaunchDefaultBrowser(r"https://docs.python.org/3/", 0)
 
     def OnMusic21(self, event):
         wx.LaunchDefaultBrowser(r"https://web.mit.edu/music21/", 0)
@@ -527,6 +607,7 @@ class CustomMenuBar(wx.MenuBar):
         pass
 
 
+
     def _OnPreferencesDialogClosed(self, dialog, evt):
         val = evt.GetReturnCode()
         print("Val %d: " % val)
@@ -537,9 +618,22 @@ class CustomMenuBar(wx.MenuBar):
             btn = '<unknown>'
         #self.GetTopLevelParent().mayaviview
         if btn == "OK":
-            self.GetTopLevelParent().mayaviview.grid3d_span = float(dialog.input_span.GetLineText(0))
-            self.GetTopLevelParent().mayaviview.bpm = float(dialog.input_bpm.GetLineText(0))
-            self.GetTopLevelParent().mayaviview.i_div = float(dialog.input_i_div.GetLineText(0))
+            if dialog.input_span.GetLineText(0) == None:
+                pass
+            else:
+                self.GetTopLevelParent().mayaviview.grid3d_span = float(dialog.input_span.GetLineText(0))
+            if dialog.input_bpm.GetLineText(0) == None:
+                pass
+            else:
+                self.GetTopLevelParent().mayaviview.bpm = float(dialog.input_bpm.GetLineText(0))
+            if dialog.input_i_div.GetLineText(0) == None:
+                pass
+            else:
+                self.GetTopLevelParent().mayaviview.i_div = float(dialog.input_i_div.GetLineText(0))
+            if dialog.popupCtrl.GetStringValue() == "FLStudioColors":
+                self.GetTopLevelParent().mayaviview.default_color_palette = midiart.FLStudioColors
+            else:
+                self.GetTopLevelParent().mayaviview.default_color_palette = midiart.get_color_palettes()[dialog.popupCtrl.GetStringValue()]
 
     def _OnHelpDialogClosed(self, dialog, evt):
         val = evt.GetReturnCode()
@@ -567,7 +661,7 @@ class CustomMenuBar(wx.MenuBar):
 class RichTextFrame(wx.Frame):
     def __init__(self, parent, id, value, pos, size, style, validator, name):
         wx.Frame.__init__(self, parent, id, name, pos, size, style, name)
-        self.rtc = rt.RichTextCtrl(self, style=wx.VSCROLL | wx.HSCROLL | wx.NO_BORDER);
+        self.rtc = rt.RichTextCtrl(self, style=wx.VSCROLL | wx.HSCROLL | wx.NO_BORDER)
         wx.CallAfter(self.rtc.SetFocus)
         self.rtc.WriteText(value)
 
@@ -578,12 +672,19 @@ class HelpDialog(wx.Dialog):
         wx.Dialog.__init__(self)
         self.Create(parent, id, title, pos, size, style, name)
 
+        #Helps with help.
+        #self.Midas = self.GetParent().GetTopLevelParent()
+
+        #Static Text
+        self.description = self.name_static = wx.StaticText(self, -1, "Type in a python module\class\object name."
+                                                        "Then choose a help method.",     style=wx.ALIGN_CENTER_HORIZONTAL)
+
         #Text Query
-        self.inputTxt = wx.TextCtrl(self, -1, "", size=(250, -1), name="Help Query")
+        self.inputtxt = wx.TextCtrl(self, -1, "", size=(250, -1), name="Help Query")
         self.helpbutton = wx.Button(self, -1, "Help()")
         self.membersbutton = wx.Button(self, -1, "Get Members")
         self.methodsbutton = wx.Button(self, -1, "All Methods")
-        self.argsbutton = wx.Button(self, -1, "Args")
+        self.argsbutton = wx.Button(self, -1, "ArgSpec")
 
         #Special Help Buttons!
         self.Bind(wx.EVT_BUTTON, self.OnShowHelp, self.helpbutton)
@@ -601,57 +702,73 @@ class HelpDialog(wx.Dialog):
 
         sizer1 = wx.BoxSizer(wx.HORIZONTAL)
         sizer1.Add(self.helpbutton, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL, 20)
-        sizer1.Add(self.membersbutton, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL, 20)
         sizer1.Add(self.methodsbutton, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL, 20)
+        sizer1.Add(self.membersbutton, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL, 20)
         sizer1.Add(self.argsbutton, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL, 20)
 
         sizerMain = wx.BoxSizer(wx.VERTICAL)
-        sizerMain.Add(self.inputTxt,  0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL, 20)
+        sizerMain.Add(self.description, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL, 20)
+        sizerMain.Add(self.inputtxt, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL, 20)
         sizerMain.Add(sizer1,  0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL, 20)
         sizerMain.Add(btnsizer, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL, 20)
         self.SetSizerAndFit(sizerMain)
 
 
     def OnShowHelp(self, event):
-        object = self.inputTxt.GetLineText(0)
-        sexyprint = pydoc.render_doc(eval(object), renderer=pydoc.plaintext)
-        win = RichTextFrame(self, -1, sexyprint, wx.DefaultPosition,
+        object = self.inputtxt.GetLineText(0)
+
+        # Helps with introspecting the entire hierarchy.
+        Midas = self.GetParent().GetTopLevelParent()
+
+        help_string = pydoc.render_doc(eval(object), renderer=pydoc.plaintext)
+        win = RichTextFrame(self, -1, help_string, wx.DefaultPosition,
                             size=(700, 500),
                             style=wx.DEFAULT_FRAME_STYLE, validator=wx.DefaultValidator, name="Pydoc's Help")
         win.Show(True)
     def OnShowAllMethods(self, event):
-        object = self.inputTxt.GetLineText(0)
+        object = self.inputtxt.GetLineText(0)
 
-        sexystring = ""
+        # Helps with introspecting the entire hierarchy.
+        Midas = self.GetParent().GetTopLevelParent()
+
+        methods_string = ""
         for j in pydoc.allmethods(eval(object)).keys():
             string = str(j) + '   ' + str(pydoc.allmethods(eval(object))[j]) + "\n"
-            sexystring += string
+            methods_string += string
 
-        win = RichTextFrame(self, -1, sexystring, wx.DefaultPosition,
+        win = RichTextFrame(self, -1, methods_string, wx.DefaultPosition,
                             size=(700, 500),
                             style=wx.DEFAULT_FRAME_STYLE, validator=wx.DefaultValidator, name="Pydoc's All Methods")
         win.Show(True)
     def OnShowMembers(self, event):
-        object = self.inputTxt.GetLineText(0)
+        object = self.inputtxt.GetLineText(0)
 
-        sexystring = " "
+        # Helps with introspecting the entire hierarchy.
+        Midas = self.GetParent().GetTopLevelParent()
+
+        members_string = " "
         for j in inspect.getmembers(eval(object)):
             string = str(j[0]) + "   ----->    "  + pprint.pformat(str(j[1]), width = 100) + "\n"
-            sexystring += string
-        sexierstring = pprint.pformat(sexystring, width = 150)
+            members_string += string
+        sexierstring = pprint.pformat(members_string, width = 150)
 
         win = RichTextFrame(self, -1, sexierstring, wx.DefaultPosition,
                             size=(700, 500),
                             style=wx.DEFAULT_FRAME_STYLE, validator=wx.DefaultValidator, name='''Inspect's "Get Members"''')
         win.Show(True)
     def OnShowArgs(self, event):
-        object = self.inputTxt.GetLineText(0)
-        sexytext = str(inspect.getfullargspec(eval(object)))
+        object = self.inputtxt.GetLineText(0)
 
-        win = RichTextFrame(self, -1, sexytext, wx.DefaultPosition,
+        # Helps with introspecting the entire hierarchy.
+        Midas = self.GetParent().GetTopLevelParent()
+
+        args_string = str(inspect.getfullargspec(eval(object)))
+
+        win = RichTextFrame(self, -1, args_string, wx.DefaultPosition,
                             size=(700, 500),
                             style=wx.DEFAULT_FRAME_STYLE, validator=wx.DefaultValidator, name='''Inspect's "GetFullArgSpec"''')
         win.Show(True)
+
 
 
 # class FileBrowseButton(wx.Panel):
