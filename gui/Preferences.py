@@ -186,14 +186,22 @@ class ToolsDialog(wx.Dialog):
         print("Gen_ID", self.func_id)
         self.func_name = str(self.GetParent().FindItemById(self.func_id).GetName())
         print("Gen_func_name", self.func_name)
-        self.func_module = inspect.getmodule(eval(self.func_name))
+        #self.musicode_workaround = super().GetParent().GetTopLevelParent().musicode
+        #print("Gen_mc_func_name:", self.musicode_workaround)
+        try:
+            self.func_module = inspect.getmodule(eval(self.func_name))
+        except NameError:
+            self.func_module = super().GetParent().GetTopLevelParent().musicode
+        #self.func_class = inspect.getmodule(eval(self))
         print("Gen_func_module", self.func_module)
         self.func_txt = wx.StaticText(self, -1, self.func_name)
         self.sizerMain = wx.BoxSizer(wx.VERTICAL)
         self.sizerHorizontal = wx.BoxSizer(wx.HORIZONTAL)
         self.sizerHorizontal.Add(self.func_txt, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL, 20)
         #self.sizerMain.Add(self.ass, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL, 20)
-        for argskwargs in [j for j in inspect.getfullargspec(eval("self.func_module." + "%s" % self.func_name))][0]:
+        #print(eval("self.func_module.translate"))
+        print("self.func_module" + '.' + "%s" % self.func_name)
+        for argskwargs in [j for j in inspect.getfullargspec(eval(str("self.func_module" + '.' + "%s" % self.func_name)))][0]:
             argSizer = wx.BoxSizer(wx.VERTICAL)
             argkwargname = wx.StaticText(self, 0, argskwargs)
             argkwarginput = wx.TextCtrl(self, 0, argskwargs, size=(70, -1), style=wx.ALIGN_CENTER_HORIZONTAL, name=argskwargs)
