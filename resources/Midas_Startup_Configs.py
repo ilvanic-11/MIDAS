@@ -78,8 +78,8 @@ print('     Using knowledge and techniques of python, music21, numpy, opencv-pyt
       '     The MIDAS installation possesses a path called "intermediary_path" assigned as a variable, and this path is the traffic hub for said data manipulation; the transformation and manipulation \n'
       'of all files and data that go through this toolkit ideally will use the "intermediary_path". This path is established for ease of using this embedded \n'
       'python interpreter and it can be assigned as an output for all your other programs. \n'
-      '     Since Midas focuses heavily on musical data, it\'s primary input\\output filetype is a .mid midi file. Midas does possess the ability, however, \n' 
-      'to do input and output of .txt, .jpg, .png, and .ply file types. Using all these in conjunction with intermediary_path and Midas\'s tools, creativity via rapid development and production \n'
+      '     Since Midas focuses heavily on musical data, its primary input\\output filetype is a .mid midi file. Midas does possess the ability, however, \n' 
+      'to do input and output of .txt, .jpg, .png, and .ply file types. Using all these in conjunction with intermediary_path and a developing library of Midas tools, creativity via rapid development and production \n'
       'of Visual Music is now in your hands.  \n\n'
       
       '----We hope you enjoy MIDAS.----')
