@@ -14,11 +14,9 @@ from traits.trait_numeric import AbstractArray
 
 class ZPlanesControlPanel(wx.Panel):
 	def __init__(self, parent, log):
-		# HasTraits.__init__(self)
 		wx.Panel.__init__(self, parent, -1)
 		self.log = log
 		
-		#tb = self.SetupToolbar()
 		
 		self.ZPlanesListBox = CustomZPlanesListBox(self,log)
 		self.toolbar = wx.ToolBar(self, -1, wx.DefaultPosition, wx.DefaultSize, style=wx.TB_HORIZONTAL)
@@ -38,7 +36,7 @@ class ZPlanesControlPanel(wx.Panel):
 		bmp_showall = wx.ArtProvider.GetBitmap(wx.ART_LIST_VIEW, wx.ART_TOOLBAR, btn_size)
 		
 		id_showall = 10
-		self.toolbar.AddCheckTool(id_showall, "Select", bmp_showall, wx.NullBitmap, "Show All?",
+		self.toolbar.AddCheckTool(id_showall, "ShowAll", bmp_showall, wx.NullBitmap, "Show All?",
 		                          "Toggle between showing ", None)
 		self.Bind(wx.EVT_TOOL, self.OnToolBarClick, id=id_showall)
 		
@@ -78,7 +76,7 @@ class CustomZPlanesListBox(wx.ListCtrl, CheckListCtrlMixin):
 		CheckListCtrlMixin.__init__(self)
 		self.log = log
 		
-		self.InsertColumn(0,"Visible", wx.LIST_FORMAT_CENTER, width=40)
+		#self.InsertColumn(0,"Visible", wx.LIST_FORMAT_CENTER, width=40)
 		self.InsertColumn(1,"ZPlane", wx.LIST_FORMAT_CENTER, width=64)
 		
 		
@@ -98,7 +96,7 @@ class CustomZPlanesListBox(wx.ListCtrl, CheckListCtrlMixin):
 		self.GetTopLevelParent().pianorollpanel.pianoroll.ForceRefresh()
 	
 	def OnGetItemText(self, item, column):
-		if column == 1:
+		if column == 0:
 			return f"{self.filter[item]}"
 		else:
 			return ""
@@ -113,7 +111,7 @@ class CustomZPlanesListBox(wx.ListCtrl, CheckListCtrlMixin):
 		
 	def UpdateFilter(self):
 		self.log.info("UpdateFilter():")
-		a3D = self.GetTopLevelParent().mayavi_view.array3D
+		a3D = self.GetTopLevelParent().mayavi_view.CurrentActor().array3D
 		#print(np.shape(a3D))
 		
 		self.filter = list()

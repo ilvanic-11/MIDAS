@@ -8,7 +8,6 @@ import logging
 import numpy as np
 import math
 from midas_scripts import musicode, music21funcs
-import wx.lib.dragscroller
 
 """ 
 PianoRollPanel
@@ -92,24 +91,24 @@ class PianoRollDataTable(wx.grid.GridTableBase):
         
 
     def GetNumberCols(self):
-        #print("GetNumberCols(): {}".format(self.parent.GetTopLevelParent().mayavi_view.array3D.shape[0]))
-        return self.pianorollpanel.GetTopLevelParent().mayavi_view.array3D.shape[0]
+        #print("GetNumberCols(): {}".format(self.parent.GetTopLevelParent().mayavi_view.CurrentActor().array3D.shape[0]))
+        return self.pianorollpanel.GetTopLevelParent().mayavi_view.CurrentActor().array3D.shape[0]
 
     def GetNumberRows(self):
-        #print("GetNumberCols(): {}".format(self.parent.GetTopLevelParent().mayavi_view.array3D.shape[1]))
-        return self.pianorollpanel.GetTopLevelParent().mayavi_view.array3D.shape[1]
+        #print("GetNumberCols(): {}".format(self.parent.GetTopLevelParent().mayavi_view.CurrentActor().array3D.shape[1]))
+        return self.pianorollpanel.GetTopLevelParent().mayavi_view.CurrentActor().array3D.shape[1]
 
     def GetValue(self,row,col):
         z = self.pianorollpanel.currentZplane
         self.log.debug(f"ZZZ = {z} type:")
         self.log.debug(type(z))
-        return str(int(self.pianorollpanel.GetTopLevelParent().mayavi_view.array3D[col][127-row][z]))
+        return str(int(self.pianorollpanel.GetTopLevelParent().mayavi_view.CurrentActor().array3D[col][127-row][z]))
       
 
     def SetValue(self,row,col,value):
         self.log.info(f"PianoRollDataTable.SetValue(): ({col},{row}),val={value}")
         z = self.pianorollpanel.currentZplane
-        self.pianorollpanel.GetTopLevelParent().mayavi_view.array3D[col][127-row][z] = int(value)
+        self.pianorollpanel.GetTopLevelParent().mayavi_view.CurrentActor().array3D[col][127-row][z] = int(value)
 
 # Main Class for the PianoRoll, based orn wx.Grid
 class PianoRoll(wx.grid.Grid, glr.GridWithLabelRenderersMixin):
@@ -131,13 +130,6 @@ class PianoRoll(wx.grid.Grid, glr.GridWithLabelRenderersMixin):
 
         self.SetTable(self._table,True)
 
-        #ATTEMPT at drag scroll.
-        self.scroller = wx.lib.dragscroller.DragScroller(self)
-        self.Bind(wx.EVT_RIGHT_DOWN, self.OnRightDown)
-        self.Bind(wx.EVT_RIGHT_UP, self.OnRightUp)
-
-
-
         glr.GridWithLabelRenderersMixin.__init__(self)
         # self.SetDefaultEditor(wx.grid.GridCellBoolEditor())
         self.SetDefaultRenderer(PianoRollCellRenderer())
@@ -147,12 +139,6 @@ class PianoRoll(wx.grid.Grid, glr.GridWithLabelRenderersMixin):
         self.max_y = 400  # max zoom-in
 
         self.zoom_interval = 4
-
-        print("ScrollLineX", self.GetScrollLineX())
-        print("ScrollLineY", self.GetScrollLineY())
-        self.SetScrollLineX(30)
-        self.SetScrollLineY(30)
-
 
         self.drawing = 1 # Used for click and drag to draw notes
 
@@ -196,17 +182,6 @@ class PianoRoll(wx.grid.Grid, glr.GridWithLabelRenderersMixin):
        # self.Bind(wx.grid.EVT_GRID_CELL_CHANGED, self.OnCellChanged)
         self.Bind(wx.EVT_MOUSEWHEEL, self.OnMouseWheel)
 
-
-    #Used with attempt on right click dragscrolling.
-    def OnRightDown(self, event):
-        print(event)
-        self.scroller.Start(event.GetPosition())
-
-    def OnRightUp(self, event):
-        self.scroller.Stop()
-
-
-
     def DrawColumnLabels(self):
         # Set up column labels to have measure numbers and stuff
         for i in range(self.NumberCols):
@@ -231,9 +206,10 @@ class PianoRoll(wx.grid.Grid, glr.GridWithLabelRenderersMixin):
         for x in range(0, self.GetNumberCols()):
             for y in range(0, self.GetNumberRows()):
                 self.SetCellValue(y,x,"0")
-                self.GetTopLevelParent().mayaviview.array3D[x, 127 - y, layer] = 0
+                self.GetTopLevelParent().mayavi_view.CurrentActor().array3D[x, 127 - y, layer] = 0
         self.ResetGridCellSizes()
-        self.GetTopLevelParent().mayaviview.arraychangedflag += 1
+        mv = self.GetTopLevelParent().mayavi_view
+        mv.actors[mv.cur].arraychangedflag += 1
 
     def ChangeCellsPerQrtrNote(self, newvalue):
         if newvalue == self._cells_per_qrtrnote:
