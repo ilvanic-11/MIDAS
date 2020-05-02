@@ -18,7 +18,7 @@ import music21
 import open3d
 import cv2
 import numpy
-import sympy
+#import sympy
 import vtk
 import tvtk
 from midas_scripts import music21funcs, midiart, midiart3D, musicode
