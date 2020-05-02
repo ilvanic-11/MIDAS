@@ -388,8 +388,8 @@ def get_planes_on_axis( coords_array, axis="z", ordered=False, clean=True):
                 planes_list.append(j)
             planes_dict[i] = planes_list
 
-    print(planes_dict.keys())
-    print("Then use np.array on the value to reassert as numpy coordinate data.")
+    #print(planes_dict.keys())
+    #print("Then use np.array on the value to reassert as numpy coordinate data.")
     return planes_dict
 
 #3D-12.

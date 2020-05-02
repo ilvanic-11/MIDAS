@@ -20,7 +20,7 @@ from mayavi.core import module_manager
 from mayavi3D import MusicObjects
 from gui import PianoRoll
 import copy
-from traits.api import HasTraits, Range, Instance, on_trait_change, Float
+from traits.api import HasTraits, Range, Instance, on_trait_change, Float, String, Int
 from traitsui.api import View, Item, HGroup
 from traits.trait_numeric import Array
 from tvtk.pyface.scene_editor import SceneEditor
@@ -35,27 +35,29 @@ from traits.trait_types import Int
 from mayavi.tools import animator
 import cv2
 # from traits.trait_types import Method
-# from traits.trait_types import List
+from traits.trait_types import List
 from traits.trait_types import Any
 
+class Actor(HasTraits):
+    name = String()
+    points = Array(dtype=np.int)
+    array3D = Array(dtype=np.float, shape=(5000, 128, 128))
+    arraychangedflag = Int()
+    
+    
 
 # mlab.options.offscreen = True
 class Mayavi3idiView(HasTraits):
     scene3d = Instance(MlabSceneModel, ())
-    points = Array(dtype=np.int)
-    array3D = Array(dtype=np.float, shape=(5000, 128, 127))   #TODO Make the numpy range (1000000, 1000000, 1000000)? And then a note for the workable volume being (Any, 127, 127).
-    arraychangedflag = Int()
-    ass = Float
-    #button = Button()
     view = View(Item('scene3d', editor=SceneEditor(scene_class=MayaviScene), resizable=True, show_label=False),
                 resizable=True)
+    actors = List(Actor)
+    cur = Int()
 
-    def __init__(self):
+    def __init__(self,parent):
         HasTraits.__init__(self)
         #self.on_trait_event(self.array3D_changed, 'arraychangedflag')
-
-
-        #Mayavi Engine and Scenes
+        self.parent = parent
         self.engine = self.scene3d.engine
         self.engine.start()  # TODO What does this do?
         self.scene = self.engine.scenes[0]   #TODO Refactor the name of this variable? (self.scene?)
@@ -68,6 +70,9 @@ class Mayavi3idiView(HasTraits):
         # Colors Imports
         ###Set Scene Background Color
         self.scene.scene.background = (0.0, 0.0, 0.0)
+        self.scene.scene.movie_maker.record = False
+
+        #Imports Colors
         self.clr_dict_list = midiart.get_color_palettes(r".\resources\color_palettes")
         self.default_color_palette = midiart.FLStudioColors
 
@@ -80,13 +85,26 @@ class Mayavi3idiView(HasTraits):
         self.text3d_default_positions = []
         self.highlighter_calls = []
         self.volume_slice = None
-
-
-
-
-
-
-
+        
+        self.sources = list()
+        
+        self.append_actor()
+        
+        
+        
+    def CurrentActor(self):
+        return self.actors[self.cur]
+        
+    def append_actor(self):
+        #self.add_trait(actor_name,Actor())
+        a = Actor()
+        self.actors.append(a)
+        self.sources.append(self.insert_array_data(a.array3D, color=(0, 0, 1), mode="sphere", scale_factor=2.5))
+        self.on_trait_change(self.actor_values_changed, 'actors.arraychangedflag')
+        self.on_trait_change(self.actor_list_changed, 'actors[]')
+        self.cur = len(self.actors)-1
+        
+        
     @on_trait_change('scene3d.activated')
     def create_3dmidiart_display(self):
         self.midi = music21.converter.parse(r".\resources\Spark4.mid")
@@ -106,9 +124,9 @@ class Mayavi3idiView(HasTraits):
 
         self.SM_Span = self.midi.highestTime
         self.grid3d_span = self.SM_Span
-
         self.Points_Span = self.Points.max()
-        self.insert_piano_grid_text_timeplane(self.SM_Span)  #TODO REFACTOR THIS?
+        self.insert_piano_grid_text_timeplane(self.SM_Span)
+        #TODO REFACTOR THIS?
 
         ###SELECT OBJECT
 
@@ -131,7 +149,7 @@ class Mayavi3idiView(HasTraits):
         #self.insert_titles()     ##I had a 2nd call for a work session where I lost the camera. I may not need this now...
         self.establish_opening()     #TODO Write in a pass statement for when calls to this function are made from within the program; camera issue. Now Redundant?
         self.animate(160, self.SM_Span, i_div=2)
-        print("Animate")
+        #print("Animate")
 
         #Animator Instance. Instantiated upon the invocation of self.animate after which the animation is immediately stopped here.
         #self.animate1._stop_fired() #TODO Redundant. _stop_fired() now called within Animate after invocation of animate_plane_scroll.
@@ -145,27 +163,41 @@ class Mayavi3idiView(HasTraits):
         #mlab.start_recording(ui=True)
 
         self.insert_titles()
-        #self.insert_note_text("3-Dimensional Music", 0, 164, 0, color=(1,0,1), opacity=.12, orient_to_camera=False, scale=30)
+        #self.insert_note_text("3-Dimensional Music", 0, 164, 0, color=(1,0,1), opacity=.12, orient_to_camera=False, scale=3
 
 
     def remove_mlab_actor(self, actor_child): #TODO Write from scenes[0].children stuff. CHECK--Use child.remove()
         actor_child.remove()  #Must be an actor_child found in scene3d.engine.scenes[0].children. Use subscript for it.
         #TODO Create version of this to call for the actor by its "name" trait.
 
+    @on_trait_change('cur')
+    def current_actor_changed(self):
+        print("current_actor_changed")
 
     ##WORKING INSTANCE
-    @on_trait_change('arraychangedflag')
-    def array3D_changed(self):
-        #print("array3D_changed")
-        self.points = np.argwhere(self.array3D >= 1)
-        self.model.mlab_source.trait_set(points=self.points)
+    def actor_values_changed(self):
+        print("actor_values_changed")
+    
+        self.CurrentActor().points = np.argwhere(self.CurrentActor().array3D >= 1.0)
+        print(type(self.CurrentActor().points))
+        print(self.CurrentActor().points.dtype)
+        print(self.CurrentActor().points)
+    
+        self.sources[self.cur].mlab_source.trait_set(points=self.CurrentActor().points)
 
-
+    #def insert_array_data(self, array_2d, color=(0., 0., 0.), mode="cube", scale_factor=.25):
+        #I don't think this is needed.
+        #self.parent.pianorollpanel.zplanesctrlpanel.ZPlanesListBox.UpdateFilter()
+     
+    def actor_list_changed(self):
+        print("actor_list_changed")
+        
+        
+        
     def insert_array_data(self, array_2d, color=(0., 0., 0.), mode="cube", scale_factor=.25):
         # print(array_2d)
         mlab_data = mlab.points3d(array_2d[:, 0], array_2d[:, 1], array_2d[:, 2], color=color, mode=mode,
                              scale_factor=scale_factor)
-        self.mlab_calls.append(mlab_data)
         return mlab_data
 
 
@@ -592,7 +624,7 @@ class Mayavi3idiView(HasTraits):
     def establish_opening(self):
         scene = self.scene
         # scene.scene.x_minus_view()
-        self.image_plane_widget = self.engine.scenes[0].children[6].children[0].children[0]
+        #self.image_plane_widget = self.engine.scenes[0].children[6].children[0].children[0]
         print("IPW TYPE:", type(self.image_plane_widget))
         self.image_plane_widget.ipw.origin = array([0., 0.0, 0.0])
         self.image_plane_widget.ipw.point1 = array([0.0, 127., 0.0])

@@ -1977,7 +1977,7 @@ def create_glyph(image_array, x_stretch=1, y_shift=0, z_value=127, downscale=21.
     if type(image_array) != np.ndarray: # Can use directory of image file.
         image_array = cv2.imread(image_array)
     listy = []
-    print("IMRAY LEN:", len(image_array))
+    #print("IMRAY LEN:", len(image_array))
     for y in range(0, len(image_array)):
         for x in range(0, len(image_array[y])):
             if tuple((image_array[y][x]).flatten()) != (255, 255, 255):
