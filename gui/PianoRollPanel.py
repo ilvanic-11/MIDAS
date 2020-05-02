@@ -7,10 +7,15 @@ import numpy as np
 import math
 from midas_scripts import musicode, music21funcs
 from gui import PianoRoll
+from gui import ZPlanesControlPanel
 from traits.api import HasTraits, on_trait_change
 from traits.trait_numeric import AbstractArray
 
-""" 
+import logging
+
+
+
+"""
 PianoRollPanel
 Toolbar
 wxNoteBook
@@ -22,82 +27,89 @@ wxNoteBook
 
 """
 class PianoRollPanel(wx.Panel):
+    log = logging.getLogger("PianoRollPanel")
+    
     def __init__(self, parent, log):
         #HasTraits.__init__(self)
         wx.Panel.__init__(self, parent, -1)
+        
         self.log = log
+        self.log.info("PianoRollPanel.__init__()")
+        self.tb = self.SetupToolbar()
+        
+        self.zplanesctrlpanel = ZPlanesControlPanel.ZPlanesControlPanel(self, self.log)
+        
+        self.currentZplane = 0
+        
+        self.pianoroll = PianoRoll.PianoRoll(self,
+                                             self.currentZplane,
+                                             -1,
+                                             wx.DefaultPosition,
+                                             wx.DefaultSize,
+                                             0,
+                                             "Piano Roll",
+                                             self.log
+                                             )
+        
+        self.pianoroll.GetGridWindow().Bind(wx.EVT_MOTION, self.OnMotion)
+        self.pianoroll.GetGridWindow().Bind(wx.EVT_LEFT_UP, self.OnMouseLeftUp)
 
-        tb = self.SetupToolbar()
-        self.Piano_Roll = PianoRoll
-
-
-        self.pianorollNB = wx.Notebook(self, -1, wx.DefaultPosition, wx.DefaultSize, style=wx.NB_LEFT|wx.NB_FIXEDWIDTH)
-        self.pianorolls = list()
-
-
-        self.InsertNewPianoRoll(0)
-        self.currentPage = self.pianorolls[self.pianorollNB.GetSelection()]
-
-
-        self.pianorolls[0].GetGridWindow().Bind(wx.EVT_MOTION, self.OnMotion)
-        self.pianorolls[0].GetGridWindow().Bind(wx.EVT_LEFT_UP, self.OnMouseLeftUp)
-
-
-        self.Bind(wx.EVT_NOTEBOOK_PAGE_CHANGED, self.OnPageChanged)
-
-
+        #self.Bind(wx.EVT_NOTEBOOK_PAGE_CHANGED, self.OnPageChanged)
 
         mainSizer = wx.BoxSizer(wx.VERTICAL)
-        mainSizer.Add(tb, 0, wx.ALL | wx.ALIGN_LEFT | wx.EXPAND, 4)
-        mainSizer.Add(self.pianorollNB, 1, wx.EXPAND)
+        horizSizer = wx.BoxSizer(wx.HORIZONTAL)
+        mainSizer.Add(self.tb, 0, wx.ALL | wx.ALIGN_LEFT | wx.EXPAND, 4)
+        mainSizer.Add(horizSizer, 0, wx.EXPAND)
+        
+        horizSizer.Add(self.zplanesctrlpanel, 1, wx.EXPAND,)
+        horizSizer.Add(self.pianoroll, 1, wx.EXPAND)
         self.SetSizer(mainSizer)
 
+   # def OnPageChanged(self, evt):
+        #self.currentpianoroll = self.pianorolls[self.pianorollNB.GetSelection()]
+        #self.cbCellsPerQrtrNote.SetSelection(self.cbCellsPerQrtrNote.FindString(repr(self.currentpianoroll.GetCellsPerQrtrNote())))
 
 
-    def OnPageChanged(self, evt):
-        self.currentPage = self.pianorolls[self.pianorollNB.GetSelection()]
-        self.cbCellsPerQrtrNote.SetSelection(self.cbCellsPerQrtrNote.FindString(repr(self.currentPage.GetCellsPerQrtrNote())))
-        #TODO: Fix DrawCellSize
+    #def InsertNewPianoRoll(self, index):
+        #self.log.info("InsertNewPianoRoll")
+        #pianoroll = PianoRoll.PianoRoll(self.pianorollNB, index, -1, wx.DefaultPosition, wx.DefaultSize, 0, f"Piano Roll {index}" , self.log)
 
-    def InsertNewPianoRoll(self, index):
-        self.log.WriteText("InsertNewPianoRoll(): ")
-        pianoroll = self.Piano_Roll.PianoRoll(self.pianorollNB, index, -1, wx.DefaultPosition, wx.DefaultSize, 0, f"Piano Roll {index}" , self.log)
+        #self.pianorolls.insert(index, pianoroll)
+        #self.pianorollNB.InsertPage(index, pianoroll, str(index), select=True)
+		
 
-        self.pianorolls.insert(index, pianoroll)
-        self.pianorollNB.InsertPage(index, pianoroll, str(index), select=True)
+        #self.pianorolls[index].GetGridWindow().Bind(wx.EVT_MOTION, self.OnMotion)
+        #self.pianorolls[index].GetGridWindow().Bind(wx.EVT_LEFT_UP, self.OnMouseLeftUp)
 
-        self.pianorolls[index].GetGridWindow().Bind(wx.EVT_MOTION, self.OnMotion)
-        self.pianorolls[index].GetGridWindow().Bind(wx.EVT_LEFT_UP, self.OnMouseLeftUp)
-
-        self.currentPage = self.pianorolls[self.pianorollNB.GetSelection()]
+        #self.currentpianoroll = self.pianorolls[self.currentZplane]
 
     def DeletePianoRoll(self, index):
-        self.log.WriteText("DeletePianoRoll(): ")
+        self.log.info("DeletePianoRoll")
         self.pianorolls.pop(index-1)
-        self.pianorollNB.DeletePage(index-1)
+        #self.pianorollNB.DeletePage(index-1)
+        
 
-    def DeleteAllPianoRolls(self): #TODO Notebook is gone, so needs rewriting.
-        self.log.WriteText("DeletePianoRoll(): ")
-        self.pianorolls.clear()
-        self.pianorollNB.DeleteAllPages()
-
+    # def DeleteAllPianoRolls(self):
+    #     self.log.info("DeleteAllPianoRolls: ")
+    #     self.pianorolls.clear()
+    #     #self.pianorollNB.DeleteAllPages()
+    
     def OnMotion(self, evt):
-        # print("OnMotion: Drawing=%d, " % self.pianorolls[self.currentPage].drawing)
+        #self.log.debug("OnMotion: Drawing=%d " % self.pianoroll.drawing)
 
         if evt.Dragging() and evt.LeftIsDown():
-            page = self.currentPage
-            x, y = page.CalcUnscrolledPosition(evt.GetPosition())
-            row = page.YToRow(y)
-            col = page.XToCol(x)
-            (span, sx, sy) = page.GetCellSize(row, col)
-            # print(f"row={row},col={col}" + self.pianorolls[self.currentPage].print_cell_info(row,col))
+            x, y = self.pianoroll.CalcUnscrolledPosition(evt.GetPosition())
+            row = self.pianoroll.YToRow(y)
+            col = self.pianoroll.XToCol(x)
+            (span, sx, sy) = self.pianoroll.GetCellSize(row, col)
+            # print(f"row={row},col={col}" + self.pianorolls[self.currentpianoroll].print_cell_info(row,col))
 
-            if page.drawing == 0:
-                if (page.GetCellValue(row, col) == "1" or span == wx.grid.Grid.CellSpan_Inside):
-                    page.EraseCell(row, col)
-            elif page.drawing == 1:
-                if (page.GetCellValue(row, col) == "0" and span != wx.grid.Grid.CellSpan_Inside):
-                    page.DrawCell("1", row, col, 1, self.currentPage.draw_cell_size)
+            if self.pianoroll.drawing == 0:
+                if (self.pianoroll.GetCellValue(row, col) == "1" or span == wx.grid.Grid.CellSpan_Inside):
+                    self.pianoroll.EraseCell(row, col)
+            elif self.pianoroll.drawing == 1:
+                if (self.pianoroll.GetCellValue(row, col) == "0" and span != wx.grid.Grid.CellSpan_Inside):
+                    self.pianoroll.DrawCell("1", row, col, 1, self.pianoroll.draw_cell_size)
 
             # print("x=%d, y=%d, row=%d, col=%d" % (x,y,row,col))
         evt.Skip()
@@ -167,7 +179,6 @@ class PianoRollPanel(wx.Panel):
         self.Bind(wx.EVT_TOOL, self.OnToolBarClick, id=id_DeleteAllLayers)
 
 
-
         self.toolbar.Realize()
         return self.toolbar
 
@@ -177,11 +188,11 @@ class PianoRollPanel(wx.Panel):
         newvalue = int(self.cbCellsPerQrtrNote.GetValue())
 
         # need to redraw current piano roll and update stream
-        self.currentPage.ChangeCellsPerQrtrNote(newvalue)
+        self.pianoroll.ChangeCellsPerQrtrNote(newvalue)
 
     def OnDrawCellSizeChanged(self, event):
         print("OnDrawCellSizeChanged(): new size = %s" % self.cbDrawCellSize.GetValue())
-        self.currentPage.draw_cell_size = int(self.cbDrawCellSize.GetValue())
+        self.pianoroll.draw_cell_size = int(self.cbDrawCellSize.GetValue())
 
     def OnToolBarClick(self, event):
         """
@@ -195,31 +206,34 @@ class PianoRollPanel(wx.Panel):
         elif event.GetId() == 20:
             self.OnDrawMode(event)
         elif event.GetId() == 30:
-            self.InsertNewPianoRoll(len(self.pianorolls))
+            #self.InsertNewPianoRoll(len(self.pianorolls))
+            pass
         elif event.GetId() == 40:
             self.DeletePianoRoll(len(self.pianorolls))
         elif event.GetId() == 50:
-            self.DeleteAllPianoRolls()
+            #self.DeleteAllPianoRolls()
+            pass
 
 
     def OnSelectMode(self, event):
-        print("OnSelectMode():")
+        self.log.info("OnSelectMode():")
 
     def OnDrawMode(self, event):
-        print("OnDrawMode():")
+        self.log.info("OnDrawMode():")
 
     def OnMouseLeftUp(self, evt):
-        self.log.WriteText("OnMouseLeftUp():")
-        #self.currentPage.UpdateStream()
-        self.GetTopLevelParent().mayaviview.arraychangedflag += 1
+        self.log.info("OnMouseLeftUp():")
+        #self.currentpianoroll.UpdateStream()
+        mv = self.GetTopLevelParent().mayavi_view
+        mv.actors[mv.cur].arraychangedflag += 1
         evt.Skip()
 
     def print_cell_sizes(self):  #TODO Redundant? Consider deleting this button.
         s = ""
         with open("test.txt", 'w') as f:
-            for row in range(0, self.currentPage.GetNumberRows()):
-                for col in range(0, self.currentPage.GetNumberCols()):
-                    s += self.currentPage.print_cell_info(row, col)
+            for row in range(0, self.pianoroll.GetNumberRows()):
+                for col in range(0, self.pianoroll.GetNumberCols()):
+                    s += self.pianoroll.print_cell_info(row, col)
                 s += "\n"
                 print(type(s))
             f.write(s)
