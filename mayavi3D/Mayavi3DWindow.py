@@ -82,19 +82,24 @@ class Mayavi3idiView(HasTraits):
         self.bpm = 90  # TODO Set based on music21.tempo.Metronome object.
         self.i_div = 2
 
+        # Movie Recording
+        self.scene.scene.movie_maker.record = False
+        self.scene.scene.movie_maker.directory = r".\resources\intermediary_path\recorded_frames"
+
         # Colors Imports
         ###Set Scene Background Color
         self.scene.scene.background = (0.0, 0.0, 0.0)
 
-        self.scene.scene.movie_maker.record = False
+
 
         #Imports Colors
 
         self.clr_dict_list = midiart.get_color_palettes(r".\resources\color_palettes")
         self.default_color_palette = midiart.FLStudioColors
 
+        #TODO Should this be in main MIDAS_wx? Should be in preferences. Yes.
 
-        #TODO Should this be in top_pyshell_split MIDAS_wx? Should be in preferences. Yes.
+
 
         #Grid Construct
         self.mlab_calls = []  #TODO Note: mlab.clf() in the pyshell does not clear this list.
@@ -187,10 +192,6 @@ class Mayavi3idiView(HasTraits):
         #Animator Instance. Instantiated upon the invocation of self.animate after which the animation is immediately stopped here.
         #self.animate1._stop_fired() #TODO Redundant. _stop_fired() now called within Animate after invocation of animate_plane_scroll.
         #print("Animation Stopped")
-
-        #Movie Recording
-        self.scene.scene.movie_maker.record = False
-        self.scene.scene.movie_maker.directory =r".\resources\intermediary_path\recorded_frames"
 
         ###RECORD python Scripts
         #mlab.start_recording(ui=True)
