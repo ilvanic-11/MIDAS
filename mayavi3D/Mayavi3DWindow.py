@@ -28,7 +28,7 @@ from gui import PianoRoll
 
 import copy
 
-from traits.api import HasTraits, Range, Instance, on_trait_change, Float
+from traits.api import HasTraits, Range, Instance, on_trait_change, Float, String, Int
 
 from traitsui.api import View, Item, HGroup
 from traits.trait_numeric import Array
@@ -46,7 +46,7 @@ from traits.trait_types import Int
 from mayavi.tools import animator
 import cv2
 # from traits.trait_types import Method
-# from traits.trait_types import List
+from traits.trait_types import List
 from traits.trait_types import Any
 
 class Actor(HasTraits):
@@ -212,7 +212,7 @@ class Mayavi3idiView(HasTraits):
     
         self.sources[self.cur].mlab_source.trait_set(points=self.CurrentActor().points)
 
-    def insert_array_data(self, array_2d, color=(0., 0., 0.), mode="cube", scale_factor=.25):
+    #def insert_array_data(self, array_2d, color=(0., 0., 0.), mode="cube", scale_factor=.25):
         #I don't think this is needed.
         #self.parent.pianorollpanel.zplanesctrlpanel.ZPlanesListBox.UpdateFilter()
      
@@ -221,6 +221,7 @@ class Mayavi3idiView(HasTraits):
         
         
         
+    def insert_array_data(self, array_2d, color=(0., 0., 0.), mode="cube", scale_factor=.25):
         # print(array_2d)
         mlab_data = mlab.points3d(array_2d[:, 0], array_2d[:, 1], array_2d[:, 2], color=color, mode=mode,
                              scale_factor=scale_factor)
@@ -284,7 +285,7 @@ class Mayavi3idiView(HasTraits):
         x2, y2, z2 = (0, 127, z_axis)  # | => pt2
         x3, y3, z3 = (length, 0, z_axis)  # | => pt3
         x4, y4, z4 = (length, 127, z_axis)  # | => pt4
-        linebox = MusicObjects.LineSquare(length=length, z_axis=z_axis)
+        linebox = MusicObjects.line_square(length=length, z_axis=z_axis)
         plane = mayavi.mlab.mesh([[x1, x2],
                                  [x3, x4]],  # | => x coordinate
 
@@ -652,7 +653,7 @@ class Mayavi3idiView(HasTraits):
     def establish_opening(self):
         scene = self.scene
         # scene.scene.x_minus_view()
-        self.image_plane_widget = self.engine.scenes[0].children[6].children[0].children[0]
+        #self.image_plane_widget = self.engine.scenes[0].children[6].children[0].children[0]
         print("IPW TYPE:", type(self.image_plane_widget))
         self.image_plane_widget.ipw.origin = array([0., 0.0, 0.0])
         self.image_plane_widget.ipw.point1 = array([0.0, 127., 0.0])

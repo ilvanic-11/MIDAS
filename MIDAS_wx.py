@@ -15,7 +15,7 @@ from mayavi.api import Engine
 from traits.trait_types import Function
 from traits.trait_types import Method
 import copy
-from demo import images
+#from demo import images
 import os
 # explicitly importing these so pyInstaller works
 import wx._adv, wx._html, wx._xml, wx.py, time
