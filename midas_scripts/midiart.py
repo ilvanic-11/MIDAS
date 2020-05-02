@@ -104,9 +104,9 @@ def filter_notes_by_key(stream, key, in_place=True):
     """
         Removes notes from a stream, if they are not pitches that are part of the given key.
 
-    :param stream: the input stream to operate on
-    :param key: music21.key.Key object for the chosen key
-    :param in_place: boolean to either operate directly on the input stream or return a deepcopy
+    :param stream:      the input stream to operate on
+    :param key:         music21.key.Key object for the chosen key
+    :param in_place:    boolean to either operate directly on the input stream or return a deepcopy
     :return
     """
 
@@ -158,7 +158,7 @@ def make_midi_from_colored_pixels(pixels, granularity, connect=False, colors=Non
     :param granularity: 	like music21's quarterlength.  4=each 'pixel' is whole note, 1=quarternote, 0.5=eightnote etc.
     :param connect: 		True means connect adjacent notes.
     :param colors			The list of colors to use.  if colors=None, will use FLStudio Piano Roll colors
-    :return: music21.stream.Stream
+    :return:                music21.stream.Stream
     """
 
     if len(pixels) > 128:
@@ -249,9 +249,9 @@ def set_to_nn_colors(im_array, clrs=None):
         This function takes a 3D numpy color array(i.e an image), and converts all of the color tuples of that image to
     16 different colors. This allows for display in FL studio with those 16 colors.
 
-    :param im_array: A 3D numpy image array.
-    :param clrs: A user defined dictionary of colors, allowing for greater possibility of colors for future applications.
-                 If clrs=None, will default to using the FLStudio Piano Roll colors
+    :param im_array:    A 3D numpy image array.
+    :param clrs:        A user defined dictionary of colors, allowing for greater possibility of colors for future
+                        applications. If clrs=None, will default to using the FLStudio Piano Roll colors
 
     :return:
     """
@@ -301,9 +301,9 @@ def set_parts_to_midi_channels(in_stream, output_file):  # TODO Should be a musi
         Assuming that notes are allocated to particular parts in a music21 stream, this function takes those parts and
     allocates them to specific midi channels in a midifile. This changes how midi data is imported in DAWS and the like.
 
-    :param in_stream: Stream we are turning into a midi file.
-    :param output_file: Full path to output midi full.
-    :return: Writes music21.stream.Stream data to a midifile. This function doesn't return anything.
+    :param in_stream:       Stream we are turning into a midi file.
+    :param output_file:     Full path to output midi full.
+    :return:                Writes music21.stream.Stream data to a midifile. This function doesn't return anything.
     """
 
     # Create the operand .mid file from in_stream.
@@ -348,7 +348,7 @@ def make_pixels_from_midi(in_stream, color=[255, 255, 255], gran=16):
     numpy image array.    ....gran was originally 16, for whatever reason.
 
     :param in_stream:
-    :return: numpy array
+    :return:            numpy array
     """
 
     # temp_stream = musicode.mc.notafy(in_stream)
@@ -456,14 +456,14 @@ def stagger_pitch_range(in_stream, stepsize=1, ascending=True, starting_offset=N
     strip of notes above\below where you want to start gets cumulatively shifted in offset, as if arpeggiated, allowing
     for a staggered appearance.
 
-    :param in_stream: Input stream.
-    :param stepsize: Quarter length of offset step for arpeggiation.
-    :param ascending:  True = ascending appegiation, False = descending arpeggiation
+    :param in_stream:       Input stream.
+    :param stepsize:        Quarter length of offset step for arpeggiation.
+    :param ascending:       True = ascending appegiation, False = descending arpeggiation
     :param starting_offset: Default None uses the starting offset of the first note of lowest pitch if ascending=True,
-    or highest if ascending=False. Otherwise, directly specify starting offset.
-    :param range_l: Low range is specified by the starting note's offset.
-    :param range_h: High range determines how many strips to be arpeggiated in relation to the starting note's offset.
-    :return: Returns a new music21.stream.Stream() object.
+                            or highest if ascending=False. Otherwise, directly specify starting offset.
+    :param range_l:         Low range is specified by the starting note's offset.
+    :param range_h:         Determines # of strips to be arpeggiated in relation to the starting note's offset.
+    :return:                Returns a new music21.stream.Stream() object.
     """
 
     # Step 1
@@ -535,14 +535,14 @@ def transcribe_colored_image_to_midiart(img, granularity=1, connect=False, keych
     """
         This function is the commonly called transcribe function for creating musical images.
 
-    :param im_path: A file path or numpy array of an image.
-    :param granularity: quarterLength value that determines the offset and duration values of all the notes transcribed.
-    :param connect: The contiguity feature. Notes chopped by default. Connect=True connects adjacent notes contiguously.
-    :param keychoice: The key of the piece, specified as a string (i.e. "C" for C Major or "C#m" for C Sharp Minor)
-    :param colors: If True, note_pxl_value becomes irrelevant, and this enables use of color tupls found in the image.
-    :param output_path: Directory to which output will be written, specified as a string.
+    :param im_path:         A file path or numpy array of an image.
+    :param granularity:     quarterLength value determines the offset and duration values of all the notes transcribed.
+    :param connect:         The contiguity feature. Notes chopped by default. True connects adjacent notes contiguously.
+    :param keychoice:       The key of the piece, specified as a string(i.e. "C" for C Major or "C#m" for C Sharp Minor)
+    :param colors:          If True, note_pxl_value becomes irrelevant, and this enables use of the image's color tupls.
+    :param output_path:     Directory to which output will be written, specified as a string.
 
-    :return: Returns a music21.stream.Stream() object.
+    :return:                Returns a music21.stream.Stream() object.
     """
     if type(img) == str:
         img = cv2.imread(img, cv2.IMREAD_COLOR)
@@ -574,15 +574,15 @@ def transcribe_grayscale_image_to_midiart(img, granularity, connect, keychoice=N
         This function is the commonly called transcribe function for creating musical QR codes, but can be used for an
     image as well.
 
-    :param img: A file path or numpy array of an image.
-    :param granularity: quarterLength value that determines the offset and duration values of all the notes transcribed.
-    :param connect: The contiguity feature. Notes chopped by default. Connect=True connects adjacent notes contiguously.
-    :param keychoice: The key of the piece, specified as a string (i.e. "C" for C Major or "C#m" for C Sharp Minor)
-    :param note_pxl_value: When not dealing clrs, images are converted to having black and white pixels. A value of 255
-                           or 0 will determine what of those pixels from the image will be turned into notes.
-    :param output_path: Directory to which output will be written, specified as a string.
+    :param img:             A file path or numpy array of an image.
+    :param granularity:     quarterLength value determining the offset and duration values of all the notes transcribed.
+    :param connect:         Contiguity feature. Notes chopped by default. "True" connects adjacent notes contiguously.
+    :param keychoice:       The key of the piece, specified as a string(i.e. "C" for C Major or "C#m" for C Sharp Minor)
+    :param note_pxl_value:  When not doing clrs, images are converted to having black and white pixels. A value of 255
+                            or 0 will determine what of those pixels from the image will be turned into notes.
+    :param output_path:     Directory to which output will be written, specified as a string.
 
-    :return: Returns a music21.stream.Stream() object.
+    :return:                Returns a music21.stream.Stream() object.
     """
 
     if type(img) == str:
@@ -616,17 +616,17 @@ def transcribe_image_edges_to_midiart(image_path, height, granularity, midi_path
         This function is the commonly called function for creating musical edge-detected images. It inherits parameters
     from "make_midi_from_pixels."
 
-    :param image_path: A filepath or numpy array of an image.
+    :param image_path:      A filepath or numpy array of an image.
     :param height:
     :param granularity:
-    :param midi_path: Directory to which output will be written, specified as a string. i.e r"C:\\Users\Blah\blarg...."
-    :param connect: The contiguity feature. Notes are chopped by default. Connect=True connects adjacent notes
-                    contiguously.
-    :param keychoice: The key of the piece, specificed as a string (i.e. "C" for C Major or "C#m" for C Sharp Minor)
-    :param note_pxl_value:  When not dealing clrs, images are converted to having black and white pixels. A value of 255
+    :param midi_path:       Directory to which output will be written, specified as a string. i.e r"C:\\Users\ah\arg..."
+    :param connect:         The contiguity feature. Notes are chopped by default. Connect=True connects adjacent notes
+                            contiguously.
+    :param keychoice:       The key of the piece, specified as a string(i.e. "C" for C Major or "C#m" for C Sharp Minor)
+    :param note_pxl_value:  When not doing clrs, images are converted to having black and white pixels. A value of 255
                             or 0 will determine what of those pixels from the image will be turned into notes.
-    :param clrs: If True, note_pxl_value becomes irrelevant, and this enables the use of color tupls found in the image.
-    :return: Returns a music21.stream.Stream() object.
+    :param clrs:            If True, note_pxl_value becomes irrelevant, and this enables use of the image's color tupls.
+    :return:                Returns a music21.stream.Stream() object.
     """
     if type(image_path) == numpy.ndarray:
         img = image_path
@@ -652,13 +652,13 @@ def extract_sub_melodies(stream, keep_dur=False, chop_durs=False, offset_interva
     within the input music21 stream. Each note in the input m21 stream will only be used once in that random creation
     of melodies.
 
-    :param stream: Input music21 stream.
-    :param keep_dur: If true, notes longer than offset interval will be chopped up into individual notes of
-                     duration = offset interval.
-    :param chop_durs: If chop_durs = True, notes will be chopped up into notes with duration = offset interval.
+    :param stream:          Input music21 stream.
+    :param keep_dur:        If true, notes longer than offset interval will be chopped up into individual notes of
+                            duration = offset interval.
+    :param chop_durs:       If chop_durs = True, notes will be chopped up into notes with duration = offset interval.
     :param offset_interval: quarterLength value determining "get_next_note" search. (4=whole note, 2=halfnote,
                             1=quarternote, 0.5=eighthnote,etc.)
-    :return: Returns a list of streams/
+    :return:                Returns a list of streams/
     """
 
     # """
@@ -671,9 +671,11 @@ def extract_sub_melodies(stream, keep_dur=False, chop_durs=False, offset_interva
         # """
         #
         # :param
-        # :param in_stream: The music 21 stream to be input into the function.
-        # :param current_offset: Current_offset is the offset input to indicate where to start looking for the "next note."
-        # :param offset_interval: Granularity, the offset_interval is\uses the quarterLength feature of music21, to indicate how far to search for the "next note" after the "current offset."
+        # :param in_stream:         The music 21 stream to be input into the function.
+        # :param current_offset:    Current_offset is the offset input to indicate where to start looking for the
+        #                           "next note."
+        # :param offset_interval:   Granularity, the offset_interval is\uses the quarterLength feature of music21, to
+        #                           indicate how far to search for the "next note" after the "current offset."
         # :return:
         # """
         # This function needs to know:
@@ -776,8 +778,8 @@ def get_random_melody(in_stream):
         A smaller function than extract_sub_melodies, this function creates a stream of one melody at random from an
     input stream.
 
-    :param in_stream: Stream from which a random melody will be derived.
-    :return: A new music21.stream.Stream() object.
+    :param in_stream:   Stream from which a random melody will be derived.
+    :return:            A new music21.stream.Stream() object.
     """
 
     neu_stream = music21.stream.Stream()
@@ -811,9 +813,9 @@ def sectionalize_image_array(image_array, sec_root):
         This functions creates smaller, proportional "tiles" of an input image array that can be indexed. Used with the
     wxMidas grid.
 
-    :param image_array: An input cv2-read image array.
-    :param sec_root: The square root of the number of desired sections. If you want 64 sections, set sec_root to 8.
-    :return: A list of smaller, evenly shaped arrays that, when pieced back together form the original image.
+    :param image_array:     An input cv2-read image array.
+    :param sec_root:        The square root of the # of desired sections. If you want 64 sections, set sec_root to 8.
+    :return:                A list of smaller, evenly shaped arrays that piece back together to form the original image.
     """
 
     # Initial split, right down the middle. (Or more, for very large images with high resolution.
@@ -846,8 +848,8 @@ def reconstruct_image_sections(array_list):
     which is part of this function's goal, those sections Must retain their exact number of pixels, or the
     reconstruction will fail.
 
-    :param array_list: List off sectionalized tile numpy arrays that are pieces of a larger whole.
-    :return: Reconstructed image_array.
+    :param array_list:  List off sectionalized tile numpy arrays that are pieces of a larger whole.
+    :return:            Reconstructed image_array.
     """
     join_list = list()
     array_list.reverse()
@@ -892,10 +894,10 @@ def lists_of_to_array(lizt, dim=2):
     This takes coordinate lists (2D numpy arrays) or color lists of cv2.imreads (3D arrays) and turns them back into numpy
     arrays with the appropriate shape and ndim. More advanced use may use more dimensions. This is not supported yet.
 
-    :param lizt: A python list of array coordinates or color tuples. (typically)
-    :param dim: Number of desired dimensions. 2 by default, otherwise will probably be 3,
-    in order to return lizt to original cv2 numpy array.
-    :return: Numpy array.
+    :param lizt:    A python list of array coordinates or color tuples. (typically)
+    :param dim:     Number of desired dimensions. 2 by default, otherwise will probably be 3,
+                    in order to return lizt to original cv2 numpy array.
+    :return:        Numpy array.
     """
 
     # for q in lists:
@@ -930,9 +932,9 @@ def array_to_lists_of(coords_array, tupl=True):
     This functionality is contingent upon the input arrays ndim.
     Useful for compare calls between numpy data without wanting to use .any() or .all(), among other uses.
 
-    :param coords_array: Input 2D coordinate array or cv2.imread 3D array of color tuples. (i.e. a picture)
-    :param tupl: Determines whether or not you want the parent list populated with the data as lists or tuples.
-    :return: A List of lists or tuples.
+    :param coords_array:    Input 2D coordinate array or cv2.imread 3D array of color tuples. (i.e. a picture)
+    :param tupl:            Determines whether or not you want the parent list with the data set as lists or tuples.
+    :return:                A List of lists or list of tuples.
     """
 
     if coords_array.ndim == 2:
@@ -973,15 +975,16 @@ def separate_pixels_to_coords_by_color(image, z_value, nn=False, dimensionalize=
     dimensionalizing it along the z axis from the starting point of z_value, a value between 0-127. Use of nearest
     neighbor functionality vastly expedites this process; see midiart.set_to_nn_colors().
 
-    :param image: Input image, either filepath, or cv2.imread(filepath). If stream=True, input is treated as a stream.
-    :param z_value: Z axis plane on which to place the image.
-    :param nn: If true, sets colors in image to their nearest neighbors determined by the FL studio color palette or
-               selected palette..
-    :param dimensionalize: Value denoting space along z axis between separated parts.
-    :param display: Displays a standard mayavi mlab visualization of image.
-    :param clrs: 16-colors palette to use. FL studio colors used by default when None.
-    :return: Returns odict, an Ordered Dictionary of coordinates organized by color, and mlab_list, a list of variables
-             corresponding to the mlab calls made if display=True
+    :param image:           Input image, either filepath, or cv2.imread(filepath). If stream=True, input is treated as
+                            a stream.
+    :param z_value:         Z axis plane on which to place the image.
+    :param nn:              If true, sets colors in image to their nearest neighbors determined by the FL studio color
+                            palette or selected palette..
+    :param dimensionalize:  Value denoting space along z axis between separated parts.
+    :param display:         Displays a standard mayavi mlab visualization of image.
+    :param clrs:            16-colors palette to use. FL studio colors used by default when None.
+    :return:                Returns odict, an Ordered Dictionary of coordinates organized by color, and an mlab_list,
+                            a list of variables corresponding to the mlab calls made if display=True.
     """
     if type(image) != numpy.ndarray:
         cv2.imread(image)
@@ -1035,8 +1038,8 @@ def get_color_palettes(mypath=None):
 
     Colors acquired from: ---->
 
-    :param mypath: Should generally be r".\\Midas\\resources\\color_palettes folder".
-    :return: A dictionary of dictionaries of color tuples.
+    :param mypath:  Should generally be r".\\Midas\\resources\\color_palettes folder".
+    :return:        A dictionary of dictionaries of color tuples.
     """
     if mypath is None:
         mypath = r".\resources\color_palettes\\"
