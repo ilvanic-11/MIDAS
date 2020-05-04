@@ -67,9 +67,9 @@ else:
 
 print("Successfully imported all paths.")
 print('\n')
-print("----Welcome to MIDAS, the MIDI-Intermediary Digital Art Suite.----")
+print("-----Welcome to MIDAS, the MIDI-Intermediary Digital Art Suite.-----")
 print('\n')
-print("----Your Visual Music GUI and Toolkit.----")
+print("     Your Visual Music GUI and Toolkit.")
 print('\n')
 print('     Using knowledge and techniques of python, music21, numpy, opencv-python, open3d, vtk, and mayavi, this gui toolkit provides a musical engineer \n'
       'with the ability to transform text, images, and point clouds into musical data for composing, production and visualization purposes. \n'

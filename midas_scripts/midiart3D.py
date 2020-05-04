@@ -479,9 +479,24 @@ def BPM_to_FPS(bpm, i_div, timesig = None):
     """
         This function calculates a fps value from a bpm value.
 
+        We ask: What is the equation for fps given the bpm and the frames per beat?
+    For our purposes:
+    bpmm = beats per measure
+
+    steps value = 1/i_div
+    4 steps == 1 Measure
+
+    i_div*bpmm = frames per measure
+    fpm/bpmm = frames per beat
+
+    **(bpm * ((i_div*bpmm)\bpmm))\60 = fps **
+
+    Therefore, fpb == i_div.
+
+    (bpm * fpb)\60 = fps
     :param bpm:     Beats per minute
     :param bpmm:    Beats per measure.
-    :param i_div:   Frames per measure. (Think of this like quarternotes, eighth notes, 16th, etc....)
+    :param i_div:   Frames per beat. (Think of this like quarternotes, eighth notes, 16th, etc....)
     :return:        Frames per second.
     """
     if timesig is None:
@@ -489,6 +504,8 @@ def BPM_to_FPS(bpm, i_div, timesig = None):
     else:
         timesig = music21.meter.TimeSignature(timesig)
     bpmm = timesig.barDuration.quarterLength
-    fps = (bpm * (i_div/bpmm))/60
+
+    #fpm == 4/i_div
+    fps = (bpm * i_div)/60
     #modulo = (bpm * fps) % 60
     return fps
