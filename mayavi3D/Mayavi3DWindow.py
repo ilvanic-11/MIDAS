@@ -79,8 +79,10 @@ class Mayavi3idiView(HasTraits):
 
         # Common Scene Properties
         self.grid3d_span = 127  # For right now.
-        self.bpm = 90  # TODO Set based on music21.tempo.Metronome object.
-        self.i_div = 2
+        self.bpm = 540  # TODO Set based on music21.tempo.Metronome object.
+        self.i_div = 2  #Upon further review, i_div IS frames per beat. I'll change this variable name later.
+        #self.time_sig = '4/4' #TODO Set based on music21.meter.TimeSignature object.
+
 
         # Movie Recording
         self.scene.scene.movie_maker.record = False
@@ -276,6 +278,7 @@ class Mayavi3idiView(HasTraits):
         self.image_plane_widget.ipw.point2 = array([0.0, 0.0, 127.])
         self.image_plane_widget.ipw.slice_position = 1
         self.image_plane_widget.ipw.slice_position = 0
+        #self.loop_end = False
         return self.volume_slice
 
 
@@ -529,6 +532,8 @@ class Mayavi3idiView(HasTraits):
                 if i == x_length:   #Because we animate ACROSS our desired range max, we make sure that this condition is met.
                     #Destroy the volume_slice and rebuild it at the end of the animating generator function.
                     self.reset_volume_slice(self.grid3d_span)
+                    #Fire a "loop_end" flag so we can turn off "movie_maker.record" if we intend to animate without generating frames.
+                    self.loop_end = True
                     #pass
                     return i, print("True")
                 else:
@@ -544,8 +549,9 @@ class Mayavi3idiView(HasTraits):
 
         self.animate1 = animate_plane_scroll(int(time_length), int(nano_delay))
         self.animate1._stop_fired()
+        self.loop_end = False
         #self.i_list = [i for i in self.animate1]
-        print("Animate")
+        print("Animaties")
 
         # animate1.timer.Stop()
         # input("Press Enter.")
