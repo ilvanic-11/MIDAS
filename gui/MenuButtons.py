@@ -302,28 +302,32 @@ class CustomMenuBar(wx.MenuBar):
 
     def OnExportMovie(self, event):
         print("This fucker works.")
-        mayaviview = self.GetTopLevelParent().mayavi_view
-        movie_maker = mayaviview.engine.scenes[0].scene.movie_maker
-        length = (mayaviview.grid3d_span)
-        bpm_speed = self.GetTopLevelParent().mayaviview.bpm + 60
-        i_div = mayaviview.i_div
+        mayavi_view = self.GetTopLevelParent().mayavi_view
+        movie_maker = mayavi_view.engine.scenes[0].scene.movie_maker
+        length = (mayavi_view.grid3d_span)
+        bpm_speed = self.GetTopLevelParent().mayavi_view.bpm    ###+ 60
+        i_div = mayavi_view.i_div
 
-        print("# Grid Length:", mayaviview.grid3d_span)
-        print("BPM:", bpm_speed)
-        print("# of Measures:", length/4)   #Measures assumed to be in '4/4' time. #TODO Fix.
-        print("# of Frames:", (length *i_div))
+        print("# BPM:", bpm_speed)
+        print("# Grid Length:", mayavi_view.grid3d_span)
+        print("# Animation Step Value:", 1/i_div)
+        print("# of Measures:", length/4)   #Measures assumed to be in '4/4' time. #TODO Fix by syncing with a time signature object.
+        print("# of Frames:", (length * i_div))
+        print("# of Frames per Measure:", i_div*4)
+        print("# of Frames per Beat:", i_div)
 
         #mayavi_view.volume_slice.remove()
         #mayavi_view.insert_volume_slice(length)
+        #TODO Add to preferences as checkbox. (for animation without creating frames.)
+
+        #Enable frame saving.
         if movie_maker.record is False:
             movie_maker.record = True
-        mayaviview.animate(length, bpm_speed, i_div, sleep = 0)
-        animator_instance = mayaviview.animate1
+        mayavi_view.animate(length, bpm_speed, i_div, sleep = 0)
+        animator_instance = mayavi_view.animate1
         animator_instance._start_fired()
-        time.sleep(0)
+        time.sleep(1)
         #TODO set movie_maker back False in animate function after loop completes.
-        if mayaviview.image_plane_widget.ipw.slice_position == 0.0:
-            movie_maker.record = False
         print("In Blender, set FPS to:", midiart3D.BPM_to_FPS(bpm_speed, i_div)) ##((bpm_speed * (i_div/4) /60)))
         pass
 
@@ -621,19 +625,19 @@ class CustomMenuBar(wx.MenuBar):
             if dialog.input_span.GetLineText(0) == None:
                 pass
             else:
-                self.GetTopLevelParent().mayaviview.grid3d_span = float(dialog.input_span.GetLineText(0))
+                self.GetTopLevelParent().mayavi_view.grid3d_span = float(dialog.input_span.GetLineText(0))
             if dialog.input_bpm.GetLineText(0) == None:
                 pass
             else:
-                self.GetTopLevelParent().mayaviview.bpm = float(dialog.input_bpm.GetLineText(0))
+                self.GetTopLevelParent().mayavi_view.bpm = float(dialog.input_bpm.GetLineText(0))
             if dialog.input_i_div.GetLineText(0) == None:
                 pass
             else:
-                self.GetTopLevelParent().mayaviview.i_div = float(dialog.input_i_div.GetLineText(0))
+                self.GetTopLevelParent().mayavi_view.i_div = float(dialog.input_i_div.GetLineText(0))
             if dialog.popupCtrl.GetStringValue() == "FLStudioColors":
-                self.GetTopLevelParent().mayaviview.default_color_palette = midiart.FLStudioColors
+                self.GetTopLevelParent().mayavi_view.default_color_palette = midiart.FLStudioColors
             else:
-                self.GetTopLevelParent().mayaviview.default_color_palette = midiart.get_color_palettes()[dialog.popupCtrl.GetStringValue()]
+                self.GetTopLevelParent().mayavi_view.default_color_palette = midiart.get_color_palettes()[dialog.popupCtrl.GetStringValue()]
 
     def _OnHelpDialogClosed(self, dialog, evt):
         val = evt.GetReturnCode()

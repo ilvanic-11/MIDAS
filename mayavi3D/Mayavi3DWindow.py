@@ -20,7 +20,7 @@ from mayavi.core import module_manager
 from mayavi3D import MusicObjects
 from gui import PianoRoll
 import copy
-from traits.api import HasTraits, Range, Instance, on_trait_change, Float, String, Int, Dict
+from traits.api import HasTraits, Range, Instance, on_trait_change, Float, String, Int
 from traitsui.api import View, Item, HGroup
 from traits.trait_numeric import Array
 from tvtk.pyface.scene_editor import SceneEditor
@@ -38,15 +38,13 @@ import cv2
 from traits.trait_types import List
 from traits.trait_types import Any
 
-
-
 class Actor(HasTraits):
     name = String()
     points = Array(dtype=np.int)
     array3D = Array(dtype=np.float, shape=(5000, 128, 128))
     arraychangedflag = Int()
-    color = (0,0,1)
-
+    
+    
 
 # mlab.options.offscreen = True
 class Mayavi3idiView(HasTraits):
@@ -66,8 +64,14 @@ class Mayavi3idiView(HasTraits):
 
         # Common Scene Properties
         self.grid3d_span = 127  # For right now.
-        self.bpm = 90  # TODO Set based on music21.tempo.Metronome object.
-        self.i_div = 2
+        self.bpm = 540  # TODO Set based on music21.tempo.Metronome object.
+        self.i_div = 2  #Upon further review, i_div IS frames per beat. I'll change this variable name later.
+        #self.time_sig = '4/4' #TODO Set based on music21.meter.TimeSignature object.
+
+
+        # Movie Recording
+        self.scene.scene.movie_maker.record = False
+        self.scene.scene.movie_maker.directory = r".\resources\intermediary_path\recorded_frames"
 
         # Colors Imports
         ###Set Scene Background Color
@@ -77,9 +81,7 @@ class Mayavi3idiView(HasTraits):
         #Imports Colors
         self.clr_dict_list = midiart.get_color_palettes(r".\resources\color_palettes")
         self.default_color_palette = midiart.FLStudioColors
-
-
-        #TODO Should this be in top_pyshell_split MIDAS_wx? Should be in preferences. Yes.
+        #TODO Should this be in main MIDAS_wx? Should be in preferences. Yes.
 
         #Grid Construct
         self.mlab_calls = []  #TODO Note: mlab.clf() in the pyshell does not clear this list.
@@ -161,10 +163,6 @@ class Mayavi3idiView(HasTraits):
         #Animator Instance. Instantiated upon the invocation of self.animate after which the animation is immediately stopped here.
         #self.animate1._stop_fired() #TODO Redundant. _stop_fired() now called within Animate after invocation of animate_plane_scroll.
         #print("Animation Stopped")
-
-        #Movie Recording
-        self.scene.scene.movie_maker.record = False
-        self.scene.scene.movie_maker.directory =r".\resources\intermediary_path\recorded_frames"
 
         ###RECORD python Scripts
         #mlab.start_recording(ui=True)
@@ -412,6 +410,7 @@ class Mayavi3idiView(HasTraits):
 
     def set_text_positions(self, pos=np.array([0, 0, 0]), default=True, rando=False):
 
+
         def random_position():
             list1 = list()
             for i in range(0, 3, 1):
@@ -501,6 +500,11 @@ class Mayavi3idiView(HasTraits):
                 if i == x_length:   #Because we animate ACROSS our desired range max, we make sure that this condition is met.
                     #Destroy the volume_slice and rebuild it at the end of the animating generator function.
                     self.reset_volume_slice(self.grid3d_span)
+                    #Fire a "loop_end" flag so we can turn off "movie_maker.record" if we intend to animate without generating frames.
+                    self.loop_end = True
+                    #Might change this later, for playback stuff.
+                    if self.loop_end is True:
+                        self.scene.scene.movie_maker.record = False
                     #pass
                     return i, print("True")
                 else:
@@ -516,8 +520,9 @@ class Mayavi3idiView(HasTraits):
 
         self.animate1 = animate_plane_scroll(int(time_length), int(nano_delay))
         self.animate1._stop_fired()
+        self.loop_end = False
         #self.i_list = [i for i in self.animate1]
-        print("Animate")
+        print("Animaties")
 
         # animate1.timer.Stop()
         # input("Press Enter.")

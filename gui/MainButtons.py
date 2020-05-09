@@ -509,7 +509,7 @@ class MIDIArt3DDialog(wx.Dialog):
 
 
     def On3DDisplayRedraw(self, evt):
-        super().GetParent().GetTopLevelParent().mayaviview.redraw_mayaviview()
+        super().GetParent().GetTopLevelParent().mayavi_view.redraw_mayaviview()
 
 
 class Music21ConverterParseDialog(wx.Dialog):
