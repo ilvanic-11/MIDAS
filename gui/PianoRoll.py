@@ -84,31 +84,47 @@ class PianoRollDataTable(wx.grid.GridTableBase):
     """
     
     log = logging.getLogger("PianoRollDataTable")
-    def __init__(self,parent):
-        # The base class must be initialized *first*
+    def __init__(self, pianorollpanel):
         wx.grid.GridTableBase.__init__(self)
-        self.pianorollpanel = parent.GetParent()
+        self.pianorollpanel = pianorollpanel
+    # need to store a reference to the piano roll panel.  GridTableBase does not store gui parents.
+    
+    #def SetRefToPianoRollPanel(self, pianorollpanel):
+    
         
-
     def GetNumberCols(self):
         #print("GetNumberCols(): {}".format(self.parent.GetTopLevelParent().mayavi_view.CurrentActor().array3D.shape[0]))
-        return self.pianorollpanel.GetTopLevelParent().mayavi_view.CurrentActor().array3D.shape[0]
-
+        if self.pianorollpanel.GetTopLevelParent().mayavi_view.CurrentActor():
+            return self.pianorollpanel.GetTopLevelParent().mayavi_view.CurrentActor().array3D.shape[0]
+        else:
+            return 5000
+        
     def GetNumberRows(self):
         #print("GetNumberCols(): {}".format(self.parent.GetTopLevelParent().mayavi_view.CurrentActor().array3D.shape[1]))
-        return self.pianorollpanel.GetTopLevelParent().mayavi_view.CurrentActor().array3D.shape[1]
-
+        if self.pianorollpanel.GetTopLevelParent().mayavi_view.CurrentActor():
+            return self.pianorollpanel.GetTopLevelParent().mayavi_view.CurrentActor().array3D.shape[1]
+        else:
+            return 128
+        
     def GetValue(self,row,col):
-        z = self.pianorollpanel.currentZplane
-        self.log.debug(f"ZZZ = {z} type:")
-        self.log.debug(type(z))
-        return str(int(self.pianorollpanel.GetTopLevelParent().mayavi_view.CurrentActor().array3D[col][127-row][z]))
-      
+    
+        if self.pianorollpanel.GetTopLevelParent().mayavi_view.CurrentActor():
+            if (self.pianorollpanel):
+                z = self.pianorollpanel.currentZplane
+            else:
+                z = 0
+            self.log.debug(f"ZZZ = {z} type:")
+            self.log.debug(type(z))
+            return str(int(self.pianorollpanel.GetTopLevelParent().mayavi_view.CurrentActor().array3D[col][127-row][z]))
+        else:
+            return ""
 
     def SetValue(self,row,col,value):
         self.log.info(f"PianoRollDataTable.SetValue(): ({col},{row}),val={value}")
-        z = self.pianorollpanel.currentZplane
-        self.pianorollpanel.GetTopLevelParent().mayavi_view.CurrentActor().array3D[col][127-row][z] = int(value)
+
+        if self.pianorollpanel.GetTopLevelParent().mayavi_view.CurrentActor():
+            z = self.pianorollpanel.currentZplane
+            self.pianorollpanel.GetTopLevelParent().mayavi_view.CurrentActor().array3D[col][127-row][z] = int(value)
 
 # Main Class for the PianoRoll, based orn wx.Grid
 class PianoRoll(wx.grid.Grid, glr.GridWithLabelRenderersMixin):
@@ -122,7 +138,7 @@ class PianoRoll(wx.grid.Grid, glr.GridWithLabelRenderersMixin):
         self.stream = music21.stream.Stream()
 
         #self.CreateGrid(NUM_TONES,512)
-        self._table = PianoRollDataTable(self)
+        self._table = PianoRollDataTable(self.GetParent().GetParent())
         
         for x in range(0, self.GetNumberCols()):
             for y in range(0, self.GetNumberRows()):

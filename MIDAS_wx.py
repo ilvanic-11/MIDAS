@@ -46,7 +46,7 @@ class MySplashScreen(SplashScreen):
         self.Hide()
 
         # if the timer is still running then go ahead and show the
-        # topsplit frame now
+        # pianoroll_mainbuttons_split frame now
         if self.fc.IsRunning():
             self.fc.Stop()
             self.ShowMain()
@@ -59,6 +59,24 @@ class MySplashScreen(SplashScreen):
             self.Raise()
        #f wx.CallAfter(frame.ShowTip)
 
+class MyCrust(wx.py.crust.Crust):
+    def __init__(self, parent, id=-1, pos=wx.DefaultPosition,
+                 size=wx.DefaultSize, style=wx.SP_3D | wx.SP_LIVE_UPDATE,
+                 name='Crust Window', rootObject=None, rootLabel=None,
+                 rootIsNamespace=True, intro='', locals=None,
+                 InterpClass=None,
+                 startupScript=None, execStartupScript=True,
+                 *args, **kwds):
+        super().__init__(parent, id, pos, size, style, name, rootObject, rootLabel, rootIsNamespace,intro,
+                       locals, InterpClass, startupScript, execStartupScript)
+
+        self.Bind(wx.EVT_SPLITTER_DCLICK, self.OnSashDClick)
+        
+    def OnSashDClick(self, event):
+        # do nothing.  overloads pycrust's default implementation which is to unsplit when double clicking the sash
+        pass
+    
+        
 class MainWindow(wx.Frame):
     log = logging.getLogger(__name__)
     
@@ -70,26 +88,27 @@ class MainWindow(wx.Frame):
        
         self.SetSize((1400, 900))  #TODO Optimize for users screen resolution.
 
-        self.basesplit = wx.SplitterWindow(self.mainpanel, wx.ID_ANY, style=wx.SP_3DSASH | wx.SP_BORDER)
-        self.main = wx.SplitterWindow(self.basesplit, wx.ID_ANY, style=wx.SP_3DSASH | wx.SP_BORDER)
-        self.topsplit = wx.SplitterWindow(self.main, wx.ID_ANY, style=wx.SP_3DSASH | wx.SP_BORDER)
-        self.leftsplit = wx.SplitterWindow(self.topsplit, wx.ID_ANY, style=wx.SP_3DSASH | wx.SP_BORDER)
+        self.top_mayaviview_split = wx.SplitterWindow(self.mainpanel, wx.ID_ANY, style=wx.SP_3DSASH | wx.SP_BORDER)
+        self.top_pyshell_split = wx.SplitterWindow(self.top_mayaviview_split, wx.ID_ANY, style=wx.SP_3DSASH | wx.SP_BORDER)
+        self.pianoroll_mainbuttons_split = wx.SplitterWindow(self.top_pyshell_split, wx.ID_ANY, style=wx.SP_3DSASH | wx.SP_BORDER)
+        self.mainbuttons_stats_split = wx.SplitterWindow(self.pianoroll_mainbuttons_split, wx.ID_ANY, style=wx.SP_3DSASH | wx.SP_BORDER)
 
 
-        self.musicode = musicode.Musicode()
+        #self.musicode = musicode.Musicode()
 
 
         self.mayavi_view = Mayavi3DWindow.Mayavi3idiView(self)
-        self.mayavi_view_control_panel = self.mayavi_view.edit_traits(parent=self.basesplit, kind='subpanel').control
-        self.pyshellpanel = wx.py.crust.Crust(self.main, startupScript=str(os.getcwd() + "\\\\resources\\\\" + "Midas_Startup_Configs.py"))
-
-
-
-        self.pianorollpanel = PianoRollPanel.PianoRollPanel(self.topsplit, self.log)
-        self.mainbuttonspanel = MainButtons.MainButtonsPanel(self.leftsplit, self.log)
-        self.statsdisplaypanel = StatsDisplayPanel.StatsDisplayPanel(self.leftsplit, self.log)
+        self.mayavi_view_control_panel = self.mayavi_view.edit_traits(parent=self.top_mayaviview_split, kind='subpanel').control
+       
+        self.pyshellpanel = MyCrust(self.top_pyshell_split, startupScript=str(os.getcwd() + "\\\\resources\\\\" + "Midas_Startup_Configs.py"))
+        self.pianorollpanel = PianoRollPanel.PianoRollPanel(self.pianoroll_mainbuttons_split, self.log)
+        self.mainbuttonspanel = MainButtons.MainButtonsPanel(self.mainbuttons_stats_split, self.log)
+        self.statsdisplaypanel = StatsDisplayPanel.StatsDisplayPanel(self.mainbuttons_stats_split, self.log)
+        
+        self.pianorollpanel.actorsctrlpanel.actorsListBox.new_actor("0", 0)
+        
         sizer = wx.BoxSizer(wx.VERTICAL)
-        sizer.Add(self.basesplit, 1, wx.EXPAND)
+        sizer.Add(self.top_mayaviview_split, 1, wx.EXPAND)
         self.mainpanel.SetSizerAndFit(sizer)
 
         #Icon
@@ -217,20 +236,25 @@ class MainWindow(wx.Frame):
         self._bind_music21funcs_tools()
 
         self.SetMenuBar(self.menuBar)
+
+        # Maxes top_pyshell_split window.
+        #self.Maximize(True)
+        self.SetSize(1920, 1080)
+        
         # self.CreateStatusBar()
         self._set_properties()
         self._do_layout()
 
-        #Maxes main window.
-        self.Maximize(True)
+        
 
 
-        # Pyshell Resplit on Init
+        # Pyshell Resplit on Init becasue pyshell defaults to SplitHorizontal()
         self.pyshellpanel.Unsplit(self.pyshellpanel.Window2)  #Actually, it can be read, because this works.
         # self.pyshellpanel.AddChild(self.pyshellpanel.notebook)
-        self.pyshellpanel.SplitVertically(self.pyshellpanel.Window1, self.pyshellpanel.notebook, sashPosition=980)
-        self.pyshellpanel.SetSashPosition(980, redraw=False)
-
+        self.pyshellpanel.SplitVertically(self.pyshellpanel.Window1, self.pyshellpanel.notebook)
+        self.pyshellpanel.SetSashPosition(800)
+        self.pyshellpanel.SetMinimumPaneSize(400)
+        
 
         self.mainpanel.Bind(wx.EVT_CHAR_HOOK, self.OnKeyDown)
         self.Show(True)
@@ -274,17 +298,17 @@ class MainWindow(wx.Frame):
         if event.GetUnicodeKey() == ord('D'):
             if event.AltDown():
                 #TopSashUp
-                self.main.SetSashPosition(self.main.GetSashPosition() - 48)
+                self.top_pyshell_split.SetSashPosition(self.top_pyshell_split.GetSashPosition() - 48)
             elif event.ControlDown():
                 #TopSashDown
-                self.main.SetSashPosition(self.main.GetSashPosition() + 48)
+                self.top_pyshell_split.SetSashPosition(self.top_pyshell_split.GetSashPosition() + 48)
         elif event.GetUnicodeKey() == ord('G'):
             if event.AltDown():
                 #BottomSashUp
-                self.basesplit.SetSashPosition(self.basesplit.GetSashPosition() - 48)
+                self.top_mayaviview_split.SetSashPosition(self.top_mayaviview_split.GetSashPosition() - 48)
             elif event.ControlDown():
                 #BottomSashDown
-                self.basesplit.SetSashPosition(self.basesplit.GetSashPosition() + 48)
+                self.top_mayaviview_split.SetSashPosition(self.top_mayaviview_split.GetSashPosition() + 48)
         event.Skip()
 
 
@@ -293,26 +317,27 @@ class MainWindow(wx.Frame):
         self.pianorollpanel.SetBackgroundColour("white")
         self.statsdisplaypanel.SetBackgroundColour("silver")
         self.mainbuttonspanel.SetBackgroundColour("green")
-        self.main.SetBackgroundColour("black")
-        self.main.SetMinimumPaneSize(50)
-        self.topsplit.SetMinimumPaneSize(150)
-        self.leftsplit.SetMinimumPaneSize(200)
-        self.basesplit.SetMinimumPaneSize(50)
+        self.top_pyshell_split.SetBackgroundColour("black")
+        self.top_pyshell_split.SetMinimumPaneSize(50)
+        self.pianoroll_mainbuttons_split.SetMinimumPaneSize(120)
+        self.mainbuttons_stats_split.SetMinimumPaneSize(200)
+        self.top_mayaviview_split.SetMinimumPaneSize(50)
 
     def _do_layout(self):
-        self.leftsplit.SplitHorizontally(self.mainbuttonspanel, self.statsdisplaypanel)
-        self.topsplit.SplitVertically(self.leftsplit, self.pianorollpanel)
-        self.main.SplitHorizontally(self.topsplit, self.pyshellpanel)
-        self.basesplit.SplitHorizontally(self.main, self.mayavi_view_control_panel)
-        self.topsplit.SetSashPosition(200)
-        self.leftsplit.SetSashPosition(600)
-        self.main.SetSashPosition(900)
-        self.basesplit.SetSashPosition(300)  ###Affects 3D title insert.
+        self.mainbuttons_stats_split.SplitHorizontally(self.mainbuttonspanel, self.statsdisplaypanel)
+        self.pianoroll_mainbuttons_split.SplitVertically(self.mainbuttons_stats_split, self.pianorollpanel)
+        self.top_pyshell_split.SplitHorizontally(self.pianoroll_mainbuttons_split, self.pyshellpanel)
+        self.top_mayaviview_split.SplitHorizontally(self.top_pyshell_split, self.mayavi_view_control_panel)
+        
+        self.pianoroll_mainbuttons_split.SetSashPosition(120)
+        self.mainbuttons_stats_split.SetSashPosition(400)
+        self.top_pyshell_split.SetSashPosition(300)
+        self.top_mayaviview_split.SetSashPosition(600)  ###Affects 3D title insert
+        
+        self.top_mayaviview_split.SetSashGravity(0.5)
+        self.top_pyshell_split.SetSashGravity(0.5)
         self.mainpanel.Layout()
         self.Layout()
-
-
-
 
 
 if __name__ == '__main__':
