@@ -499,6 +499,9 @@ class Mayavi3idiView(HasTraits):
                     self.reset_volume_slice(self.grid3d_span)
                     #Fire a "loop_end" flag so we can turn off "movie_maker.record" if we intend to animate without generating frames.
                     self.loop_end = True
+                    #Might change this later, for playback stuff.
+                    if self.loop_end is True:
+                        self.scene.scene.movie_maker.record = False
                     #pass
                     return i, print("True")
                 else:
