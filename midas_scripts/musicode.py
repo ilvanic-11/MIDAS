@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 #------------------------------------------------------------------------------------
 # Name:         musicode.py
-# Purpose:      This is the topsplit file for musicode
+# Purpose:      This is the pianoroll_mainbuttons_split file for musicode
 #
 # Authors:      Zachary Plovanic - Lead Programmer
 #               Isaac Plovanic - Creator, Director, Programmer
