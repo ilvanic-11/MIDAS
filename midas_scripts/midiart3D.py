@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 #------------------------------------------------------------------------------------
 # Name:         midiart3D.py
-# Purpose:      This is the topsplit file for 3idiart functions
+# Purpose:      This is the pianoroll_mainbuttons_split file for 3idiart functions
 #
 # Authors:      Zachary Plovanic - Lead Programmer
 #               Isaac Plovanic - Creator, Director, Programmer
