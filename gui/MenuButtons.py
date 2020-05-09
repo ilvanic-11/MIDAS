@@ -308,8 +308,9 @@ class CustomMenuBar(wx.MenuBar):
         bpm_speed = self.GetTopLevelParent().mayavi_view.bpm    ###+ 60
         i_div = mayavi_view.i_div
 
+        print("# BPM:", bpm_speed)
         print("# Grid Length:", mayavi_view.grid3d_span)
-        print("BPM:", bpm_speed)
+        print("# Animation Step Value:", 1/i_div)
         print("# of Measures:", length/4)   #Measures assumed to be in '4/4' time. #TODO Fix by syncing with a time signature object.
         print("# of Frames:", (length * i_div))
         print("# of Frames per Measure:", i_div*4)
@@ -318,16 +319,15 @@ class CustomMenuBar(wx.MenuBar):
         #mayavi_view.volume_slice.remove()
         #mayavi_view.insert_volume_slice(length)
         #TODO Add to preferences as checkbox. (for animation without creating frames.)
+
+        #Enable frame saving.
         if movie_maker.record is False:
             movie_maker.record = True
-
         mayavi_view.animate(length, bpm_speed, i_div, sleep = 0)
         animator_instance = mayavi_view.animate1
         animator_instance._start_fired()
         time.sleep(1)
         #TODO set movie_maker back False in animate function after loop completes.
-        if mayavi_view.loop_end is True:
-            movie_maker.record = False
         print("In Blender, set FPS to:", midiart3D.BPM_to_FPS(bpm_speed, i_div)) ##((bpm_speed * (i_div/4) /60)))
         pass
 
