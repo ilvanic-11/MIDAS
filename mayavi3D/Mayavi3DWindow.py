@@ -28,7 +28,7 @@ from gui import PianoRoll
 
 import copy
 
-from traits.api import HasTraits, Range, Instance, on_trait_change, Float, String, Int
+from traits.api import HasTraits, Range, Instance, on_trait_change, Float, String, Int, Dict
 
 from traitsui.api import View, Item, HGroup
 from traits.trait_numeric import Array
@@ -49,13 +49,15 @@ import cv2
 from traits.trait_types import List
 from traits.trait_types import Any
 
+
+
 class Actor(HasTraits):
     name = String()
     points = Array(dtype=np.int)
     array3D = Array(dtype=np.float, shape=(5000, 128, 128))
     arraychangedflag = Int()
-    
-    
+    color = (0,0,1)
+
 
 
 # mlab.options.offscreen = True
@@ -92,7 +94,7 @@ class Mayavi3idiView(HasTraits):
         self.default_color_palette = midiart.FLStudioColors
 
 
-        #TODO Should this be in main MIDAS_wx? Should be in preferences. Yes.
+        #TODO Should this be in top_pyshell_split MIDAS_wx? Should be in preferences. Yes.
 
         #Grid Construct
         self.mlab_calls = []  #TODO Note: mlab.clf() in the pyshell does not clear this list.
@@ -105,22 +107,27 @@ class Mayavi3idiView(HasTraits):
         
         self.sources = list()
         
-        self.append_actor()
+        #self.append_actor("0")
+
         
         
         
     def CurrentActor(self):
-        return self.actors[self.cur]
+        if len(self.actors) <= 0:
+            return None
+        else:
+            return self.actors[self.cur]
         
-    def append_actor(self):
+    def append_actor(self, name, color):
         #self.add_trait(actor_name,Actor())
         a = Actor()
         self.actors.append(a)
-        self.sources.append(self.insert_array_data(a.array3D, color=(0, 0, 1), mode="sphere", scale_factor=2.5))
+        self.sources.append(self.insert_array_data(a.array3D, color=color, mode="sphere", scale_factor=2.5))
         self.on_trait_change(self.actor_values_changed, 'actors.arraychangedflag')
         self.on_trait_change(self.actor_list_changed, 'actors[]')
         self.cur = len(self.actors)-1
-        
+        a.name = name
+        a.color = color
         
     @on_trait_change('scene3d.activated')
     def create_3dmidiart_display(self):
@@ -223,7 +230,7 @@ class Mayavi3idiView(HasTraits):
         
     def insert_array_data(self, array_2d, color=(0., 0., 0.), mode="cube", scale_factor=.25):
         # print(array_2d)
-        mlab_data = mlab.points3d(array_2d[:, 0], array_2d[:, 1], array_2d[:, 2], color=color, mode=mode,
+        mlab_data = mlab.points3d(array_2d[:, 0], array_2d[:, 1], array_2d[:, 2], color=self.actors[self.cur].color, mode=mode,
                              scale_factor=scale_factor)
         return mlab_data
 
@@ -431,7 +438,6 @@ class Mayavi3idiView(HasTraits):
                 j.actor.actor.orientation = ori ####Current Actor's Current Z-Plane's Position
 
     def set_text_positions(self, pos=np.array([0, 0, 0]), default=True, rando=False):
-
 
         def random_position():
             list1 = list()
@@ -643,7 +649,7 @@ class Mayavi3idiView(HasTraits):
     def insert_titles(self):
         self.insert_note_text("The Midas 3idiArt Display", 0, 137, 0, color=(1, 1, 0), orient_to_camera=True,
                               scale=7)
-        ###Note: affected by basesplit sash position.
+        ###Note: affected by top_mayaviview_split sash position.
         self.title = self.insert_title("3-Dimensional Music", color=(1, 0, 1), height=.82, opacity=.12, size=.65)
 
 

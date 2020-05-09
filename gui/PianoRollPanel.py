@@ -7,7 +7,7 @@ import numpy as np
 import math
 from midas_scripts import musicode, music21funcs
 from gui import PianoRoll
-from gui import ZPlanesControlPanel
+from gui import ZPlanesControlPanel, ActorsControlPanel
 from traits.api import HasTraits, on_trait_change
 from traits.trait_numeric import AbstractArray
 
@@ -36,12 +36,18 @@ class PianoRollPanel(wx.Panel):
         self.log = log
         self.log.info("PianoRollPanel.__init__()")
         self.tb = self.SetupToolbar()
-        
-        self.zplanesctrlpanel = ZPlanesControlPanel.ZPlanesControlPanel(self, self.log)
-        
+
         self.currentZplane = 0
         
-        self.pianoroll = PianoRoll.PianoRoll(self,
+     
+        
+        self.pianorollSplit = wx.SplitterWindow(self, wx.ID_ANY, style=wx.SP_3DSASH | wx.SP_BORDER)
+        self.ctrlpanelSplit = wx.SplitterWindow(self.pianorollSplit, wx.ID_ANY, style=wx.SP_3DSASH | wx.SP_BORDER)
+
+        self.zplanesctrlpanel = ZPlanesControlPanel.ZPlanesControlPanel(self.ctrlpanelSplit, self.log)
+        self.actorsctrlpanel = ActorsControlPanel.ActorsControlPanel(self.ctrlpanelSplit, self.log)
+
+        self.pianoroll = PianoRoll.PianoRoll(self.pianorollSplit,
                                              self.currentZplane,
                                              -1,
                                              wx.DefaultPosition,
@@ -50,49 +56,34 @@ class PianoRollPanel(wx.Panel):
                                              "Piano Roll",
                                              self.log
                                              )
-        
+
         self.pianoroll.GetGridWindow().Bind(wx.EVT_MOTION, self.OnMotion)
         self.pianoroll.GetGridWindow().Bind(wx.EVT_LEFT_UP, self.OnMouseLeftUp)
 
-        #self.Bind(wx.EVT_NOTEBOOK_PAGE_CHANGED, self.OnPageChanged)
-
         mainSizer = wx.BoxSizer(wx.VERTICAL)
-        horizSizer = wx.BoxSizer(wx.HORIZONTAL)
-        mainSizer.Add(self.tb, 0, wx.ALL | wx.ALIGN_LEFT | wx.EXPAND, 4)
-        mainSizer.Add(horizSizer, 0, wx.EXPAND)
+        mainSizer.Add(self.tb, 1, wx.EXPAND)
+        mainSizer.Add(self.pianorollSplit, 1, wx.EXPAND)
         
-        horizSizer.Add(self.zplanesctrlpanel, 1, wx.EXPAND,)
-        horizSizer.Add(self.pianoroll, 1, wx.EXPAND)
-        self.SetSizer(mainSizer)
+        self.pianorollSplit.SplitVertically(self.ctrlpanelSplit, self.pianoroll)
+        self.ctrlpanelSplit.SplitVertically(self.actorsctrlpanel, self.zplanesctrlpanel)
+        self.ctrlpanelSplit.SetSashGravity(0.5)
+        
+        self.pianorollSplit.SetSashPosition(240)
+        self.ctrlpanelSplit.SetSashPosition(120)
 
-   # def OnPageChanged(self, evt):
-        #self.currentpianoroll = self.pianorolls[self.pianorollNB.GetSelection()]
-        #self.cbCellsPerQrtrNote.SetSelection(self.cbCellsPerQrtrNote.FindString(repr(self.currentpianoroll.GetCellsPerQrtrNote())))
+        self.pianorollSplit.SetMinimumPaneSize(240)
+        #self.ctrlpanelSplit.SetMinimumPaneSize(10)
+        
 
+        self.Layout()
+        self.SetSizerAndFit(mainSizer)
 
-    #def InsertNewPianoRoll(self, index):
-        #self.log.info("InsertNewPianoRoll")
-        #pianoroll = PianoRoll.PianoRoll(self.pianorollNB, index, -1, wx.DefaultPosition, wx.DefaultSize, 0, f"Piano Roll {index}" , self.log)
-
-        #self.pianorolls.insert(index, pianoroll)
-        #self.pianorollNB.InsertPage(index, pianoroll, str(index), select=True)
-		
-
-        #self.pianorolls[index].GetGridWindow().Bind(wx.EVT_MOTION, self.OnMotion)
-        #self.pianorolls[index].GetGridWindow().Bind(wx.EVT_LEFT_UP, self.OnMouseLeftUp)
-
-        #self.currentpianoroll = self.pianorolls[self.currentZplane]
-
+  
     def DeletePianoRoll(self, index):
         self.log.info("DeletePianoRoll")
         self.pianorolls.pop(index-1)
         #self.pianorollNB.DeletePage(index-1)
         
-
-    # def DeleteAllPianoRolls(self):
-    #     self.log.info("DeleteAllPianoRolls: ")
-    #     self.pianorolls.clear()
-    #     #self.pianorollNB.DeleteAllPages()
     
     def OnMotion(self, evt):
         #self.log.debug("OnMotion: Drawing=%d " % self.pianoroll.drawing)
