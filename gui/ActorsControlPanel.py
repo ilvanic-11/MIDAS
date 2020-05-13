@@ -42,13 +42,13 @@ class ActorsControlPanel(wx.Panel):
 		self.toolbar.AddTool(id_newactor, "New Actor", bmp_newactor,
 		                        shortHelp="Add New Actor", kind=wx.ITEM_NORMAL)
 		self.toolbar.AddTool(id_delactor, "Delete Actor", bmp_delactor,
-		                        shortHelp="Delete Selected Actor", kind=wx.ITEM_NORMAL)
+		                        shortHelp="Delete Current Actor", kind=wx.ITEM_NORMAL)
 		
 		
 		self.Bind(wx.EVT_TOOL, self.OnToolBarClick, id=id_showall)
 		self.Bind(wx.EVT_TOOL, self.OnToolBarClick, id=id_newactor)
 		self.Bind(wx.EVT_TOOL, self.OnToolBarClick, id=id_delactor)
-		
+
 		self.toolbar.Realize()
 	
 	
@@ -85,7 +85,17 @@ class ActorsControlPanel(wx.Panel):
 		
 
 	def OnBtnDelActor(self,evt):
-		pass
+		#TODO Make dynamic for all cases.
+		#Note: These deletions delete by index, not by actor name.
+		current = self.mayavi_view.cur
+		#Remove from scene(the mayavi pipeline)
+		self.mayavi_view.sources[current].remove()
+		#Remove from mlab_calls list
+		self.mayavi_view.mlab_calls.remove(self.mayavi_view.sources[current])
+		#Remove from source list
+		self.mayavi_view.sources.remove(self.mayavi_view.sources[current])
+		#Remove from actorsListBox
+		self.actorsListBox.DeleteItem(current)
 
 class CustomActorsListBox(wx.ListCtrl):
 	def __init__(self, parent, log):
@@ -97,7 +107,10 @@ class CustomActorsListBox(wx.ListCtrl):
 		                     )
 
 		self.log = log
-		
+
+		self.SetBackgroundColour((0, 0, 0))
+		self.SetTextColour((191, 191, 191))
+
 		self.InsertColumn(0, "Visible", wx.LIST_FORMAT_CENTER, width=50)
 		self.InsertColumn(1, "Actor", wx.LIST_FORMAT_CENTER, width=64)
 
@@ -110,11 +123,14 @@ class CustomActorsListBox(wx.ListCtrl):
 	def OnActorsListItemActivated(self, evt):
 		self.log.info("OnListItemActivated():")
 		print(f"evt.Index = {evt.Index}")
-		self.mayavi_view.cur = evt.Index
+		if len(self.mayavi_view.sources) < 2:
+			self.mayavi_view.cur = -1
+		else:
+			self.mayavi_view.cur = evt.Index
 		self.GetTopLevelParent().pianorollpanel.pianoroll.ForceRefresh()
 	
 	def new_actor(self, name, i):
 		self.log.info(f"new_actor() {name} {i}")
-		self.mayavi_view.append_actor(name, (1,0,0))
-		self.InsertItem( i, name)
-		self.mayavi_view.cur = i
+		self.mayavi_view.append_actor(name, (1, 0, 0))  #Subsequent actors red.
+		self.InsertItem(i, name)
+

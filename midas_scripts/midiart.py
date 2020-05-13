@@ -76,22 +76,22 @@ FLStudioColors = {
 }
 
 FLStudioMayaviColors = {
-    1: [0.6196078431372549, 0.8196078431372549, 0.6470588235294118],
-    2: [0.6235294117647059, 0.8274509803921568, 0.7294117647058823],
-    3: [0.6313725490196078, 0.8392156862745098, 0.8156862745098039],
-    4: [0.6392156862745098, 0.792156862745098, 0.8470588235294118],
-    5: [0.6470588235294118, 0.7215686274509804, 0.8588235294117647],
-    6: [0.6588235294117647, 0.6549019607843137, 0.8705882352941177],
-    7: [0.7372549019607844, 0.6549019607843137, 0.8705882352941177],
-    8: [0.8196078431372549, 0.6549019607843137, 0.8705882352941177],
-    9: [0.8666666666666667, 0.6549019607843137, 0.8392156862745098],
-    10: [0.8588235294117647, 0.6470588235294118, 0.7529411764705882],
-    11: [0.8509803921568627, 0.6392156862745098, 0.6627450980392157],
-    12: [0.8392156862745098, 0.6862745098039216, 0.6352941176470588],
-    13: [0.8313725490196079, 0.7568627450980392, 0.6274509803921569],
-    14: [0.8196078431372549, 0.8235294117647058, 0.6196078431372549],
-    15: [0.7411764705882353, 0.8196078431372549, 0.6196078431372549],
-    16: [0.6627450980392157, 0.8196078431372549, 0.615686274509804]}
+    1: (0.6196078431372549, 0.8196078431372549, 0.6470588235294118),
+    2: (0.6235294117647059, 0.8274509803921568, 0.7294117647058823),
+    3: (0.6313725490196078, 0.8392156862745098, 0.8156862745098039),
+    4: (0.6392156862745098, 0.792156862745098, 0.8470588235294118),
+    5: (0.6470588235294118, 0.7215686274509804, 0.8588235294117647),
+    6: (0.6588235294117647, 0.6549019607843137, 0.8705882352941177),
+    7: (0.7372549019607844, 0.6549019607843137, 0.8705882352941177),
+    8: (0.8196078431372549, 0.6549019607843137, 0.8705882352941177),
+    9: (0.8666666666666667, 0.6549019607843137, 0.8392156862745098),
+    10: (0.8588235294117647, 0.6470588235294118, 0.7529411764705882),
+    11: (0.8509803921568627, 0.6392156862745098, 0.6627450980392157),
+    12: (0.8392156862745098, 0.6862745098039216, 0.6352941176470588),
+    13: (0.8313725490196079, 0.7568627450980392, 0.6274509803921569),
+    14: (0.8196078431372549, 0.8235294117647058, 0.6196078431372549),
+    15: (0.7411764705882353, 0.8196078431372549, 0.6196078431372549),
+    16: (0.6627450980392157, 0.8196078431372549, 0.615686274509804)}
 
 
 ##MIDIART_FUNCTIONS
@@ -164,9 +164,9 @@ def make_midi_from_colored_pixels(pixels, granularity, connect=False, colors=Non
     if len(pixels) > 128:
         raise ValueError("The .png file size is too large.")
         return None
-    # Establish variables.
 
-    part_stream = music21.stream.Stream()
+    # Establish variables.
+    #part_stream = music21.stream.Stream()
     out_stream = music21.stream.Stream()
 
     if colors == None:
@@ -284,7 +284,7 @@ def set_to_nn_colors(im_array, clrs=None):
     im_list = list()
     for x in range(len(im_array)):
         for y in range(len(im_array[x])):
-            im_dex = np.array(im_array[x][y], dtype=np.float64)
+            im_dex = np.array(im_array[x][y], dtype=np.float16)
             # im_list.append(im_dex)
             # for i in im_list:
             k_idx_list = kd_tree.search_knn_vector_3d(im_dex, 1)
@@ -539,7 +539,7 @@ def transcribe_colored_image_to_midiart(img, granularity=1, connect=False, keych
     :param granularity:     quarterLength value determines the offset and duration values of all the notes transcribed.
     :param connect:         The contiguity feature. Notes chopped by default. True connects adjacent notes contiguously.
     :param keychoice:       The key of the piece, specified as a string(i.e. "C" for C Major or "C#m" for C Sharp Minor)
-    :param colors:          If True, note_pxl_value becomes irrelevant, and this enables use of the image's color tupls.
+    :param colors:#TODO Fix:If True, note_pxl_value becomes irrelevant, and this enables use of the image's color tupls.
     :param output_path:     Directory to which output will be written, specified as a string.
 
     :return:                Returns a music21.stream.Stream() object.
@@ -557,10 +557,12 @@ def transcribe_colored_image_to_midiart(img, granularity=1, connect=False, keych
         height = 127
         width = int(127 / len(img) * len(img[0]))
         img = cv2.resize(img, (width, height), cv2.INTER_AREA)
-
+    print("Image check:", img)
     img_nn = set_to_nn_colors(img, colors)
+    print("NN_check:", img_nn)
     s = make_midi_from_colored_pixels(img_nn, granularity, connect, colors)
-    print("Stream Created.")
+    print("Stream Created.", s)
+    s.show('txt')
     filter_notes_by_key(s, keychoice, in_place=True)
     if output_path is not None:
         set_parts_to_midi_channels(s, output_path)
@@ -580,7 +582,7 @@ def transcribe_grayscale_image_to_midiart(img, granularity, connect, keychoice=N
     :param keychoice:       The key of the piece, specified as a string(i.e. "C" for C Major or "C#m" for C Sharp Minor)
     :param note_pxl_value:  When not doing clrs, images are converted to having black and white pixels. A value of 255
                             or 0 will determine what of those pixels from the image will be turned into notes.
-    :param output_path:     Directory to which output will be written, specified as a string.
+    :param output_path:     Directory + filename to which output will be written, specified as a string.
 
     :return:                Returns a music21.stream.Stream() object.
     """
@@ -1054,3 +1056,17 @@ def get_color_palettes(mypath=None):
             dict[i+1] = tuple(x)
         dict_list[name] = dict
     return dict_list
+
+def convert_dict_colors(colors_dict):
+    """
+        Function to divide dict color tuple values by 255 for use in the mayavi view. Resulting values are floats thus:
+        (0.0 <= a floating point number <= 1.0)
+    :param colors_dict: Dict of colors, usually of 16 colors.
+    :return:
+    """
+    new_dict = copy.deepcopy(colors_dict)
+    for i in new_dict.keys():
+        #print(colors_92[i])
+        new_color = tuple([new_dict[i][0]/255, new_dict[i][1]/255, new_dict[i][1]/255])
+        new_dict[i] = new_color
+    return new_dict
