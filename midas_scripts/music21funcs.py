@@ -714,12 +714,14 @@ def notafy( in_stream):
                     newnote.volume.velocity = i.volume.velocity
                 else:
                     print("No velocity info for chord. ")
+                    pass
                 notelist.append(newnote)
             for x in notelist:
                 new_stream.insert(i.offset, copy.deepcopy(x))
         elif type(i) is music21.note.Note:
             new_stream.insert(i.offset, copy.deepcopy(i))
-
+    # print("NEW_STREAM BITCH:", new_stream)
+    # new_stream.show('txt')
     return new_stream
 
 #M21-3.

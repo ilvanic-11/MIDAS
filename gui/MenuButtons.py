@@ -636,8 +636,12 @@ class CustomMenuBar(wx.MenuBar):
                 self.GetTopLevelParent().mayavi_view.i_div = float(dialog.input_i_div.GetLineText(0))
             if dialog.popupCtrl.GetStringValue() == "FLStudioColors":
                 self.GetTopLevelParent().mayavi_view.default_color_palette = midiart.FLStudioColors
+                self.GetTopLevelParent().mayavi_view.default_mayavi_palette = \
+                    midiart.convert_dict_colors(self.GetTopLevelParent().mayavi_view.default_color_palette)
             else:
                 self.GetTopLevelParent().mayavi_view.default_color_palette = midiart.get_color_palettes()[dialog.popupCtrl.GetStringValue()]
+                self.GetTopLevelParent().mayavi_view.default_mayavi_palette = \
+                    midiart.convert_dict_colors(self.GetTopLevelParent().mayavi_view.default_color_palette)
 
     def _OnHelpDialogClosed(self, dialog, evt):
         val = evt.GetReturnCode()

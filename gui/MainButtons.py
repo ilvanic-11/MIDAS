@@ -7,6 +7,7 @@ import cv2, numpy
 import numpy as np
 import os
 import subprocess
+import random
 from collections import OrderedDict
 
 class MainButtonsPanel(wx.Panel):
@@ -111,11 +112,11 @@ class MainButtonsPanel(wx.Panel):
         print(type(dialog))
         if type(dialog) is MusicodeDialog:
             self._OnMusicodeDialogClosed(dialog, evt)
-        elif type (dialog) is MIDIArtDialog:
+        elif type(dialog) is MIDIArtDialog:
             self._OnMIDIArtDialogClosed(dialog, evt)
-        elif type (dialog) is Music21ConverterParseDialog:
+        elif type(dialog) is Music21ConverterParseDialog:
             self._OnM21ConverterParseDialogClosed(dialog, evt)
-        elif type (dialog) is MIDIArt3DDialog:
+        elif type(dialog) is MIDIArt3DDialog:
             self._OnMIDIArt3DDialogClosed(dialog, evt)
         dialog.Destroy()
 
@@ -162,26 +163,88 @@ class MainButtonsPanel(wx.Panel):
             btn = '<unknown>'
 
         if btn == "OK":
+            pathname = dialog.pathname
             pixels = dialog.img     #2D array (2D of only on\off values.)
             pixels2 = dialog.img2   #3D array (2D of color tuples)
             pixels_resized = dialog.resizedImg
-            print("PIXELS")
+            gran = dialog.pixScaler
+            print("PIXELS", pixels)
+            print("PIXELS2", pixels2)
             print("PIXELS_RESIZED:", pixels, type(pixels))
             print("pixels shape", numpy.shape(pixels))
+
+            mayavi_view = self.GetTopLevelParent().mayavi_view
+            mayavi_color_palette = mayavi_view.default_mayavi_palette
+
             if dialog.EdgesCheck:
                 edges = cv2.Canny(pixels_resized, 100, 200)
-                stream = midiart.make_midi_from_grayscale_pixels(edges, 0.125, True,  note_pxl_value=255)   ##dialog.inputKey.GetValue(), , colors=False
+                stream = midiart.make_midi_from_grayscale_pixels(edges, gran, True,  note_pxl_value=255)   ##dialog.inputKey.GetValue(), , colors=False
+                print("EdgeStream:", stream)
                 stream.show('txt')
-                self.GetTopLevelParent().pianorollpanel.currentPage.StreamToGrid(stream)
+                points = midiart3D.extract_xyz_coordinates_to_array(stream)
+                index = len(mayavi_view.actors)
+                name = str(len(mayavi_view.actors)) + "_" + "Edges" + "_" + dialog.img_name
+                #clr = color_palette[random.randint(1, 16)]  #TODO Random color of 16 possible for now.
+                actor = self.GetTopLevelParent().pianorollpanel.actorsctrlpanel.actorsListBox.new_actor(name, index)
+                #self.GetTopLevelParent().pianorollpanel.currentPage.StreamToGrid(stream)
+                for j in mayavi_view.actors:
+                    if j.name == name:
+                        print("Points here?")
+                        j.change_points(points)
 
             elif dialog.ColorsCheck:
                 #TODO Display in grid upon completion of Actors\Z-Planes classes.
-                stream = midiart.transcribe_colored_image_to_midiart(pixels2, .125, connect=False, keychoice=None, colors=None, output_path=None)
-                self.GetTopLevelParent().pianorollpanel.currentPage.StreamToGrid(stream)
+                print("PREPixels2:", pixels2)
+                print("Gran", gran)
+                stream = midiart.transcribe_colored_image_to_midiart(pixels2, gran, connect=False, keychoice=None, colors=None)
+                # stream.show('txt')
+                # stream_0 = midiart3D.extract_xyz_coordinates_to_array(stream[0])
+                # index = len(mayavi_view.actors)
+                # name = str(stream[0].partsName) + "_" +"Clrs" + "_" + dialog.img_name
+                # clr = mayavi_color_palette[stream[0].partsName]
+                # print("Color", clr)
+                # actor = self.GetTopLevelParent().pianorollpanel.actorsctrlpanel.actorsListBox.new_actor(name, index)
+                # print("Stream_points0 Here?:", stream_0)
+                # for j in mayavi_view.actors:
+                #     if j.name == name:
+                #         j.change_points(stream_0)
+                #         print("Points here?")
+                # for k in mayavi_view.sources:
+                #     if k.name == name:
+                #         k.actor.property.color = clr
+                #         print("Colors here?")
+
+                for i in stream:
+                    parts_points = midiart3D.extract_xyz_coordinates_to_array(i)
+                    index = len(mayavi_view.actors)
+                    name =  str(i.partsName) + "_" + "Clrs" + "_" + dialog.img_name
+                    clr = mayavi_color_palette[i.partsName]
+                    actor = self.GetTopLevelParent().pianorollpanel.actorsctrlpanel.actorsListBox.new_actor(name, index)
+                    for j in mayavi_view.actors:
+                        if j.name == name:
+                            print("Points here?")
+                            j.change_points(parts_points)
+                    #TODO Too Slow! Memory Intensive!
+                    for k in mayavi_view.sources:
+                        if k.name == name:
+                            print("Colors here?")
+                            k.actor.property.color = clr
+                #self.GetTopLevelParent().pianorollpanel.currentPage.StreamToGrid(stream)
 
             elif dialog.QRCheck:
-                stream = midiart.make_midi_from_grayscale_pixels(pixels_resized, .125, False, note_pxl_value=0)
-                self.GetTopLevelParent().pianorollpanel.currentPage.StreamToGrid(stream)
+                stream = midiart.make_midi_from_grayscale_pixels(pixels_resized, gran, False, note_pxl_value=0)
+                stream.show('txt')
+                points = midiart3D.extract_xyz_coordinates_to_array(stream)
+                index = len(mayavi_view.actors)
+                name = str(len(mayavi_view.actors)) + "_" + "Edges" + "_" + dialog.img_name
+                # clr = color_palette[random.randint(1, 16)]  #TODO Random color of 16 possible for now.
+                actor = self.GetTopLevelParent().pianorollpanel.actorsctrlpanel.actorsListBox.new_actor(name, index)
+                # self.GetTopLevelParent().pianorollpanel.currentPage.StreamToGrid(stream)
+                for j in mayavi_view.actors:
+                    if j.name == name:
+                        print("Points here?")
+                        j.change_points(points)
+                #self.GetTopLevelParent().pianorollpanel.currentPage.StreamToGrid(stream)
 
 
     def _OnM21ConverterParseDialogClosed(self, dialog, evt):
@@ -195,9 +258,24 @@ class MainButtonsPanel(wx.Panel):
             btn = '<unknown>'
 
         if btn == "OK":
+            mayavi_view = self.GetTopLevelParent().mayavi_view
+            color_palette = mayavi_view.default_color_palette
+
             stream = music21.converter.parse(dialog.midi)
             stream.show('txt')
-            self.GetTopLevelParent().pianorollpanel.currentPage.StreamToGrid(stream)
+            points = midiart3D.extract_xyz_coordinates_to_array(stream)
+            index = len(mayavi_view.actors)
+            name = str(len(mayavi_view.actors)) + "_" + "Midi" + "_" + os.path.basename(dialog.midi)
+            # clr = color_palette[random.randint(1, 16)]  #TODO Random color of 16 possible for now.
+            actor = self.GetTopLevelParent().pianorollpanel.actorsctrlpanel.actorsListBox.new_actor(name, index)
+            # self.GetTopLevelParent().pianorollpanel.currentPage.StreamToGrid(stream)
+            for j in mayavi_view.actors:
+                if j.name == name:
+                    print("Points here?")
+                    j.change_points(points)
+            #self.GetTopLevelParent().pianorollpanel.currentPage.StreamToGrid(stream)
+
+
 
     def _OnMIDIArt3DDialogClosed(self, dialog, evt):
         val = evt.GetReturnCode()
@@ -215,16 +293,31 @@ class MainButtonsPanel(wx.Panel):
                 ply = None
             if ply is not None:
                 points = midiart3D.get_points_from_ply(dialog.ply)
-                planes_dict = midiart3D.get_planes_on_axis(points, 'z', ordered=True, clean=True)
-                #Delete the startup piano roll when loading ply.
-                try:
-                    self.GetTopLevelParent().pianorollpanel.DeletePianoRoll(1)
-                except IndexError:
-                    pass
-                index_list = [k for k in planes_dict.keys()]
-                for k in index_list:
-                    self.GetTopLevelParent().pianorollpanel.InsertNewPianoRoll(int(index_list.index(k)))
-                    self.GetTopLevelParent().pianorollpanel.currentPage.StreamToGrid(midiart3D.extract_xyz_coordinates_to_stream((np.array(planes_dict[k]))))
+                print(points)
+                #planes_dict = midiart3D.get_planes_on_axis(points, 'z', ordered=True, clean=True)
+                #TODO Delete the startup piano roll/actor when loading ply. ---Still do this?
+                # try:
+                #     self.GetTopLevelParent().pianorollpanel.DeletePianoRoll(1)
+                # except IndexError:
+                #     pass
+                mayavi_view = self.GetTopLevelParent().mayavi_view
+
+                #Establish "Midas Actor" name and index.
+                #TODO Acquire from dialog
+                i = len(mayavi_view.actors)
+                name = str(i)
+                actor = self.GetTopLevelParent().pianorollpanel.actorsctrlpanel.actorsListBox.new_actor(name, i)
+
+                for j in mayavi_view.actors:
+                    if j.name == name:
+                        print("Points here?")
+                        j.change_points(points)
+            else:
+                pass
+                #index_list = [k for k in planes_dict.keys()]
+                # for k in index_list:
+                #     self.GetTopLevelParent().pianorollpanel.InsertNewPianoRoll(int(index_list.index(k)))
+                #     self.GetTopLevelParent().pianorollpanel.currentPage.StreamToGrid(midiart3D.extract_xyz_coordinates_to_stream((np.array(planes_dict[k]))))
 
 
         #r"C:\Program Files\MuseScore 3\bin\MuseScore3.exe"
@@ -366,6 +459,8 @@ class MIDIArtDialog(wx.Dialog):
                                             list(self.granularitiesDict.keys()),
                                             2, wx.RA_SPECIFY_COLS)
 
+        #TODO Change default granularity checked box.
+
         #self.txtConnectNotes = wx.StaticText(self, -1, "Connect Notes?", style=wx.ALIGN_RIGHT)
 
 
@@ -421,9 +516,13 @@ class MIDIArtDialog(wx.Dialog):
 
             # Proceed loading the file chosen by the user
             pathname = fileDialog.GetPath()
+            print(pathname)
             try:
+                self.pathname = pathname
                 self.img = cv2.imread(pathname, 0)
-                self.img2 = cv2.imread(pathname)
+                #print(type(self.img))
+                self.img_name = os.path.basename(pathname)
+                self.img2 = cv2.imread(pathname, cv2.IMREAD_COLOR)
                 self.EdgesCheck = self.chbxEdges.IsChecked()
                 self.ColorsCheck = self.chbxColorImage.IsChecked()
                 self.QRCheck = self.chbxQRCode.IsChecked()
@@ -438,6 +537,7 @@ class MIDIArtDialog(wx.Dialog):
 
     def OnRadioBoxChanged(self,event):
         if self.img is not None:
+            print("No image selected. Select an image first. :)")
             self.UpdatePreview()
 
     def UpdatePreview(self):
