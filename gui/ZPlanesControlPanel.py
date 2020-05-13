@@ -16,8 +16,7 @@ class ZPlanesControlPanel(wx.Panel):
 	def __init__(self, parent, log):
 		wx.Panel.__init__(self, parent, -1)
 		self.log = log
-		
-		
+
 		self.ZPlanesListBox = CustomZPlanesListBox(self,log)
 		self.toolbar = wx.ToolBar(self, -1, wx.DefaultPosition, wx.DefaultSize, style=wx.TB_HORIZONTAL)
 		self.SetupToolBar()
@@ -75,7 +74,10 @@ class CustomZPlanesListBox(wx.ListCtrl, CheckListCtrlMixin):
 		                     )
 		CheckListCtrlMixin.__init__(self)
 		self.log = log
-		
+
+		self.SetBackgroundColour((141, 141, 141))
+
+
 		self.InsertColumn(0,"Visible", wx.LIST_FORMAT_CENTER, width=50)
 		self.InsertColumn(1,"ZPlane", wx.LIST_FORMAT_CENTER, width=64)
 		
@@ -93,6 +95,7 @@ class CustomZPlanesListBox(wx.ListCtrl, CheckListCtrlMixin):
 		
 		print(f"evt.Index = {evt.Index}, zplane = {self.filter[evt.Index]}")
 		self.GetTopLevelParent().pianorollpanel.currentZplane = self.filter[evt.Index]
+		self.GetTopLevelParent().mayavi_view.cur_z = self.filter[evt.Index]
 		self.GetTopLevelParent().pianorollpanel.pianoroll.ForceRefresh()
 	
 	def OnGetItemText(self, item, column):
@@ -111,7 +114,7 @@ class CustomZPlanesListBox(wx.ListCtrl, CheckListCtrlMixin):
 		
 	def UpdateFilter(self):
 		self.log.info("UpdateFilter():")
-		a3D = self.GetTopLevelParent().mayavi_view.CurrentActor().array3D
+		a3D = self.GetTopLevelParent().mayavi_view.CurrentActor()._array3D
 		#print(np.shape(a3D))
 		
 		self.filter = list()

@@ -53,10 +53,32 @@ from traits.trait_types import Any
 
 class Actor(HasTraits):
     name = String()
-    points = Array(dtype=np.int)
-    array3D = Array(dtype=np.float, shape=(5000, 128, 128))
-    arraychangedflag = Int()
-    color = (0,0,1)
+
+    _points = Array(dtype=np.int)
+    _array3D = Array(dtype=np.float, shape=(5000, 128, 128))
+    _stream = Any()
+    array3Dchangedflag = Int()
+    pointschangedflag = Int()
+    streamchangedflag = Int()
+    color = (0, 1, 0)
+
+
+    #3d numpy array---> True\False map of existing coords for rapid access.
+    def change_array3D(self, array3D):
+        self._array3D = array3D
+        self.array3Dchangedflag = not self.array3Dchangedflag
+
+    #2d numpy array---> List of actual coordinates
+    def change_points(self, points):
+        self._points = points
+        self.pointschangedflag = not self.pointschangedflag
+
+    #music21 stream---> Stream for stream purposes.
+    def change_stream(self, stream):
+        self._stream = stream
+        self.streamchangedflag = not self.streamchangedflag
+
+    #def change_color(self, color):
 
 
 
@@ -68,16 +90,18 @@ class Mayavi3idiView(HasTraits):
                 resizable=True)
     actors = List(Actor)
     cur = Int()
+    cur_z = Int()
+    position = Array()
 
-    def __init__(self,parent):
+    def __init__(self, parent):
         HasTraits.__init__(self)
-        #self.on_trait_event(self.array3D_changed, 'arraychangedflag')
+        #self.on_trait_event(self._array3D_changed, 'array3Dchangedflag')
         self.parent = parent
         self.engine = self.scene3d.engine
         self.engine.start()  # TODO What does this do?
-        self.scene = self.engine.scenes[0]   #TODO Refactor the name of this variable? (self.scene?)
+        self.scene = self.engine.scenes[0]   #TODO Refactor the name of this variable? (self.skene?)
 
-        # Common Scene Properties
+        # Common Scene Properties #TODO Should these be traits? (I think grid3d_span should be...at least)
         self.grid3d_span = 127  # For right now.
         self.bpm = 540  # TODO Set based on music21.tempo.Metronome object.
         self.i_div = 2  #Upon further review, i_div IS frames per beat. I'll change this variable name later.
@@ -99,7 +123,11 @@ class Mayavi3idiView(HasTraits):
         self.clr_dict_list = midiart.get_color_palettes(r".\resources\color_palettes")
         self.default_color_palette = midiart.FLStudioColors
 
-        #TODO Should this be in main MIDAS_wx? Should be in preferences. Yes.
+
+        self.default_mayavi_palette = midiart.convert_dict_colors(self.default_color_palette)
+        #TODO Should this be in main MIDAS_wx?
+
+
 
 
 
@@ -113,7 +141,9 @@ class Mayavi3idiView(HasTraits):
         self.volume_slice = None
         
         self.sources = list()
-        
+        #TODO I don't like "sources" as the name of this list. Sources is actually a trait in the mayavi pipeline somewhere....
+        #TODO Also, sources and mlab_calls are virtually the same thing. Delete one?
+
         #self.append_actor("0")
 
         
@@ -129,10 +159,15 @@ class Mayavi3idiView(HasTraits):
         #self.add_trait(actor_name,Actor())
         a = Actor()
         self.actors.append(a)
-        self.sources.append(self.insert_array_data(a.array3D, color=color, mode="sphere", scale_factor=2.5))
-        self.on_trait_change(self.actor_values_changed, 'actors.arraychangedflag')
-        self.on_trait_change(self.actor_list_changed, 'actors[]')
         self.cur = len(self.actors)-1
+        self.appending_data = self.insert_array_data(a._array3D, color=color, mode="cube", name=name, scale_factor=1.0)
+        self.sources.append(self.appending_data)
+        self.mlab_calls.append(self.appending_data)
+        self.on_trait_change(self.actor_array3D_changed, 'actors.array3Dchangedflag')
+        self.on_trait_change(self.actor_points_changed, 'actors.pointschangedflag')
+        #TODO self.on_trait_change(self.actor_stream_changed, 'actors.streamchangedflag')
+        self.on_trait_change(self.actor_list_changed, 'actors[]')
+
         a.name = name
         a.color = color
         
@@ -177,7 +212,7 @@ class Mayavi3idiView(HasTraits):
 
 
         #Highlighter Plane
-        self.plane = self.establish_highlighter_plane(114, color=(0, 1, 0), length=self.SM_Span)
+        self.plane = self.establish_highlighter_plane(0, color=(0, 1, 0), length=self.SM_Span)
 
 
         #self.points = self.Points
@@ -212,46 +247,60 @@ class Mayavi3idiView(HasTraits):
         print("current_actor_changed")
 
     ##WORKING INSTANCE
-    def actor_values_changed(self):
-        print("actor_values_changed")
+    def actor_array3D_changed(self):
+        print("actor_array3D_changed")
+
+        self.CurrentActor()._points = np.argwhere(self.CurrentActor()._array3D >= 1.0)
+        print(type(self.CurrentActor()._points))
+        print(self.CurrentActor()._points.dtype)
+        print(self.CurrentActor()._points)
     
-        self.CurrentActor().points = np.argwhere(self.CurrentActor().array3D >= 1.0)
-        print(type(self.CurrentActor().points))
-        print(self.CurrentActor().points.dtype)
-        print(self.CurrentActor().points)
-    
-        self.sources[self.cur].mlab_source.trait_set(points=self.CurrentActor().points)
+        self.sources[self.cur].mlab_source.trait_set(points=self.CurrentActor()._points)
 
     #def insert_array_data(self, array_2d, color=(0., 0., 0.), mode="cube", scale_factor=.25):
         #I don't think this is needed.
         #self.parent.pianorollpanel.zplanesctrlpanel.ZPlanesListBox.UpdateFilter()
-     
+
+    def actor_points_changed(self):
+        print("actor_points_changed")
+        new_array3D = np.zeros(self.CurrentActor()._array3D.shape, dtype=np.float64)
+        for p in self.CurrentActor()._points:
+            new_array3D[p[0], p[1], p[2]] = 1.0
+        self.CurrentActor()._array3D = new_array3D
+        self.sources[self.cur].mlab_source.trait_set(points=self.CurrentActor()._points)
+
+    #TODO def actor_stream_changed(self):
+        #print("actor_stream_changed")
+
+
     def actor_list_changed(self):
         print("actor_list_changed")
-        
-        
-        
-    def insert_array_data(self, array_2d, color=(0., 0., 0.), mode="cube", scale_factor=.25):
+
+
+
+    def insert_array_data(self, array_2d, color=(0, 0, 0), mode="cube", name='', scale_factor=.25):
         # print(array_2d)
-        mlab_data = mlab.points3d(array_2d[:, 0], array_2d[:, 1], array_2d[:, 2], color=self.actors[self.cur].color, mode=mode,
+            #color = lambda x: super().actors[super().cur].color
+
+        mlab_data = mlab.points3d(array_2d[:, 0], array_2d[:, 1], array_2d[:, 2], color=self.actors[self.cur].color, mode=mode, name=name,
                              scale_factor=scale_factor)
         return mlab_data
 
 
-    def insert_music_data(self, in_stream, color=(0., 0., 0.), mode="cube", name=None, scale_factor=1):
+    def insert_music_data(self, in_stream, color=(0., 0., 0.), mode="cube", name='', scale_factor=1):
         array_data = midiart3D.extract_xyz_coordinates_to_array(in_stream)
         array_data = array_data.astype(float)
         # print(array_data)
-        mlab_data = mlab.points3d(array_data[:, 0], array_data[:, 1], array_data[:, 2], color=color, mode=mode,
+        mlab_data = mlab.points3d(array_data[:, 0], array_data[:, 1], array_data[:, 2], color=color, mode=mode, name=name,
                                   scale_factor=scale_factor)
         self.mlab_calls.append(mlab_data)
         return mlab_data
 
 
-    def insert_text_data(self, mc, text, color=(0., 0., 0.), mode="cube", name=None, scale_factor=1):
+    def insert_text_data(self, mc, text, color=(0., 0., 0.), mode="cube", name='', scale_factor=1):
         text_stream = musicode.mc.translate(mc, text)
         text_array = midiart3D.extract_xyz_coordinates_to_array(text_stream)
-        mlab_data = mlab.points3d(text_array[:, 0], text_array[:, 1], text_array[:, 2], color=color, mode=mode,
+        mlab_data = mlab.points3d(text_array[:, 0], text_array[:, 1], text_array[:, 2], color=color, mode=mode, name=name,
                                   scale_factor=scale_factor)
         self.mlab_calls.append(mlab_data)
         return mlab_data
@@ -291,7 +340,11 @@ class Mayavi3idiView(HasTraits):
         self.insert_volume_slice(length)
 
 
-    def establish_highlighter_plane(self, z_axis, color, grandstaff=True, length=127):
+    def establish_highlighter_plane(self, z_axis=0, color=(0, 1, 0), grandstaff=True, length=None):
+        if length is not None:
+            length = length
+        else:
+            length = self.grid3d_span
         x1, y1, z1 = (0, 0, z_axis)  # | => pt1
         x2, y2, z2 = (0, 127, z_axis)  # | => pt2
         x3, y3, z3 = (length, 0, z_axis)  # | => pt3
@@ -306,12 +359,11 @@ class Mayavi3idiView(HasTraits):
                                   [[z1, z2],
                                   [z3, z4]],  # | => z coordinate
 
-                                  color=color, line_width=5.0, mode='sphere', opacity=.25,   #extent=(-50, 128, -50, 128, 114, 114)
-                                  scale_factor=1, tube_radius=None)  # black
+                                  color=color, line_width=5.0, mode='sphere', name="Green Surface", opacity=.125, scale_factor=1, tube_radius=None)  # black#extent=(-50, 128, -50, 128, 114, 114)
         #self.mlab_calls.append(plane)
         self.highlighter_calls.append(plane)
         plane_edges = mayavi.mlab.plot3d(linebox[:, 0], linebox[:, 1], linebox[:, 2]+.25,
-                                         color=(1,1,1), line_width=2.5, opacity=.35, tube_radius=None)
+                                         color=(1,1,1), line_width=2.5, name="White Edges", opacity=.35, tube_radius=None)
         #self.mlab_calls.append(plane_edges)
         self.highlighter_calls.append(plane_edges)
         if grandstaff:
@@ -319,9 +371,9 @@ class Mayavi3idiView(HasTraits):
             gclef = MusicObjects.create_glyph(r".\resources\TrebleClef.png", y_shift=59, z_value = z_axis)
             fclef = MusicObjects.create_glyph(r".\resources\BassClef.png", y_shift=44.3,  z_value = z_axis)
             #for j in grandstaff:
-            self.gscalls = mlab.plot3d(stafflines[:, 0], stafflines[:, 1], stafflines[:, 2], color=(0,1,0), opacity=.65, tube_radius=None)
-            self.gclef_call = mlab.points3d(gclef[:, 0], gclef[:, 1], gclef[:, 2], color=(0,1,0), mode='cube', opacity=.015, scale_factor=.25)
-            self.fclef_call = mlab.points3d(fclef[:, 0], fclef[:, 1], fclef[:, 2], color=(0,1,0), mode='cube', opacity=.015, scale_factor=.25)
+            self.gscalls = mlab.plot3d(stafflines[:, 0], stafflines[:, 1], stafflines[:, 2], color=(0,1,0), name="Staff Lines", opacity=.65, tube_radius=None)
+            self.gclef_call = mlab.points3d(gclef[:, 0], gclef[:, 1], gclef[:, 2], color=(0,1,0), mode='cube', name="Treble Clef", opacity=.015, scale_factor=.25)
+            self.fclef_call = mlab.points3d(fclef[:, 0], fclef[:, 1], fclef[:, 2], color=(0,1,0), mode='cube', name="Bass Clef", opacity=.015, scale_factor=.25)
             #self.mlab_calls.append(self.gscalls)
             self.highlighter_calls.append(self.gscalls)
             #self.mlab_calls.append(self.gclef_call)
@@ -330,7 +382,69 @@ class Mayavi3idiView(HasTraits):
             self.highlighter_calls.append(self.fclef_call)
             #self.gclef_call.actor.actor.position = np.array([0, 59, 0])
             #self.fclef_call.actor.actor.position = np.array([0, 44.3, 0])
+        for h in self.highlighter_calls:
+            h.actor.actor.position = np.array([0, 0, 90])
         return plane
+
+
+    # TODO Tie this to a button.
+    def remove_highlighter_plane(self):
+        for i in self.highlighter_calls:
+            # Remove from scene3d.
+            i.remove()
+        # Clear reference list.
+        self.highlighter_calls.clear()
+
+
+    @on_trait_change('cur')
+    def sync_positions(self):
+        #self.position = self.sources[self.cur].actor.actor.position
+        #self.remove_trait('position')
+
+        #Note: There is the option to remove trait_syncing.
+        #NOTE: removing a sync didn't seem to be working.....
+
+        # self.sync_trait('position', self.sources[self.cur].actor.actor, mutual=True, remove=True)
+        # self.remove_trait('position')
+        # self.add_trait('position')
+        self.position = self.sources[self.cur].actor.actor.position
+        #self.copy_traits(self.sources[self.cur].actor.actor, ['position'])
+        #self.sync_trait('position', self.sources[self.cur].actor.actor, mutual=True, remove=False)
+        print("Position trait synced.")
+
+
+    # @on_trait_change('cur')
+    # def highlighter_actor_chase(self):
+    #     #Align Positions
+    #     print("Cur Changed")
+    #     for i in self.highlighter_calls:
+    #         i.actor.actor.position = self.sources[self.cur].actor.actor.position
+    #         print("Highlighter Chased")
+    #     self.remove_trait('position')
+
+    @on_trait_change('position')
+    def highlighter_actor_chase(self):
+        # Align Positions
+        for i in self.highlighter_calls:
+            i.actor.actor.position = self.sources[self.cur].actor.actor.position
+            print("Highlighter Chased")
+
+
+    @on_trait_change('cur_z')
+    def highlighter_plane_chase(self):
+        # Align Z-value
+        for i in self.highlighter_calls:
+            i_z = self.sources[self.cur].actor.actor.position[2]
+            #5
+            #Convert to zero
+            i_z_zerod = (i_z*-1) + i_z
+            #Transform from zero.
+            #Zplane 20
+            i_transformed = i_z_zerod + self.cur_z
+            #Add original value back
+            i_restored = i_transformed + i_z
+            i.actor.actor.position = np.array([i.actor.actor.position[0], i.actor.actor.position[1], i_restored])
+            print("Highlighter Aligned")
 
 
     def set_z_to_single_value(self, coords, value, index=None):
@@ -394,6 +508,7 @@ class Mayavi3idiView(HasTraits):
                     pos = position
                 j.actor.actor.position = pos ####Current Actor's Current Z-Plane's Position
 
+
     def set_actor_orientations(self, orientation=np.array([0,0,0]), actors=None, rando=False):
 
         def random_orientation():
@@ -441,6 +556,7 @@ class Mayavi3idiView(HasTraits):
                     ori = orientation
                 j.actor.actor.orientation = ori ####Current Actor's Current Z-Plane's Position
 
+
     def set_text_positions(self, pos=np.array([0, 0, 0]), default=True, rando=False):
 
         def random_position():
@@ -451,7 +567,7 @@ class Mayavi3idiView(HasTraits):
             pos = np.asarray(list1, dtype=np.float64)
             return pos
 
-        # TODO Learn where these smaller text3d mlab calls are stored in the scene. CHECK---use glyph.parent.parent.parent....
+
         if default is True and rando is False:
             for l in range(0, len(self.text3d_calls)):
                 self.text3d_calls[l].actor.actor.position = self.text3d_default_positions[l]
@@ -468,11 +584,12 @@ class Mayavi3idiView(HasTraits):
         self.create_3dmidiart_display()
 
 
+    #TODO Deprecated?
     def update_3Dpoints(self, row, col, val):
         try:
             page = self.GetTopLevelParent().pianorollpanel.currentPage
             layer = self.GetTopLevelParent().pianorollpanel.pianorollNB.FindPage(page)
-            self.array3D[col, 127 - row, layer] = val
+            self._array3D[col, 127 - row, layer] = val
         except Exception as e:
             print(e)
             pass
@@ -481,15 +598,23 @@ class Mayavi3idiView(HasTraits):
     ###DEFINE MUSIC ANIMATION
     def animate(self, time_length, bpm=None, i_div=4, sleep=None):
         #TODO Re-doc this.
-        """ I_div should be 2 or 4. Upon a division of greater than 4, say 8, the millisecond delay becomes so small,
+        """
+            I_div should be 2 or 4. Upon a division of greater than 4, say 8, the millisecond delay becomes so small,
         that it is almost not even read properly, producing undesired results.
         Animation function that gives the impression of rendering 3D music. Does not play music.
-        :param time_length: Length of the piece to be rendered in the animation display: this determines the range of the animation.
-        :param bpm: Beats per minutes of the music as an integer: this allows for the calculation of the functions delay, and determines the speed of the animation scroll.
-        For best results, select your bpm from the following list: (1, 2, 3, 4, 5, 6, 8, 10, 12, 15, 16, 20, 24, 25, 30, 32, 40, 48, 50, 60, 75, 80, 96, 100, 120, 125, 150, 160, 200, 240, 250,
-        300, 375, 400, 480, 500, 600, 625, 750, 800, 1000, 1200, 1250, 1500, 1875, 2000, 2400, 2500, 3000, 3750, 4000,
-        5000, 6000, 7500, 10000, 12000, 15000, 20000, 30000, 60000.)
-        :param i_div: Number of planescrolls per second: this determines the fineness of your animation.
+
+        :param time_length:     Length of the piece to be rendered in the animation display: this determines the range
+                                of the animation.
+        :param bpm:             Beats per minutes of the music as an integer: this allows for the calculation of the
+                                functions delay, and determines the speed of the animation scroll.
+
+        For best results, select your bpm from the following list: (1, 2, 3, 4, 5, 6, 8, 10, 12, 15, 16, 20, 24, 25, 30,
+        32, 40, 48, 50, 60, 75, 80, 96, 100, 120, 125, 150, 160, 200, 240, 250, 300, 375, 400, 480, 500, 600, 625, 750,
+        800, 1000, 1200, 1250, 1500, 1875, 2000, 2400, 2500, 3000, 3750, 4000, 5000, 6000, 7500, 10000, 12000, 15000,
+        20000, 30000, 60000.)
+
+        :param i_div:           Number of planescrolls per second: this determines the fineness of your animation.
+
         :return:
         """
         import time
@@ -503,15 +628,19 @@ class Mayavi3idiView(HasTraits):
         @mayavi.tools.animator.animate(delay=bpm_delay, ui=False)   #@mlab.animate, same thing.
         def animate_plane_scroll(x_length, delay, sleep=sleep):
             """
-            Mlab animate's builtin delay has to be specified as an integer in milliseconds with a minimum of 10, and also could
-            not be removed, so we subtracted .01 seconds (or 10 milliseconds) in a workaround delay of our own in order to compensate.
-            :param x_length: Length of the range of the animation plane along the x-axis. (See music21.stream.Stream.highestTime)
-            :param delay: Int in microseconds.
+                Mlab animate's builtin delay has to be specified as an integer in milliseconds with a minimum of 10,
+            and also could not be removed, so we subtracted .01 seconds (or 10 milliseconds) in a workaround delay of
+            our own in order to compensate.
+
+            :param x_length:    Length of the range of the animation plane along the x-axis.
+                                (See music21.stream.Stream.highestTime)
+            :param delay:       Int in microseconds.
             :return: N/A
             """
-            #The "1" in this range is a compensation value. For some unknown reason, the correct range is not being fully animated.
-            # It's always 2 i range values off (which is 8 iterations if i_div is 4 because we're incrementing at fractional step values.
-            # The desired range is still x_length, we just made it go a little over that to make darn sure the whole range is captured.
+            #The "+ 1" in this range is a compensation value. For some unknown reason, the correct range is not being
+            # fully animated. It's always 2 'i' range values off (which is 8 iterations if i_div is 4 because we're
+            # incrementing at fractional step values) The desired range is still x_length, we just made it go a little
+            #over that to make darn sure the whole range is captured.
             for i in np.arange(0, (x_length + 1), 1/i_div):
                 # print("%f %d" % (i, time.time_ns()))
                 interval = delay

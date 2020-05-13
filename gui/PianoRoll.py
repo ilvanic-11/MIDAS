@@ -93,16 +93,16 @@ class PianoRollDataTable(wx.grid.GridTableBase):
     
         
     def GetNumberCols(self):
-        #print("GetNumberCols(): {}".format(self.parent.GetTopLevelParent().mayavi_view.CurrentActor().array3D.shape[0]))
+        #print("GetNumberCols(): {}".format(self.parent.GetTopLevelParent().mayavi_view.CurrentActor()._array3D.shape[0]))
         if self.pianorollpanel.GetTopLevelParent().mayavi_view.CurrentActor():
-            return self.pianorollpanel.GetTopLevelParent().mayavi_view.CurrentActor().array3D.shape[0]
+            return self.pianorollpanel.GetTopLevelParent().mayavi_view.CurrentActor()._array3D.shape[0]
         else:
             return 5000
         
     def GetNumberRows(self):
-        #print("GetNumberCols(): {}".format(self.parent.GetTopLevelParent().mayavi_view.CurrentActor().array3D.shape[1]))
+        #print("GetNumberCols(): {}".format(self.parent.GetTopLevelParent().mayavi_view.CurrentActor()._array3D.shape[1]))
         if self.pianorollpanel.GetTopLevelParent().mayavi_view.CurrentActor():
-            return self.pianorollpanel.GetTopLevelParent().mayavi_view.CurrentActor().array3D.shape[1]
+            return self.pianorollpanel.GetTopLevelParent().mayavi_view.CurrentActor()._array3D.shape[1]
         else:
             return 128
         
@@ -115,7 +115,7 @@ class PianoRollDataTable(wx.grid.GridTableBase):
                 z = 0
             self.log.debug(f"ZZZ = {z} type:")
             self.log.debug(type(z))
-            return str(int(self.pianorollpanel.GetTopLevelParent().mayavi_view.CurrentActor().array3D[col][127-row][z]))
+            return str(int(self.pianorollpanel.GetTopLevelParent().mayavi_view.CurrentActor()._array3D[col][127-row][z]))
         else:
             return ""
 
@@ -124,7 +124,7 @@ class PianoRollDataTable(wx.grid.GridTableBase):
 
         if self.pianorollpanel.GetTopLevelParent().mayavi_view.CurrentActor():
             z = self.pianorollpanel.currentZplane
-            self.pianorollpanel.GetTopLevelParent().mayavi_view.CurrentActor().array3D[col][127-row][z] = int(value)
+            self.pianorollpanel.GetTopLevelParent().mayavi_view.CurrentActor()._array3D[col][127-row][z] = int(value)
 
 # Main Class for the PianoRoll, based orn wx.Grid
 class PianoRoll(wx.grid.Grid, glr.GridWithLabelRenderersMixin):
@@ -222,10 +222,10 @@ class PianoRoll(wx.grid.Grid, glr.GridWithLabelRenderersMixin):
         for x in range(0, self.GetNumberCols()):
             for y in range(0, self.GetNumberRows()):
                 self.SetCellValue(y,x,"0")
-                self.GetTopLevelParent().mayavi_view.CurrentActor().array3D[x, 127 - y, layer] = 0
+                self.GetTopLevelParent().mayavi_view.CurrentActor()._array3D[x, 127 - y, layer] = 0
         self.ResetGridCellSizes()
         mv = self.GetTopLevelParent().mayavi_view
-        mv.actors[mv.cur].arraychangedflag += 1
+        mv.actors[mv.cur].array3Dchangedflag += 1
 
     def ChangeCellsPerQrtrNote(self, newvalue):
         if newvalue == self._cells_per_qrtrnote:
@@ -423,7 +423,7 @@ class PianoRoll(wx.grid.Grid, glr.GridWithLabelRenderersMixin):
         #page = self.GetTopLevelParent().pianorollpanel.currentPage
         layer = self.GetTopLevelParent().pianorollpanel.currentZplane
 
-        self.GetTopLevelParent().mayavi_view.array3D[c, 127 - row, layer] = 0
+        self.GetTopLevelParent().mayavi_view.CurrentActor()._array3D[c, 127 - row, layer] = 0
 
 
     def DrawCell(self, val, row, col, new_sy, new_sx):
@@ -433,8 +433,7 @@ class PianoRoll(wx.grid.Grid, glr.GridWithLabelRenderersMixin):
         if cur_span == wx.grid.Grid.CellSpan_Inside:
             return
 
-        page = self.GetTopLevelParent().pianorollpanel.currentZplane
-        layer = self.GetTopLevelParent().pianorollpanel.currentZplane
+        #layer = self.GetTopLevelParent().pianorollpanel.currentZplane
 
         x = col
         while x < (col + new_sx):
@@ -456,7 +455,7 @@ class PianoRoll(wx.grid.Grid, glr.GridWithLabelRenderersMixin):
         print(f"  {row},{col} = {val}")
         #self._table.SetValue(row, 127-col, val)
         self.SetCellValue(row, col, val)
-        #self.GetTopLevelParent().mayavi_view.array3D[x, 127 - y, layer] = 1
+        #self.GetTopLevelParent().mayavi_view.CurrentActor()._array3D[x, 127 - y, layer] = 1
         self.SetCellSize(row, col, new_sy, new_sx)
 
 
@@ -508,7 +507,7 @@ class PianoRoll(wx.grid.Grid, glr.GridWithLabelRenderersMixin):
                         print("Note size is too small for current grid CellsPerNote.")
                     else:
                         self._table.SetValue(x, y, "1")
-                        self.GetTopLevelParent().mayavi_view.array3D[y, 127 - x, layer] = 1
+                        self.GetTopLevelParent().mayavi_view.CurrentActor()._array3D[y, 127 - x, layer] = 1
                         self.SetCellSize(x, y, 1, size)
                 # print(matrix)
             elif type(n) is music21.note.Note:
@@ -519,12 +518,12 @@ class PianoRoll(wx.grid.Grid, glr.GridWithLabelRenderersMixin):
                     print("Note size is too small for current grid CellsPerNote.")
                 else:
                     self._table.SetValue(x, y, "1")
-                    self.GetTopLevelParent().mayavi_view.array3D[y, 127 - x, layer] = 1
+                    self.GetTopLevelParent().mayavi_view.CurrentActor()._array3D[y, 127 - x, layer] = 1
                     self.SetCellSize(x, y, 1, size)
 
         # print(matrix)
 
-        self.GetTopLevelParent().mayavi_view.arraychangedflag += 1
+        self.GetTopLevelParent().mayavi_view.array3Dchangedflag += 1
         self.stream = in_stream
 
 
@@ -562,7 +561,7 @@ class PianoRoll(wx.grid.Grid, glr.GridWithLabelRenderersMixin):
         s.makeMeasures(inPlace=True)
         self.stream = s
         s.show('txt')
-        self.GetTopLevelParent().mayavi_view.arraychangedflag += 1
+        self.GetTopLevelParent().mayavi_view.array3Dchangedflag += 1
         return s
 
 
