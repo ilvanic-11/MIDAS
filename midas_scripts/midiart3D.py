@@ -61,7 +61,7 @@ from midas_scripts import midiart
 # ----------------------------------------------------------------------------------------------------------------------
 
 #3D-1.
-def extract_xyz_coordinates_to_array( in_stream):
+def extract_xyz_coordinates_to_array( in_stream, velocities=90.0):
     """
         This functions extracts the int values of the offsets, pitches, and velocities of a music21 stream's notes and
     puts them into a common 2d numpy coords_array as floats.
@@ -73,21 +73,42 @@ def extract_xyz_coordinates_to_array( in_stream):
     # import vtk
     # Create lists and arrays for coordinate integer values.
     temp_stream = music21funcs.notafy(in_stream)
+    substitute_volumes = list((np.full((1, len(in_stream.flat.notes)), velocities, dtype=np.float16))[0])
+    #print("Substitute Velocities", substitute_volumes)
     volume_list = list()
     pitch_list = list()
     offset_list = list()
     #TODO Duration list?
     #Gather data all at once, turn them into floats, and put them into lists.-- (.offets are floats by default)
     for XYZ in temp_stream.flat.notes:
-        if XYZ.volume.velocity is None:
-            print("There are no velocity values for these notes. Assign velocity values.")
-            return None
+        #if XYZ.volume.velocity is None:
+            #XYZ.volume.velocity = round(XYZ.volume.realized * 127)
+
+        #if XYZ.volume.velocity is None:
+            #print("There are no velocity values for these notes. Assign velocity values.")
+            #return None
         offset_list.append(float(XYZ.offset))
         pitch_list.append(float(XYZ.pitch.midi))
-        volume_list.append(float(XYZ.volume.velocity))
-    #Create a numpy array with the the concatenated x,y,z data its elements.
+        if XYZ.volume.velocity is not None:
+            volume_list.append(float(XYZ.volume.velocity))
+        else:
+            pass
+    if len(volume_list) == 0:
+        print("There were no velocity values for these notes. Velocities set to volume.realized * 127.")
+        volume_list = substitute_volumes
+    #Create a numpy array with the the concatenated x,y,z data as its elements.
     note_coordinates = np.r_['1, 2, 0', offset_list, pitch_list, volume_list]
-    return note_coordinates
+    new_coordinates = np.array(note_coordinates, dtype=np.float16)
+    del(note_coordinates)
+    print("New coords", new_coordinates)
+    #Save memory.
+    #note_coordinates.dtype = np.float16
+    #print(type(note_coordinates))
+    if len(new_coordinates) != 0:
+        print("Coordinates Created.")
+    else:
+        print("Coords failed.")
+    return new_coordinates
 
 #3D-2.
 def extract_xyz_coordinates_to_stream( coords_array):
@@ -509,3 +530,4 @@ def BPM_to_FPS(bpm, i_div, timesig = None):
     fps = (bpm * i_div)/60
     #modulo = (bpm * fps) % 60
     return fps
+
