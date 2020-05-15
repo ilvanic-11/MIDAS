@@ -131,6 +131,6 @@ class CustomActorsListBox(wx.ListCtrl):
 	
 	def new_actor(self, name, i):
 		self.log.info(f"new_actor() {name} {i}")
-		self.mayavi_view.append_actor(name, (1, 0, 0))  #Subsequent actors red.
+		self.mayavi_view.append_actor(name, (0, 1, 0))  #Subsequent actors red.
 		self.InsertItem(i, name)
 
