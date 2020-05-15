@@ -174,6 +174,7 @@ class MainButtonsPanel(wx.Panel):
             print("pixels shape", numpy.shape(pixels))
 
             mayavi_view = self.GetTopLevelParent().mayavi_view
+            #default_color_palette = mayavi_view.default_color_palette
             mayavi_color_palette = mayavi_view.default_mayavi_palette
 
             if dialog.EdgesCheck:
@@ -219,6 +220,10 @@ class MainButtonsPanel(wx.Panel):
                     index = len(mayavi_view.actors)
                     name =  str(i.partsName) + "_" + "Clrs" + "_" + dialog.img_name
                     clr = mayavi_color_palette[i.partsName]
+                    clr_list = list(clr)
+                    clr_list.reverse()
+                    clr_tuple = tuple(clr_list)
+                    print("Color-Type", clr, type(clr))
                     actor = self.GetTopLevelParent().pianorollpanel.actorsctrlpanel.actorsListBox.new_actor(name, index)
                     for j in mayavi_view.actors:
                         if j.name == name:
@@ -265,7 +270,7 @@ class MainButtonsPanel(wx.Panel):
             stream.show('txt')
             points = midiart3D.extract_xyz_coordinates_to_array(stream)
             index = len(mayavi_view.actors)
-            name = str(len(mayavi_view.actors)) + "_" + "Midi" + "_" + os.path.basename(dialog.midi)
+            name = str(len(mayavi_view.actors)) + "_" + "Midi" + "_" + dialog.midi_name
             # clr = color_palette[random.randint(1, 16)]  #TODO Random color of 16 possible for now.
             actor = self.GetTopLevelParent().pianorollpanel.actorsctrlpanel.actorsListBox.new_actor(name, index)
             # self.GetTopLevelParent().pianorollpanel.currentPage.StreamToGrid(stream)
@@ -305,7 +310,7 @@ class MainButtonsPanel(wx.Panel):
                 #Establish "Midas Actor" name and index.
                 #TODO Acquire from dialog
                 i = len(mayavi_view.actors)
-                name = str(i)
+                name = str(len(mayavi_view.actors)) + "_" + "PointCloud" + "_" + dialog.ply_name
                 actor = self.GetTopLevelParent().pianorollpanel.actorsctrlpanel.actorsListBox.new_actor(name, i)
 
                 for j in mayavi_view.actors:
@@ -604,6 +609,7 @@ class MIDIArt3DDialog(wx.Dialog):
             print(pathname)
             try:
                 self.ply = pathname
+                self.ply_name = os.path.basename(pathname)
             except IOError:
                 wx.LogError("Cannot open file '%s'." % pathname)
 
@@ -664,5 +670,6 @@ class Music21ConverterParseDialog(wx.Dialog):
             print(pathname)
             try:
                 self.midi = pathname
+                self.midi_name = os.path.basename(pathname)
             except IOError:
                 wx.LogError("Cannot open file '%s'." % pathname)
