@@ -1067,6 +1067,6 @@ def convert_dict_colors(colors_dict):
     new_dict = copy.deepcopy(colors_dict)
     for i in new_dict.keys():
         #print(colors_92[i])
-        new_color = tuple([new_dict[i][0]/255, new_dict[i][1]/255, new_dict[i][1]/255])
+        new_color = tuple([new_dict[i][0]/255, new_dict[i][1]/255, new_dict[i][2]/255])
         new_dict[i] = new_color
     return new_dict

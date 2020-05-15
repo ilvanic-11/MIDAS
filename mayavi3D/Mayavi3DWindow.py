@@ -61,7 +61,16 @@ class Actor(HasTraits):
     pointschangedflag = Int()
     streamchangedflag = Int()
     color = (0, 1, 0)
+    position = Array()
 
+    # cur = Int()
+    #
+    # def __init__(self, parent):
+    #     HasTraits.__init__(self)
+    #     self.parent = parent
+    #     self.sync_trait('cur', self.GetTopLevelParent().mayavi_view, mutual=True)
+    #     self.sync_trait('position', self.GetTopLevelParent.mayavi_view.sources[self.cur].actor.actor, mutual=True, remove=True)
+    #     self.sync_trait('position', self.GetTopLevelParent.mayavi_view, mutual=False, remove=True)
 
     #3d numpy array---> True\False map of existing coords for rapid access.
     def change_array3D(self, array3D):
@@ -96,7 +105,7 @@ class Mayavi3idiView(HasTraits):
     def __init__(self, parent):
         HasTraits.__init__(self)
         #self.on_trait_event(self._array3D_changed, 'array3Dchangedflag')
-        self.parent = parent
+        self.parent = parent  #TODO What's this for?
         self.engine = self.scene3d.engine
         self.engine.start()  # TODO What does this do?
         self.scene = self.engine.scenes[0]   #TODO Refactor the name of this variable? (self.skene?)
@@ -159,10 +168,11 @@ class Mayavi3idiView(HasTraits):
         #self.add_trait(actor_name,Actor())
         a = Actor()
         self.actors.append(a)
-        self.cur = len(self.actors)-1
         self.appending_data = self.insert_array_data(a._array3D, color=color, mode="cube", name=name, scale_factor=1.0)
         self.sources.append(self.appending_data)
         self.mlab_calls.append(self.appending_data)
+        #Moved this down four lines.
+        self.cur = len(self.actors)-1
         self.on_trait_change(self.actor_array3D_changed, 'actors.array3Dchangedflag')
         self.on_trait_change(self.actor_points_changed, 'actors.pointschangedflag')
         #TODO self.on_trait_change(self.actor_stream_changed, 'actors.streamchangedflag')
@@ -340,7 +350,7 @@ class Mayavi3idiView(HasTraits):
         self.insert_volume_slice(length)
 
 
-    def establish_highlighter_plane(self, z_axis=0, color=(0, 1, 0), grandstaff=True, length=None):
+    def establish_highlighter_plane(self, z_axis=0, position = np.array([0, 0, 90]), color=(0, 1, 0), grandstaff=True, length=None):
         if length is not None:
             length = length
         else:
@@ -383,7 +393,7 @@ class Mayavi3idiView(HasTraits):
             #self.gclef_call.actor.actor.position = np.array([0, 59, 0])
             #self.fclef_call.actor.actor.position = np.array([0, 44.3, 0])
         for h in self.highlighter_calls:
-            h.actor.actor.position = np.array([0, 0, 90])
+            h.actor.actor.position = position
         return plane
 
 
@@ -398,19 +408,27 @@ class Mayavi3idiView(HasTraits):
 
     @on_trait_change('cur')
     def sync_positions(self):
-        #self.position = self.sources[self.cur].actor.actor.position
-        #self.remove_trait('position')
 
+        #self.remove_trait('position')
+        print("Cur:", self.cur)
+        print(self.sources)
+        print("Sources length:", len(self.sources))
         #Note: There is the option to remove trait_syncing.
         #NOTE: removing a sync didn't seem to be working.....
-
+        self.sources[self.cur].actor.actor.sync_trait('position', self, mutual=False)
+        if len(self.sources) == 1 and self.cur == 0:
+            pass
+        else:
+            for i in self.highlighter_calls:
+                i.actor.actor.position = self.sources[self.cur].actor.actor.position
+        #self.sources[self.cur].actor.actor.position = self.position
         # self.sync_trait('position', self.sources[self.cur].actor.actor, mutual=True, remove=True)
         # self.remove_trait('position')
         # self.add_trait('position')
-        self.position = self.sources[self.cur].actor.actor.position
+        #self.position = self.sources[self.cur].actor.actor.position
         #self.copy_traits(self.sources[self.cur].actor.actor, ['position'])
         #self.sync_trait('position', self.sources[self.cur].actor.actor, mutual=True, remove=False)
-        print("Position trait synced.")
+        print("Position trait one-way synced: actor.position ---to---> mayavi_view.position.")
 
 
     # @on_trait_change('cur')
@@ -425,9 +443,13 @@ class Mayavi3idiView(HasTraits):
     @on_trait_change('position')
     def highlighter_actor_chase(self):
         # Align Positions
-        for i in self.highlighter_calls:
-            i.actor.actor.position = self.sources[self.cur].actor.actor.position
-            print("Highlighter Chased")
+        #TODO If it's the first and only actor, ignore it. (for right now)
+        if len(self.sources) == 1 and self.cur == 0:
+            pass
+        else:
+            for i in self.highlighter_calls:
+                i.actor.actor.position = self.position   ###self.sources[self.cur].actor.actor.position
+                print("Highlighter Chased")
 
 
     @on_trait_change('cur_z')
