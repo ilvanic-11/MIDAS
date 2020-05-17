@@ -105,7 +105,7 @@ class MainWindow(wx.Frame):
         self.mainbuttonspanel = MainButtons.MainButtonsPanel(self.mainbuttons_stats_split, self.log)
         self.statsdisplaypanel = StatsDisplayPanel.StatsDisplayPanel(self.mainbuttons_stats_split, self.log)
         
-        self.pianorollpanel.actorsctrlpanel.actorsListBox.new_actor("0", 0)
+        self.pianorollpanel.actorsctrlpanel.actorsListBox.new_actor(0)
 
         #Allows highlighter chase to begin right away if desired.
         #self.mayavi_view.cur = -1
