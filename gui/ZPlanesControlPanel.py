@@ -96,6 +96,7 @@ class CustomZPlanesListBox(wx.ListCtrl, CheckListCtrlMixin):
 		print(f"evt.Index = {evt.Index}, zplane = {self.filter[evt.Index]}")
 		self.GetTopLevelParent().pianorollpanel.currentZplane = self.filter[evt.Index]
 		self.GetTopLevelParent().mayavi_view.cur_z = self.filter[evt.Index]
+		self.GetTopLevelParent().mayavi_view.CurrentActor().cur_z = self.filter[evt.Index]
 		self.GetTopLevelParent().pianorollpanel.pianoroll.ForceRefresh()
 	
 	def OnGetItemText(self, item, column):
