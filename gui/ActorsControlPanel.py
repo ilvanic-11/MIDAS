@@ -79,23 +79,37 @@ class ActorsControlPanel(wx.Panel):
 	
 	def OnBtnNewActor(self,evt):
 		i = len(self.mayavi_view.actors)
-		name = str(i)
-		
-		self.actorsListBox.new_actor(name, i)
+		self.actorsListBox.new_actor(i)
 		
 
 	def OnBtnDelActor(self,evt):
 		#TODO Make dynamic for all cases.
 		#Note: These deletions delete by index, not by actor name.
+
+
 		current = self.mayavi_view.cur
+		self.mayavi_view.cur = current -1
 		#Remove from scene(the mayavi pipeline)
 		self.mayavi_view.sources[current].remove()
 		#Remove from mlab_calls list
 		self.mayavi_view.mlab_calls.remove(self.mayavi_view.sources[current])
 		#Remove from source list
 		self.mayavi_view.sources.remove(self.mayavi_view.sources[current])
+		#Remove from actors list
+		self.mayavi_view.actors.remove(self.mayavi_view.actors[current])
 		#Remove from actorsListBox
 		self.actorsListBox.DeleteItem(current)
+
+		# if len(self.mayavi_view.actors) != 0:
+		# 	self.mayavi_view.cur = len(self.mayavi_view.actors) - 1
+		#else:
+			#self.mayavi_view.cur = -1#Condition for single actor case.
+			#self.actorsListBox.new_actor("0", 0)
+
+
+			#Clear Piano
+
+
 
 class CustomActorsListBox(wx.ListCtrl):
 	def __init__(self, parent, log):
@@ -123,13 +137,14 @@ class CustomActorsListBox(wx.ListCtrl):
 	def OnActorsListItemActivated(self, evt):
 		self.log.info("OnListItemActivated():")
 		print(f"evt.Index = {evt.Index}")
-		if len(self.mayavi_view.sources) < 2:
-			self.mayavi_view.cur = -1
-		else:
-			self.mayavi_view.cur = evt.Index
+		self.mayavi_view.cur = evt.Index
+		self.mayavi_view.cur_z = self.mayavi_view.actors[evt.Index].cur_z
+		self.mayavi_view.cur_changed_flag = not self.mayavi_view.cur_changed_flag
 		self.GetTopLevelParent().pianorollpanel.pianoroll.ForceRefresh()
 	
-	def new_actor(self, name, i):
+	def new_actor(self, i, name = None):
+		if name is None:
+			name = str(i) + "_" + "Actor"
 		self.log.info(f"new_actor() {name} {i}")
 		self.mayavi_view.append_actor(name, (0, 1, 0))  #Subsequent actors red.
 		self.InsertItem(i, name)

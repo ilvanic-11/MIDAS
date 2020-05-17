@@ -60,11 +60,13 @@ class Actor(HasTraits):
     array3Dchangedflag = Int()
     pointschangedflag = Int()
     streamchangedflag = Int()
+
+    cur_z = Int()
     color = (0, 1, 0)
     position = Array()
 
     # cur = Int()
-    #
+
     # def __init__(self, parent):
     #     HasTraits.__init__(self)
     #     self.parent = parent
@@ -99,6 +101,7 @@ class Mayavi3idiView(HasTraits):
                 resizable=True)
     actors = List(Actor)
     cur = Int()
+    cur_changed_flag = Int()
     cur_z = Int()
     position = Array()
 
@@ -163,24 +166,35 @@ class Mayavi3idiView(HasTraits):
             return None
         else:
             return self.actors[self.cur]
-        
+
+
     def append_actor(self, name, color):
         #self.add_trait(actor_name,Actor())
+        print("append_actor")
         a = Actor()
+        print('1')
+        self.cur = len(self.actors)
+        print('2')
+        #self.sources.append(None)
         self.actors.append(a)
+        print('3')
         self.appending_data = self.insert_array_data(a._array3D, color=color, mode="cube", name=name, scale_factor=1.0)
+        print('4')
         self.sources.append(self.appending_data)
+        print('5')
         self.mlab_calls.append(self.appending_data)
-        #Moved this down four lines.
-        self.cur = len(self.actors)-1
+        print('6')
+        print("Setting trait_change handlers.")
         self.on_trait_change(self.actor_array3D_changed, 'actors.array3Dchangedflag')
+        print('7')
         self.on_trait_change(self.actor_points_changed, 'actors.pointschangedflag')
+        print('8')
         #TODO self.on_trait_change(self.actor_stream_changed, 'actors.streamchangedflag')
         self.on_trait_change(self.actor_list_changed, 'actors[]')
-
         a.name = name
         a.color = color
-        
+        self.cur_changed_flag = not self.cur_changed_flag
+
     @on_trait_change('scene3d.activated')
     def create_3dmidiart_display(self):
 
@@ -205,6 +219,7 @@ class Mayavi3idiView(HasTraits):
         self.SM_Span = self.midi.highestTime
         self.grid3d_span = self.SM_Span
         self.Points_Span = self.Points.max()
+        #Draw Grid
         self.insert_piano_grid_text_timeplane(self.SM_Span)
         #TODO REFACTOR THIS?
 
@@ -222,7 +237,7 @@ class Mayavi3idiView(HasTraits):
 
 
         #Highlighter Plane
-        self.plane = self.establish_highlighter_plane(0, color=(0, 1, 0), length=self.SM_Span)
+        self.establish_highlighter_plane(0, color=(0, 1, 0), length=self.SM_Span)
 
 
         #self.points = self.Points
@@ -259,12 +274,15 @@ class Mayavi3idiView(HasTraits):
     ##WORKING INSTANCE
     def actor_array3D_changed(self):
         print("actor_array3D_changed")
-
+        print("self.cur   ", self.cur)
+        if self.CurrentActor() is None:
+            print("Current Actor is None")
+            return
         self.CurrentActor()._points = np.argwhere(self.CurrentActor()._array3D >= 1.0)
         print(type(self.CurrentActor()._points))
         print(self.CurrentActor()._points.dtype)
         print(self.CurrentActor()._points)
-    
+
         self.sources[self.cur].mlab_source.trait_set(points=self.CurrentActor()._points)
 
     #def insert_array_data(self, array_2d, color=(0., 0., 0.), mode="cube", scale_factor=.25):
@@ -273,11 +291,18 @@ class Mayavi3idiView(HasTraits):
 
     def actor_points_changed(self):
         print("actor_points_changed")
-        new_array3D = np.zeros(self.CurrentActor()._array3D.shape, dtype=np.float64)
-        for p in self.CurrentActor()._points:
-            new_array3D[p[0], p[1], p[2]] = 1.0
-        self.CurrentActor()._array3D = new_array3D
-        self.sources[self.cur].mlab_source.trait_set(points=self.CurrentActor()._points)
+        print("self.cur", self.cur)
+        if self.CurrentActor() is None:
+            print("Also Current Actor is None")
+            return
+        else:
+            new_array3D = np.zeros(self.CurrentActor()._array3D.shape, dtype=np.float64)
+            for p in self.CurrentActor()._points:
+                new_array3D[p[0], p[1], p[2]] = 1.0
+            self.CurrentActor()._array3D = new_array3D
+            self.sources[self.cur].mlab_source.trait_set(points=self.CurrentActor()._points)
+            print("actor_points_changed")
+
 
     #TODO def actor_stream_changed(self):
         #print("actor_stream_changed")
@@ -291,7 +316,7 @@ class Mayavi3idiView(HasTraits):
     def insert_array_data(self, array_2d, color=(0, 0, 0), mode="cube", name='', scale_factor=.25):
         # print(array_2d)
             #color = lambda x: super().actors[super().cur].color
-
+        print("insert_array_data")
         mlab_data = mlab.points3d(array_2d[:, 0], array_2d[:, 1], array_2d[:, 2], color=self.actors[self.cur].color, mode=mode, name=name,
                              scale_factor=scale_factor)
         return mlab_data
@@ -350,17 +375,18 @@ class Mayavi3idiView(HasTraits):
         self.insert_volume_slice(length)
 
 
-    def establish_highlighter_plane(self, z_axis=0, position = np.array([0, 0, 90]), color=(0, 1, 0), grandstaff=True, length=None):
+    def establish_highlighter_plane(self, z_points=0, z_marker=0, position = np.array([0, 0, 90]), color=(0, 1, 0), grandstaff=True, length=None):
         if length is not None:
             length = length
         else:
             length = self.grid3d_span
-        x1, y1, z1 = (0, 0, z_axis)  # | => pt1
-        x2, y2, z2 = (0, 127, z_axis)  # | => pt2
-        x3, y3, z3 = (length, 0, z_axis)  # | => pt3
-        x4, y4, z4 = (length, 127, z_axis)  # | => pt4
-        linebox = MusicObjects.line_square(length=length, z_axis=z_axis)
-        plane = mayavi.mlab.mesh([[x1, x2],
+        x1, y1, z1 = (0, 0, z_points)  # | => pt1
+        x2, y2, z2 = (0, 127, z_points)  # | => pt2
+        x3, y3, z3 = (length, 0, z_points)  # | => pt3
+        x4, y4, z4 = (length, 127, z_points)  # | => pt4
+        linebox = MusicObjects.line_square(length=length, z_axis=z_points)
+        #Green Surface
+        plane = mlab.mesh([[x1, x2],
                                  [x3, x4]],  # | => x coordinate
 
                                   [[y1, y2],
@@ -372,17 +398,21 @@ class Mayavi3idiView(HasTraits):
                                   color=color, line_width=5.0, mode='sphere', name="Green Surface", opacity=.125, scale_factor=1, tube_radius=None)  # black#extent=(-50, 128, -50, 128, 114, 114)
         #self.mlab_calls.append(plane)
         self.highlighter_calls.append(plane)
-        plane_edges = mayavi.mlab.plot3d(linebox[:, 0], linebox[:, 1], linebox[:, 2]+.25,
+        #White Edges
+        plane_edges = mlab.plot3d(linebox[:, 0], linebox[:, 1], linebox[:, 2]+.25,
                                          color=(1,1,1), line_width=2.5, name="White Edges", opacity=.35, tube_radius=None)
-        #self.mlab_calls.append(plane_edges)
         self.highlighter_calls.append(plane_edges)
+        #self.mlab_calls.append(plane_edges)
         if grandstaff:
-            stafflines = MusicObjects.grand_staff(z_value=z_axis, length=length)
-            gclef = MusicObjects.create_glyph(r".\resources\TrebleClef.png", y_shift=59, z_value = z_axis)
-            fclef = MusicObjects.create_glyph(r".\resources\BassClef.png", y_shift=44.3,  z_value = z_axis)
+            stafflines = MusicObjects.grand_staff(z_value=z_points, length=length)
+            gclef = MusicObjects.create_glyph(r".\resources\TrebleClef.png", y_shift=59, z_value = z_points)
+            fclef = MusicObjects.create_glyph(r".\resources\BassClef.png", y_shift=44.3, z_value = z_points)
             #for j in grandstaff:
+            #Grand Staff Lines
             self.gscalls = mlab.plot3d(stafflines[:, 0], stafflines[:, 1], stafflines[:, 2], color=(0,1,0), name="Staff Lines", opacity=.65, tube_radius=None)
+            #Treble Clef
             self.gclef_call = mlab.points3d(gclef[:, 0], gclef[:, 1], gclef[:, 2], color=(0,1,0), mode='cube', name="Treble Clef", opacity=.015, scale_factor=.25)
+            #Bass Clef
             self.fclef_call = mlab.points3d(fclef[:, 0], fclef[:, 1], fclef[:, 2], color=(0,1,0), mode='cube', name="Bass Clef", opacity=.015, scale_factor=.25)
             #self.mlab_calls.append(self.gscalls)
             self.highlighter_calls.append(self.gscalls)
@@ -392,9 +422,18 @@ class Mayavi3idiView(HasTraits):
             self.highlighter_calls.append(self.fclef_call)
             #self.gclef_call.actor.actor.position = np.array([0, 59, 0])
             #self.fclef_call.actor.actor.position = np.array([0, 44.3, 0])
+        #Z-Plane marker.
+        z_label = mlab.text3d(-40, 0, 0, "Z-Plane_%s" % z_marker, color=(.55, .55, .55), name="Z_Label", orient_to_camera=False, scale=4)
+        self.highlighter_calls.append(z_label)
+        #INITIAL Highlighter positions.
+        #self.cur_z = 90  #Matches position variable.
         for h in self.highlighter_calls:
-            h.actor.actor.position = position
-        return plane
+            if h.name == "Z_Label":
+                h.actor.actor.position = np.array([position[0]-40, position[1], position[2]])
+                h.text = "Z-Plane_%s" % str(90)
+            else:
+                h.actor.actor.position = position
+        #return plane
 
 
     # TODO Tie this to a button.
@@ -406,7 +445,7 @@ class Mayavi3idiView(HasTraits):
         self.highlighter_calls.clear()
 
 
-    @on_trait_change('cur')
+    @on_trait_change('cur_changed_flag')
     def sync_positions(self):
 
         #self.remove_trait('position')
@@ -415,12 +454,27 @@ class Mayavi3idiView(HasTraits):
         print("Sources length:", len(self.sources))
         #Note: There is the option to remove trait_syncing.
         #NOTE: removing a sync didn't seem to be working.....
+        if self.cur < 0:
+            return
+        print("self.cur", self.cur)
         self.sources[self.cur].actor.actor.sync_trait('position', self, mutual=False)
         if len(self.sources) == 1 and self.cur == 0:
             pass
         else:
             for i in self.highlighter_calls:
-                i.actor.actor.position = self.sources[self.cur].actor.actor.position
+                pos = self.sources[self.cur].actor.actor.position
+                i_x = pos[0]
+                if i.name == "Z_Label":
+                    i_x_zerod = (i_x * -1) + i_x
+                    i_x_transformed = i_x_zerod - 40  # Always will be minus 40 for this label.
+                    i_x_restored = i_x_transformed + i_x
+                    i.actor.actor.position = (i_x_restored, pos[1], pos[2])
+                    i.text = "Z-Plane_%s" % self.cur_z
+
+                else:
+                    i.actor.actor.position = pos
+
+
         #self.sources[self.cur].actor.actor.position = self.position
         # self.sync_trait('position', self.sources[self.cur].actor.actor, mutual=True, remove=True)
         # self.remove_trait('position')
@@ -444,28 +498,57 @@ class Mayavi3idiView(HasTraits):
     def highlighter_actor_chase(self):
         # Align Positions
         #TODO If it's the first and only actor, ignore it. (for right now)
-        if len(self.sources) == 1 and self.cur == 0:
-            pass
+        # if len(self.sources) == 1 and self.cur == 0:
+        #     pass
+        if self.cur < 0:
+            return
         else:
             for i in self.highlighter_calls:
-                i.actor.actor.position = self.position   ###self.sources[self.cur].actor.actor.position
-                print("Highlighter Chased")
+                pos = self.position
+                i_x = pos[0]
+                i_z = pos[2]
+                # Zero, transform, restore for xz value
+                i_z_zerod = (i_z * -1) + i_z
+                i_transformed = i_z_zerod + self.cur_z
+                i_restored = i_transformed + i_z
+                if i.name == "Z_Label":
+                    # Zero, transform, restore for x value
+                    i_x_zerod = (i_x * -1) + i_x
+                    i_x_transformed = i_x_zerod - 40  # Always will be minus 40 for this label.
+                    i_x_restored = i_x_transformed + i_x
+                    i.actor.actor.position = (i_x_restored, pos[1], i_restored)
+                    i.text = "Z-Plane_%s" % self.CurrentActor().cur_z
+                else:
+                    i.actor.actor.position = (pos[0], pos[1], i_restored)
 
 
     @on_trait_change('cur_z')
     def highlighter_plane_chase(self):
         # Align Z-value
+        if self.cur < 0:
+            return
         for i in self.highlighter_calls:
-            i_z = self.sources[self.cur].actor.actor.position[2]
+            pos = self.sources[self.cur].actor.actor.position
+            i_z = pos[2]
+            i_y = pos[1]
+            i_x = pos[0]
             #5
-            #Convert to zero
+            ##--Z
+            #Convert to zero, #Transform from zero, #Add original value back
             i_z_zerod = (i_z*-1) + i_z
-            #Transform from zero.
-            #Zplane 20
             i_transformed = i_z_zerod + self.cur_z
-            #Add original value back
             i_restored = i_transformed + i_z
-            i.actor.actor.position = np.array([i.actor.actor.position[0], i.actor.actor.position[1], i_restored])
+            ##--X
+            #Zero, transform, restore for x value
+            i_x_zerod = (i_x * -1) + i_x
+            i_x_transformed = i_x_zerod - 40 #Always will be minus 40 for this label.
+            i_x_restored = i_x_transformed + i_x
+
+            if i.name == "Z_Label":
+                i.actor.actor.position = np.array([i_x_restored, i_y, i_restored])
+                i.text = "Z-Plane_%s" % self.cur_z
+            else:
+                i.actor.actor.position = np.array([i_x, i_y, i_restored])
             print("Highlighter Aligned")
 
 
@@ -786,8 +869,8 @@ class Mayavi3idiView(HasTraits):
             measures = mlab.text3d(m, 0, -2, str(i+1), color=(1, 1, 0), scale=1.65)
             self.text3d_calls.append(measures)
             self.text3d_default_positions.append(measures.actor.actor.position)
-
         self.volume_slice = self.insert_volume_slice(length)
+
 
 
 
