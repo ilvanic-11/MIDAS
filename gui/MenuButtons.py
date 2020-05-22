@@ -90,6 +90,13 @@ class CustomMenuBar(wx.MenuBar):
         # Tools
         self.toolsmenu = wx.Menu()
         # Check menu items
+        self.analyzetools = wx.Menu()
+        self.toolsmenu.Append(400, "Analyze", self.analyzetools)
+        self.analyzetools.Append(1400, "Display Chord Details")
+        self.analyzetools.Append(1401, "Display Music21.show('txt')")
+        self.analyzetools.Append(1402, "Show Midi Data")
+        self.analyzetools.Append(1403, "Show Cell Sizes Data")
+
         self.musicodetools = wx.Menu()
         self.toolsmenu.Append(401, "Musicode", self.musicodetools)
         self._append_musicode_tools()
@@ -109,6 +116,7 @@ class CustomMenuBar(wx.MenuBar):
         menu7 = wx.Menu()
         menu8 = wx.Menu()
         menu9 = wx.Menu()
+
         self.toolsmenu.Append(405, "Current ActorList to Shell", menu7)
 
         # Dict of coords_arrays or Stream with parts(we're dealing with multiple actors for colors...)
@@ -125,81 +133,41 @@ class CustomMenuBar(wx.MenuBar):
         menu9.Append(901, "As Numpy Points")
         self.Append(self.toolsmenu, "&Tools")
 
+
+
         # Help
-        helpmenu = wx.Menu()
-        item = wx.MenuItem(helpmenu, 500, "&Search-Help\tCtrl+Alt+S")  # , "This one has an icon"
-        helpmenu.Append(item)
-        helpmenu.Append(501, "About Midas...")
-        helpmenu.AppendSeparator()
-        helpmenu.Append(502, "Licensing\tShift+H")
-        helpmenu.AppendSeparator()
-        docsubmenu = wx.Menu()
-        helpmenu.Append(503, "Documentation", docsubmenu)
+        self.helpmenu = wx.Menu()
+        item = wx.MenuItem(self.helpmenu, 500, "&Search-Help\tCtrl+Alt+S")  # , "This one has an icon"
+        self.helpmenu.Append(item)
+        self.helpmenu.Append(501, "About Midas...")
+        self.helpmenu.AppendSeparator()
+        self.helpmenu.Append(502, "Licensing\tShift+H")
+        self.helpmenu.AppendSeparator()
+        self.docsubmenu = wx.Menu()
+        self.helpmenu.Append(503, "Documentation", self.docsubmenu)
 
         #Documentation Submenu
-        docsubmenu.Append(600, "Python")
-        docsubmenu.Append(601, "Music21")
-        docsubmenu.Append(602, "Mayavi")
-        docsubmenu.Append(603, "Numpy")
-        docsubmenu.Append(604, "Sympy")
-        docsubmenu.Append(605, "Open3D")
-        docsubmenu.Append(606, "Open-CVPython")
-        docsubmenu.Append(607, "VTK")
-        docsubmenu.Append(608, "TVTK")
+        self.docsubmenu.Append(600, "Python")
+        self.docsubmenu.Append(601, "Music21")
+        self.docsubmenu.Append(602, "Mayavi")
+        self.docsubmenu.Append(603, "Numpy")
+        self.docsubmenu.Append(604, "Sympy")
+        self.docsubmenu.Append(605, "Open3D")
+        self.docsubmenu.Append(606, "Open-CVPython")
+        self.docsubmenu.Append(607, "VTK")
+        self.docsubmenu.Append(608, "TVTK")
 
         # menu6.Append(601, "Midas Homepage")
-        helpmenu.Append(504, "Midas Homepage")
-        helpmenu.Append(505, "The Magic Hammer Homepage")
-        helpmenu.Append(506, "Tutorials")
-        helpmenu.Append(507, "Community")
-        helpmenu.Append(508, "Google Search")
-        helpmenu.Append(509, "Check for Updates...")
-        helpmenu.Append(510, "Credits.")
-        self.Append(helpmenu, "&Help")
+        self.helpmenu.Append(504, "Midas Homepage")
+        self.helpmenu.Append(505, "The Magic Hammer Homepage")
+        self.helpmenu.Append(506, "Tutorials")
+        self.helpmenu.Append(507, "Community")
+        self.helpmenu.Append(508, "Google Search")
+        self.helpmenu.Append(509, "Check for Updates...")
+        self.helpmenu.Append(510, "Credits.")
+        self.Append(self.helpmenu, "&Help")
 
-    #Test
-    def OnToolSelection(self, event):
-        print(event.Id)
-        print("ass ass ass ass")
-        dlg = Preferences.ToolsDialog(self, -1, "Midas Dynamic Tool")
-        dlg.func_id = event.Id
-        #Generate custom tool-based layout here.
-        dlg._generate_layout(event.Id)
-        dlg.ShowWindowModal()
 
-    #def OnToolClose(
-
-    #Everytime a new function is added to one of the midas_scripts, it automatically is appended to it's appropriate
-    #tools submenu.
-
-    # #Menu Comprehensive Append Functions --In MIDAS_wx.py, see #Menu Comprehensive Bind Functions
-    def _append_musicode_tools(self):
-        mcode_ids = 1000
-        self.musicode_list = [o for o in inspect.getmembers(musicode.Musicode) if inspect.isfunction(o[1])]
-        for func in self.musicode_list:
-            self.musicodetools.Append(mcode_ids, func[0])
-            mcode_ids += 1
-
-    def _append_midiart_tools(self):
-        mcode_ids = 1100
-        self.midiart_list = [o for o in inspect.getmembers(midiart) if inspect.isfunction(o[1])]
-        for func in self.midiart_list:
-            self.midiarttools.Append(mcode_ids, func[0])
-            mcode_ids += 1
-
-    def _append_midiart3D_tools(self):
-        mcode_ids = 1200
-        self.midiart3D_list = [o for o in inspect.getmembers(midiart3D) if inspect.isfunction(o[1])]
-        for func in self.midiart3D_list:
-            self.midiart3Dtools.Append(mcode_ids, func[0])
-            mcode_ids += 1
-
-    def _append_music21funcs_tools(self):
-        mcode_ids = 1300
-        self.music21funcs_list = [o for o in inspect.getmembers(music21funcs) if inspect.isfunction(o[1])]
-        for func in self.music21funcs_list:
-            self.music21funcstools.Append(mcode_ids, func[0])
-            mcode_ids += 1
 
     # #File Buttons Defined
     def OnNewSession(self, event):
@@ -473,23 +441,117 @@ class CustomMenuBar(wx.MenuBar):
     def OnProject2(self, event):
         pass
 
-        # Tools Buttons Defined
+
+    ## Tools Buttons Defined
+    #---------------------------------------------
+
+    def OnDisplayChords(self, evt):
+        chord_details_string = ""
+        for i, p in enumerate(self.GetTopLevelParent().pianorollpanel.pianorolls):
+            chord_details_string += f"Layer {i}\n"
+            chord_details_string += music21funcs.print_chords_in_piece(p.stream)
+            chord_details_string += "\n"
+
+        win = RichTextFrame(self, -1, chord_details_string, wx.DefaultPosition,
+                            size=(700, 500),
+                            style=wx.DEFAULT_FRAME_STYLE, validator=wx.DefaultValidator, name="Chord_Details")
+        win.Show(True)
+
+    def OnDisplayStreamShowTxt(self, evt):
+        stream_details_string = ""
+        for i, p in enumerate(self.GetTopLevelParent().pianorollpanel.pianorolls):
+            stream_details_string += f"Layer {i}\n"
+            stream_details_string += music21funcs.print_show_streamtxt(p.stream)
+            stream_details_string += "\n"
+
+        win = RichTextFrame(self, -1, stream_details_string, wx.DefaultPosition,
+                            size=(700, 500),
+                            style=wx.DEFAULT_FRAME_STYLE, validator=wx.DefaultValidator, name="Stream_Details")
+        win.Show(True)
+
+    def OnDisplayMidiData(self, evt):
+        stream_details_string = ""
+        for i, p in enumerate(self.GetTopLevelParent().pianorollpanel.pianorolls):
+            stream_details_string += f"Layer {i}\n"
+            stream_details_string += music21funcs.print_midi_data(p.stream)
+            stream_details_string += "\n"
+
+        win = RichTextFrame(self, -1, stream_details_string, wx.DefaultPosition,
+                            size=(700, 500),
+                            style=wx.DEFAULT_FRAME_STYLE, validator=wx.DefaultValidator, name="Midi_Details")
+        win.Show(True)
+
+    def OnDisplayCellSizesData(self, evt):
+        stream_details_string = ""
+        for i, p in enumerate(self.GetTopLevelParent().pianorollpanel.pianorolls):
+            stream_details_string += f"Layer {i}\n"
+            stream_details_string += self.GetTopLevelParent().pianorollpanel.print_cell_sizes()
+            stream_details_string += "\n"
+
+        win = RichTextFrame(self, -1, stream_details_string, wx.DefaultPosition,
+                            size=(700, 500),
+                            style=wx.DEFAULT_FRAME_STYLE, validator=wx.DefaultValidator, name="Cell_Sizes_Details")
+        win.Show(True)
 
 
-    def OnMusicode(self, event):
-        pass
+    # Test #TODO Figure out what to do to finish these midas_scripts quick tools.
+    def OnToolSelection(self, event):
+        print(event.Id)
+        print("ass ass ass ass")
+        dlg = Preferences.ToolsDialog(self, -1, "Midas Dynamic Tool")
+        dlg.func_id = event.Id
+        # Generate custom tool-based layout here.
+        dlg._generate_layout(event.Id)
+        dlg.ShowWindowModal()
 
+    # TODO def OnToolClose() ??
 
-    def OnMidiart(self, event):
-        pass
+    # Everytime a new function is added to one of the midas_scripts, it automatically is appended to it's appropriate
+    # tools submenu.
+    # #Menu Comprehensive Append Functions --In MIDAS_wx.py, see #Menu Comprehensive Bind Functions
+    def _append_musicode_tools(self):
+        mcode_ids = 1000
+        self.musicode_list = [o for o in inspect.getmembers(musicode.Musicode) if inspect.isfunction(o[1])]
+        for func in self.musicode_list:
+            self.musicodetools.Append(mcode_ids, func[0])
+            mcode_ids += 1
 
+    def _append_midiart_tools(self):
+        mcode_ids = 1100
+        self.midiart_list = [o for o in inspect.getmembers(midiart) if inspect.isfunction(o[1])]
+        for func in self.midiart_list:
+            self.midiarttools.Append(mcode_ids, func[0])
+            mcode_ids += 1
 
-    def On3iDiart(self, event):
-        pass
+    def _append_midiart3D_tools(self):
+        mcode_ids = 1200
+        self.midiart3D_list = [o for o in inspect.getmembers(midiart3D) if inspect.isfunction(o[1])]
+        for func in self.midiart3D_list:
+            self.midiart3Dtools.Append(mcode_ids, func[0])
+            mcode_ids += 1
 
+    def _append_music21funcs_tools(self):
+        mcode_ids = 1300
+        self.music21funcs_list = [o for o in inspect.getmembers(music21funcs) if inspect.isfunction(o[1])]
+        for func in self.music21funcs_list:
+            self.music21funcstools.Append(mcode_ids, func[0])
+            mcode_ids += 1
 
-    def OnMusic21Funcs(self, event):
-        pass
+    #Menus that lead to submenus---so these will not be functions.
+    # def OnMusicode(self, event):
+    #     pass
+    #
+    #
+    # def OnMidiart(self, event):
+    #     pass
+    #
+    #
+    # def On3iDiart(self, event):
+    #     pass
+    #
+    #
+    # def OnMusic21Funcs(self, event):
+    #     pass
 
         # Submenu 7, 8, 9
         # def OnCurrentActorListToShell(self, event):
@@ -519,8 +581,9 @@ class CustomMenuBar(wx.MenuBar):
     def OnAsNumpyPoints(self, event):
         pass
 
-        # Help Buttons Defined
 
+    ## Help Buttons Defined
+    #---------------------------------------------
 
     def OnSearchHelp(self, event):
         dlg = self.helper
@@ -528,7 +591,12 @@ class CustomMenuBar(wx.MenuBar):
 
 
     def OnAboutMidas(self, event):
-        pass
+        #TODO Better method? Better about?
+        about_midas = music21funcs.about_midas()
+        win = RichTextFrame(self, -1, about_midas, wx.DefaultPosition,
+                            size=(700, 500),
+                            style=wx.DEFAULT_FRAME_STYLE, validator=wx.DefaultValidator, name="About Midas")
+        win.Show(True)
 
 
     def OnLicensing(self, event):
@@ -545,7 +613,6 @@ class CustomMenuBar(wx.MenuBar):
 
     def OnTheMagicHammerHomepage(self, event):
         wx.LaunchDefaultBrowser(r"www.themagichammer.com", 0)
-
 
 
     def OnTutorials(self, event):

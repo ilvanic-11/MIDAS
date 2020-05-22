@@ -1,38 +1,30 @@
 ::Fresh Python Install 3.7.4
 ::For MIDAS
-python -m pip install --upgrade pip -user
-pip install wheel
-pip install setuptools
-pip install numpy
-pip install music21
-python -m pip install --upgrade music21
-pip install mlab
-pip install matlab
-pip install plotly
-pip install matplotlib
-pip install pyqt5
-pip install pyface
-python -m pip install --upgrade pyface
-pip install wxpython
-python -m pip install --upgrade wxpython
-pip install vtk
-pip install traits
-python -m pip install --upgrade traits
-pip install traitsui
-python -m pip install --upgrade traitsui
-pip install mayavi
-python -m pip install --upgrade mayavi
-pip install open3d-python
-pip install pillow
-pip install opencv-python 
-python -m pip install --upgrade opencv-python
-pip install pygame
-python -m pip install --upgrade pygame
-pip install scipy
-pip install sympy
-pip install inspect
-pip install mido
-
+python -m pip install --upgrade pip --user
+python -m pip install --upgrade wheel --user
+python -m pip install --upgrade setuptools --user
+python -m pip install --upgrade numpy --user
+python -m pip install --upgrade music21 --user
+python -m pip install --upgrade mlab --user
+python -m pip install --upgrade matlab --user
+python -m pip install --upgrade plotly --user
+python -m pip install --upgrade matplotlib --user
+python -m pip install --upgrade pyqt5 --user
+python -m pip install --upgrade pyface --user
+python -m pip install --upgrade wxpython --user
+python -m pip install --upgrade vtk --user
+python -m pip install --upgrade traits --user
+python -m pip install --upgrade traitsui --user
+python -m pip install --upgrade mayavi --user
+python -m pip install --upgrade open3d-python --user
+python -m pip install --upgrade pillow --user
+python -m pip install --upgrade opencv-python --user
+python -m pip install --upgrade pygame --user
+python -m pip install --upgrade scipy --user
+python -m pip install --upgrade sympy --user
+python -m pip install --upgrade inspect --user
+python -m pip install --upgrade mido --user
+python -m pip install --upgrade blender --user
 
 ::pip install py3d
 ::pip install ipython
@@ -63,10 +55,10 @@ pip install mido
 ::pip install naming
 
 ::Kivi Install
-python -m pip install --upgrade pip wheel setuptools
-python -m pip install docutils pygments pypiwin32 kivy.deps.sdl2 kivy.deps.glew
-python -m pip install kivy.deps.gstreamer
-python -m pip install kivy.deps.angle
-python -m pip install kivy
-python -m pip install kivy_examples
+::python -m pip install --upgrade pip wheel setuptools
+::python -m pip install docutils pygments pypiwin32 kivy.deps.sdl2 kivy.deps.glew
+::python -m pip install kivy.deps.gstreamer
+::python -m pip install kivy.deps.angle
+::python -m pip install kivy
+::python -m pip install kivy_examples
 
