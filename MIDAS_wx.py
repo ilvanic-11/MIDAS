@@ -1,10 +1,10 @@
 import wx
 from traits.etsconfig.api import ETSConfig
 ETSConfig.toolkit = 'wx'
-from gui import MenuButtons, MainButtons, StatsDisplayPanel, PianoRollPanel,Musical_Matrix_Rain,Preferences
+from gui import MenuButtons, MainButtons, PianoRollPanel,Musical_Matrix_Rain,Preferences
 from wx.adv import SplashScreen as SplashScreen
 #from mayavi3D import Mayavi3idiArtAnimation
-from mayavi3D import Mayavi3DWindow
+from mayavi3D import Mayavi3DWindow, MusicObjects
 from gui import StatusBar
 #from logging import log
 import mayavi
@@ -102,14 +102,13 @@ class MainWindow(wx.Frame):
        
         self.pyshellpanel = MyCrust(self.top_pyshell_split, startupScript=str(os.getcwd() + "\\\\resources\\\\" + "Midas_Startup_Configs.py"))
         self.pianorollpanel = PianoRollPanel.PianoRollPanel(self.pianoroll_mainbuttons_split, self.log)
-        self.mainbuttonspanel = MainButtons.MainButtonsPanel(self.mainbuttons_stats_split, self.log)
-        self.statsdisplaypanel = StatsDisplayPanel.StatsDisplayPanel(self.mainbuttons_stats_split, self.log)
-        
-        self.pianorollpanel.actorsctrlpanel.actorsListBox.new_actor(0)
+        self.mainbuttonspanel = MainButtons.MainButtonsPanel(self.pianoroll_mainbuttons_split, self.log)
+        #self.statsdisplaypanel = StatsDisplayPanel.StatsDisplayPanel(self.mainbuttons_stats_split, self.log)
 
-        #Allows highlighter chase to begin right away if desired.
-        #self.mayavi_view.cur = -1
-        
+        #Actor on startup.
+        self.pianorollpanel.actorsctrlpanel.actorsListBox.new_actor(0)
+        self.mayavi_view.actors[0].change_points(MusicObjects.earth())
+
         sizer = wx.BoxSizer(wx.VERTICAL)
         sizer.Add(self.top_mayaviview_split, 1, wx.EXPAND)
         self.mainpanel.SetSizerAndFit(sizer)
@@ -188,10 +187,17 @@ class MainWindow(wx.Frame):
         self.Bind(wx.EVT_MENU, self.menuBar.OnProject2, id=308)
 
         # Tools
-        self.Bind(wx.EVT_MENU, self.menuBar.OnMusicode, id=401)
-        self.Bind(wx.EVT_MENU, self.menuBar.OnMidiart, id=402)
-        self.Bind(wx.EVT_MENU, self.menuBar.On3iDiart, id=403)
-        self.Bind(wx.EVT_MENU, self.menuBar.OnMusic21Funcs, id=404)
+        #Analyze..
+        self.Bind(wx.EVT_MENU, self.menuBar.OnDisplayChords, id=1400)
+        self.Bind(wx.EVT_MENU, self.menuBar.OnDisplayStreamShowTxt, id=1401)
+        self.Bind(wx.EVT_MENU, self.menuBar.OnDisplayMidiData, id=1402)
+        self.Bind(wx.EVT_MENU, self.menuBar.OnDisplayCellSizesData, id=1403)
+
+        #Musicode, Midiart, 3idiart, Music21funcs...
+        # self.Bind(wx.EVT_MENU, self.menuBar.OnMusicode, id=401)
+        # self.Bind(wx.EVT_MENU, self.menuBar.OnMidiart, id=402)
+        # self.Bind(wx.EVT_MENU, self.menuBar.On3iDiart, id=403)
+        # self.Bind(wx.EVT_MENU, self.menuBar.OnMusic21Funcs, id=404)
 
         #Submenus...
         # self.Bind(wx.EVT_MENUself.menuBar.f.OnCurrentActorListToShell, id=405)
@@ -320,22 +326,24 @@ class MainWindow(wx.Frame):
     def _set_properties(self):
         self.SetTitle("MIDAS")
         self.pianorollpanel.SetBackgroundColour("white")
-        self.statsdisplaypanel.SetBackgroundColour("silver")
+        #self.statsdisplaypanel.SetBackgroundColour("silver")
         self.mainbuttonspanel.SetBackgroundColour("green")
         self.top_pyshell_split.SetBackgroundColour("black")
         self.top_pyshell_split.SetMinimumPaneSize(50)
         self.pianoroll_mainbuttons_split.SetMinimumPaneSize(120)
-        self.mainbuttons_stats_split.SetMinimumPaneSize(200)
+        #self.mainbuttons_stats_split.SetMinimumPaneSize(200)
         self.top_mayaviview_split.SetMinimumPaneSize(50)
+        self.mayavi_view.cur_z = 90
 
     def _do_layout(self):
-        self.mainbuttons_stats_split.SplitHorizontally(self.mainbuttonspanel, self.statsdisplaypanel)
-        self.pianoroll_mainbuttons_split.SplitVertically(self.mainbuttons_stats_split, self.pianorollpanel)
+        #self.mainbuttons_stats_split.SplitHorizontally(self.mainbuttonspanel, self.statsdisplaypanel)
+        #self.pianoroll_mainbuttons_split.SplitVertically(self.mainbuttons_stats_split, self.pianorollpanel)
+        self.pianoroll_mainbuttons_split.SplitVertically(self.mainbuttonspanel, self.pianorollpanel)
         self.top_pyshell_split.SplitHorizontally(self.pianoroll_mainbuttons_split, self.pyshellpanel)
         self.top_mayaviview_split.SplitHorizontally(self.top_pyshell_split, self.mayavi_view_control_panel)
         
         self.pianoroll_mainbuttons_split.SetSashPosition(120)
-        self.mainbuttons_stats_split.SetSashPosition(400)
+        #self.mainbuttons_stats_split.SetSashPosition(400)
         self.top_pyshell_split.SetSashPosition(300)
         self.top_mayaviview_split.SetSashPosition(600)  ###Affects 3D title insert
         

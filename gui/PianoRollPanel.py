@@ -37,7 +37,7 @@ class PianoRollPanel(wx.Panel):
         self.log.info("PianoRollPanel.__init__()")
         self.tb = self.SetupToolbar()
 
-        self.currentZplane = 0
+        self.currentZplane = 90
         
      
         
