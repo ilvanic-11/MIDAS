@@ -32,22 +32,29 @@ class ActorsControlPanel(wx.Panel):
 		bmp_showall = wx.ArtProvider.GetBitmap(wx.ART_LIST_VIEW, wx.ART_TOOLBAR, btn_size)
 		bmp_newactor = wx.ArtProvider.GetBitmap(wx.ART_ADD_BOOKMARK, wx.ART_TOOLBAR, btn_size)
 		bmp_delactor = wx.ArtProvider.GetBitmap(wx.ART_DEL_BOOKMARK, wx.ART_TOOLBAR, btn_size)
-		
+		bmp_delallactors = wx.ArtProvider.GetBitmap(wx.ART_DEL_BOOKMARK, wx.ART_TOOLBAR, btn_size)
+
+
 		id_showall = 10
 		id_newactor = 20
 		id_delactor = 30
-		
+		id_delallactors = 40
+
+
 		self.toolbar.AddTool(id_showall, "ShowAll", bmp_showall,
 		                          shortHelp="Toggle all Actors' visibility", kind=wx.ITEM_CHECK)
 		self.toolbar.AddTool(id_newactor, "New Actor", bmp_newactor,
 		                        shortHelp="Add New Actor", kind=wx.ITEM_NORMAL)
 		self.toolbar.AddTool(id_delactor, "Delete Actor", bmp_delactor,
 		                        shortHelp="Delete Current Actor", kind=wx.ITEM_NORMAL)
-		
+		self.toolbar.AddTool(id_delallactors, "Delete All Actors", bmp_delallactors,
+		                        shortHelp="Delete All Actors", kind=wx.ITEM_NORMAL)
+
 		
 		self.Bind(wx.EVT_TOOL, self.OnToolBarClick, id=id_showall)
 		self.Bind(wx.EVT_TOOL, self.OnToolBarClick, id=id_newactor)
 		self.Bind(wx.EVT_TOOL, self.OnToolBarClick, id=id_delactor)
+		self.Bind(wx.EVT_TOOL, self.OnToolBarClick, id=id_delallactors)
 
 		self.toolbar.Realize()
 	
@@ -65,6 +72,8 @@ class ActorsControlPanel(wx.Panel):
 			self.OnBtnNewActor(event)
 		elif event.GetId() == 30:
 			self.OnBtnDelActor(event)
+		elif event.GetId() == 40:
+			self.OnBtnDelAllActors(event)
 		else:
 			pass
 	
@@ -109,6 +118,24 @@ class ActorsControlPanel(wx.Panel):
 
 
 			#Clear Piano
+
+	#TODO Bind to button.
+	def OnBtnDelAllActors(self, evt):
+		for j in range(0, len(self.mayavi_view.actors)):
+			#This function deletes by index 0 the number of times of the loop's range, not by self.mayavi_view.cur.
+
+			index_0 = 0
+			
+			self.actorsListBox.DeleteItem(index_0)
+			# Remove from scene(the mayavi pipeline)
+			self.mayavi_view.sources[index_0].remove()
+			# Remove from mlab_calls list
+			self.mayavi_view.mlab_calls.remove(self.mayavi_view.sources[index_0])
+			# Remove from source list
+			self.mayavi_view.sources.remove(self.mayavi_view.sources[index_0])
+			# Remove from actors list
+			self.mayavi_view.actors.remove(self.mayavi_view.actors[index_0])
+
 
 
 
