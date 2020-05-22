@@ -53,13 +53,13 @@ class MainButtonsPanel(wx.Panel):
         sizer.Add(btn_clear_pianoroll, 0, wx.ALL|wx.ALIGN_CENTER_HORIZONTAL, 10)
         self.Bind(wx.EVT_BUTTON, self.OnClearPianoRoll , btn_clear_pianoroll)
 
-        btn_print_cell_sizes = wx.Button(self, -1, "Print Cell Sizes")
-        sizer.Add(btn_print_cell_sizes, 0, wx.ALL|wx.ALIGN_CENTER_HORIZONTAL, 10)
-        self.Bind(wx.EVT_BUTTON, self.OnPrintCellSizes , btn_print_cell_sizes)
-
-        btn_grid_to_stream = wx.Button(self, -1, "Grid To Stream")
-        sizer.Add(btn_grid_to_stream, 0, wx.ALL|wx.ALIGN_CENTER_HORIZONTAL, 10)
-        self.Bind(wx.EVT_BUTTON, self.OnGridToStream , btn_grid_to_stream)
+        # btn_print_cell_sizes = wx.Button(self, -1, "Print Cell Sizes")
+        # sizer.Add(btn_print_cell_sizes, 0, wx.ALL|wx.ALIGN_CENTER_HORIZONTAL, 10)
+        # self.Bind(wx.EVT_BUTTON, self.OnPrintCellSizes , btn_print_cell_sizes)
+        #
+        # btn_grid_to_stream = wx.Button(self, -1, "Grid To Stream")
+        # sizer.Add(btn_grid_to_stream, 0, wx.ALL|wx.ALIGN_CENTER_HORIZONTAL, 10)
+        # self.Bind(wx.EVT_BUTTON, self.OnGridToStream , btn_grid_to_stream)
 
 
         self.SetSizer(sizer)

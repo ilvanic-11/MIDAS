@@ -561,7 +561,7 @@ class PianoRoll(wx.grid.Grid, glr.GridWithLabelRenderersMixin):
         s.makeMeasures(inPlace=True)
         self.stream = s
         s.show('txt')
-        self.GetTopLevelParent().mayavi_view.array3Dchangedflag += 1
+        self.GetTopLevelParent().mayavi_view.array3Dchangedflag += 1  #TODO Change to 'not' method?
         return s
 
 

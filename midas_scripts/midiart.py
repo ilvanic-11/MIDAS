@@ -540,8 +540,8 @@ def transcribe_colored_image_to_midiart(img, granularity=1, connect=False, keych
     :param connect:         The contiguity feature. Notes chopped by default. True connects adjacent notes contiguously.
     :param keychoice:       The key of the piece, specified as a string(i.e. "C" for C Major or "C#m" for C Sharp Minor)
     :param colors:#TODO Fix:If True, note_pxl_value becomes irrelevant, and this enables use of the image's color tupls.
-    :param output_path:     Directory to which output will be written, specified as a string.
-
+    :param output_path:     Directory to which output will be written, specified as a string. If None, does not write
+                            to file.
     :return:                Returns a music21.stream.Stream() object.
     """
     if type(img) == str:
