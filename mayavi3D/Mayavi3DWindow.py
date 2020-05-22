@@ -39,16 +39,18 @@ from traits.trait_types import List
 from traits.trait_types import Any
 
 class Actor(HasTraits):
+    #For general purposes as traits.
     name = String()
+    color = (0, 1, 0)
     _points = Array(dtype=np.int)
     _array3D = Array(dtype=np.float, shape=(5000, 128, 128))
-    _stream = Any()
+    _stream = Any()  #TODO For exporting, finish.
+    #For trait flagging.
     array3Dchangedflag = Int()
     pointschangedflag = Int()
     streamchangedflag = Int()
-
-    cur_z = Int()
-    color = (0, 1, 0)
+    ##For trait-syncing.
+    cur_z = Int(90)
     position = Array()
 
     # cur = Int()
@@ -83,11 +85,14 @@ class Mayavi3idiView(HasTraits):
     scene3d = Instance(MlabSceneModel, ())
     view = View(Item('scene3d', editor=SceneEditor(scene_class=MayaviScene), resizable=True, show_label=False),
                 resizable=True)
+    actor = Any()
     actors = List(Actor)
     cur = Int()
-    cur_changed_flag = Int()
     cur_z = Int()
+    cur_changed_flag = Int()
     position = Array()
+    stream = Any()
+
 
     def __init__(self, parent):
         HasTraits.__init__(self)
@@ -134,43 +139,8 @@ class Mayavi3idiView(HasTraits):
 
         #self.append_actor("0")
 
-        
-        
-        
-    def CurrentActor(self):
-        if len(self.actors) <= 0:
-            return None
-        else:
-            return self.actors[self.cur]
 
-
-    def append_actor(self, name, color):
-        #self.add_trait(actor_name,Actor())
-        print("append_actor")
-        a = Actor()
-        print('1')
-        self.cur = len(self.actors)
-        print('2')
-        #self.sources.append(None)
-        self.actors.append(a)
-        print('3')
-        self.appending_data = self.insert_array_data(a._array3D, color=color, mode="cube", name=name, scale_factor=1.0)
-        print('4')
-        self.sources.append(self.appending_data)
-        print('5')
-        self.mlab_calls.append(self.appending_data)
-        print('6')
-        print("Setting trait_change handlers.")
-        self.on_trait_change(self.actor_array3D_changed, 'actors.array3Dchangedflag')
-        print('7')
-        self.on_trait_change(self.actor_points_changed, 'actors.pointschangedflag')
-        print('8')
-        #TODO self.on_trait_change(self.actor_stream_changed, 'actors.streamchangedflag')
-        self.on_trait_change(self.actor_list_changed, 'actors[]')
-        a.name = name
-        a.color = color
-        self.cur_changed_flag = not self.cur_changed_flag
-
+    #Grid Establisher.
     @on_trait_change('scene3d.activated')
     def create_3dmidiart_display(self):
         self.midi = music21.converter.parse(r".\resources\Spark4.mid")
@@ -228,10 +198,54 @@ class Mayavi3idiView(HasTraits):
         self.insert_titles()
         #self.insert_note_text("3-Dimensional Music", 0, 164, 0, color=(1,0,1), opacity=.12, orient_to_camera=False, scale=3
 
+    def redraw_mayaviview(self):
+        mlab.clf()
+        self.create_3dmidiart_display()
 
     def remove_mlab_actor(self, actor_child): #TODO Write from scenes[0].children stuff. CHECK--Use child.remove()
         actor_child.remove()  #Must be an actor_child found in scene3d.engine.scenes[0].children. Use subscript for it.
         #TODO Create version of this to call for the actor by its "name" trait.
+
+
+    ##ZACH's dynamic trait array3D\points\actors trait updating functions.
+    #-------------------
+    ##----------------------------------------
+    ###-------------------------------------------------------------------
+
+
+    def CurrentActor(self):
+        if len(self.actors) <= 0:
+            return None
+        else:
+            return self.actors[self.cur]
+
+    def append_actor(self, name, color):
+        # self.add_trait(actor_name,Actor())
+        print("append_actor")
+        a = Actor()
+        self.actor = a
+        print('1')
+        self.cur = len(self.actors)
+        print('2')
+        # self.sources.append(None)
+        self.actors.append(a)
+        print('3')
+        self.appending_data = self.insert_array_data(a._array3D, color=color, mode="cube", name=name, scale_factor=1.0)
+        print('4')
+        self.sources.append(self.appending_data)
+        print('5')
+        self.mlab_calls.append(self.appending_data)
+        print('6')
+        print("Setting trait_change handlers.")
+        self.on_trait_change(self.actor_array3D_changed, 'actor.array3Dchangedflag')
+        print('7')
+        self.on_trait_change(self.actor_points_changed, 'actor.pointschangedflag')
+        print('8')
+        # TODO self.on_trait_change(self.actor_stream_changed, 'actors.streamchangedflag')
+        self.on_trait_change(self.actor_list_changed, 'actors[]')
+        a.name = name
+        a.color = color
+        self.cur_changed_flag = not self.cur_changed_flag
 
     @on_trait_change('cur')
     def current_actor_changed(self):
@@ -269,6 +283,16 @@ class Mayavi3idiView(HasTraits):
             self.sources[self.cur].mlab_source.trait_set(points=self.CurrentActor()._points)
             print("actor_points_changed")
 
+    # TODO Deprecated?
+    def update_3Dpoints(self, row, col, val):
+        try:
+            page = self.GetTopLevelParent().pianorollpanel.currentPage
+            layer = self.GetTopLevelParent().pianorollpanel.pianorollNB.FindPage(page)
+            self._array3D[col, 127 - row, layer] = val
+        except Exception as e:
+            print(e)
+            pass
+
 
     #TODO def actor_stream_changed(self):
         #print("actor_stream_changed")
@@ -278,6 +302,10 @@ class Mayavi3idiView(HasTraits):
         print("actor_list_changed")
 
 
+    ###MAYAVI_VIEW INSERT AND MANIPULATION FUNCTIONS
+    #-------------------
+    ##----------------------------------------------
+    ###---------------------------------------------------------------------------------------
 
     def insert_array_data(self, array_2d, color=(0, 0, 0), mode="cube", name='', scale_factor=.25):
         # print(array_2d)
@@ -307,6 +335,28 @@ class Mayavi3idiView(HasTraits):
         return mlab_data
 
 
+    ###TITLES and NOTE inserts.
+    def insert_note_text(self, text, x=0, y=154, z=0, color=(0, 0, 1), opacity=1, orient_to_camera=True, scale=3):
+        mlab_t3d = mlab.text3d(text=text, x=x, y=y, z=z, color=color, opacity=opacity,
+                               orient_to_camera=orient_to_camera, scale=scale)
+        self.text3d_calls.append(mlab_t3d)
+        self.text3d_default_positions.append(mlab_t3d.actor.actor.position)
+        # TODO
+        ## def insert_image_data(self, imarray_2d, color=(0,0,0), mode="cube", scale_factor = 1):
+
+
+    ###SCENE TITLEd
+    def insert_title(self, text, color=(1, .5, 0), height=.7, opacity=1.0, size=1):
+        return mlab.title(text=text, color=color, height=height, opacity=opacity, size=size)
+
+    # Leave this here for now.
+    def insert_titles(self):
+        self.insert_note_text("The Midas 3idiArt Display", 0, 137, 0, color=(1, 1, 0), orient_to_camera=True,
+                              scale=7)
+        ###Note: affected by top_mayaviview_split sash position.
+        self.title = self.insert_title("3-Dimensional Music", color=(1, 0, 1), height=.82, opacity=.12, size=.65)
+
+    #Volume Slice Functions
     def insert_volume_slice(self, length=127):
         # Time_ScrollPlane
         # x,y,z = np.mgrid[0:127, 0:127, 0:127]
@@ -339,7 +389,7 @@ class Mayavi3idiView(HasTraits):
         self.volume_slice.remove()
         self.insert_volume_slice(length)
 
-
+    #Highlighter Plane functions.
     def establish_highlighter_plane(self, z_points=0, z_marker=0, position = np.array([0, 0, 90]), color=(0, 1, 0), grandstaff=True, length=None):
         if length is not None:
             length = length
@@ -410,113 +460,7 @@ class Mayavi3idiView(HasTraits):
         self.highlighter_calls.clear()
 
 
-    @on_trait_change('cur_changed_flag')
-    def sync_positions(self):
-
-        #self.remove_trait('position')
-        print("Cur:", self.cur)
-        print(self.sources)
-        print("Sources length:", len(self.sources))
-        #Note: There is the option to remove trait_syncing.
-        #NOTE: removing a sync didn't seem to be working.....
-        if self.cur < 0:
-            return
-        print("self.cur", self.cur)
-        self.sources[self.cur].actor.actor.sync_trait('position', self, mutual=False)
-        if len(self.sources) == 1 and self.cur == 0:
-            pass
-        else:
-            for i in self.highlighter_calls:
-                pos = self.sources[self.cur].actor.actor.position
-                i_x = pos[0]
-                if i.name == "Z_Label":
-                    i_x_zerod = (i_x * -1) + i_x
-                    i_x_transformed = i_x_zerod - 40  # Always will be minus 40 for this label.
-                    i_x_restored = i_x_transformed + i_x
-                    i.actor.actor.position = (i_x_restored, pos[1], pos[2])
-                    i.text = "Z-Plane_%s" % self.cur_z
-
-                else:
-                    i.actor.actor.position = pos
-
-
-        #self.sources[self.cur].actor.actor.position = self.position
-        # self.sync_trait('position', self.sources[self.cur].actor.actor, mutual=True, remove=True)
-        # self.remove_trait('position')
-        # self.add_trait('position')
-        #self.position = self.sources[self.cur].actor.actor.position
-        #self.copy_traits(self.sources[self.cur].actor.actor, ['position'])
-        #self.sync_trait('position', self.sources[self.cur].actor.actor, mutual=True, remove=False)
-        print("Position trait one-way synced: actor.position ---to---> mayavi_view.position.")
-
-
-    # @on_trait_change('cur')
-    # def highlighter_actor_chase(self):
-    #     #Align Positions
-    #     print("Cur Changed")
-    #     for i in self.highlighter_calls:
-    #         i.actor.actor.position = self.sources[self.cur].actor.actor.position
-    #         print("Highlighter Chased")
-    #     self.remove_trait('position')
-
-    @on_trait_change('position')
-    def highlighter_actor_chase(self):
-        # Align Positions
-        #TODO If it's the first and only actor, ignore it. (for right now)
-        # if len(self.sources) == 1 and self.cur == 0:
-        #     pass
-        if self.cur < 0:
-            return
-        else:
-            for i in self.highlighter_calls:
-                pos = self.position
-                i_x = pos[0]
-                i_z = pos[2]
-                # Zero, transform, restore for xz value
-                i_z_zerod = (i_z * -1) + i_z
-                i_transformed = i_z_zerod + self.cur_z
-                i_restored = i_transformed + i_z
-                if i.name == "Z_Label":
-                    # Zero, transform, restore for x value
-                    i_x_zerod = (i_x * -1) + i_x
-                    i_x_transformed = i_x_zerod - 40  # Always will be minus 40 for this label.
-                    i_x_restored = i_x_transformed + i_x
-                    i.actor.actor.position = (i_x_restored, pos[1], i_restored)
-                    i.text = "Z-Plane_%s" % self.CurrentActor().cur_z
-                else:
-                    i.actor.actor.position = (pos[0], pos[1], i_restored)
-
-
-    @on_trait_change('cur_z')
-    def highlighter_plane_chase(self):
-        # Align Z-value
-        if self.cur < 0:
-            return
-        for i in self.highlighter_calls:
-            pos = self.sources[self.cur].actor.actor.position
-            i_z = pos[2]
-            i_y = pos[1]
-            i_x = pos[0]
-            #5
-            ##--Z
-            #Convert to zero, #Transform from zero, #Add original value back
-            i_z_zerod = (i_z*-1) + i_z
-            i_transformed = i_z_zerod + self.cur_z
-            i_restored = i_transformed + i_z
-            ##--X
-            #Zero, transform, restore for x value
-            i_x_zerod = (i_x * -1) + i_x
-            i_x_transformed = i_x_zerod - 40 #Always will be minus 40 for this label.
-            i_x_restored = i_x_transformed + i_x
-
-            if i.name == "Z_Label":
-                i.actor.actor.position = np.array([i_x_restored, i_y, i_restored])
-                i.text = "Z-Plane_%s" % self.cur_z
-            else:
-                i.actor.actor.position = np.array([i_x, i_y, i_restored])
-            print("Highlighter Aligned")
-
-
+    #Position, orientation, and #TODO origin functions.
     def set_z_to_single_value(self, coords, value, index=None):
         if index is None:
             coords_array = coords
@@ -649,21 +593,29 @@ class Mayavi3idiView(HasTraits):
             for n in range(0, len(self.text3d_calls)):
                 self.text3d_calls[n].actor.actor.position = pos
 
+    #Basic Point Cloud transformation functions.
+    def standard_reorientation(self, points, scale=1.):
+        # TODO Maximum rescaling check.
+        # TODO scale_function?  Need check to avoid float values.
+        # TODO Scaling needs to be done with respect to musical, i.e. a musical key, and within the grid's available space.
 
-    def redraw_mayaviview(self):
-        mlab.clf()
-        self.create_3dmidiart_display()
+        #TODO MAJOR: There is a 'scale' trait within an mlab actor. Use this for scaling? (it scales the size of points up as well..)
+
+        points = midiart3D.transform_points_by_axis(points, positive_octant=True)
+        points = midiart3D.delete_redundant_points(points, stray=False)
+        points = points * scale
+        return points
 
 
-    #TODO Deprecated?
-    def update_3Dpoints(self, row, col, val):
-        try:
-            page = self.GetTopLevelParent().pianorollpanel.currentPage
-            layer = self.GetTopLevelParent().pianorollpanel.pianorollNB.FindPage(page)
-            self._array3D[col, 127 - row, layer] = val
-        except Exception as e:
-            print(e)
-            pass
+    def trim(self, points, axis='y', trim=0):
+        Points_Odict = midiart3D.get_planes_on_axis(points, axis, ordered=True)
+
+        # Trim (Trim by index in the list. An in-place operation.)
+        [Points_Odict.pop(i) for i in list(Points_Odict.keys())[:trim]]
+
+        # Restore to a coords_array.
+        Restored_Points = midiart3D.restore_coords_array_from_ordered_dict(Points_Odict)
+        return Restored_Points
 
 
     ###DEFINE MUSIC ANIMATION
@@ -761,30 +713,7 @@ class Mayavi3idiView(HasTraits):
         # animate1.timer.Start()
 
 
-    def standard_reorientation(self, points, scale=1.):
-        # TODO Maximum rescaling check.
-        # TODO scale_function?  Need check to avoid float values.
-        # TODO Scaling needs to be done with respect to musical, i.e. a musical key, and within the grid's available space.
-
-        #TODO MAJOR: There is a 'scale' trait within an mlab actor. Use this for scaling? (it scales the size of points up as well..)
-
-        points = midiart3D.transform_points_by_axis(points, positive_octant=True)
-        points = midiart3D.delete_redundant_points(points, stray=False)
-        points = points * scale
-        return points
-
-
-    def trim(self, points, axis='y', trim=0):
-        Points_Odict = midiart3D.get_planes_on_axis(points, axis, ordered=True)
-
-        # Trim (Trim by index in the list. An in-place operation.)
-        [Points_Odict.pop(i) for i in list(Points_Odict.keys())[:trim]]
-
-        # Restore to a coords_array.
-        Restored_Points = midiart3D.restore_coords_array_from_ordered_dict(Points_Odict)
-        return Restored_Points
-
-
+    #Grid Constructor
     def insert_piano_grid_text_timeplane(self, length):
         ###Piano
         # MayaviPianoBlack = music21.converter.parse(r"C:\Users\Isaac's\Desktop\Neo Mp3s-Wavs-and-Midi\FL Midi Files\MidiPianoBlack.mid")
@@ -838,30 +767,6 @@ class Mayavi3idiView(HasTraits):
         self.volume_slice = self.insert_volume_slice(length)
 
 
-
-
-    ###TITLES and NOTE inserts.
-    def insert_note_text(self, text, x=0, y=154, z=0, color=(0, 0, 1), opacity=1, orient_to_camera=True, scale=3):
-        mlab_t3d = mlab.text3d(text=text, x=x, y=y, z=z, color=color, opacity=opacity, orient_to_camera=orient_to_camera, scale=scale)
-        self.text3d_calls.append(mlab_t3d)
-        self.text3d_default_positions.append(mlab_t3d.actor.actor.position)
-        # TODO
-        ## def insert_image_data(self, imarray_2d, color=(0,0,0), mode="cube", scale_factor = 1):
-
-
-    ###SCENE TITLEd
-    def insert_title(self, text, color=(1, .5, 0), height=.7, opacity=1.0, size=1):
-        return mlab.title(text=text, color=color, height=height, opacity=opacity, size=size)
-
-
-    #Leave this here for now.
-    def insert_titles(self):
-        self.insert_note_text("The Midas 3idiArt Display", 0, 137, 0, color=(1, 1, 0), orient_to_camera=True,
-                              scale=7)
-        ###Note: affected by top_mayaviview_split sash position.
-        self.title = self.insert_title("3-Dimensional Music", color=(1, 0, 1), height=.82, opacity=.12, size=.65)
-
-
     ###OPENING ANIMATION
     ###-----------------
     ###Script Widget Shrink and Initial Camera Angle
@@ -883,6 +788,125 @@ class Mayavi3idiView(HasTraits):
         scene.scene.camera.clipping_range = [210.11552421145498, 882.5056024983969]
         scene.scene.camera.compute_view_plane_normal()
         scene.scene.render()
+
+
+    ####TRAITS FUNCTIONS
+    #-------------------
+    ##-------------------------------------
+    ###---------------------------------------------------------
+
+    @on_trait_change('cur_changed_flag')
+    def sync_positions(self):
+
+        #self.remove_trait('position')
+        print("Cur:", self.cur)
+        print(self.sources)
+        print("Sources length:", len(self.sources))
+        #Note: There is the option to remove trait_syncing.
+        #NOTE: removing a sync didn't seem to be working.....
+        if self.cur < 0:
+            return
+        print("self.cur", self.cur)
+        self.sources[self.cur].actor.actor.sync_trait('position', self, mutual=False)
+        print("Position trait one-way synced: actor.position ---to---> mayavi_view.position.")
+        self.actors[self.cur].sync_trait('cur_z', self, mutual=False)
+        print("Cur_z trait one-way synced: actor.cur_z ---to---> mayavi_view.cur_z.")
+        if len(self.sources) == 1 and self.cur == 0:
+            pass
+        else:
+            for i in self.highlighter_calls:
+                pos = self.sources[self.cur].actor.actor.position
+                i_z = pos[2]
+                i_y = pos[1]
+                i_x = pos[0]
+                i_z_zerod = (i_z * -1) + i_z
+                i_transformed = i_z_zerod + self.cur_z
+                i_restored = i_transformed + i_z
+                if i.name == "Z_Label":
+                    i_x_zerod = (i_x * -1) + i_x
+                    i_x_transformed = i_x_zerod - 40  # Always will be minus 40 for this label.
+                    i_x_restored = i_x_transformed + i_x
+                    i.actor.actor.position = (i_x_restored, i_y, i_restored)
+                    i.text = "Z-Plane_%s" % self.cur_z
+
+                else:
+                    i.actor.actor.position = np.array([i_x, i_y, i_restored])
+
+
+        #self.sources[self.cur].actor.actor.position = self.position
+        # self.sync_trait('position', self.sources[self.cur].actor.actor, mutual=True, remove=True)
+        # self.remove_trait('position')
+        # self.add_trait('position')
+        #self.position = self.sources[self.cur].actor.actor.position
+        #self.copy_traits(self.sources[self.cur].actor.actor, ['position'])
+        #self.sync_trait('position', self.sources[self.cur].actor.actor, mutual=True, remove=False)
+
+
+    # @on_trait_change('cur')
+    # def highlighter_actor_chase(self):
+    #     #Align Positions
+    #     print("Cur Changed")
+    #     for i in self.highlighter_calls:
+    #         i.actor.actor.position = self.sources[self.cur].actor.actor.position
+    #         print("Highlighter Chased")
+    #     self.remove_trait('position')
+
+    @on_trait_change('position')
+    def highlighter_actor_chase(self):
+        # Align Positions
+        #TODO If it's the first and only actor, ignore it. (for right now)
+        # if len(self.sources) == 1 and self.cur == 0:
+        #     pass
+        if self.cur < 0:
+            return
+        else:
+            for i in self.highlighter_calls:
+                pos = self.position
+                i_z = pos[2]
+                i_y = pos[1]
+                i_x = pos[0]
+                # Zero, transform, restore for z value
+                i_z_zerod = (i_z * -1) + i_z
+                i_transformed = i_z_zerod + self.cur_z
+                i_restored = i_transformed + i_z
+                # Zero, transform, restore for x value
+                if i.name == "Z_Label":
+                    i_x_zerod = (i_x * -1) + i_x
+                    i_x_transformed = i_x_zerod - 40  # Always will be minus 40 for this label.
+                    i_x_restored = i_x_transformed + i_x
+                    i.actor.actor.position = (i_x_restored, i_y, i_restored)
+                    i.text = "Z-Plane_%s" % self.CurrentActor().cur_z
+                else:
+                    i.actor.actor.position = (i_x, i_y, i_restored)
+
+
+    @on_trait_change('cur_z')
+    def highlighter_plane_chase(self):
+        # Align Z-value
+        if self.cur < 0:
+            return
+        for i in self.highlighter_calls:
+            pos = self.sources[self.cur].actor.actor.position
+            i_z = pos[2]
+            i_y = pos[1]
+            i_x = pos[0]
+            ##--Z
+            #Convert to zero, #Transform from zero, #Add original value back
+            i_z_zerod = (i_z*-1) + i_z
+            i_transformed = i_z_zerod + self.cur_z
+            i_restored = i_transformed + i_z
+            ##--X
+            #Zero, transform, restore for x value
+            if i.name == "Z_Label":
+                i_x_zerod = (i_x * -1) + i_x
+                i_x_transformed = i_x_zerod - 40 #Always will be minus 40 for this label.
+                i_x_restored = i_x_transformed + i_x
+                i.actor.actor.position = np.array([i_x_restored, i_y, i_restored])
+                i.text = "Z-Plane_%s" % self.cur_z
+            else:
+                i.actor.actor.position = np.array([i_x, i_y, i_restored])
+            print("Highlighter Aligned")
+
 
 
 if __name__ == '__main__':

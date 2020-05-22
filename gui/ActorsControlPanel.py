@@ -89,6 +89,9 @@ class ActorsControlPanel(wx.Panel):
 
 		current = self.mayavi_view.cur
 		self.mayavi_view.cur = current -1
+
+		#Remove from actorsListBox
+		self.actorsListBox.DeleteItem(current)
 		#Remove from scene(the mayavi pipeline)
 		self.mayavi_view.sources[current].remove()
 		#Remove from mlab_calls list
@@ -97,8 +100,6 @@ class ActorsControlPanel(wx.Panel):
 		self.mayavi_view.sources.remove(self.mayavi_view.sources[current])
 		#Remove from actors list
 		self.mayavi_view.actors.remove(self.mayavi_view.actors[current])
-		#Remove from actorsListBox
-		self.actorsListBox.DeleteItem(current)
 
 		# if len(self.mayavi_view.actors) != 0:
 		# 	self.mayavi_view.cur = len(self.mayavi_view.actors) - 1

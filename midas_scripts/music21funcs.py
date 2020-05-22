@@ -697,7 +697,7 @@ def delete_redundant_notes( in_stream, greatest_dur=False):
 def notafy( in_stream):
     """
         Returns a copy of the in_stream but with all 'chord' objects replaced with
-    separate 'note' objects for each note in the chord. Basically, it is a chord.flatten() function.
+    separate individual 'note' objects for each note in the chord. Basically, it is a chord.flatten() function.
 
     :param in_stream:   Operand stream.
     :return:            new_stream
@@ -921,6 +921,8 @@ def split_midi_channels(midi_file, directory, name, to_file=False):
     else:
         return parse_stream
 
+
+##Data Analysis Functions.
 # M21-9.
 def print_chords_in_piece(in_stream):
     """
@@ -990,6 +992,8 @@ def print_midi_data(in_stream):
     midistring = str(midiFile)
     midiFile.close()
     return midistring
+
+
 
 #M21-
 def fill_measure_end_gaps(measure, timeSig=None, inPlace=True):
@@ -1174,3 +1178,26 @@ def matrix_to_stream(matrix, connect=True, cells_per_qrtrnote=4):
                     s.insert(n.offset, n)
     s.makeMeasures(inPlace=True)
     return s
+
+
+
+def about_midas():
+    a_s = '-----Welcome to MIDAS, the MIDI-Intermediary Digital Art Suite.-----\n'
+    a_0 = '     Your Visual Music GUI and Toolkit.\n'
+    a_1 = '     Using knowledge and techniques of python, music21, numpy, opencv-python, open3d, vtk, and mayavi, this gui toolkit provides a musical engineer \n'
+    a_2 = 'with the ability to transform text, images, and point clouds into musical data for composing, production and visualization purposes. \n'
+    a_3 = 'MIDAS incorporates strong musicological analyses displays as well as grants the user the ability to rapidly manipulate their musical data via \n'
+    a_4 = 'a unique, simple user interface and input\output methods to and from other programs such as FL Studio, MuseScore, NotePad++, Word, Paint\PicPick, Meshlab, and even Blender. \n'
+    a_5 = '     The MIDAS installation possesses a path called "intermediary_path" assigned as a variable, and this path is the traffic hub for said data manipulation; the transformation and manipulation \n'
+    a_6 = 'of all files and data that go through this toolkit ideally will use the "intermediary_path". This path is established for ease of using this embedded \n'
+    a_7 = 'python interpreter and it can be assigned as an output for all your other programs. \n'
+    a_8 = '     Since Midas focuses heavily on musical data, its primary input\\output filetype is a .mid midi file. Midas does possess the ability, however, \n'
+    a_9 = 'to do input and output of .txt, .jpg, .png, and .ply file types. Using all these in conjunction with intermediary_path and a developing library of Midas tools, creativity via rapid development and production \n'
+    a_10 = 'of Visual Music is now in your hands.  \n\n'
+
+    a_11 = '----We hope you enjoy MIDAS.----\n'
+
+    about = str(a_s + a_1 + a_2 + a_3 + a_4 + a_5 + a_6 + a_7 + a_8 + a_9 + a_10 + a_11)
+    print(about)
+    return about
+
