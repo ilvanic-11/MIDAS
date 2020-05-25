@@ -155,7 +155,19 @@ class MainWindow(wx.Frame):
         self.Bind(wx.EVT_MENU, self.menuBar.OnSaveSessionAs, id=104)
         self.Bind(wx.EVT_MENU, self.menuBar.OnImport, id=105)
         self.Bind(wx.EVT_MENU, self.menuBar.OnImportDirectory, id=106)
-        self.Bind(wx.EVT_MENU, self.menuBar.OnExport, id=107)
+
+        #self.Bind(wx.EVT_MENU, self.menuBar.OnExport, id=107)  #TODO Free id available; 107
+        #Export Submenu
+        self.Bind(wx.EVT_MENU, self.menuBar.OnExport_CurrentActor, id=1500)
+        self.Bind(wx.EVT_MENU, self.menuBar.OnExport_AllActors, id=1501)
+        self.Bind(wx.EVT_MENU, self.menuBar.OnExport_CurrentActorsCurrentZplane, id=1502)
+        self.Bind(wx.EVT_MENU, self.menuBar.OnExport_AllCurrentActorsZplanes, id=1503)
+        self.Bind(wx.EVT_MENU, self.menuBar.OnExport_Selection, id=1504)
+        self.Bind(wx.EVT_MENU, self.menuBar.OnExport_Colors, id=1505)
+        self.Bind(wx.EVT_MENU, self.menuBar.OnExport_Text, id=1506)
+        self.Bind(wx.EVT_MENU, self.menuBar.OnExport_PointCloud, id=1507)
+        self.Bind(wx.EVT_MENU, self.menuBar.OnExport_Image, id=1508)
+
         self.Bind(wx.EVT_MENU, self.menuBar.OnExportAsDirectory, id=108)
         self.Bind(wx.EVT_MENU, self.menuBar.OnExportMusicode, id=109)
         self.Bind(wx.EVT_MENU, self.menuBar.OnExportMovie, id=110)
@@ -331,6 +343,8 @@ class MainWindow(wx.Frame):
         self.pianoroll_mainbuttons_split.SetMinimumPaneSize(120)
         #self.mainbuttons_stats_split.SetMinimumPaneSize(200)
         self.top_mayaviview_split.SetMinimumPaneSize(50)
+
+        #TODO Put somewhere else?
         self.mayavi_view.cur_z = 90
 
     def _do_layout(self):

@@ -217,7 +217,9 @@ class PianoRollPanel(wx.Panel):
         print("On Mouse Left Up:")
         #self.currentpianoroll.UpdateStream()
         mv = self.GetTopLevelParent().mayavi_view
+        print("Flag not changed yet.", mv.CurrentActor().array3Dchangedflag)
         mv.CurrentActor().array3Dchangedflag = not mv.CurrentActor().array3Dchangedflag
+        print("Flag changed now.", mv.CurrentActor().array3Dchangedflag)
         evt.Skip()
 
     def print_cell_sizes(self):  #TODO Redundant? Consider deleting this button.
@@ -230,3 +232,12 @@ class PianoRollPanel(wx.Panel):
                 print(type(s))
             f.write(s)
             return s
+
+    def ClearZPlane(self, z):
+        for x in range(0, self.pianoroll._table.GetNumberCols()):
+            for y in range(0, self.pianoroll._table.GetNumberRows()):
+                self.pianoroll._table.SetValue(y, x, "0")
+                self.GetTopLevelParent().mayavi_view.CurrentActor()._array3D[x, 127 - y, z] = 0
+
+        mv = self.GetTopLevelParent().mayavi_view
+        mv.actors[mv.cur].array3Dchangedflag += 1

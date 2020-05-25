@@ -37,30 +37,33 @@ import cv2
 # from traits.trait_types import Method
 from traits.trait_types import List
 from traits.trait_types import Any
+from traits.trait_types import Tuple
 
 class Actor(HasTraits):
     #For general purposes as traits.
     name = String()
-    color = (0, 1, 0)
     _points = Array(dtype=np.int)
-    _array3D = Array(dtype=np.float, shape=(5000, 128, 128))
+    _array3D = Array(dtype=np.int8, shape=(5000, 128, 128))
     _stream = Any()  #TODO For exporting, finish.
+
     #For trait flagging.
     array3Dchangedflag = Int()
     pointschangedflag = Int()
     streamchangedflag = Int()
+
     ##For trait-syncing.
-    cur_z = Int(90)
-    position = Array()
+    cur_z = Int(90)  #         #Synced one-way to mayavi_view.cur_z trait.
+    color = Tuple(0., 1., 0.)  #Synced two_way with the pipeline's current_actor.property.color trait.
+    position = Array()         #Synced two-way with the pipeline's current_actor.actor.actor.position trait.
+
 
     # cur = Int()
 
-    # def __init__(self, parent):
-    #     HasTraits.__init__(self)
-    #     self.parent = parent
-    #     self.sync_trait('cur', self.GetTopLevelParent().mayavi_view, mutual=True)
-    #     self.sync_trait('position', self.GetTopLevelParent.mayavi_view.sources[self.cur].actor.actor, mutual=True, remove=True)
-    #     self.sync_trait('position', self.GetTopLevelParent.mayavi_view, mutual=False, remove=True)
+
+    def __init__(self, mayavi_view, index):
+        HasTraits.__init__(self)
+        self.index = index
+        self.mayavi_view = mayavi_view
 
     #3d numpy array---> True\False map of existing coords for rapid access.
     def change_array3D(self, array3D):
@@ -79,6 +82,39 @@ class Actor(HasTraits):
 
     #def change_color(self, color):
 
+    ##WORKING INSTANCE
+    @on_trait_change("array3Dchangedflag")
+    def actor_array3D_changed(self):
+        print("actor_array3D_changed")
+        print("actor_index  ", self.index)
+        self._points = np.argwhere(self._array3D >= 1.0)
+
+        self.mayavi_view.sources[self.index].mlab_source.trait_set(points=self._points)
+
+    # def insert_array_data(self, array_2d, color=(0., 0., 0.), mode="cube", scale_factor=.25):
+    # I don't think this is needed.
+    # self.parent.pianorollpanel.zplanesctrlpanel.ZPlanesListBox.UpdateFilter()
+    @on_trait_change("pointschangedflag")
+    def actor_points_changed(self):
+        print("actor_points_changed")
+        print("actor_index ", self.index)
+        new_array3D = np.zeros(self._array3D.shape, dtype=np.float64) #TODO Int 8 here?
+        for p in self._points:
+            new_array3D[p[0], p[1], p[2]] = 1.0
+        self._array3D = new_array3D
+        self.mayavi_view.sources[self.index].mlab_source.trait_set(points=self._points)
+        print("sources trait_set after actor_points_changed")
+
+    @on_trait_change('color')
+    def show_color(self):
+        print("COLOR TRAIT CHANGED:", self.color)
+
+    @on_trait_change('position')
+    def show_position(self):
+        print("POSITION TRAIT CHANGED:", self.position)
+        self.mayavi_view.cur = self.index #TODO Change mayavi_view.cur to curActorIndex
+
+
 
 # mlab.options.offscreen = True
 class Mayavi3idiView(HasTraits):
@@ -87,17 +123,19 @@ class Mayavi3idiView(HasTraits):
                 resizable=True)
     actor = Any()
     actors = List(Actor)
+
     cur = Int()
     cur_z = Int()
     cur_changed_flag = Int()
-    position = Array()
-    stream = Any()
+
+    position = Array()  #Synced one_way 'from' the pipeline current actor's position.(highlighter plane purposes)
 
 
     def __init__(self, parent):
         HasTraits.__init__(self)
+
         #self.on_trait_event(self._array3D_changed, 'array3Dchangedflag')
-        self.parent = parent  #TODO What's this for?
+        self.parent = parent
         self.engine = self.scene3d.engine
         self.engine.start()  # TODO What does this do?
         self.scene = self.engine.scenes[0]   #TODO Refactor the name of this variable? (self.skene?)
@@ -107,6 +145,10 @@ class Mayavi3idiView(HasTraits):
         self.bpm = 540  # TODO Set based on music21.tempo.Metronome object.
         self.i_div = 2  #Upon further review, i_div IS frames per beat. I'll change this variable name later.
         #self.time_sig = '4/4' #TODO Set based on music21.meter.TimeSignature object.
+
+        #Stream
+        self.stream = music21.stream.Stream()
+
 
 
         # Movie Recording
@@ -139,6 +181,9 @@ class Mayavi3idiView(HasTraits):
 
         #self.append_actor("0")
 
+    #TODO For exporting
+    def Append_Streams(self):
+        pass
 
     #Grid Establisher.
     @on_trait_change('scene3d.activated')
@@ -222,10 +267,14 @@ class Mayavi3idiView(HasTraits):
     def append_actor(self, name, color):
         # self.add_trait(actor_name,Actor())
         print("append_actor")
-        a = Actor()
-        self.actor = a
         print('1')
+
         self.cur = len(self.actors)
+        a = Actor(self, self.cur)
+
+        #self.actor = a
+
+        #TODO Can ALL this v here v go into the actor's init?
         print('2')
         # self.sources.append(None)
         self.actors.append(a)
@@ -236,62 +285,39 @@ class Mayavi3idiView(HasTraits):
         print('5')
         self.mlab_calls.append(self.appending_data)
         print('6')
-        print("Setting trait_change handlers.")
-        self.on_trait_change(self.actor_array3D_changed, 'actor.array3Dchangedflag')
-        print('7')
-        self.on_trait_change(self.actor_points_changed, 'actor.pointschangedflag')
-        print('8')
+
         # TODO self.on_trait_change(self.actor_stream_changed, 'actors.streamchangedflag')
+
+        #TODO Move this to actor class?
         self.on_trait_change(self.actor_list_changed, 'actors[]')
+
         a.name = name
         a.color = color
+
+        #Traits syncing goes here, if desired. (can't go in actor init, because the actor hasn't been appended to any lists yet...)
+        #Simplifies access to the pipeline's properties\traits by configuring our "Actor()" class to have these directly.
+        self.sources[self.cur].actor.property.sync_trait('color', a, mutual=True)
+        print("Colors synced.")
+        self.sources[self.cur].actor.actor.sync_trait('position', a, mutual=True)
+        print("Position synced.")
+
         self.cur_changed_flag = not self.cur_changed_flag
 
     @on_trait_change('cur')
     def current_actor_changed(self):
         print("current_actor_changed")
 
-    ##WORKING INSTANCE
-    def actor_array3D_changed(self):
-        print("actor_array3D_changed")
-        print("self.cur   ", self.cur)
-        if self.CurrentActor() is None:
-            print("Current Actor is None")
-            return
-        self.CurrentActor()._points = np.argwhere(self.CurrentActor()._array3D >= 1.0)
-        print(type(self.CurrentActor()._points))
-        print(self.CurrentActor()._points.dtype)
-        print(self.CurrentActor()._points)
 
-        self.sources[self.cur].mlab_source.trait_set(points=self.CurrentActor()._points)
-
-    #def insert_array_data(self, array_2d, color=(0., 0., 0.), mode="cube", scale_factor=.25):
-        #I don't think this is needed.
-        #self.parent.pianorollpanel.zplanesctrlpanel.ZPlanesListBox.UpdateFilter()
-
-    def actor_points_changed(self):
-        print("actor_points_changed")
-        print("self.cur", self.cur)
-        if self.CurrentActor() is None:
-            print("Also Current Actor is None")
-            return
-        else:
-            new_array3D = np.zeros(self.CurrentActor()._array3D.shape, dtype=np.float64)
-            for p in self.CurrentActor()._points:
-                new_array3D[p[0], p[1], p[2]] = 1.0
-            self.CurrentActor()._array3D = new_array3D
-            self.sources[self.cur].mlab_source.trait_set(points=self.CurrentActor()._points)
-            print("actor_points_changed")
 
     # TODO Deprecated?
-    def update_3Dpoints(self, row, col, val):
-        try:
-            page = self.GetTopLevelParent().pianorollpanel.currentPage
-            layer = self.GetTopLevelParent().pianorollpanel.pianorollNB.FindPage(page)
-            self._array3D[col, 127 - row, layer] = val
-        except Exception as e:
-            print(e)
-            pass
+    # def update_3Dpoints(self, row, col, val):
+    #     try:
+    #         page = self.GetTopLevelParent().pianorollpanel.currentPage
+    #         layer = self.GetTopLevelParent().pianorollpanel.pianorollNB.FindPage(page)
+    #         self._array3D[col, 127 - row, layer] = val
+    #     except Exception as e:
+    #         print(e)
+    #         pass
 
 
     #TODO def actor_stream_changed(self):
@@ -833,30 +859,9 @@ class Mayavi3idiView(HasTraits):
                     i.actor.actor.position = np.array([i_x, i_y, i_restored])
 
 
-        #self.sources[self.cur].actor.actor.position = self.position
-        # self.sync_trait('position', self.sources[self.cur].actor.actor, mutual=True, remove=True)
-        # self.remove_trait('position')
-        # self.add_trait('position')
-        #self.position = self.sources[self.cur].actor.actor.position
-        #self.copy_traits(self.sources[self.cur].actor.actor, ['position'])
-        #self.sync_trait('position', self.sources[self.cur].actor.actor, mutual=True, remove=False)
-
-
-    # @on_trait_change('cur')
-    # def highlighter_actor_chase(self):
-    #     #Align Positions
-    #     print("Cur Changed")
-    #     for i in self.highlighter_calls:
-    #         i.actor.actor.position = self.sources[self.cur].actor.actor.position
-    #         print("Highlighter Chased")
-    #     self.remove_trait('position')
-
     @on_trait_change('position')
     def highlighter_actor_chase(self):
         # Align Positions
-        #TODO If it's the first and only actor, ignore it. (for right now)
-        # if len(self.sources) == 1 and self.cur == 0:
-        #     pass
         if self.cur < 0:
             return
         else:
@@ -878,6 +883,13 @@ class Mayavi3idiView(HasTraits):
                     i.text = "Z-Plane_%s" % self.CurrentActor().cur_z
                 else:
                     i.actor.actor.position = (i_x, i_y, i_restored)
+        for i in range(0, len(self.actors)):
+            alb = self.parent.pianorollpanel.actorsctrlpanel.actorsListBox
+            #If it's selected, unselect it.
+            if alb.IsSelected(i):
+                self.parent.pianorollpanel.actorsctrlpanel.actorsListBox.Select(i, on=0)
+        #Then, select the actor whose position was just changed by dragging the actor in the mayavi view.
+        self.parent.pianorollpanel.actorsctrlpanel.actorsListBox.Select(self.cur)
 
 
     @on_trait_change('cur_z')
