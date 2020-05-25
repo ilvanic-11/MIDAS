@@ -1,0 +1,134 @@
+COMMIT LOG
+
+--IP--Commit March 25th, 2020--
+-->Create Mayavi3idiView() class function: def set_actor_positions() 
+-->Create Mayavi3idiView() class function: def set_text_positions() 
+-->Rename PianoDisplay.py to MusicObjects.py
+-->Rename color_pallete image names.
+-->Create MusicObjects.py module function: def GrandStaffLines()
+-->Create MusicObjects.py module function: def GrandStaff()
+-->Add "edges" to Mayavi3idiView().establish_highlighterplane function.
+-->Create Mayavi3idiView() list self.clr_dict_list
+-->Create Mayavi3idiView() list self.mlab_calls
+-->Create Mayavi3idiView() list self.text3d_calls
+-->Create Mayavi3idiView() list self.text3d_default_positions
+-->Add mlab_calls.append("mlab_data") calls to every mlab call.
+
+
+--IP--Commit April 7th, 2020--
+-->Explored Dragscrolling -- Grid has own scroll shit.
+-->Set ScrollLine X and Y in piano roll.
+-->Discovered "right click" on piano roll panel scroll bar. Needs info 
+-->Add 'Menu' Placeholders.
+-->Discovered cool workaround--- https://forums.wxwidgets.org/viewtopic.php?t=43175
+-->Added an TrebleClef "Icon." 
+-->Added a CustomStatusBar.
+-->Figured out Animator instance control. 
+-->Complete music21funcs.make_musicode() writing to files correctly.
+-->Rename some module and class attributes better.
+
+
+--IP--Commit, April 18th, 2020--
+--> Create MenuButtons module and CustomMenuBar(wx.MenuBar) class.
+--> Create Preferences module and Preferences(wx.Dialog) class.
+--In Preferences
+--> Add mayaviview.bpm, mayaviview.grid3d_span, and mayaviview.i_div to Preferences.
+--In File menu
+--> Complete "Export Musicode" button.
+--> Complete "Export Movie" button.
+--> Complete "Preferences" button
+--> Complete "Intermediary_path" button.
+--In Show Menu
+--> Complete "Show In DAW" button.
+--> Complete "Show in MuseScore" button.
+--In Help menu.
+--> Complete draft of "Search\Help" menu button.
+--> Complete All "Documentation" submenu button links.-->
+--- Including: Music21, Mayavi, Numpy, Sympy, Open3d, OpenCv-Python, VTK, TVTK
+--> Complete "The Magic Hammer" button link.
+--> Complete "Google Search" button link.
+--In Mayavi3DView
+--> Establish "properties" (i.e. grid3d_span, bpm, i_div) for use in Preferences as mayaviview class variables.
+--> Create insert_volume_slice() function.
+--> Create reset_volume_slice() function.
+--> Create redraw_mayaviview() function.
+--> Modify, for frames exporting purposes, the animate() function and it's nested animate_plane_scroll() call.
+--> Extend the length of the np.arange() call in the animate_plane_scroll by an int value of 1.
+--> Eliminate redundant self.image_plane_widget construction calls. 
+--> Clean up hash and whitespace in the module. Remove unecessary hash.
+--In MainButtons
+--> Add "Redraw Mayavi View" button to the 3idiArt Main Button dialog.
+--In MIDAS_wx
+--> Change variable Midas back to app.
+--> Make Midas = app.GetTopWindow()
+--> Make pyshellpanel split vertically instead of horizontally(left and right now instead of top and bottom)
+--In Midas_Startup_Configs
+--> Add inspect to list of imports
+--> Add pydoc to list of imports.
+
+
+--IP--Commit, April 20, 2020--
+--In MenuButtons
+-->Populate Tools Menus (musicode, midiart, midiart3D, music21funcs) with respective functions.
+-->Create Dynamic ToolsDialog(wx.Dialog) for displaying said midas_script functions.
+-->Clean up doc strings in all midas_scripts modules.
+--In Documentation submenu
+-->Add "Python" to Documentation submenu list.
+--In Preferences
+-->Add "Default Color Palette" dropdown ComboCtrl box.
+-->Populate Color Palettes dropdown with colors from r".\resources\color_palettes."
+
+
+--IP--Commit, May 22, 2020--
+--In Mayavi3DView
+-->Reorganize module layout for readability and cleanness.
+-->Write Highlighter Plane trait functions--- working successfully.
+--In Actors class.
+-->Sync cur_z trait one_way with mayavi_view.cur_z --Used in highlighter plane functions.
+-->Addition of "stream" trait in preparation for major export features\functionality.
+--In ActorsCtrlPanel
+-->Fix OBOE errors.
+-->Delete actor function now deletes from the ListBox first.
+--In Menu Buttons
+--> Working instance of Menu button "About Midas" made functional. 
+--> Move Stats Buttons to "Tools" menu bar. Stats buttons now named "Analyze" submenu.
+--In MIDAS_wx
+--> Set MusicObjects.earth() as default startup points for actor 0.
+--> Set default Z-Plane to 90 for music21 reasons.
+--> Eliminate StatsDisplayPanel. Adjust splitter panels accordingly.
+--In music21funcs
+-->Write about_midas() function; code used taken from Midas_Startup_Configs.
+
+-->Miscellaneous Small fixes for readability.
+
+
+--IP--Commit, May 25, 2020--
+In MIDAS_wx
+--> Bind File menu's Export submenu buttons.
+In Mayavi3DView
+--> Create actorListBox correct 'item' selection on actor.position trait change.
+--> Clean up 
+--> Append_Actor() function: Add trait_syncs for 'position' and 'color' two-way between mayavi pipeline and our Actor() class. 
+In Actor() class
+--> Establish Actor() class init() and parameterization.
+--> Organize class and traits. 
+In ActorsCtrlPanel
+--> Create DeleteAllActors() function and button
+--> Create OnRightClickPopupMenu() function and popup menu with menubuttons.
+In MainButtons
+--> _OnMidiartDialogClosed: ColorsCheck; Eliminate garbage hash. Adjustments to setting colors on close. 
+In MenuButtons
+--> Export Menu Button Now a submenu.
+--> Append and Bind self.export submenu with:-- CurrentActor, AllActors, CurrentActorsCurrentZplane, 
+-AllCurrentActorsZplanes, Selection, Colors, Text, PointCloud, and Image
+--> Assign Hotkeys to all export submenu buttons (i.e CurrentActor hotkey = Ctrl + E + 1, AllActors hotkey = Ctrl + E + 2, etc )
+In PianoRoll.py
+--> Restore GridToStream, StreamToGrid, ClearGrid
+--> Create ClearZPlane() function
+--> Clean up old call bugs. (_table.GetNumberCols, etc.)
+In Install.bat
+--> Make all pip install commands ""python - m pip install --upgrade 'package' --user""
+In Resources
+-->Add MidasCommitLog.txt to resources folder. All current large commits added to MidasCommitLog.txt.
+In midas_scripts/midiart.py
+-->Adjust midiart.separate_pixels_to_coords_by_color for export usage.
