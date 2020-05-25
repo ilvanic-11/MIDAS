@@ -45,8 +45,18 @@ class CustomMenuBar(wx.MenuBar):
         self.filemenu.Append(104, "&Save Session As\tCtrl+Shift+S")
         self.filemenu.Append(105, "&Import...\tCtrl+I")
         self.filemenu.Append(106, "&Import Directory\tCtrl+Shift+I")
-        self.filemenu.Append(107, "&Export...\tCtrl+E")  # Current Actor
-        self.filemenu.Append(108, "&Export As Directory\tCtrl+Shift+E")  # All Actors
+        self.export = wx.Menu()
+        self.export.Append(1500, "&Current Actor\tCtrl+E+1")
+        self.export.Append(1501, "&All Actors\tCtrl+E+2")
+        self.export.Append(1502, "&Current Actor's Current Zplane\tCtrl+E+3")
+        self.export.Append(1503, "&All Current Actor's Zplanes\tCtrl+E+4")
+        self.export.Append(1504, "&Selection\tCtrl+E+5")
+        self.export.Append(1505, "&Colors\tCtrl+E+6")
+        self.export.Append(1506, "&Text\tCtrl+E+7")
+        self.export.Append(1507, "&Point Cloud\tCtrl+E+8")
+        self.export.Append(1508, "&Image\tCtrl+E+9")
+
+        self.filemenu.Append(107, "Export...", self.export)  # Current Actor        self.filemenu.Append(108, "&Export As Directory\tCtrl+Shift+E")  # All Actors
         self.filemenu.Append(109, "&Export Musicode\tCtrl+Shift+M")  # All Actors
         self.filemenu.Append(110, "&Export Movie\tCtrl+Alt+E")  # All Actors
         self.filemenu.Append(111, "&Preferences\tCtrl+P")
@@ -194,12 +204,68 @@ class CustomMenuBar(wx.MenuBar):
         pass
 
 
-    def OnExport(self, event):
+    #Now Submenu
+    #Define Export Submenu Functions
+    #--------------------------------------------
+
+    def OnExport_CurrentActor(self, event):
+        print("Exporting Current Actor....")
         pass
+
+    def OnExport_AllActors(self, event):
+        print("Exporting All Actors....")
+        pass
+
+    #TODO *Be mindful of 'track mode' vs 'velocity mode' for later; when we have those modes for each zplane.
+    def OnExport_CurrentActorsCurrentZplane(self, event):
+        print("Exporting Current Actor....")
+        pass
+
+    #TODO *Same.
+    def OnExport_AllCurrentActorsZplanes(self, event):
+        print("Exporting Current Actor....")
+        pass
+
+    def OnExport_Selection(self, event):
+        print("Exporting Selection....")
+        pass
+
+    def OnExport_Colors(self, event):
+        print("Exporting Current Actor....")
+        pass
+
+    def OnExport_Text(self, event):
+        print("Exporting Current Actor....")
+        pass
+
+    def OnExport_PointCloud(self, event):
+        print("Exporting Current Actor....")
+        pass
+
+    def OnExport_Image(self, event):
+        print("Exporting Current Actor....")
+        pass
+
+    #self.export.Append(1500, "&Current Actor\tCtrl+E+1")
+    # self.export.Append(1500, "&All Actors\tCtrl+E+2")
+    # self.export.Append(1500, "&Current Actor's Current Zplane\tCtrl+E+3")
+    # self.export.Append(1500, "&All Current Actor's Zplanes\tCtrl+E+4")
+    # self.export.Append(1500, "&Selection\tCtrl+E+5")
+    # self.export.Append(1500, "&Colors\tCtrl+E+6")
+    # self.export.Append(1500, "&Text\tCtrl+E+7")
+    # self.export.Append(1500, "&Point Cloud\tCtrl+E+8")
+    # self.export.Append(1500, "&Image\tCtrl+E+9")
+
+
+
 
 
     def OnExportAsDirectory(self, event):
         pass
+
+
+
+
 
 
     def OnExportMusicode(self, event):
@@ -733,6 +799,10 @@ class CustomMenuBar(wx.MenuBar):
             self._OnHelpDialogClosed(dialog, evt)
 
 
+
+
+
+
 class RichTextFrame(wx.Frame):
     def __init__(self, parent, id, value, pos, size, style, validator, name):
         wx.Frame.__init__(self, parent, id, name, pos, size, style, name)
@@ -843,7 +913,6 @@ class HelpDialog(wx.Dialog):
                             size=(700, 500),
                             style=wx.DEFAULT_FRAME_STYLE, validator=wx.DefaultValidator, name='''Inspect's "GetFullArgSpec"''')
         win.Show(True)
-
 
 
 # class FileBrowseButton(wx.Panel):

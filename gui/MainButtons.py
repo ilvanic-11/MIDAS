@@ -71,24 +71,24 @@ class MainButtonsPanel(wx.Panel):
         # self.mc_dialog = MusicodeDialog()
         # self.mc_dialog.user_named = self.GetTopLevelParent().musicode.musicode_name
 
+    #TODO Redundant?
     def OnGridToStream(self, evt):
-        self.GetTopLevelParent().pianorollpanel.currentPage.GridToStream()
+        self.GetTopLevelParent().pianorollpanel.pianoroll.GridToStream()
 
     def OnPrintCellSizes(self, evt):
         self.GetTopLevelParent().pianorollpanel.print_cell_sizes()
 
     def OnClearPianoRoll(self,evt):
-        self.GetTopLevelParent().pianorollpanel.currentPage.ClearGrid()
-        self.GetTopLevelParent().pianorollpanel.currentPage.stream = music21.stream.Stream()
+        self.GetTopLevelParent().pianorollpanel.ClearZPlane(self.GetTopLevelParent().pianorollpanel.currentZplane)
 
     # def OnDeleteAllPianoRolls(self, evt):
     #     self.GetTopLevelParent().
 
     def OnUpdateStream(self,evt):
-        self.GetTopLevelParent().pianorollpanel.currentPage.UpdateStream()
+        self.GetTopLevelParent().pianorollpanel.pianoroll.UpdateStream()
 
     def OnShowStreamTxt(self, evt):
-        self.GetTopLevelParent().pianorollpanel.currentPage.stream.show('txt')
+        self.GetTopLevelParent().pianorollpanel.pianoroll.stream.show('txt')
 
     def OnMusic21ConverterParseDialog(self, evt):
         dlg = Music21ConverterParseDialog(self, -1, "       music21.converter.parse")
@@ -138,10 +138,10 @@ class MainButtonsPanel(wx.Panel):
             shorthand_name = "ug"
         if dialog.create_musicode.GetValue() is True and btn == "OK":
             print("DialogCheck:", dialog.create_musicode.GetValue())
-            stream = self.GetTopLevelParent().pianorollpanel.currentPage.GridToStream()  # TODO Change to currentActor's currentZplane upon completion.
+            stream = self.GetTopLevelParent().pianorollpanel.pianoroll.GridToStream()  # TODO Change to currentActor's currentZplane upon completion.
             self.GetTopLevelParent().musicode.make_musicode(stream, musicode_name, shorthand_name, filepath=None,
                                      selection=str(dialog.inputTxt.GetLineText(0)), write=False, timeSig=None)
-            self.GetTopLevelParent().pianorollpanel.currentPage.ClearGrid()
+            self.GetTopLevelParent().pianorollpanel.pianoroll.ClearGrid()
             #print("DialogCheck:", dialog.createMusicode.GetValue())
         elif dialog.create_musicode.GetValue() is False and btn == "OK":
             print("DialogCheck:", dialog.create_musicode.GetValue())
@@ -149,7 +149,7 @@ class MainButtonsPanel(wx.Panel):
                 dialog.rdbtnMusicodeChoice.GetString(dialog.rdbtnMusicodeChoice.GetSelection()),
                 dialog.inputTxt.GetLineText(0))
             print("LINETEXT:", dialog.inputTxt.GetLineText(0))
-            self.GetTopLevelParent().pianorollpanel.currentPage.StreamToGrid(stream)
+            self.GetTopLevelParent().pianorollpanel.pianoroll.StreamToGrid(stream)
 
 
 
@@ -187,7 +187,7 @@ class MainButtonsPanel(wx.Panel):
                 name = str(len(mayavi_view.actors)) + "_" + "Edges" + "_" + dialog.img_name
                 #clr = color_palette[random.randint(1, 16)]  #TODO Random color of 16 possible for now.
                 actor = self.GetTopLevelParent().pianorollpanel.actorsctrlpanel.actorsListBox.new_actor(index, name)
-                #self.GetTopLevelParent().pianorollpanel.currentPage.StreamToGrid(stream)
+                #self.GetTopLevelParent().pianorollpanel.pianoroll.StreamToGrid(stream)
                 for j in mayavi_view.actors:
                     if j.name == name:
                         print("Points here?")
@@ -198,43 +198,26 @@ class MainButtonsPanel(wx.Panel):
                 print("PREPixels2:", pixels2)
                 print("Gran", gran)
                 stream = midiart.transcribe_colored_image_to_midiart(pixels2, gran, connect=False, keychoice=None, colors=None)
-                # stream.show('txt')
-                # stream_0 = midiart3D.extract_xyz_coordinates_to_array(stream[0])
-                # index = len(mayavi_view.actors)
-                # name = str(stream[0].partsName) + "_" +"Clrs" + "_" + dialog.img_name
-                # clr = mayavi_color_palette[stream[0].partsName]
-                # print("Color", clr)
-                # actor = self.GetTopLevelParent().pianorollpanel.actorsctrlpanel.actorsListBox.new_actor(name, index)
-                # print("Stream_points0 Here?:", stream_0)
-                # for j in mayavi_view.actors:
-                #     if j.name == name:
-                #         j.change_points(stream_0)
-                #         print("Points here?")
-                # for k in mayavi_view.sources:
-                #     if k.name == name:
-                #         k.actor.property.color = clr
-                #         print("Colors here?")
+
+                #TODO Rework the logic to avoid going from points to stream back to points and then to a new stream again.(f dat)
 
                 for i in stream:
+                    #TODO Too Slow! Memory Intensive!
                     parts_points = midiart3D.extract_xyz_coordinates_to_array(i)
                     index = len(mayavi_view.actors)
                     name =  str(i.partsName) + "_" + "Clrs" + "_" + dialog.img_name
                     clr = mayavi_color_palette[i.partsName]
-                    clr_list = list(clr)
-                    clr_list.reverse()
-                    clr_tuple = tuple(clr_list)
                     print("Color-Type", clr, type(clr))
                     actor = self.GetTopLevelParent().pianorollpanel.actorsctrlpanel.actorsListBox.new_actor(index, name)
+                    #actor.change_points(parts_points)
                     for j in mayavi_view.actors:
                         if j.name == name:
                             print("Points here?")
                             j.change_points(parts_points)
-                    #TODO Too Slow! Memory Intensive!
-                    for k in mayavi_view.sources:
-                        if k.name == name:
-                            print("Colors here?")
-                            k.actor.property.color = clr
-                #self.GetTopLevelParent().pianorollpanel.currentPage.StreamToGrid(stream)
+                            print("Color Change:", clr)
+                            j.color = clr
+
+                    # actor.color = clr
 
             elif dialog.QRCheck:
                 stream = midiart.make_midi_from_grayscale_pixels(pixels_resized, gran, False, note_pxl_value=0)
@@ -244,12 +227,12 @@ class MainButtonsPanel(wx.Panel):
                 name = str(len(mayavi_view.actors)) + "_" + "Edges" + "_" + dialog.img_name
                 # clr = color_palette[random.randint(1, 16)]  #TODO Random color of 16 possible for now.
                 actor = self.GetTopLevelParent().pianorollpanel.actorsctrlpanel.actorsListBox.new_actor(index, name)
-                # self.GetTopLevelParent().pianorollpanel.currentPage.StreamToGrid(stream)
+                # self.GetTopLevelParent().pianorollpanel.pianoroll.StreamToGrid(stream)
                 for j in mayavi_view.actors:
                     if j.name == name:
                         print("Points here?")
                         j.change_points(points)
-                #self.GetTopLevelParent().pianorollpanel.currentPage.StreamToGrid(stream)
+                #self.GetTopLevelParent().pianorollpanel.pianoroll.StreamToGrid(stream)
 
 
     def _OnM21ConverterParseDialogClosed(self, dialog, evt):
@@ -273,12 +256,12 @@ class MainButtonsPanel(wx.Panel):
             name = str(len(mayavi_view.actors)) + "_" + "Midi" + "_" + dialog.midi_name
             # clr = color_palette[random.randint(1, 16)]  #TODO Random color of 16 possible for now.
             actor = self.GetTopLevelParent().pianorollpanel.actorsctrlpanel.actorsListBox.new_actor(index, name)
-            # self.GetTopLevelParent().pianorollpanel.currentPage.StreamToGrid(stream)
+            # self.GetTopLevelParent().pianorollpanel.pianoroll.StreamToGrid(stream)
             for j in mayavi_view.actors:
                 if j.name == name:
                     print("Points here?")
                     j.change_points(points)
-            #self.GetTopLevelParent().pianorollpanel.currentPage.StreamToGrid(stream)
+            #self.GetTopLevelParent().pianorollpanel.pianoroll.StreamToGrid(stream)
 
 
 
@@ -322,7 +305,7 @@ class MainButtonsPanel(wx.Panel):
                 #index_list = [k for k in planes_dict.keys()]
                 # for k in index_list:
                 #     self.GetTopLevelParent().pianorollpanel.InsertNewPianoRoll(int(index_list.index(k)))
-                #     self.GetTopLevelParent().pianorollpanel.currentPage.StreamToGrid(midiart3D.extract_xyz_coordinates_to_stream((np.array(planes_dict[k]))))
+                #     self.GetTopLevelParent().pianorollpanel.pianoroll.StreamToGrid(midiart3D.extract_xyz_coordinates_to_stream((np.array(planes_dict[k]))))
 
 
         #r"C:\Program Files\MuseScore 3\bin\MuseScore3.exe"

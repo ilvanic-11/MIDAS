@@ -1182,7 +1182,7 @@ def matrix_to_stream(matrix, connect=True, cells_per_qrtrnote=4):
 
 
 def about_midas():
-    a_s = '-----Welcome to MIDAS, the MIDI-Intermediary Digital Art Suite.-----\n'
+    a_s = '-----Welcome to MIDAS, the MIDI-Intermediary Digital Art Suite.-----\n\n'
     a_0 = '     Your Visual Music GUI and Toolkit.\n'
     a_1 = '     Using knowledge and techniques of python, music21, numpy, opencv-python, open3d, vtk, and mayavi, this gui toolkit provides a musical engineer \n'
     a_2 = 'with the ability to transform text, images, and point clouds into musical data for composing, production and visualization purposes. \n'
