@@ -999,7 +999,8 @@ def separate_pixels_to_coords_by_color(image, z_value, nn=False, dimensionalize=
     else:
         pass
     clrs_list = list()
-    mlab_list = list()
+    if display:
+        mlab_list = list()
     for y in range(0, len(image)):
             for x in range(0, len(image[y])):
                 clr = (tuple((image[y][x] / 255).flatten()))
@@ -1022,7 +1023,8 @@ def separate_pixels_to_coords_by_color(image, z_value, nn=False, dimensionalize=
     for r in odict1.keys():
         odict1[r] = np.hstack((odict1[r], np.full((len(odict1[r][:, 0]), 1), z_value)))
         actor = mlab.points3d(odict1[r][:, 0], odict1[r][:, 1], odict1[r][:, 2], color=(r[-1], r[-2], r[-3]), mode='cube', scale_factor=1)
-        mlab_list.append(actor)
+        if display:
+            mlab_list.append(actor)
         if dimensionalize is not None:
             z_value += dimensionalize
     if display:
