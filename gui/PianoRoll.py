@@ -9,6 +9,8 @@ import numpy as np
 import math
 from midas_scripts import musicode, music21funcs
 
+import time
+
 """ 
 PianoRollPanel
 Toolbar
@@ -95,6 +97,8 @@ class PianoRollDataTable(wx.grid.GridTableBase):
     def GetNumberCols(self):
         #print("GetNumberCols(): {}".format(self.parent.GetTopLevelParent().mayavi_view.CurrentActor()._array3D.shape[0]))
         if self.pianorollpanel.GetTopLevelParent().mayavi_view.CurrentActor():
+            #print(self.pianorollpanel.GetTopLevelParent().mayavi_view.CurrentActor())
+            #print("Has current_actor.")
             return self.pianorollpanel.GetTopLevelParent().mayavi_view.CurrentActor()._array3D.shape[0]
         else:
             return 5000
@@ -102,6 +106,8 @@ class PianoRollDataTable(wx.grid.GridTableBase):
     def GetNumberRows(self):
         #print("GetNumberCols(): {}".format(self.parent.GetTopLevelParent().mayavi_view.CurrentActor()._array3D.shape[1]))
         if self.pianorollpanel.GetTopLevelParent().mayavi_view.CurrentActor():
+            #print(self.pianorollpanel.GetTopLevelParent().mayavi_view.CurrentActor())
+            #print("Has current_actor.")
             return self.pianorollpanel.GetTopLevelParent().mayavi_view.CurrentActor()._array3D.shape[1]
         else:
             return 128
@@ -139,10 +145,6 @@ class PianoRoll(wx.grid.Grid, glr.GridWithLabelRenderersMixin):
 
         #self.CreateGrid(NUM_TONES,512)
         self._table = PianoRollDataTable(self.GetParent().GetParent())
-        
-        for x in range(0, self.GetNumberCols()):
-            for y in range(0, self.GetNumberRows()):
-                self.SetCellValue(y,x,"0")
 
         self.SetTable(self._table,True)
 
@@ -215,17 +217,19 @@ class PianoRoll(wx.grid.Grid, glr.GridWithLabelRenderersMixin):
                 self.SetColLabelRenderer(i, PianoRollColLabelRenderer("LIGHT STEEL BLUE", "BLACK"))
 
     def ClearGrid(self):
+        #TODO Is this working? ResetGridCellSizes has 'spans' that haven't been touched in a while....
+        print("ClearGrid():")
         super().ClearGrid()
-        page = self.GetTopLevelParent().pianorollpanel.currentPage
-        layer = self.GetTopLevelParent().pianorollpanel.pianorollNB.FindPage(page)
-
-        for x in range(0, self.GetNumberCols()):
-            for y in range(0, self.GetNumberRows()):
-                self.SetCellValue(y,x,"0")
-                self.GetTopLevelParent().mayavi_view.CurrentActor()._array3D[x, 127 - y, layer] = 0
         self.ResetGridCellSizes()
-        mv = self.GetTopLevelParent().mayavi_view
-        mv.actors[mv.cur].array3Dchangedflag += 1
+
+
+
+    #TODO
+    # def ClearAllGrids(self):
+    #     for i in range(0, 127):
+    #         self.ClearGrid(z)
+
+
 
     def ChangeCellsPerQrtrNote(self, newvalue):
         if newvalue == self._cells_per_qrtrnote:
@@ -255,8 +259,11 @@ class PianoRoll(wx.grid.Grid, glr.GridWithLabelRenderersMixin):
 
     def ResetGridCellSizes(self):
         noUpdates = wx.grid.GridUpdateLocker(self)
-        for y in range(self.GetNumberRows()):
-            for x in range(self.GetNumberCols()):
+
+        #TODO Haven't touched spans in a while. Return to this when we deal with cellspans\stream durations.
+
+        for y in range(self._table.GetNumberRows()):
+            for x in range(self._table.GetNumberCols()):
                 span,r,c = self.GetCellSize(x,y)
 
                 if span == wx.grid.Grid.CellSpan_Main:
@@ -266,6 +273,7 @@ class PianoRoll(wx.grid.Grid, glr.GridWithLabelRenderersMixin):
 
 
     def UpdateStream(self):
+        print("Update Stream()")
         # matrix = np.zeros((self.GetNumberCols(), self.GetNumberRows()), dtype=np.int8)
         # # matrix = [ [None] * self.GetNumberRows() for _ in range(self.GetNumberCols())]
         # for x in range(self.GetNumberCols()):
@@ -420,7 +428,7 @@ class PianoRoll(wx.grid.Grid, glr.GridWithLabelRenderersMixin):
         self.SetCellSize(row, c, 1, 1)
         self.SetCellValue(row, c, "0")
 
-        #page = self.GetTopLevelParent().pianorollpanel.currentPage
+        #page = self.GetTopLevelParent().pianorollpanel.pianoroll
         layer = self.GetTopLevelParent().pianorollpanel.currentZplane
 
         self.GetTopLevelParent().mayavi_view.CurrentActor()._array3D[c, 127 - row, layer] = 0
@@ -461,7 +469,7 @@ class PianoRoll(wx.grid.Grid, glr.GridWithLabelRenderersMixin):
 
 
 
-    def StreamToGrid(self, in_stream):
+    def StreamToGrid(self, in_stream, z=None):
         """
         Converts a music21 stream into wxGrid of shape (x,128) where x is the highestTime of the stream.
 
@@ -478,11 +486,12 @@ class PianoRoll(wx.grid.Grid, glr.GridWithLabelRenderersMixin):
         :param cell_note_size:  note duration that each cell/pixel represents
         :return: 				np.array
         """
+        if z is None:
+            z = self.GetTopLevelParent().pianorollpanel.currentZplane
 
         self.ClearGrid()
 
-        page = self.GetTopLevelParent().pianorollpanel.currentPage
-        layer = self.GetTopLevelParent().pianorollpanel.pianorollNB.FindPage(page)
+
 
         for n in in_stream.flat.getElementsByClass(["Chord", "Note"]):
             if type(n) is music21.chord.Chord:
@@ -494,7 +503,7 @@ class PianoRoll(wx.grid.Grid, glr.GridWithLabelRenderersMixin):
                         print("Note size is too small for current grid CellsPerNote.")
                     else:
                         self._table.SetValue(x, y, "1")
-                        self.GetTopLevelParent().mayavi_view.CurrentActor()._array3D[y, 127 - x, layer] = 1
+                        self.GetTopLevelParent().mayavi_view.CurrentActor()._array3D[y, 127 - x, z] = 1
                         self.SetCellSize(x, y, 1, size)
                 # print(matrix)
             elif type(n) is music21.note.Note:
@@ -505,12 +514,12 @@ class PianoRoll(wx.grid.Grid, glr.GridWithLabelRenderersMixin):
                     print("Note size is too small for current grid CellsPerNote.")
                 else:
                     self._table.SetValue(x, y, "1")
-                    self.GetTopLevelParent().mayavi_view.CurrentActor()._array3D[y, 127 - x, layer] = 1
+                    self.GetTopLevelParent().mayavi_view.CurrentActor()._array3D[y, 127 - x, z] = 1
                     self.SetCellSize(x, y, 1, size)
 
         # print(matrix)
 
-        self.GetTopLevelParent().mayavi_view.array3Dchangedflag += 1
+        self.GetTopLevelParent().mayavi_view.CurrentActor().array3Dchangedflag += 1
         self.stream = in_stream
 
 
@@ -534,21 +543,33 @@ class PianoRoll(wx.grid.Grid, glr.GridWithLabelRenderersMixin):
         :param cells_per_qrtrnote:  number of pixels/cells per quarter note
         :return: music21 stream
         """
+        print("GridToStream()")
         self.log.debug("GridToStream():")
         s = music21.stream.Stream()
-        for x in range(0, self.GetNumberRows()):
-            for y in range(0, self.GetNumberCols()):
-                if (self.GetCellValue(x, y) == "1"):
+        print("1")
+        print("Rows:", self._table.GetNumberRows())
+        print("Cols:", self._table.GetNumberCols())
+        for x in range(0, self._table.GetNumberRows()):
+            for y in range(0, self._table.GetNumberCols()):
+                #print(self.GetCellValue(x,y))
+                #time.sleep(1)
+                if (self._table.GetValue(x, y) == "1"):
                     (span, sx, sy) = self.GetCellSize(x ,y)
+                    print("2")
                     n = music21.note.Note()
+                    print("A note:", n)
+                    print("3")
                     n.pitch.midi = 127 - x
                     n.offset = y / self._cells_per_qrtrnote
                     n.duration.quarterLength = sy / self._cells_per_qrtrnote
                     s.insert(n.offset, n)
+        print("4")
         s.makeMeasures(inPlace=True)
+        print("5")
         self.stream = s
+        self.GetTopLevelParent().mayavi_view.CurrentActor()._stream = s
         s.show('txt')
-        self.GetTopLevelParent().mayavi_view.array3Dchangedflag += 1  #TODO Change to 'not' method?
+        #self.GetTopLevelParent().mayavi_view.CurrentActor().array3Dchangedflag += 1  #TODO Change to 'not' method?
         return s
 
 
