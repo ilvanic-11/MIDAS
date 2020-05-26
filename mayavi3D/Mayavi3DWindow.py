@@ -883,12 +883,17 @@ class Mayavi3idiView(HasTraits):
                     i.text = "Z-Plane_%s" % self.CurrentActor().cur_z
                 else:
                     i.actor.actor.position = (i_x, i_y, i_restored)
-        for i in range(0, len(self.actors)):
-            alb = self.parent.pianorollpanel.actorsctrlpanel.actorsListBox
-            #If it's selected, unselect it.
-            if alb.IsSelected(i):
-                self.parent.pianorollpanel.actorsctrlpanel.actorsListBox.Select(i, on=0)
+        print("Actors Length:", len(self.actors))
+        if len(self.actors) is not 0:
+            for i in range(0, len(self.actors)):
+                alb = self.parent.pianorollpanel.actorsctrlpanel.actorsListBox
+                #If it's selected, unselect it.
+                if alb.IsSelected(i):
+                    self.parent.pianorollpanel.actorsctrlpanel.actorsListBox.Select(i, on=0)
+        else:
+            pass
         #Then, select the actor whose position was just changed by dragging the actor in the mayavi view.
+        #TODO Causes a red error on startup and at some color loading because of pos changes, but non-breaking.
         self.parent.pianorollpanel.actorsctrlpanel.actorsListBox.Select(self.cur)
 
 

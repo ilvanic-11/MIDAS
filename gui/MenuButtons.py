@@ -49,7 +49,7 @@ class CustomMenuBar(wx.MenuBar):
         self.export.Append(1500, "&Current Actor\tCtrl+E+1")
         self.export.Append(1501, "&All Actors\tCtrl+E+2")
         self.export.Append(1502, "&Current Actor's Current Zplane\tCtrl+E+3")
-        self.export.Append(1503, "&All Current Actor's Zplanes\tCtrl+E+4")
+        self.export.Append(1503, "&All Actor's Zplanes\tCtrl+E+4")
         self.export.Append(1504, "&Selection\tCtrl+E+5")
         self.export.Append(1505, "&Colors\tCtrl+E+6")
         self.export.Append(1506, "&Text\tCtrl+E+7")
