@@ -970,7 +970,7 @@ def array_to_lists_of(coords_array, tupl=True):
 
 #MA-15.
 
-def separate_pixels_to_coords_by_color(image, z_value, nn=False, dimensionalize=None, display=False, clrs=None, stream=False):
+def separate_pixels_to_coords_by_color(image, z_value, nn=False, dimensionalize=None, display=False, clrs=None): ###, stream=False):
     """
         Created for testing purposes, this function takes an input image and returns an Ordered Dictionary of coordinate
     arrays separated by color value. It has the added options of displaying a mayavi mlab visualization and
@@ -988,42 +988,54 @@ def separate_pixels_to_coords_by_color(image, z_value, nn=False, dimensionalize=
     :return:                Returns odict, an Ordered Dictionary of coordinates organized by color, and an mlab_list,
                             a list of variables corresponding to the mlab calls made if display=True.
     """
+    #Type check for input image.
     if type(image) != numpy.ndarray:
         cv2.imread(image)
-
-    # if stream:
-    #     im_stream = make_midi_from_colored_pixels
-
+    #Set to nn if desired.
     if nn:
         image = set_to_nn_colors(image, clrs)
     else:
         pass
+    #Create Lists
     clrs_list = list()
-    if display:
-        mlab_list = list()
+    mlab_list = list()
+    #Get colors from image and place in clrs_list.
     for y in range(0, len(image)):
             for x in range(0, len(image[y])):
+                #Colors tuples converted immediately to mayavi float colors here via dividing by 255
                 clr = (tuple((image[y][x] / 255).flatten()))
                 clrs_list.append(clr)
+    #Create an ordered dict using clrs_list. The colors as keys will be kept in order, and duplicates will be discarded.
     odict1 = OrderedDict.fromkeys([i for i in clrs_list])
     #print("Length:", len(odict1))
     #Up to here is fast.
 
     for q in odict1.keys():
-        clr_list = []
+        clr_list = []   # A new clr_list for each key, one for each clr.
+        #Loop for colors again.
         for y in range(0, len(image)):
             for x in range(0, len(image[y])):
+                #Get the color
                 clr = (tuple((image[y][x] / 255).flatten()))
+                #If it compares to the key, place a tuple(x,y) for the location of that color into clr_list.
                 if clr == q:
-                    clr_list.append((x, 127-y))
-                    odict1[q] = np.array(clr_list)
+                    clr_list.append((x, 127-y))  #127- thing for inverted iterations
+                    #Exit loop.
+        #Turn that q clr_list into an np.array().
+        odict1[q] = np.array(clr_list)
                     #arglist.append([j for j in odict1.keys()])
         #r = np.array(odict1[q])
         # color = list(q).reverse()
+
     for r in odict1.keys():
+        #Horizontally stack the np.array() previously created with user-defined z-value
+        #----[[od_x, od_y], ->hstacked with z<- ===  [[od_x, od_y, *od_z]
+        #----[od_xx, od_y]] ->hstacked with z<- ===  [od_x, od_y, *od_z]]
         odict1[r] = np.hstack((odict1[r], np.full((len(odict1[r][:, 0]), 1), z_value)))
-        actor = mlab.points3d(odict1[r][:, 0], odict1[r][:, 1], odict1[r][:, 2], color=(r[-1], r[-2], r[-3]), mode='cube', scale_factor=1)
+        #If display is true, use coords for mlab calls and append them to a list.
         if display:
+            #Color tuple used here is reversed for displaying correct colors.
+            actor = mlab.points3d(odict1[r][:, 0], odict1[r][:, 1], odict1[r][:, 2], color=(r[-1], r[-2], r[-3]), mode='cube', scale_factor=1)
             mlab_list.append(actor)
         if dimensionalize is not None:
             z_value += dimensionalize
@@ -1031,7 +1043,7 @@ def separate_pixels_to_coords_by_color(image, z_value, nn=False, dimensionalize=
         mlab.show()
         return odict1, mlab_list
     else:
-        return odict1, mlab_list
+        return odict1
 
 #MA-16
 def get_color_palettes(mypath=None):

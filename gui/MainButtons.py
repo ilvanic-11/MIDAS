@@ -193,31 +193,42 @@ class MainButtonsPanel(wx.Panel):
                         print("Points here?")
                         j.change_points(points)
 
+
             elif dialog.ColorsCheck:
                 #TODO Display in grid upon completion of Actors\Z-Planes classes.
                 print("PREPixels2:", pixels2)
                 print("Gran", gran)
-                stream = midiart.transcribe_colored_image_to_midiart(pixels2, gran, connect=False, keychoice=None, colors=None)
+                #stream = midiart.transcribe_colored_image_to_midiart(pixels2, gran, connect=False, keychoice=None, colors=None)
 
-                #TODO Rework the logic to avoid going from points to stream back to points and then to a new stream again.(f dat)
+                coords_dict = midiart.separate_pixels_to_coords_by_color(pixels2, mayavi_view.cur_z, nn=True)
 
-                for i in stream:
-                    #TODO Too Slow! Memory Intensive!
-                    parts_points = midiart3D.extract_xyz_coordinates_to_array(i)
+                #TODO This logic needs to go INSIDE the separte_pixels_to_coords_by_color function.
+                num_dict = OrderedDict()
+                num_dict.fromkeys([num for num in mayavi_color_palette.keys()])
+                for c in mayavi_color_palette.keys():
+                    for e in coords_dict.keys():
+                        if mayavi_color_palette[c] == e:
+                            num_dict[c] = coords_dict[e]
+                for d in num_dict.keys():
+                    if num_dict[d] is None:
+                        del(num_dict[d])
+
+                #Main call.
+                for h in num_dict.keys():
                     index = len(mayavi_view.actors)
-                    name =  str(i.partsName) + "_" + "Clrs" + "_" + dialog.img_name
-                    clr = mayavi_color_palette[i.partsName]
-                    print("Color-Type", clr, type(clr))
+                    # for i in mayavi_color_palette.keys():
+                    #     if mayavi_color_palette[i] == h:
+                            #Get the color we are on.
+                    clr = mayavi_color_palette[h]
+                    name = "Clrs" + "_" + str(h) + "_" + dialog.img_name
                     actor = self.GetTopLevelParent().pianorollpanel.actorsctrlpanel.actorsListBox.new_actor(index, name)
-                    #actor.change_points(parts_points)
                     for j in mayavi_view.actors:
                         if j.name == name:
                             print("Points here?")
-                            j.change_points(parts_points)
+                            j.change_points(num_dict[h])
                             print("Color Change:", clr)
                             j.color = clr
 
-                    # actor.color = clr
 
             elif dialog.QRCheck:
                 stream = midiart.make_midi_from_grayscale_pixels(pixels_resized, gran, False, note_pxl_value=0)
