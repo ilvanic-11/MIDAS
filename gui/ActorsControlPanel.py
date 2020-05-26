@@ -160,7 +160,7 @@ class ActorsControlPanel(wx.Panel):
             self.popupID8 = wx.NewIdRef()
             self.popupID9 = wx.NewIdRef()
 
-            self.Bind(wx.EVT_MENU, self.OnPopupOne, id=self.popupID1)
+            self.Bind(wx.EVT_MENU, self.OnPopup_Properties, id=self.popupID1)
             self.Bind(wx.EVT_MENU, self.OnPopupTwo, id=self.popupID2)
             self.Bind(wx.EVT_MENU, self.OnPopupThree, id=self.popupID3)
             self.Bind(wx.EVT_MENU, self.OnPopupFour, id=self.popupID4)
