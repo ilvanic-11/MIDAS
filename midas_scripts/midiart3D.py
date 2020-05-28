@@ -111,7 +111,7 @@ def extract_xyz_coordinates_to_array( in_stream, velocities=90.0):
     return new_coordinates
 
 #3D-2.
-def extract_xyz_coordinates_to_stream( coords_array):
+def extract_xyz_coordinates_to_stream( coords_array, part=False):
     """
         This function takes a numpy array of coordinates, 3 x, y, z values per coordinates, and turns it into a music21
     stream with those coordinates as .offset, .pitch, and .volume.velocity values for x, y, and z. ---Note for user.
@@ -146,7 +146,7 @@ def extract_xyz_coordinates_to_stream( coords_array):
         # print("velocity", newnote.volume.velocity)
         out_stream.insert(newnote.offset, copy.deepcopy(newnote))
     # print('Are we here?!')
-    parts_stream = music21funcs.separate_notes_to_parts_by_velocity(out_stream)
+    parts_stream = music21funcs.separate_notes_to_parts_by_velocity(out_stream, part)
     # print("How bout here?")
     return parts_stream
 

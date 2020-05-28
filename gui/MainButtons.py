@@ -91,7 +91,7 @@ class MainButtonsPanel(wx.Panel):
         self.GetTopLevelParent().pianorollpanel.pianoroll.stream.show('txt')
 
     def OnMusic21ConverterParseDialog(self, evt):
-        dlg = Music21ConverterParseDialog(self, -1, "       music21.converter.parse")
+        dlg = Music21ConverterParseDialog(self, -1, "       music21.converter.parse") #Spaces deliberate here.
         dlg.ShowWindowModal()
 
     def OnMusicodeDialog(self, evt):
@@ -141,7 +141,7 @@ class MainButtonsPanel(wx.Panel):
             stream = self.GetTopLevelParent().pianorollpanel.pianoroll.GridToStream()  # TODO Change to currentActor's currentZplane upon completion.
             self.GetTopLevelParent().musicode.make_musicode(stream, musicode_name, shorthand_name, filepath=None,
                                      selection=str(dialog.inputTxt.GetLineText(0)), write=False, timeSig=None)
-            self.GetTopLevelParent().pianorollpanel.pianoroll.ClearGrid()
+            self.GetTopLevelParent().pianorollpanel.ClearZPlane(self.GetTopLevelParent().mayavi_view.cur_z) #TODO This takes too long!
             #print("DialogCheck:", dialog.createMusicode.GetValue())
         elif dialog.create_musicode.GetValue() is False and btn == "OK":
             print("DialogCheck:", dialog.create_musicode.GetValue())
@@ -170,16 +170,18 @@ class MainButtonsPanel(wx.Panel):
             gran = dialog.pixScaler
             print("PIXELS", pixels)
             print("PIXELS2", pixels2)
-            print("PIXELS_RESIZED:", pixels, type(pixels))
+            print("PIXELS_RESIZED:", pixels_resized, type(pixels_resized))
             print("pixels shape", numpy.shape(pixels))
 
             mayavi_view = self.GetTopLevelParent().mayavi_view
-            #default_color_palette = mayavi_view.default_color_palette
+            default_color_palette = mayavi_view.default_color_palette
             mayavi_color_palette = mayavi_view.default_mayavi_palette
 
             if dialog.EdgesCheck:
                 edges = cv2.Canny(pixels_resized, 100, 200)
                 stream = midiart.make_midi_from_grayscale_pixels(edges, gran, True,  note_pxl_value=255)   ##dialog.inputKey.GetValue(), , colors=False
+
+
                 print("EdgeStream:", stream)
                 stream.show('txt')
                 points = midiart3D.extract_xyz_coordinates_to_array(stream)
@@ -199,9 +201,16 @@ class MainButtonsPanel(wx.Panel):
                 print("PREPixels2:", pixels2)
                 print("Gran", gran)
                 #stream = midiart.transcribe_colored_image_to_midiart(pixels2, gran, connect=False, keychoice=None, colors=None)
+                print("Here.")
+                #TODO Something's wrong with colors when I try to change the color palette.
+                coords_dict = midiart.separate_pixels_to_coords_by_color(pixels2, mayavi_view.cur_z, nn=True, clrs=mayavi_view.default_color_palette) #TODO use default_color_palette
 
-                coords_dict = midiart.separate_pixels_to_coords_by_color(pixels2, mayavi_view.cur_z, nn=True)
+                print("And Here.", coords_dict)
+                mayavi_view.colors_call += 1
+                mayavi_view.colors_name = dialog.img_name + "_" + "Clrs" + str(mayavi_view.colors_call)
+                print("And Here2.")
 
+                print("Palette", mayavi_color_palette)
                 #TODO This logic needs to go INSIDE the separte_pixels_to_coords_by_color function.
                 num_dict = OrderedDict()
                 num_dict.fromkeys([num for num in mayavi_color_palette.keys()])
@@ -213,6 +222,7 @@ class MainButtonsPanel(wx.Panel):
                     if num_dict[d] is None:
                         del(num_dict[d])
 
+                print("And Here3.", num_dict)
                 #Main call.
                 for h in num_dict.keys():
                     index = len(mayavi_view.actors)
@@ -220,7 +230,7 @@ class MainButtonsPanel(wx.Panel):
                     #     if mayavi_color_palette[i] == h:
                             #Get the color we are on.
                     clr = mayavi_color_palette[h]
-                    name = "Clrs" + "_" + str(h) + "_" + dialog.img_name
+                    name = "Clrs" + str(mayavi_view.colors_call) + "_" + str(h) + "_" + dialog.img_name
                     actor = self.GetTopLevelParent().pianorollpanel.actorsctrlpanel.actorsListBox.new_actor(index, name)
                     for j in mayavi_view.actors:
                         if j.name == name:
@@ -235,7 +245,7 @@ class MainButtonsPanel(wx.Panel):
                 stream.show('txt')
                 points = midiart3D.extract_xyz_coordinates_to_array(stream)
                 index = len(mayavi_view.actors)
-                name = str(len(mayavi_view.actors)) + "_" + "Edges" + "_" + dialog.img_name
+                name = str(len(mayavi_view.actors)) + "_" + "QRCode" + "_" + dialog.img_name
                 # clr = color_palette[random.randint(1, 16)]  #TODO Random color of 16 possible for now.
                 actor = self.GetTopLevelParent().pianorollpanel.actorsctrlpanel.actorsListBox.new_actor(index, name)
                 # self.GetTopLevelParent().pianorollpanel.pianoroll.StreamToGrid(stream)
@@ -540,7 +550,7 @@ class MIDIArtDialog(wx.Dialog):
             self.UpdatePreview()
 
     def UpdatePreview(self):
-
+        #TODO Fix the slider resize for all img instances.
         if self.displayImage:
             self.displayImage.Destroy()
 
