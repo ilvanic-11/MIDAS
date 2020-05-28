@@ -301,7 +301,7 @@ def set_parts_to_midi_channels(in_stream, output_file):  # TODO Should be a musi
         Assuming that notes are allocated to particular parts in a music21 stream, this function takes those parts and
     allocates them to specific midi channels in a midifile. This changes how midi data is imported in DAWS and the like.
 
-    :param in_stream:       Stream we are turning into a midi file.
+    :param in_stream:       Stream with 16 parts that we are turning into a midi file.
     :param output_file:     Full path to output midi full.
     :return:                Writes music21.stream.Stream data to a midifile. This function doesn't return anything.
     """

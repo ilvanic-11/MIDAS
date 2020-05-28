@@ -132,3 +132,34 @@ In Resources
 -->Add MidasCommitLog.txt to resources folder. All current large commits added to MidasCommitLog.txt.
 In midas_scripts/midiart.py
 -->Adjust midiart.separate_pixels_to_coords_by_color for export usage.
+
+--IP--Commit, May 26, 2020--
+In ActorsCtrlPanel
+--> Minor Tweaks to RightClickPopupMenu buttons.
+In Mayavi3idiView
+-->Tweak trait change function for highlighting current actor in listbox upon moving it's 'position' in the view.
+In MainButtons
+-->Rework logic for the colors function for speed! Optimized using midiart.separate_pixels_to_coords_by_color.
+In midas_scripts/midiart
+-->Small tweaks to midiart.separate_pixels_to_coords_by_color. Added walkthrough #markups for clarity.
+
+--IP--Commit, May 28, 2020--
+In Midas_wx
+-->Restore class instance of self.musicode = musicode.Musicode()
+In Mayavi3idiView
+-->Fixed a bug where set_actor_positions wouldn't work correctly after remove_highlighter_plane() was called.
+-->Rename self.cur to self.cur_ActorIndex
+-->Fix recurring missed refactorings of self.cur
+-->Add a class variable called self.colors_call that updates(+1) upon subsequent color images being generated in the view. For export purposes.
+-->Create a clear_all_and_redraw() function.--clears and redraws the mayavi figure, AND clears all references lists.
+In MainButtons
+-->Create Working instance of 'Colors' Export function!!!
+-->Bug fix: set_to_nn_colors doesn't allow floats for it's color values in its kd-tree search open3d grid thing.
+-->Use pianorollpanel.ClearZPlane(self.GetTopLevelParent().mayavi_view.cur_z) instead of ClearGrid() in create_musicode (for now)
+In MenuButtons
+-->Create working def OnExport_Colors() function.
+-->Create working def OnExport_Selection() function.
+-->Create working def OnExport_CurrentActor() function.
+-->Create working def OnExport_AllActors() function.
+In midas_scripts/music21funcs
+-->Add 'part=False' parameter to separate_notes_to_parts_by_velocity() function. Nested use adjusted accordingly. Adjusts output stream type.
