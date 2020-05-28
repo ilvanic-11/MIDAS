@@ -725,7 +725,7 @@ def notafy( in_stream):
     return new_stream
 
 #M21-3.
-def separate_notes_to_parts_by_velocity( in_stream):
+def separate_notes_to_parts_by_velocity( in_stream, part=False):
     """
         This function is required for extract_XYZ_coordinates_to_stream. It separates all the notes of a stream into
     parts with "part.partsName"s set equal to all the possible velocities of in_stream. This allows for the separation
@@ -736,7 +736,10 @@ def separate_notes_to_parts_by_velocity( in_stream):
     """
     part_stream = music21.stream.Stream()
     velocity_list = list()
-    end_stream = music21.stream.Stream()
+    if part is True:
+        end_stream = music21.stream.Part()
+    else:
+        end_stream = music21.stream.Stream()
     #Create a set of non-duplicate velocities.
     for h in in_stream.flat.notes:
         velocity_list.append(h.volume.velocity)
