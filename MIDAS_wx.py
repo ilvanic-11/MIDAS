@@ -94,7 +94,7 @@ class MainWindow(wx.Frame):
         self.mainbuttons_stats_split = wx.SplitterWindow(self.pianoroll_mainbuttons_split, wx.ID_ANY, style=wx.SP_3DSASH | wx.SP_BORDER)
 
 
-        #self.musicode = musicode.Musicode()
+        self.musicode = musicode.Musicode()
 
 
         self.mayavi_view = Mayavi3DWindow.Mayavi3idiView(self)
@@ -134,7 +134,7 @@ class MainWindow(wx.Frame):
         self.Bind(wx.EVT_CLOSE, self.OnCloseWindow)
 
         # Prepare the menu bar
-        self.menuBar = MenuButtons.CustomMenuBar()
+        self.menuBar = MenuButtons.CustomMenuBar(self)
 
 
         # TODO Use a search bar with help(), inspect.getdoc, and for j in inspect.getmembers: print(j[0], j[1])
@@ -166,8 +166,8 @@ class MainWindow(wx.Frame):
         self.Bind(wx.EVT_MENU, self.menuBar.OnExport_Selection, id=1504)
         self.Bind(wx.EVT_MENU, self.menuBar.OnExport_Colors, id=1505)
         self.Bind(wx.EVT_MENU, self.menuBar.OnExport_Text, id=1506)
-        self.Bind(wx.EVT_MENU, self.menuBar.OnExport_PointCloud, id=1507)
-        self.Bind(wx.EVT_MENU, self.menuBar.OnExport_Image, id=1508)
+        self.Bind(wx.EVT_MENU, self.menuBar.OnExport_Image, id=1507)
+        self.Bind(wx.EVT_MENU, self.menuBar.OnExport_PointCloud, id=1508)
 
         self.Bind(wx.EVT_MENU, self.menuBar.OnExportAsDirectory, id=108)
         self.Bind(wx.EVT_MENU, self.menuBar.OnExportMusicode, id=109)

@@ -241,5 +241,6 @@ class PianoRollPanel(wx.Panel):
                 self.GetTopLevelParent().mayavi_view.CurrentActor()._array3D[x, 127 - y, z] = 0
 
         mv = self.GetTopLevelParent().mayavi_view
-        mv.actors[mv.cur].array3Dchangedflag += 1
+
+        mv.actors[mv.cur_ActorIndex].array3Dchangedflag += 1
 

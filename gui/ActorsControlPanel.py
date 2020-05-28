@@ -98,8 +98,8 @@ class ActorsControlPanel(wx.Panel):
         #Note: These deletions delete by index, not by actor name.
 
 
-        current = self.mayavi_view.cur
-        self.mayavi_view.cur = current -1
+        current = self.mayavi_view.cur_ActorIndex
+        self.mayavi_view.cur_ActorIndex = current - 1
 
         #Remove from actorsListBox
         self.actorsListBox.DeleteItem(current)

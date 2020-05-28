@@ -105,9 +105,6 @@ class Actor(HasTraits):
 
         self.mayavi_view.sources[self.index].mlab_source.trait_set(points=self._points)
 
-    # def insert_array_data(self, array_2d, color=(0., 0., 0.), mode="cube", scale_factor=.25):
-    # I don't think this is needed.
-    # self.parent.pianorollpanel.zplanesctrlpanel.ZPlanesListBox.UpdateFilter()
     @on_trait_change("pointschangedflag")
     def actor_points_changed(self):
         print("actor_points_changed")
@@ -126,7 +123,7 @@ class Actor(HasTraits):
     @on_trait_change('position')
     def show_position(self):
         print("POSITION TRAIT CHANGED:", self.position)
-        self.mayavi_view.cur = self.index #TODO Change mayavi_view.cur to curActorIndex
+        self.mayavi_view.cur_ActorIndex = self.index
 
 
 
@@ -140,12 +137,14 @@ class Mayavi3idiView(HasTraits):
     actor = Any()
     actors = List(Actor)
 
-    cur = Int()
+    cur_ActorIndex = Int()
     cur_z = Int()
     cur_changed_flag = Int()
 
     position = Array()  #Synced one_way 'from' the pipeline current actor's position.(highlighter plane purposes)
 
+    # Stream
+    stream = music21.stream.Stream()
 
     def __init__(self, parent):
         HasTraits.__init__(self)
@@ -162,8 +161,11 @@ class Mayavi3idiView(HasTraits):
         self.i_div = 2  #Upon further review, i_div IS frames per beat. I'll change this variable name later.
         #self.time_sig = '4/4' #TODO Set based on music21.meter.TimeSignature object.
 
-        #Stream
-        self.stream = music21.stream.Stream()
+        #Calls for colors ---for exporting.
+        self.colors_call = 0   #No color calls yet.
+        self.colors_name = ""
+
+
 
 
 
@@ -277,9 +279,30 @@ class Mayavi3idiView(HasTraits):
         self.insert_titles()
         #self.insert_note_text("3-Dimensional Music", 0, 164, 0, color=(1,0,1), opacity=.12, orient_to_camera=False, scale=3
 
+    # @mlab.clf
+    # def clear_lists(self):
+    #     self.sources.clear()
+    #     self.mlab_calls.clear()
+    #     self.highlighter_calls.clear()
+    #     self.text3d_calls.clear()
+    #     self.text3d_default_positions.clear()
+
+    def clear_all_and_redraw(self):
+        mlab.clf()
+        self.sources.clear()
+        self.mlab_calls.clear()
+        self.highlighter_calls.clear()
+        self.text3d_calls.clear()
+        self.text3d_default_positions.clear()
+        self.create_3dmidiart_display()
+        #TODO Add delete_actors stuff here too. New Session function?! :)
+
+
+    #TODO Redundant now?
     def redraw_mayaviview(self):
         mlab.clf()
         self.create_3dmidiart_display()
+
 
     def remove_mlab_actor(self, actor_child): #TODO Write from scenes[0].children stuff. CHECK--Use child.remove()
         actor_child.remove()  #Must be an actor_child found in scene3d.engine.scenes[0].children. Use subscript for it.
@@ -296,15 +319,15 @@ class Mayavi3idiView(HasTraits):
         if len(self.actors) <= 0:
             return None
         else:
-            return self.actors[self.cur]
+            return self.actors[self.cur_ActorIndex]
 
     def append_actor(self, name, color):
         # self.add_trait(actor_name,Actor())
         print("append_actor")
         print('1')
 
-        self.cur = len(self.actors)
-        a = Actor(self, self.cur)
+        self.cur_ActorIndex = len(self.actors)
+        a = Actor(self, self.cur_ActorIndex)
 
         #self.actor = a
 
@@ -330,9 +353,9 @@ class Mayavi3idiView(HasTraits):
 
         #Traits syncing goes here, if desired. (can't go in actor init, because the actor hasn't been appended to any lists yet...)
         #Simplifies access to the pipeline's properties\traits by configuring our "Actor()" class to have these directly.
-        self.sources[self.cur].actor.property.sync_trait('color', a, mutual=True)
+        self.sources[self.cur_ActorIndex].actor.property.sync_trait('color', a, mutual=True)
         print("Colors synced.")
-        self.sources[self.cur].actor.actor.sync_trait('position', a, mutual=True)
+        self.sources[self.cur_ActorIndex].actor.actor.sync_trait('position', a, mutual=True)
         print("Position synced.")
 
         self.cur_changed_flag = not self.cur_changed_flag
@@ -371,8 +394,8 @@ class Mayavi3idiView(HasTraits):
         # print(array_2d)
             #color = lambda x: super().actors[super().cur].color
         print("insert_array_data")
-        mlab_data = mlab.points3d(array_2d[:, 0], array_2d[:, 1], array_2d[:, 2], color=self.actors[self.cur].color, mode=mode, name=name,
-                             scale_factor=scale_factor)
+        mlab_data = mlab.points3d(array_2d[:, 0], array_2d[:, 1], array_2d[:, 2], color=self.actors[self.cur_ActorIndex].color, mode=mode, name=name,
+                                  scale_factor=scale_factor)
         return mlab_data
 
 
@@ -517,6 +540,10 @@ class Mayavi3idiView(HasTraits):
         for i in self.highlighter_calls:
             # Remove from scene3d.
             i.remove()
+            #Remove's the entire vtk_data_source and all nested objects of that instance.
+            #Makes highlighterplane work correctly.
+            #print("Parent", i.parent)
+            #i.parent.parent.remove()
         # Clear reference list.
         self.highlighter_calls.clear()
 
@@ -556,15 +583,20 @@ class Mayavi3idiView(HasTraits):
                 if isinstance(vtk_data_source, type(mayavi.sources.array_source.ArraySource())):
                     vtk_data_source.children[0].children[0].ipw.slice_position = 0
 
-                elif type(vtk_data_source.children[0].children[0]) is not type(mayavi.core.module_manager.ModuleManager()):
-                    vtk_data_source.children[0].children[0].actor.actor.position = pos
+                #assert len(vtk_data_source.children[0].children) > 0, "List is empty."
 
-                elif isinstance(vtk_data_source.children[0].children[0], type(mayavi.core.module_manager.ModuleManager())):
-                    for k in vtk_data_source.children[0].children[0].children:
-                        if isinstance(k.actor, mayavi.components.actor.Actor):
-                            k.actor.actor.position = pos
-                        else:
-                            pass   #k.actor.position = pos
+                elif len(vtk_data_source.children[0].children) is not 0:
+                    if not isinstance(vtk_data_source.children[0].children[0], type(mayavi.core.module_manager.ModuleManager())):
+                        vtk_data_source.children[0].children[0].actor.actor.position = pos
+
+
+                elif len(vtk_data_source.children[0].children) is not 0:
+                    if isinstance(vtk_data_source.children[0].children[0], type(mayavi.core.module_manager.ModuleManager())):
+                        for k in vtk_data_source.children[0].children[0].children:
+                            if isinstance(k.actor, mayavi.components.actor.Actor):
+                                k.actor.actor.position = pos
+                            else:
+                                pass   #k.actor.position = pos
 
                     #print("SECONDCHILD:", vtk_data_source.children[0].ch   ildren[0])
         elif actors == 'music':
@@ -861,23 +893,23 @@ class Mayavi3idiView(HasTraits):
     def sync_positions(self):
 
         #self.remove_trait('position')
-        print("Cur:", self.cur)
+        print("Cur:", self.cur_ActorIndex)
         print(self.sources)
         print("Sources length:", len(self.sources))
         #Note: There is the option to remove trait_syncing.
         #NOTE: removing a sync didn't seem to be working.....
-        if self.cur < 0:
+        if self.cur_ActorIndex < 0:
             return
-        print("self.cur", self.cur)
-        self.sources[self.cur].actor.actor.sync_trait('position', self, mutual=False)
+        print("self.cur", self.cur_ActorIndex)
+        self.sources[self.cur_ActorIndex].actor.actor.sync_trait('position', self, mutual=False)
         print("Position trait one-way synced: actor.position ---to---> mayavi_view.position.")
-        self.actors[self.cur].sync_trait('cur_z', self, mutual=False)
+        self.actors[self.cur_ActorIndex].sync_trait('cur_z', self, mutual=False)
         print("Cur_z trait one-way synced: actor.cur_z ---to---> mayavi_view.cur_z.")
-        if len(self.sources) == 1 and self.cur == 0:
+        if len(self.sources) == 1 and self.cur_ActorIndex == 0:
             pass
         else:
             for i in self.highlighter_calls:
-                pos = self.sources[self.cur].actor.actor.position
+                pos = self.sources[self.cur_ActorIndex].actor.actor.position
                 i_z = pos[2]
                 i_y = pos[1]
                 i_x = pos[0]
@@ -898,7 +930,7 @@ class Mayavi3idiView(HasTraits):
     @on_trait_change('position')
     def highlighter_actor_chase(self):
         # Align Positions
-        if self.cur < 0:
+        if self.cur_ActorIndex < 0:
             return
         else:
             for i in self.highlighter_calls:
@@ -930,16 +962,16 @@ class Mayavi3idiView(HasTraits):
             pass
         #Then, select the actor whose position was just changed by dragging the actor in the mayavi view.
         #TODO Causes a red error on startup and at some color loading because of pos changes, but non-breaking.
-        self.parent.pianorollpanel.actorsctrlpanel.actorsListBox.Select(self.cur)
+        self.parent.pianorollpanel.actorsctrlpanel.actorsListBox.Select(self.cur_ActorIndex)
 
 
     @on_trait_change('cur_z')
     def highlighter_plane_chase(self):
         # Align Z-value
-        if self.cur < 0:
+        if self.cur_ActorIndex < 0:
             return
         for i in self.highlighter_calls:
-            pos = self.sources[self.cur].actor.actor.position
+            pos = self.sources[self.cur_ActorIndex].actor.actor.position
             i_z = pos[2]
             i_y = pos[1]
             i_x = pos[0]

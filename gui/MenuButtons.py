@@ -26,11 +26,14 @@ from midas_scripts import music21funcs, midiart, midiart3D, musicode
 
 class CustomMenuBar(wx.MenuBar):
 
-    def __init__(self):
+    def __init__(self, parent):
         super().__init__(style=0)
-
+        self.parent = parent
         #A help dialog instance
         self.helper = HelpDialog(self, -1, "Help Window")
+
+        #mayavi_view reference
+        self.m_v = self.parent.mayavi_view
 
         #TODO Do this?
         #self.preferences = Preferences.PreferencesDialog()
@@ -53,8 +56,8 @@ class CustomMenuBar(wx.MenuBar):
         self.export.Append(1504, "&Selection\tCtrl+E+5")
         self.export.Append(1505, "&Colors\tCtrl+E+6")
         self.export.Append(1506, "&Text\tCtrl+E+7")
-        self.export.Append(1507, "&Point Cloud\tCtrl+E+8")
-        self.export.Append(1508, "&Image\tCtrl+E+9")
+        self.export.Append(1507, "&Image\tCtrl+E+8")
+        self.export.Append(1508, "&Point Cloud\tCtrl+E+9")
 
         self.filemenu.Append(107, "Export...", self.export)  # Current Actor        self.filemenu.Append(108, "&Export As Directory\tCtrl+Shift+E")  # All Actors
         self.filemenu.Append(109, "&Export Musicode\tCtrl+Shift+M")  # All Actors
@@ -210,10 +213,31 @@ class CustomMenuBar(wx.MenuBar):
 
     def OnExport_CurrentActor(self, event):
         print("Exporting Current Actor....")
+        if len(self.m_v.actors) is not 0:
+            for i in range(0, len(self.m_v.actors)):
+                # alb = self.GetTopLevelParent().pianorollpanel.actorsctrlpanel.actorsListBox
+                # #If it's selected, unselect it.
+                # if alb.IsSelected(i):
+                if i == self.m_v.cur_ActorIndex:
+                    intermediary_path = os.getcwd() + os.sep + "resources" + os.sep + "intermediary_path" + os.sep
+                    filename = self.m_v.actors[i].name
+                    output = intermediary_path + filename + ".mid"
+                    selected_stream = midiart3D.extract_xyz_coordinates_to_stream(self.m_v.actors[i]._points)
+                    selected_stream.write('mid', output)
         pass
 
     def OnExport_AllActors(self, event):
         print("Exporting All Actors....")
+        if len(self.m_v.actors) is not 0:
+            for i in range(0, len(self.m_v.actors)):
+                # alb = self.GetTopLevelParent().pianorollpanel.actorsctrlpanel.actorsListBox
+                # #If it's selected, unselect it.
+                # if alb.IsSelected(i):
+                intermediary_path = os.getcwd() + os.sep + "resources" + os.sep + "intermediary_path" + os.sep
+                filename = self.m_v.actors[i].name
+                output = intermediary_path + filename + ".mid"
+                selected_stream = midiart3D.extract_xyz_coordinates_to_stream(self.m_v.actors[i]._points)
+                selected_stream.write('mid', output)
         pass
 
     #TODO *Be mindful of 'track mode' vs 'velocity mode' for later; when we have those modes for each zplane.
@@ -228,22 +252,55 @@ class CustomMenuBar(wx.MenuBar):
 
     def OnExport_Selection(self, event):
         print("Exporting Selection....")
+
+        if len(self.m_v.actors) is not 0:
+            for i in range(0, len(self.m_v.actors)):
+                alb = self.GetTopLevelParent().pianorollpanel.actorsctrlpanel.actorsListBox
+                #If it's selected, unselect it.
+                if alb.IsSelected(i):
+                    intermediary_path = os.getcwd() + os.sep + "resources" + os.sep + "intermediary_path" + os.sep
+                    filename = self.m_v.actors[i].name
+                    output = intermediary_path + filename + ".mid"
+                    self.m_v.actors[i]._stream = midiart3D.extract_xyz_coordinates_to_stream(self.m_v.actors[i]._points)
+                    self.m_v.actors[i]._stream.write('mid', output)
         pass
 
     def OnExport_Colors(self, event):
-        print("Exporting Current Actor....")
+        print("Exporting Colors....")
+        self.mv = self.GetTopLevelParent().mayavi_view
+        main_stream = self.mv.stream
+        for i in range(0, len(self.mv.actors)):
+            if "Clrs%s" % str(self.mv.colors_call) in self.GetTopLevelParent().pianorollpanel.actorsctrlpanel.actorsListBox.GetItemText(i):
+                self.mv.actors[i]._stream = midiart3D.extract_xyz_coordinates_to_stream(self.mv.actors[i]._points, part=True)
+                self.mv.actors[i]._stream.partsName = i
+
+                main_stream.append(self.mv.actors[i]._stream)
+            else:
+                pass
+        if len(main_stream) != 16:
+            append_part = music21.stream.Part()
+            for i in range(0, 16 - len(main_stream)):
+                main_stream.append(append_part)
+        intermediary_path = os.getcwd() + os.sep + "resources" + os.sep + "intermediary_path" + os.sep
+        filename = self.mv.colors_name
+        output = intermediary_path + filename + ".mid"
+        midiart.set_parts_to_midi_channels(main_stream, output)
+        #main_stream.write("")
         pass
 
     def OnExport_Text(self, event):
-        print("Exporting Current Actor....")
+        #TODO
+        print("Exporting extracted musicode text as .txt....")
         pass
 
     def OnExport_PointCloud(self, event):
-        print("Exporting Current Actor....")
+        #TODO
+        print("Exporting _points as .ply....")
         pass
 
     def OnExport_Image(self, event):
-        print("Exporting Current Actor....")
+        #TODO
+        print("Exporting as img as .png/.jpg....")
         pass
 
     #self.export.Append(1500, "&Current Actor\tCtrl+E+1")
@@ -269,7 +326,7 @@ class CustomMenuBar(wx.MenuBar):
 
 
     def OnExportMusicode(self, event):
-        print("Exporting...")
+        print("Exporting Musicode...")
         user_Created = self.GetTopLevelParent().musicode.user_Created
         print("User Created")
         user_Created.show('txt')
@@ -335,15 +392,14 @@ class CustomMenuBar(wx.MenuBar):
 
 
     def OnExportMovie(self, event):
-        print("This fucker works.")
-        mayavi_view = self.GetTopLevelParent().mayavi_view
-        movie_maker = mayavi_view.engine.scenes[0].scene.movie_maker
-        length = (mayavi_view.grid3d_span)
+        print("Exporting Movie Frames as .jpgs...")
+        movie_maker = self.m_v.engine.scenes[0].scene.movie_maker
+        length = (self.m_v.grid3d_span)
         bpm_speed = self.GetTopLevelParent().mayavi_view.bpm    ###+ 60
-        i_div = mayavi_view.i_div
+        i_div = self.m_v.i_div
 
         print("# BPM:", bpm_speed)
-        print("# Grid Length:", mayavi_view.grid3d_span)
+        print("# Grid Length:", self.m_v.grid3d_span)
         print("# Animation Step Value:", 1/i_div)
         print("# of Measures:", length/4)   #Measures assumed to be in '4/4' time. #TODO Fix by syncing with a time signature object.
         print("# of Frames:", (length * i_div))
@@ -357,8 +413,8 @@ class CustomMenuBar(wx.MenuBar):
         #Enable frame saving.
         if movie_maker.record is False:
             movie_maker.record = True
-        mayavi_view.animate(length, bpm_speed, i_div, sleep = 0)
-        animator_instance = mayavi_view.animate1
+        self.m_v.animate(length, bpm_speed, i_div, sleep = 0)
+        animator_instance = self.m_v.animate1
         animator_instance._start_fired()
         time.sleep(1)
         #TODO set movie_maker back False in animate function after loop completes.
