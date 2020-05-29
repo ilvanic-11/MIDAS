@@ -235,12 +235,18 @@ class PianoRollPanel(wx.Panel):
             return s
 
     def ClearZPlane(self, z):
-        for x in range(0, self.pianoroll._table.GetNumberCols()):
-            for y in range(0, self.pianoroll._table.GetNumberRows()):
-                self.pianoroll._table.SetValue(y, x, "0")
-                self.GetTopLevelParent().mayavi_view.CurrentActor()._array3D[x, 127 - y, z] = 0
+        # for x in range(0, self.pianoroll._table.GetNumberCols()):
+        #     for y in range(0, self.pianoroll._table.GetNumberRows()):
+                #self.pianoroll._table.SetValue(y, x, "0")
+                #self.GetTopLevelParent().mayavi_view.CurrentActor()._array3D[x, 127 - y, z] = 0
 
         mv = self.GetTopLevelParent().mayavi_view
 
+        on_points = np.argwhere(mv.CurrentActor()._array3D[:, :, z] >= 1.0)
+        print("On_Points", on_points)
+        for i in on_points:
+            self.pianoroll._table.SetValue(127- i[1], i[0], "0")   #TODO Track mode stuff! What can the 'value' parameter be?
+        mv.CurrentActor()._array3D[:, :, z] = mv.CurrentActor()._array3D[:, :, z] * 0
+        self.pianoroll.ForceRefresh()
         mv.actors[mv.cur_ActorIndex].array3Dchangedflag += 1
 
