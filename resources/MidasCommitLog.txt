@@ -163,3 +163,11 @@ In MenuButtons
 -->Create working def OnExport_AllActors() function.
 In midas_scripts/music21funcs
 -->Add 'part=False' parameter to separate_notes_to_parts_by_velocity() function. Nested use adjusted accordingly. Adjusts output stream type.
+
+--IP--Commit, May 29, 2020--
+In PianoRoll
+--> Rewrite GridToStream() #Made it fast!!!
+In PianoRollPanel
+--> Rewrite ClearZPlane() #Made it fast!!
+In ActorsCtrlPanel
+-->Fix some mayavi_view.cur refactor misses. (cur_ActorIndex)

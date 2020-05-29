@@ -143,6 +143,9 @@ class PianoRoll(wx.grid.Grid, glr.GridWithLabelRenderersMixin):
 
         self.stream = music21.stream.Stream()
 
+        #mayavi_view references
+        self.m_v = self.GetTopLevelParent().mayavi_view
+
         #self.CreateGrid(NUM_TONES,512)
         self._table = PianoRollDataTable(self.GetParent().GetParent())
 
@@ -431,7 +434,7 @@ class PianoRoll(wx.grid.Grid, glr.GridWithLabelRenderersMixin):
         #page = self.GetTopLevelParent().pianorollpanel.pianoroll
         layer = self.GetTopLevelParent().pianorollpanel.currentZplane
 
-        self.GetTopLevelParent().mayavi_view.CurrentActor()._array3D[c, 127 - row, layer] = 0
+        self.m_v.CurrentActor()._array3D[c, 127 - row, layer] = 0
 
 
     def DrawCell(self, val, row, col, new_sy, new_sx):
@@ -463,7 +466,7 @@ class PianoRoll(wx.grid.Grid, glr.GridWithLabelRenderersMixin):
         print(f"  {row},{col} = {val}")
         #self._table.SetValue(row, 127-col, val)
         self.SetCellValue(row, col, val)
-        #self.GetTopLevelParent().mayavi_view.CurrentActor()._array3D[x, 127 - y, layer] = 1
+        #self.m_v.CurrentActor()._array3D[x, 127 - y, layer] = 1
         self.SetCellSize(row, col, new_sy, new_sx)
 
 
@@ -493,7 +496,7 @@ class PianoRoll(wx.grid.Grid, glr.GridWithLabelRenderersMixin):
         | (0,3) (1,3) (2,3) (3,3) ... |
 
         but midi pitches begin at 0 for the low C0 note and go up the piano roll.
-        So the y index of the matrix will be subtracted from 128.
+        So the y index of the matrix will be subtracted from 128.  #TODO 127?
 
         :param in_stream: 			music21.Stream object
         :param cell_note_size:  note duration that each cell/pixel represents
@@ -516,7 +519,7 @@ class PianoRoll(wx.grid.Grid, glr.GridWithLabelRenderersMixin):
                         print("Note size is too small for current grid CellsPerNote.")
                     else:
                         self._table.SetValue(x, y, "1")
-                        self.GetTopLevelParent().mayavi_view.CurrentActor()._array3D[y, 127 - x, z] = 1
+                        self.m_v.CurrentActor()._array3D[y, 127 - x, z] = 1
                         self.SetCellSize(x, y, 1, size)
                 # print(matrix)
             elif type(n) is music21.note.Note:
@@ -527,12 +530,12 @@ class PianoRoll(wx.grid.Grid, glr.GridWithLabelRenderersMixin):
                     print("Note size is too small for current grid CellsPerNote.")
                 else:
                     self._table.SetValue(x, y, "1")
-                    self.GetTopLevelParent().mayavi_view.CurrentActor()._array3D[y, 127 - x, z] = 1
+                    self.m_v.CurrentActor()._array3D[y, 127 - x, z] = 1
                     self.SetCellSize(x, y, 1, size)
 
         # print(matrix)
 
-        self.GetTopLevelParent().mayavi_view.CurrentActor().array3Dchangedflag += 1
+        self.m_v.CurrentActor().array3Dchangedflag += 1
         self.stream = in_stream
 
 
@@ -562,27 +565,32 @@ class PianoRoll(wx.grid.Grid, glr.GridWithLabelRenderersMixin):
         print("1")
         print("Rows:", self._table.GetNumberRows())
         print("Cols:", self._table.GetNumberCols())
-        for x in range(0, self._table.GetNumberRows()):
-            for y in range(0, self._table.GetNumberCols()):
-                #print(self.GetCellValue(x,y))
-                #time.sleep(1)
-                if (self._table.GetValue(x, y) == "1"):
-                    (span, sx, sy) = self.GetCellSize(x ,y)
-                    print("2")
-                    n = music21.note.Note()
-                    print("A note:", n)
-                    print("3")
-                    n.pitch.midi = 127 - x
-                    n.offset = y / self._cells_per_qrtrnote
-                    n.duration.quarterLength = sy / self._cells_per_qrtrnote
-                    s.insert(n.offset, n)
+        # for x in range(0, self._table.GetNumberRows()):
+        #     for y in range(0, self._table.GetNumberCols()):
+        #         #print(self.GetCellValue(x,y))
+        #         #time.sleep(1)
+        #         if (self._table.GetValue(x, y) == "1"):
+        on_points = np.argwhere(self.m_v.CurrentActor()._array3D[:, :, self.m_v.cur_z] >= 1.0)
+        print("On_Points", on_points)
+        for i in on_points:
+            (span, sx, sy) = self.GetCellSize(i[1], i[0])
+            #print("2")
+            n = music21.note.Note()
+            #print("A note:", n)
+            #print("3")
+            n.pitch.midi = i[1]
+            n.offset = i[0] / self._cells_per_qrtrnote
+            n.duration.quarterLength = sy / self._cells_per_qrtrnote
+            n.volume.velocity = self.mv.cur_z
+            s.insert(n.offset, n)
+
         print("4")
         s.makeMeasures(inPlace=True)
         print("5")
         self.stream = s
-        self.GetTopLevelParent().mayavi_view.CurrentActor()._stream = s
+        self.m_v.CurrentActor()._stream = s
         s.show('txt')
-        #self.GetTopLevelParent().mayavi_view.CurrentActor().array3Dchangedflag += 1  #TODO Change to 'not' method?
+        #self.m_v.CurrentActor().array3Dchangedflag += 1  #TODO Change to 'not' method?
         return s
 
 

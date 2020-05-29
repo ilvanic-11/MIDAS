@@ -117,11 +117,8 @@ class ActorsControlPanel(wx.Panel):
         #else:
             #self.mayavi_view.cur = -1#Condition for single actor case.
             #self.actorsListBox.new_actor("0", 0)
-
-
             #Clear Piano
 
-    #TODO Bind to button.
     def OnBtnDelAllActors(self, evt):
         for j in range(0, len(self.mayavi_view.actors)):
             #This function deletes by index 0 the number of times of the loop's range, not by self.mayavi_view.cur.
@@ -248,7 +245,7 @@ class CustomActorsListBox(wx.ListCtrl):
     def OnActorsListItemActivated(self, evt):
         self.log.info("OnListItemActivated():")
         print(f"evt.Index = {evt.Index}")
-        self.mayavi_view.cur = evt.Index
+        self.mayavi_view.cur_ActorIndex = evt.Index
         self.mayavi_view.cur_z = self.mayavi_view.actors[evt.Index].cur_z
         self.mayavi_view.cur_changed_flag = not self.mayavi_view.cur_changed_flag
         self.GetTopLevelParent().pianorollpanel.pianoroll.ForceRefresh()
