@@ -581,7 +581,7 @@ class PianoRoll(wx.grid.Grid, glr.GridWithLabelRenderersMixin):
             n.pitch.midi = i[1]
             n.offset = i[0] / self._cells_per_qrtrnote
             n.duration.quarterLength = sy / self._cells_per_qrtrnote
-            n.volume.velocity = self.mv.cur_z
+            n.volume.velocity = self.m_v.cur_z
             s.insert(n.offset, n)
 
         print("4")
