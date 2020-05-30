@@ -625,7 +625,7 @@ class Musicode():
 		:param musicode_name: The name of your user-created and designed 'musicode' to be generated from said stream of measures.
 		:param shorthand: The abbreviation for your musicode. (i.e, The builtin musicode "Animuse" uses the shorthand 'am'.)
 		:param filepath: If this is none, the musicode will be saved in the ...\\Midas\resources\musicode_libraries folder.
-		:param selection: If none, select is automaticallthe Latin_Script established as--
+		:param selection: If none, select is automatically the Latin_Script established as--
 		 #Latin_Script = '''AaBbCcDdEeFfGgHhIiJjKkLlMmNnOoPpQqRrSsTtUuVvWwXxYyZz  ?,;\':-.!\"()[]/  0123456789'''
 		:param write: If true, directories are established appropriately and function writes to them accordingly.
 		:param timeSig: Determines the time signature for the measures of your new musicode. Primarily affects measure length.
@@ -683,22 +683,36 @@ class Musicode():
 
 		#Latin_Stream Assign with appropriate element wrappers assigned to measures.
 		latin_elwrap_list = []
+		selection_elwrap_list = []
 		latin_measures_list =[]
+
+		#List appended with element wrappers for all latin script characters.
 		for j in range(0, len(self.Latin_Script)):  #Has len 80: j will be an iteration of measures, since we just established them.
 			k = music21.ElementWrapper(obj=str(self.Latin_Script[j]))
-			if k.obj in selection:  #Acquires them in order of iteration over selection.
-				latin_elwrap_list.append(k)
+			latin_elwrap_list.append(k)
+
+		#List appended with element wrapers for 'selected' characters IN ORDER of selection.
+		for jk in range(0, len(selection)):
+			for elwrap in latin_elwrap_list:  #s will be after h
+				if selection[jk] == elwrap.obj:  #TODO No it doesn't...acquire them in order of iteration over selection.
+					selection_elwrap_list.append(elwrap)
+
 		#assert len(latin_elwrap_list) == len(selection), "Elementwrapper list and selection not equal."
+		print("Selection Elwrap", selection_elwrap_list)
+
+		#List appended with measures that have the 'selected' element-wrapper characters
+		#and
+		#In_stream's measures having those same 'selected' element-wrappers characters appended.
 		for el in range(0, len(selection)):
+			print("OUR Letter Selection:", selection[el])
 			# Append measures of the new musicode stream with a music21.ElementWrapper containing
 			# the symbols name as it's .obj as a string.
-			if latin_elwrap_list[el].obj in selection:
-				in_stream[el].append(latin_elwrap_list[el])
+			if selection_elwrap_list[el].obj in selection:
+				in_stream[el].append(selection_elwrap_list[el]) #TODO in_stream used beyond here? Redundancy?
 				latin_measures_list.append(in_stream[el])
+		print("Latin Measures List:", latin_measures_list)
 
-
-		#We now have our measures with the correct element-wrapped string character in them.
-
+		#We now have our measures with the correct element-wrapped string character in them in the order of "selection."
 
 		# Make a TimeSignature object. Does not get appended to a stream.
 		time = music21.meter.TimeSignature(timeSig)
@@ -772,7 +786,7 @@ class Musicode():
 				# print(j, stringz.obj)
 
 		# Account for the " " space string manually, so user is encouraged not to set a musicode for a space.
-		# Append "space_measure to user-generated musicode.
+		# Append "space_measure" to user-generated musicode.
 		space_measure = music21funcs.empty_measure(timeSig)
 		new_stream.append(space_measure)
 		print("FINAL_NEW_STREAM:")
