@@ -138,10 +138,10 @@ class MainButtonsPanel(wx.Panel):
             shorthand_name = "ug"
         if dialog.create_musicode.GetValue() is True and btn == "OK":
             print("DialogCheck:", dialog.create_musicode.GetValue())
-            stream = self.GetTopLevelParent().pianorollpanel.pianoroll.GridToStream()  # TODO Change to currentActor's currentZplane upon completion.
+            stream = self.GetTopLevelParent().pianorollpanel.pianoroll.GridToStream(update_actor=False)
             self.GetTopLevelParent().musicode.make_musicode(stream, musicode_name, shorthand_name, filepath=None,
                                      selection=str(dialog.inputTxt.GetLineText(0)), write=False, timeSig=None)
-            self.GetTopLevelParent().pianorollpanel.ClearZPlane(self.GetTopLevelParent().mayavi_view.cur_z) #TODO This takes too long!
+            self.GetTopLevelParent().pianorollpanel.ClearZPlane(self.GetTopLevelParent().mayavi_view.cur_z)
             #print("DialogCheck:", dialog.createMusicode.GetValue())
         elif dialog.create_musicode.GetValue() is False and btn == "OK":
             print("DialogCheck:", dialog.create_musicode.GetValue())
