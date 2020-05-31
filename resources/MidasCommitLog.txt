@@ -171,3 +171,17 @@ In PianoRollPanel
 --> Rewrite ClearZPlane() #Made it fast!!
 In ActorsCtrlPanel
 -->Fix some mayavi_view.cur refactor misses. (cur_ActorIndex)
+
+--IP--Comit, May 30th, 2020--
+In PianoRoll
+-->Fix a class variabel self.m_v error (was self.mv)
+In musicode.py
+-->Fix a major error where the users 'selection' when making a new 'musicode' was not being done in order of selection, but rather alphabetical order.
+
+--IP--Comit, May 31, 2020--
+In PianoRoll
+--> GridToStream now has an 'update_stream' parameter. If true, the CurrentActor()'s '_stream' will be updated. True by default. 
+In MenuButtons
+--> Refactored calls in the Show\Dispaly 'Stats' functions; more appropraite names. 
+In MainButtons
+--> Adjust make_musicode call containing GridToStream() because of adding a new parameter.
