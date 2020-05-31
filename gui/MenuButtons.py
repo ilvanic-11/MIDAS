@@ -592,25 +592,25 @@ class CustomMenuBar(wx.MenuBar):
         win.Show(True)
 
     def OnDisplayMidiData(self, evt):
-        stream_details_string = ""
+        midi_details_string = ""
         for i, p in enumerate(self.GetTopLevelParent().pianorollpanel.pianorolls):
-            stream_details_string += f"Layer {i}\n"
-            stream_details_string += music21funcs.print_midi_data(p.stream)
-            stream_details_string += "\n"
+            midi_details_string += f"Layer {i}\n"
+            midi_details_string += music21funcs.print_midi_data(p.stream)
+            midi_details_string += "\n"
 
-        win = RichTextFrame(self, -1, stream_details_string, wx.DefaultPosition,
+        win = RichTextFrame(self, -1, midi_details_string, wx.DefaultPosition,
                             size=(700, 500),
                             style=wx.DEFAULT_FRAME_STYLE, validator=wx.DefaultValidator, name="Midi_Details")
         win.Show(True)
 
     def OnDisplayCellSizesData(self, evt):
-        stream_details_string = ""
+        cell_details_string = ""
         for i, p in enumerate(self.GetTopLevelParent().pianorollpanel.pianorolls):
-            stream_details_string += f"Layer {i}\n"
-            stream_details_string += self.GetTopLevelParent().pianorollpanel.print_cell_sizes()
-            stream_details_string += "\n"
+            cell_details_string += f"Layer {i}\n"
+            cell_details_string += self.GetTopLevelParent().pianorollpanel.print_cell_sizes()
+            cell_details_string += "\n"
 
-        win = RichTextFrame(self, -1, stream_details_string, wx.DefaultPosition,
+        win = RichTextFrame(self, -1, cell_details_string, wx.DefaultPosition,
                             size=(700, 500),
                             style=wx.DEFAULT_FRAME_STYLE, validator=wx.DefaultValidator, name="Cell_Sizes_Details")
         win.Show(True)

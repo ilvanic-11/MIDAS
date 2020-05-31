@@ -539,7 +539,7 @@ class PianoRoll(wx.grid.Grid, glr.GridWithLabelRenderersMixin):
         self.stream = in_stream
 
 
-    def GridToStream(self):
+    def GridToStream(self, update_actor=True):
         """
         Converts a wxGrid of shape (x,128) into a music21 stream.
         x-axis is note offsets and durations
@@ -588,7 +588,10 @@ class PianoRoll(wx.grid.Grid, glr.GridWithLabelRenderersMixin):
         s.makeMeasures(inPlace=True)
         print("5")
         self.stream = s
-        self.m_v.CurrentActor()._stream = s
+        if update_actor:
+            self.m_v.CurrentActor()._stream = s
+        else:
+            pass
         s.show('txt')
         #self.m_v.CurrentActor().array3Dchangedflag += 1  #TODO Change to 'not' method?
         return s
