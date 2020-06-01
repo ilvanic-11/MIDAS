@@ -349,6 +349,8 @@ class MusicodeDialog(wx.Dialog):
         self.name_static = wx.StaticText(self, -1, "Musicode Name",     style=wx.ALIGN_RIGHT)
         self.input_mcname = wx.TextCtrl(self, -1, "", size=(90, -1), style=wx.TE_CENTER)
 
+        #TODO Grey out based on checkbox.
+
         #Shorthand variable name.
         self.sh_static = wx.StaticText(self, -1, "Shorthand", style=wx.ALIGN_RIGHT)
         self.input_sh = wx.TextCtrl(self, -1, "", size=(30, -1), style=wx.TE_CENTER)
@@ -367,7 +369,8 @@ class MusicodeDialog(wx.Dialog):
                                             wx.DefaultPosition, wx.DefaultSize,
                                             self.musicodesList,
                                             2, wx.RA_SPECIFY_COLS)
-        #self.userMusicodeChoice = wx.RadioBox(self, -1, "")
+
+        self.rdbtnMusicodeChoice.Enable(enable=False)
 
         #Bindings.
         self.Bind(wx.EVT_CHECKBOX, self.OnPolarizeCheckboxes)
@@ -419,11 +422,19 @@ class MusicodeDialog(wx.Dialog):
     def OnPolarizeCheckboxes(self, event):
         if self.create_musicode.IsChecked(): #Click on other one...
             self.translate_musicode.SetValue(not self.create_musicode.IsChecked())
-
+            self.rdbtnMusicodeChoice.Enable(enable=False)
+            self.name_static.Enable(enable=True)
+            self.input_mcname.Enable(enable=True)
+            self.input_sh.Enable(enable=True)
+            self.sh_static.Enable(enable=True)
         elif self.translate_musicode.IsChecked():  #True by default.
             #self.translate_musicode.SetValue(not self.translate_musicode.IsChecked()) #
             self.create_musicode.SetValue(not self.translate_musicode.IsChecked())
-            #pass
+            self.rdbtnMusicodeChoice.Enable(enable=True)
+            self.name_static.Enable(enable=False)
+            self.input_mcname.Enable(enable=False)
+            self.input_sh.Enable(enable=False)
+            self.sh_static.Enable(enable=False)
 
 
         # elif self.translate_musicode.GetValue() is False:

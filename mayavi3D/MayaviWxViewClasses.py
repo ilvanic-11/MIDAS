@@ -255,7 +255,7 @@ class Mayavi3idiView(HasTraits):
         # mlab.outline()
 
         # Render Grid
-        x1 = np.array(range(0, 127), dtype=np.float64)
+        x1 = np.array(range(0, 127), dtype=np.float16)
         x2 = np.zeros(127)
         x3 = np.zeros(127)
         Grid = np.column_stack((x1, x2, x3))
@@ -264,7 +264,7 @@ class Mayavi3idiView(HasTraits):
         mlab.points3d(Grid[:, 1], Grid[:, 2], Grid[:, 0], color=(1, 0, 0), mode="2ddash", scale_factor=1)
 
         ###---##Extended X Axis....
-        x4 = np.array(range(0, int(length)), dtype=np.float64)
+        x4 = np.array(range(0, int(length)), dtype=np.float16)
         x5 = np.zeros(int(length))
         x6 = np.zeros(int(length))
         Xdata = np.column_stack((x4, x5, x6))

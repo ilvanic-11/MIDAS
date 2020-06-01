@@ -38,7 +38,8 @@ from mayavi.core.ui.mayavi_scene import MayaviScene
 
 #from traits.trait_types import Button
 
-# from traits.trait_numeric import AbstractArray
+from traits.trait_numeric import AbstractArray
+
 # from traits.trait_types import Function
 # from traits.trait_types import Any
 from traits.trait_types import Int
@@ -56,7 +57,8 @@ class Actor(HasTraits):
     #For general purposes as traits.
     name = String()
 
-    _points = Array(dtype=np.int)
+    _points = Array(dtype=np.float32)
+
     _array3D = Array(dtype=np.int8, shape=(5000, 128, 128))
     _stream = Any()  #TODO For exporting, finish.
 
@@ -78,6 +80,10 @@ class Actor(HasTraits):
         HasTraits.__init__(self)
         self.index = index
         self.mayavi_view = mayavi_view
+
+        #CHANGE the float dtype from 64 to 16 manually on init.
+        #self._points.dtype = np.float16
+        #print("_Points", self._points, self._points.dtype)
 
     #3d numpy array---> True\False map of existing coords for rapid access.
     def change_array3D(self, array3D):
@@ -109,9 +115,9 @@ class Actor(HasTraits):
     def actor_points_changed(self):
         print("actor_points_changed")
         print("actor_index ", self.index)
-        new_array3D = np.zeros(self._array3D.shape, dtype=np.float64) #TODO Int 8 here?
+        new_array3D = np.zeros(self._array3D.shape, dtype=np.int8) #TODO Int 8 here?
         for p in self._points:
-            new_array3D[p[0], p[1], p[2]] = 1.0
+            new_array3D[int(p[0]), int(p[1]), int(p[2])] = 1.0
         self._array3D = new_array3D
         self.mayavi_view.sources[self.index].mlab_source.trait_set(points=self._points)
         print("sources trait_set after actor_points_changed")
@@ -225,8 +231,8 @@ class Mayavi3idiView(HasTraits):
         #self.Points = midiart3D.get_points_from_ply(r".\resources\sphere.ply")
         self.Points = MusicObjects.earth()
         self.Points = self.standard_reorientation(self.Points, 1.3)
-        self.Points = np.asarray(self.Points, dtype=np.int64)
-        self.Points = np.asarray(self.Points, dtype=np.float64)
+        self.Points = np.asarray(self.Points, dtype=np.int16)
+        self.Points = np.asarray(self.Points, dtype=np.float16)
         self.Points = self.trim(self.Points, axis='y', trim=0)
         self.Points = midiart3D.transform_points_by_axis(self.Points, positive_octant=True)
         #print("Points", self.Points[:, 2])
@@ -570,7 +576,7 @@ class Mayavi3idiView(HasTraits):
             for i in range(0, 3, 1):
                 i = random.randint(-357, 357)
                 list1.append(i)
-            pos = np.asarray(list1, dtype=np.float64)
+            pos = np.asarray(list1, dtype=np.float16)
             return pos
 
         if actors == 'all':
@@ -623,7 +629,7 @@ class Mayavi3idiView(HasTraits):
             for i in range(0, 3, 1):
                 i = random.randint(-357, 357)
                 list1.append(i)
-            ori = np.asarray(list1, dtype=np.float64)
+            ori = np.asarray(list1, dtype=np.float16)
             return ori
 
         if actors == 'all':
@@ -671,7 +677,7 @@ class Mayavi3idiView(HasTraits):
             for i in range(0, 3, 1):
                 i = random.randint(-357, 357)
                 list1.append(i)
-            pos = np.asarray(list1, dtype=np.float64)
+            pos = np.asarray(list1, dtype=np.float16)
             return pos
 
 
@@ -823,7 +829,7 @@ class Mayavi3idiView(HasTraits):
         # mlab.outline()
 
         # Render Grid
-        x1 = np.array(range(0, 127), dtype=np.float64)
+        x1 = np.array(range(0, 127), dtype=np.float16)
         x2 = np.zeros(127)
         x3 = np.zeros(127)
         Grid = np.column_stack((x1, x2, x3))
@@ -832,7 +838,7 @@ class Mayavi3idiView(HasTraits):
         mlab.points3d(Grid[:, 1], Grid[:, 2], Grid[:, 0], color=(1, 0, 0), mode="2ddash", scale_factor=1)
 
         ###---##Extended X Axis....
-        x4 = np.array(range(0, int(length)), dtype=np.float64)
+        x4 = np.array(range(0, int(length)), dtype=np.float16)
         x5 = np.zeros(int(length))
         x6 = np.zeros(int(length))
         Xdata = np.column_stack((x4, x5, x6))

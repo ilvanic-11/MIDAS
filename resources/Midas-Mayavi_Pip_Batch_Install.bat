@@ -12,7 +12,8 @@ python -m pip install --upgrade matplotlib --user
 python -m pip install --upgrade pyqt5 --user
 python -m pip install --upgrade pyface --user
 python -m pip install --upgrade wxpython --user
-python -m pip install --upgrade vtk --user
+python -m pip install vtk==8.1.2 --user
+::python -m pip install --upgrade vtk==8.1.2 --user
 python -m pip install --upgrade traits --user
 python -m pip install --upgrade traitsui --user
 python -m pip install --upgrade mayavi --user

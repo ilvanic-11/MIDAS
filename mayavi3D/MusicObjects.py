@@ -80,7 +80,7 @@ def earth():
     EarthData3 = EarthData2 + 100
     EarthData4 = EarthData3 / 2
     EarthData5 = EarthData4.astype(int)
-    EarthData6 = EarthData5.astype(float)
+    EarthData6 = EarthData5.astype(np.float16)
     return EarthData6
 def piano_black_notes():
     pianoblack = np.array([[0., 127., 12.],
