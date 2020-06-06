@@ -201,29 +201,15 @@ class MainButtonsPanel(wx.Panel):
                 #TODO Display in grid upon completion of Actors\Z-Planes classes.
                 print("PREPixels2:", pixels2)
                 print("Gran", gran)
-                #stream = midiart.transcribe_colored_image_to_midiart(pixels2, gran, connect=False, keychoice=None, colors=None)
                 print("Here.")
 
-                coords_dict = midiart.separate_pixels_to_coords_by_color(pixels2, mayavi_view.cur_z, nn=True, clrs=mayavi_view.default_color_palette) #TODO use default_color_palette
-
-                print("And Here.", coords_dict)
+                num_dict = midiart.separate_pixels_to_coords_by_color(pixels2, mayavi_view.cur_z, nn=True, clrs=mayavi_view.default_color_palette, num_dict=True) #TODO use default_color_palette
+                print('Num_dict:', num_dict)
                 mayavi_view.colors_call += 1
                 mayavi_view.colors_name = dialog.img_name + "_" + "Clrs" + str(mayavi_view.colors_call)
                 print("And Here2.")
-
                 print("Palette", mayavi_color_palette)
-                #TODO This logic needs to go INSIDE the separte_pixels_to_coords_by_color function.
-                num_dict = OrderedDict()
-                num_dict.fromkeys([num for num in mayavi_color_palette.keys()])
-                for c in mayavi_color_palette.keys():
-                    for e in coords_dict.keys():
-                        if mayavi_color_palette[c] == e:
-                            num_dict[c] = coords_dict[e]
-                for d in num_dict.keys():
-                    if num_dict[d] is None:
-                        del(num_dict[d])
 
-                print("And Here3.", num_dict)
                 #Main call.
                 for h in num_dict.keys():
                     index = len(mayavi_view.actors)
@@ -231,12 +217,15 @@ class MainButtonsPanel(wx.Panel):
                     #     if mayavi_color_palette[i] == h:
                             #Get the color we are on.
                     clr = mayavi_color_palette[h]
+
                     name = "Clrs" + str(mayavi_view.colors_call) + "_" + str(h) + "_" + dialog.img_name
                     actor = self.GetTopLevelParent().pianorollpanel.actorsctrlpanel.actorsListBox.new_actor(index, name)
+                    mayavi_view.actors[index].colors_instance = "Clrs" + str(mayavi_view.colors_call)
                     for j in mayavi_view.actors:
                         if j.name == name:
                             print("Points here?")
-                            j.change_points(num_dict[h])
+                            if num_dict[h] is not None:
+                                j.change_points(num_dict[h])
                             print("Color Change:", clr)
                             j.color = clr
 

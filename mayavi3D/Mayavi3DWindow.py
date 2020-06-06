@@ -81,6 +81,8 @@ class Actor(HasTraits):
         self.index = index
         self.mayavi_view = mayavi_view
 
+        self.colors_instance = ""
+
         #CHANGE the float dtype from 64 to 16 manually on init.
         #self._points.dtype = np.float16
         #print("_Points", self._points, self._points.dtype)

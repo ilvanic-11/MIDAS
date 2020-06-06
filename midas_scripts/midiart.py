@@ -970,12 +970,14 @@ def array_to_lists_of(coords_array, tupl=True):
 
 #MA-15.
 
-def separate_pixels_to_coords_by_color(image, z_value, nn=False, dimensionalize=None, display=False, clrs=None): ###, stream=False):
+def separate_pixels_to_coords_by_color(image, z_value, nn=False, dimensionalize=None, display=False, clrs=None, num_dict=False): ###, stream=False):
     """
         Created for testing purposes, this function takes an input image and returns an Ordered Dictionary of coordinate
     arrays separated by color value. It has the added options of displaying a mayavi mlab visualization and
     dimensionalizing it along the z axis from the starting point of z_value, a value between 0-127. Use of nearest
     neighbor functionality vastly expedites this process; see midiart.set_to_nn_colors().
+    Note: this function has a builtin conversion for the color palette. It is meant to be supplied with palettes of
+    colors that have (255, 255, 255) for white, instead of (1, 1, 1).
 
     :param image:           Input image, either filepath, or cv2.imread(filepath). If stream=True, input is treated as
                             a stream.
@@ -988,6 +990,11 @@ def separate_pixels_to_coords_by_color(image, z_value, nn=False, dimensionalize=
     :return:                Returns odict, an Ordered Dictionary of coordinates organized by color, and an mlab_list,
                             a list of variables corresponding to the mlab calls made if display=True.
     """
+    #Clrs check
+    if clrs is None:
+        clrs = FLStudioColors
+    else:
+        clrs = clrs
     #Type check for input image.
     if type(image) != numpy.ndarray:
         cv2.imread(image)
@@ -1039,9 +1046,25 @@ def separate_pixels_to_coords_by_color(image, z_value, nn=False, dimensionalize=
             mlab_list.append(actor)
         if dimensionalize is not None:
             z_value += dimensionalize
-    if display:
+    print("Odict1", odict1)
+    print("Clrs:", clrs)
+    if num_dict:
+        # TODO This logic needs to go INSIDE the separte_pixels_to_coords_by_color function.
+        numdict = OrderedDict().fromkeys([num for num in clrs.keys()])
+        m_clrs = convert_dict_colors(clrs)
+        for c in m_clrs.keys():
+            for e in odict1.keys():
+                if m_clrs[c] == e:
+                    numdict[c] = odict1[e]
+        # for d in num_dict.keys():
+        #     if num_dict[d] is None:
+        #         del (num_dict[d])
+
+    if display is True:
         mlab.show()
         return odict1, mlab_list
+    elif num_dict is True and display is False:
+        return numdict
     else:
         return odict1
 
