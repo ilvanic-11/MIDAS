@@ -653,14 +653,14 @@ class Musicode():
 
 		# Establish Writing Path Name (created on call of function whether writing or not, overwritten if already existing)
 		#if write is not False:
-		set_path = r"musicode_libraries\\"  # TODO Should resources be named something else? Regardless, this relative path is set.
+		set_path = r"musicode_libraries"  # TODO Should resources be named something else? Regardless, this relative path is set.
 		if filepath is None:  #Then we write to the r".\Midas\resources\musicode_libraries\ folder.
 			filepath = set_path
 			absFilePath = os.path.dirname(os.path.abspath(set_path))
 			resource_path = absFilePath + "\\resources\\" + filepath
 			if os.path.exists(resource_path + musicode_name + "\\\\") is True:  #Catch for fileexists error. Remove and rewrite, since will be commonly called.
 				shutil.rmtree(resource_path + musicode_name + "\\\\", ignore_errors=True)  #Caution with this?
-			os.mkdir(resource_path + musicode_name + "\\\\")  # TODO What should we do if directory already exists? Overwrite?
+			os.mkdir(resource_path + musicode_name + "\\")  # TODO What should we do if directory already exists? Overwrite?
 			self.full_new_musicode_path = resource_path + musicode_name + "\\\\"
 			self.create_directories()		#* Create Directories within Path since write and file_path are true, and we're writing to it.
 		# print(resource_path + musicode_name + "\\")

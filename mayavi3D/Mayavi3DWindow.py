@@ -99,7 +99,7 @@ class Actor(HasTraits):
     def actor_points_changed(self):
         print("actor_points_changed")
         print("actor_index ", self.index)
-        new_array3D = np.zeros(self._array3D.shape, dtype=np.int8) #TODO Int 8 here?
+        new_array3D = np.zeros(self._array3D.shape, dtype=np.int8)
         for p in self._points:
             new_array3D[int(p[0]), int(p[1]), int(p[2])] = 1.0
         self._array3D = new_array3D
@@ -141,7 +141,7 @@ class Mayavi3idiView(HasTraits):
         self.parent = parent
         self.engine = self.scene3d.engine
         self.engine.start()  # TODO What does this do?
-        self.scene = self.engine.scenes[0]   #TODO Refactor the name of this variable? (self.skene?)
+        self.scene = self.engine.scenes[0]
 
         # Common Scene Properties #TODO Should these be traits? (I think grid3d_span should be...at least)
         self.grid3d_span = 127  # For right now.
@@ -150,7 +150,7 @@ class Mayavi3idiView(HasTraits):
         #self.time_sig = '4/4' #TODO Set based on music21.meter.TimeSignature object.
 
         #Calls for colors ---for exporting.
-        self.colors_call = 0   #No color calls yet.
+        self.colors_call = 0   #No color calls yet. #TODO Make this part of the actor class in new method that doesn't include the actor listbox name.
         self.colors_name = ""
 
 
@@ -811,7 +811,7 @@ class Mayavi3idiView(HasTraits):
         # GridText
         x_txt = mlab.text3d(int(length), 0, 0, "X_Time-Rhythm-Duration.", color=(0, 1, 0), scale=4)
         y_txt = mlab.text3d(0, 127, 0, "Y_Frequency-Pitch.", color=(0, 1, 0), scale=4)
-        z_txt = mlab.text3d(0, 0, 127, "Z_Dynamics-Velocity-Ensemble.", color=(0, 1, 0), scale=4)
+        z_txt = mlab.text3d(0, 0, 127, "Z_Dynamics-Velocity//Ensemble-Track.", color=(0, 1, 0), scale=4)
         self.text3d_calls.append(x_txt)
         self.text3d_default_positions.append(x_txt.actor.actor.position)
         self.text3d_calls.append(y_txt)
