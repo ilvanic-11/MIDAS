@@ -369,13 +369,12 @@ if __name__ == '__main__':
     # When this module is run (not imported) then create the app, the
     # frame, show it, and start the event loop.
     #Musical_Matrix_Rain.rain_execute()
-    # time.sleep(5)
+    ## time.sleep(5)
     # splash = MySplashScreen()
     # splash.Show()
     app = wx.App()
     print(type(app))
-    frm = MainWindow(None, -1, "MIDAS")
-    Midas = app.GetTopWindow()
+    Midas = MainWindow(None, -1, "MIDAS")
     #frm.Show()
     # time.sleep(1.2)
     app.MainLoop()
