@@ -194,7 +194,7 @@ In Actors() class
 In MainButtons
 --> Modify the Musicode dialog to account for the difference between create\translate musicode by 'greying-out'(disabling) the appropriate dialog instances.
 
---IP--Commit,
+--IP--Commit, June 5th, 2020--
 In ActorsCtrlPanel
 --> Add ClearPianoRoll() (ClearCurrentZplane()) to the end of the DeleteCurrentActor() and DeleteAllActors() functions.
 In MainButtons
@@ -207,4 +207,13 @@ In MenuButtons
 In Musicode
 --> Fix file writing bug in make_musicode()
 
+--IP--Commit,
+In MainButtons
+-->Fix OBOE error in the clrs transcribing function in _OnMidiartDialogClosed
+--> Fix slider resizer bug.
+In midiart
+--> Modify the separate_pixels_to_coords_by_color function for said OBOE fix.
+In MenuButtons
+--> Adjust export function accordingly for said OBOE error.
+--> Fix export method to not use the "name" property in the listbox, but instead the 'colors_instance' property of the CurrentActor(). Allows user to name anything in the list box whatever they want.
 
