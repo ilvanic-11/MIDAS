@@ -7,6 +7,7 @@ import wx.richtext as rt
 import pprint
 import pydoc
 import inspect
+import copy
 from gui import Preferences
 import wx.lib.filebrowsebutton as filebrowse
 
@@ -282,23 +283,23 @@ class CustomMenuBar(wx.MenuBar):
     def OnExport_Colors(self, event):
         print("Exporting Colors....")
         self.mv = self.GetTopLevelParent().mayavi_view
-        main_stream = self.mv.stream
         for i in range(0, len(self.mv.actors)):
-            if "Clrs%s" % str(self.mv.colors_call) in self.GetTopLevelParent().pianorollpanel.actorsctrlpanel.actorsListBox.GetItemText(i):
+            if "Clrs%s" % str(self.mv.colors_call) == self.mv.actors[i].colors_instance:
                 self.mv.actors[i]._stream = midiart3D.extract_xyz_coordinates_to_stream(self.mv.actors[i]._points, part=True)
                 self.mv.actors[i]._stream.partsName = i
 
-                main_stream.append(self.mv.actors[i]._stream)
+                self.mv.stream.append(self.mv.actors[i]._stream)
             else:
                 pass
-        if len(main_stream) != 16:
-            append_part = music21.stream.Part()
-            for i in range(0, 16 - len(main_stream)):
-                main_stream.append(append_part)
+        print("MainStream Length:", len(self.mv.stream))
+        # if len(main_stream) != 16:
+        #     append_part = music21.stream.Part()
+        #     for i in range(0, 16 - len(main_stream)):
+        #         main_stream.append(copy.deepcopy(append_part))
         intermediary_path = os.getcwd() + os.sep + "resources" + os.sep + "intermediary_path" + os.sep
         filename = self.mv.colors_name
         output = intermediary_path + filename + ".mid"
-        midiart.set_parts_to_midi_channels(main_stream, output)
+        midiart.set_parts_to_midi_channels(self.mv.stream, output)
         #main_stream.write("")
         pass
 
