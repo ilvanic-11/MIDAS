@@ -236,19 +236,33 @@ class CustomMenuBar(wx.MenuBar):
                 intermediary_path = os.getcwd() + os.sep + "resources" + os.sep + "intermediary_path" + os.sep
                 filename = self.m_v.actors[i].name
                 output = intermediary_path + filename + ".mid"
-                selected_stream = midiart3D.extract_xyz_coordinates_to_stream(self.m_v.actors[i]._points)
-                selected_stream.write('mid', output)
+                self.m_v.actors[i]._stream = midiart3D.extract_xyz_coordinates_to_stream(self.m_v.actors[i]._points)
+                self.m_v.actors[i].write('mid', output)
         pass
 
     #TODO *Be mindful of 'track mode' vs 'velocity mode' for later; when we have those modes for each zplane.
     def OnExport_CurrentActorsCurrentZplane(self, event):
-        print("Exporting Current Actor....")
-        pass
+        print("Exporting Current Actor's Current Zplane....")
+        intermediary_path = os.getcwd() + os.sep + "resources" + os.sep + "intermediary_path" + os.sep
+        filename = self.m_v.CurrentActor().name
+        output = intermediary_path + filename + ".mid"
+        zplane = midiart3D.get_planes_on_axis(self.m_v.CurrentActor()._points)[
+            eval('self.m_v.cur_z')] #TODO Watch for debug errors here.
+        self.m_v.CurrentActor()._stream = midiart3D.extract_xyz_coordinates_to_stream(zplane)
+        self.m_v.CurrentActor()._stream.write('mid', output)
+
 
     #TODO *Same.
     def OnExport_AllCurrentActorsZplanes(self, event):
-        print("Exporting Current Actor....")
-        pass
+        print("Exporting all Current Actor's Zplanes....")
+        intermediary_path = os.getcwd() + os.sep + "resources" + os.sep + "intermediary_path" + os.sep
+        planes_dict = midiart3D.get_planes_on_axis(self.m_v.CurrentActor()._points)
+        for zplane in planes_dict.keys():
+            filename = self.m_v.CurrentActor().name + "_" + str(zplane)
+            output = intermediary_path + filename + ".mid"
+            stream = midiart3D.extract_xyz_coordinates_to_stream(planes_dict[zplane])
+            stream.write('mid', output)
+
 
     def OnExport_Selection(self, event):
         print("Exporting Selection....")
@@ -877,7 +891,7 @@ class HelpDialog(wx.Dialog):
         #self.Midas = self.GetParent().GetTopLevelParent()
 
         #Static Text
-        self.description = self.name_static = wx.StaticText(self, -1, "Type in a python module\class\object name."
+        self.description = self.name_static = wx.StaticText(self, -1, "Type in a python module\class\object name. "
                                                         "Then choose a help method.",     style=wx.ALIGN_CENTER_HORIZONTAL)
 
         #Text Query

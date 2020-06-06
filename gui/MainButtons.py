@@ -51,7 +51,7 @@ class MainButtonsPanel(wx.Panel):
 
         btn_clear_pianoroll = wx.Button(self, -1, "Clear Piano Roll")
         sizer.Add(btn_clear_pianoroll, 0, wx.ALL|wx.ALIGN_CENTER_HORIZONTAL, 10)
-        self.Bind(wx.EVT_BUTTON, self.OnClearPianoRoll , btn_clear_pianoroll)
+        self.Bind(wx.EVT_BUTTON, self.OnClearPianoRoll, btn_clear_pianoroll)
 
         # btn_print_cell_sizes = wx.Button(self, -1, "Print Cell Sizes")
         # sizer.Add(btn_print_cell_sizes, 0, wx.ALL|wx.ALIGN_CENTER_HORIZONTAL, 10)
@@ -164,13 +164,14 @@ class MainButtonsPanel(wx.Panel):
 
         if btn == "OK":
             pathname = dialog.pathname
-            pixels = dialog.img     #2D array (2D of only on\off values.)
-            pixels2 = dialog.img2   #3D array (2D of color tuples)
-            pixels_resized = dialog.resizedImg
+
+            pixels = dialog.resizedImg     #2D array (2D of only on\off values.)
+            pixels2 = dialog.resizedImg2   #3D array (2D of color tuples)
+            #pixels_resized = dialog.resizedImg
             gran = dialog.pixScaler
             print("PIXELS", pixels)
             print("PIXELS2", pixels2)
-            print("PIXELS_RESIZED:", pixels_resized, type(pixels_resized))
+            print("PIXELS_RESIZED:", pixels, type(pixels))
             print("pixels shape", numpy.shape(pixels))
 
             mayavi_view = self.GetTopLevelParent().mayavi_view
@@ -178,7 +179,7 @@ class MainButtonsPanel(wx.Panel):
             mayavi_color_palette = mayavi_view.default_mayavi_palette
 
             if dialog.EdgesCheck:
-                edges = cv2.Canny(pixels_resized, 100, 200)
+                edges = cv2.Canny(pixels, 100, 200)
                 stream = midiart.make_midi_from_grayscale_pixels(edges, gran, True,  note_pxl_value=255)   ##dialog.inputKey.GetValue(), , colors=False
 
 
@@ -187,7 +188,7 @@ class MainButtonsPanel(wx.Panel):
                 points = midiart3D.extract_xyz_coordinates_to_array(stream)
                 index = len(mayavi_view.actors)
                 name = str(len(mayavi_view.actors)) + "_" + "Edges" + "_" + dialog.img_name
-                #clr = color_palette[random.randint(1, 16)]  #TODO Random color of 16 possible for now.
+                #clr = color_palette[random.randint(1, 16)]  #TODO Random color of 16 possible for now?
                 actor = self.GetTopLevelParent().pianorollpanel.actorsctrlpanel.actorsListBox.new_actor(index, name)
                 #self.GetTopLevelParent().pianorollpanel.pianoroll.StreamToGrid(stream)
                 for j in mayavi_view.actors:
@@ -202,7 +203,7 @@ class MainButtonsPanel(wx.Panel):
                 print("Gran", gran)
                 #stream = midiart.transcribe_colored_image_to_midiart(pixels2, gran, connect=False, keychoice=None, colors=None)
                 print("Here.")
-                #TODO Something's wrong with colors when I try to change the color palette.
+
                 coords_dict = midiart.separate_pixels_to_coords_by_color(pixels2, mayavi_view.cur_z, nn=True, clrs=mayavi_view.default_color_palette) #TODO use default_color_palette
 
                 print("And Here.", coords_dict)
@@ -240,12 +241,12 @@ class MainButtonsPanel(wx.Panel):
                             j.color = clr
 
 
-            elif dialog.QRCheck:
-                stream = midiart.make_midi_from_grayscale_pixels(pixels_resized, gran, False, note_pxl_value=0)
+            elif dialog.MonochromeCheck:
+                stream = midiart.make_midi_from_grayscale_pixels(pixels, gran, False, note_pxl_value=0)
                 stream.show('txt')
                 points = midiart3D.extract_xyz_coordinates_to_array(stream)
                 index = len(mayavi_view.actors)
-                name = str(len(mayavi_view.actors)) + "_" + "QRCode" + "_" + dialog.img_name
+                name = str(len(mayavi_view.actors)) + "_" + "QR-BW" + "_" + dialog.img_name
                 # clr = color_palette[random.randint(1, 16)]  #TODO Random color of 16 possible for now.
                 actor = self.GetTopLevelParent().pianorollpanel.actorsctrlpanel.actorsListBox.new_actor(index, name)
                 # self.GetTopLevelParent().pianorollpanel.pianoroll.StreamToGrid(stream)
@@ -458,7 +459,7 @@ class MIDIArtDialog(wx.Dialog):
 
         self.chbxEdges = wx.CheckBox(self.ctrlsPanel, -1, "Edges")
         self.chbxColorImage = wx.CheckBox(self.ctrlsPanel, -1, "Color Image")
-        self.chbxQRCode = wx.CheckBox(self.ctrlsPanel, -1, "QR Code")
+        self.chbxMonochorome = wx.CheckBox(self.ctrlsPanel, -1, "Monochrome")
 
 
         self.sldrHeight = wx.Slider(self.ctrlsPanel, -1, 127, 1, 127, wx.DefaultPosition, (190,40),
@@ -492,7 +493,7 @@ class MIDIArtDialog(wx.Dialog):
         sizerCtrls = wx.BoxSizer(wx.VERTICAL)
         sizerCtrls.Add(self.chbxEdges, 0, wx.ALL  | wx.ALIGN_LEFT, 10)
         sizerCtrls.Add(self.chbxColorImage, 0, wx.ALL  | wx.ALIGN_CENTER_HORIZONTAL, 10)
-        sizerCtrls.Add(self.chbxQRCode, 0, wx.ALL  | wx.ALIGN_RIGHT, 10)
+        sizerCtrls.Add(self.chbxMonochorome, 0, wx.ALL | wx.ALIGN_RIGHT, 10)
         sizerCtrls.Add(self.btnLoadImage, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL, 20)
         sizerCtrls.Add(self.sldrHeight, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL, 20)
 
@@ -540,12 +541,13 @@ class MIDIArtDialog(wx.Dialog):
             try:
                 self.pathname = pathname
                 self.img = cv2.imread(pathname, 0)
+                self.img2 = cv2.imread(pathname, cv2.IMREAD_COLOR)
                 #print(type(self.img))
                 self.img_name = os.path.basename(pathname)
-                self.img2 = cv2.imread(pathname, cv2.IMREAD_COLOR)
+
                 self.EdgesCheck = self.chbxEdges.IsChecked()
                 self.ColorsCheck = self.chbxColorImage.IsChecked()
-                self.QRCheck = self.chbxQRCode.IsChecked()
+                self.MonochromeCheck = self.chbxMonochorome.IsChecked()
                 self.UpdatePreview()
             except IOError:
                 wx.LogError("Cannot open file '%s'." % pathname)
@@ -565,21 +567,25 @@ class MIDIArtDialog(wx.Dialog):
         if self.displayImage:
             self.displayImage.Destroy()
 
+        self.update_called = True
+
         self.pixScaler = int(8 * self.granularitiesDict[self.rdbtnGranularity.GetString(self.rdbtnGranularity.GetSelection())])
 
         height = int(self.sldrHeight.GetValue())
         width = int(height / len(self.img) * len(self.img[0]))
 
         self.resizedImg = cv2.resize(self.img, (width, height), cv2.INTER_AREA)
+        self.resizedImg2 = cv2.resize(self.img2, (width, height), cv2.INTER_AREA)
 
         self.previewImg = cv2.resize(self.resizedImg, (self.pixScaler*width, height), cv2.INTER_AREA)
+
         rgb = cv2.cvtColor(self.previewImg, cv2.COLOR_GRAY2RGB)
 
         #print("self.edges.shape=", self.edges.shape)
         h, w = self.previewImg.shape[:2]
         self.im = wx.ImageFromBuffer(w, h, rgb)
 
-        self.displayImage = wx.StaticBitmap(self.imgPreviewPanel, -1, wx.Bitmap(self.im), wx.DefaultPosition, (w,h), wx.ALIGN_CENTER)
+        self.displayImage = wx.StaticBitmap(self.imgPreviewPanel, -1, wx.Bitmap(self.im), wx.DefaultPosition, (w,h), wx.ALIGN_CENTER_HORIZONTAL)
 
 
 class MIDIArt3DDialog(wx.Dialog):
