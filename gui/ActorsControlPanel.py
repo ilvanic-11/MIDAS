@@ -112,6 +112,8 @@ class ActorsControlPanel(wx.Panel):
         #Remove from actors list
         self.mayavi_view.actors.remove(self.mayavi_view.actors[current])
 
+        self.GetTopLevelParent().pianorollpanel.ClearZPlane(self.GetTopLevelParent().pianorollpanel.currentZplane)
+
         # if len(self.mayavi_view.actors) != 0:
         # 	self.mayavi_view.cur = len(self.mayavi_view.actors) - 1
         #else:
@@ -134,6 +136,8 @@ class ActorsControlPanel(wx.Panel):
             self.mayavi_view.sources.remove(self.mayavi_view.sources[index_0])
             # Remove from actors list
             self.mayavi_view.actors.remove(self.mayavi_view.actors[index_0])
+
+        self.GetTopLevelParent().pianorollpanel.ClearZPlane(self.GetTopLevelParent().pianorollpanel.currentZplane)
 
     ###POPUP MENU Function (keep this at bottom of class)
     # --------------------------------------

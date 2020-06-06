@@ -172,16 +172,39 @@ In PianoRollPanel
 In ActorsCtrlPanel
 -->Fix some mayavi_view.cur refactor misses. (cur_ActorIndex)
 
---IP--Comit, May 30th, 2020--
+--IP--Commit, May 30th, 2020--
 In PianoRoll
 -->Fix a class variabel self.m_v error (was self.mv)
 In musicode.py
 -->Fix a major error where the users 'selection' when making a new 'musicode' was not being done in order of selection, but rather alphabetical order.
 
---IP--Comit, May 31, 2020--
+--IP--Commit, May 31, 2020--
 In PianoRoll
 --> GridToStream now has an 'update_stream' parameter. If true, the CurrentActor()'s '_stream' will be updated. True by default. 
 In MenuButtons
 --> Refactored calls in the Show\Dispaly 'Stats' functions; more appropraite names. 
 In MainButtons
 --> Adjust make_musicode call containing GridToStream() because of adding a new parameter.
+
+--IP--Commit, June 1, 2020--
+In Entire Project
+--> Change all instances of np.float64 to np.float16
+In Actors() class
+--> Change _points.dtype to be float 32. Adjusted the actor_points_changed() function to be able to handle floats.
+In MainButtons
+--> Modify the Musicode dialog to account for the difference between create\translate musicode by 'greying-out'(disabling) the appropriate dialog instances.
+
+--IP--Commit,
+In ActorsCtrlPanel
+--> Add ClearPianoRoll() (ClearCurrentZplane()) to the end of the DeleteCurrentActor() and DeleteAllActors() functions.
+In MainButtons
+--> Change "QR Code" instances of text to "Monochrome"
+--> Fix slider not working for the MidiartDialog
+In MIDAS_wx
+-->Change variable bindings to avoid an error when using the animated openings.
+In MenuButtons
+--> Finish export functions-- CurrentActor'sCurrentZplane and AllActor'sZplane)
+In Musicode
+--> Fix file writing bug in make_musicode()
+
+
