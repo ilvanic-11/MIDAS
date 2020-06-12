@@ -28,7 +28,7 @@ from gui import PianoRoll
 
 import copy
 
-from traits.api import HasTraits, Range, Instance, on_trait_change, Float, String, Int, Dict
+from traits.api import HasTraits, Range, Instance, on_trait_change, Float, String, Int, Bool
 
 from traitsui.api import View, Item, HGroup
 from traits.trait_numeric import Array
@@ -81,7 +81,8 @@ class Actor(HasTraits):
         self.index = index
         self.mayavi_view = mayavi_view
 
-        self.colors_instance = ""
+        self.colors_instance = ""  #Denotes to what instance of a loaded color image this actor belongs. (call1, call2, etc.)
+        self.part_num = 0  #For stream.Part purposes, used in colors function.
 
         #CHANGE the float dtype from 64 to 16 manually on init.
         #self._points.dtype = np.float16
@@ -102,16 +103,26 @@ class Actor(HasTraits):
         self._stream = stream
         self.streamchangedflag = not self.streamchangedflag
 
+    def isColorsInstance(self):
+        if self.colors_instance == '':
+            return False
+        else:
+            return True
     #def change_color(self, color):
 
     ##WORKING INSTANCE
+    #TODO Is this fired when an actor is deleted? If so, can we shut that off?
     @on_trait_change("array3Dchangedflag")
     def actor_array3D_changed(self):
         print("actor_array3D_changed")
         print("actor_index  ", self.index)
         self._points = np.argwhere(self._array3D >= 1.0)
+        
+        try:
+            self.mayavi_view.sources[self.index].mlab_source.trait_set(points=self._points)
+        except IndexError:
+            pass
 
-        self.mayavi_view.sources[self.index].mlab_source.trait_set(points=self._points)
 
     @on_trait_change("pointschangedflag")
     def actor_points_changed(self):
@@ -120,7 +131,7 @@ class Actor(HasTraits):
         new_array3D = np.zeros(self._array3D.shape, dtype=np.int8)
         for p in self._points:
             new_array3D[int(p[0]), int(p[1]), int(p[2])] = 1.0
-        self._array3D = new_array3D
+        self.mayavi_view.parent.pianorollpanel.pianoroll.cur_array3d = self._array3D = new_array3D
         self.mayavi_view.sources[self.index].mlab_source.trait_set(points=self._points)
         print("sources trait_set after actor_points_changed")
 
@@ -149,6 +160,8 @@ class Mayavi3idiView(HasTraits):
     cur_z = Int()
     cur_changed_flag = Int()
 
+    actor_deleted_flag = Bool()
+
     position = Array()  #Synced one_way 'from' the pipeline current actor's position.(highlighter plane purposes)
 
     # Stream
@@ -173,6 +186,8 @@ class Mayavi3idiView(HasTraits):
         self.colors_call = 0   #No color calls yet. #TODO Make this part of the actor class in new method that doesn't include the actor listbox name.
         self.colors_name = ""
 
+        #For a trait function, this lets user know what if it's a 'colors' actor before it's actually destroyed.
+        self.deleting_actor = ''
 
 
 
@@ -961,8 +976,8 @@ class Mayavi3idiView(HasTraits):
                     i.actor.actor.position = (i_x, i_y, i_restored)
         print("Actors Length:", len(self.actors))
         if len(self.actors) is not 0:
+            alb = self.parent.pianorollpanel.actorsctrlpanel.actorsListBox
             for i in range(0, len(self.actors)):
-                alb = self.parent.pianorollpanel.actorsctrlpanel.actorsListBox
                 #If it's selected, unselect it.
                 if alb.IsSelected(i):
                     self.parent.pianorollpanel.actorsctrlpanel.actorsListBox.Select(i, on=0)
@@ -1000,7 +1015,26 @@ class Mayavi3idiView(HasTraits):
                 i.actor.actor.position = np.array([i_x, i_y, i_restored])
             print("Highlighter Aligned")
 
+    @on_trait_change('actor_deleted_flag')
+    def colors_menu_delete(self):
+        #If the deleted actor wasn't part of a colors import, this block won't do anything.
 
+        if self.deleting_actor == '':
+            pass
+        else:
+            ref_list = [self.actors[j].colors_instance for j in range(0, len(self.actors))]
+            if self.deleting_actor in ref_list:
+                pass
+            else:
+                item_id = self.parent.menuBar.colors.FindItem(self.deleting_actor[-1])
+                self.parent.menuBar.colors.Delete(item_id)
+            print("Deletion Check...")
+
+    @on_trait_change('actor_deleted_flag')
+    def reset_index_attributes(self):
+        for k in range(0, len(self.actors)):
+            self.actors[k].index = k
+        print("actor.index attributes reset")
 
 
 if __name__ == '__main__':

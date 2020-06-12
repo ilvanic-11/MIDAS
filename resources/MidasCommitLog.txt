@@ -207,10 +207,9 @@ In MenuButtons
 In Musicode
 --> Fix file writing bug in make_musicode()
 
---IP--Commit,
+--IP--Commit, June 6th, 2020--
 In MainButtons
 -->Fix OBOE error in the clrs transcribing function in _OnMidiartDialogClosed
---> Fix slider resizer bug.
 In midiart
 --> Modify the separate_pixels_to_coords_by_color function for said OBOE fix.
 In MenuButtons

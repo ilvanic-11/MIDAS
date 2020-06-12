@@ -654,7 +654,7 @@ class Musicode():
 		# Establish Writing Path Name (created on call of function whether writing or not, overwritten if already existing)
 		#if write is not False:
 		set_path = r"musicode_libraries"  # TODO Should resources be named something else? Regardless, this relative path is set.
-		if filepath is None:  #Then we write to the r".\Midas\resources\musicode_libraries\ folder.
+		if filepath is None and write is True:  #Then we write to the r".\Midas\resources\musicode_libraries\ folder.
 			filepath = set_path
 			absFilePath = os.path.dirname(os.path.abspath(set_path))
 			resource_path = absFilePath + "\\resources\\" + filepath
@@ -665,11 +665,11 @@ class Musicode():
 			self.create_directories()		#* Create Directories within Path since write and file_path are true, and we're writing to it.
 		# print(resource_path + musicode_name + "\\")
 		# print(full_new_musicode_path)
-		else:  ##This block executes to save to specified fullpath.
+		elif filepath is True and write is True:  ##This block executes to save to specified fullpath.
 			self.full_new_musicode_path = filepath
 			self.create_directories()        #Create directories...*
-		# else:
-		# 	pass
+		else:
+			pass
 
 		#Assert for measures.
 		if in_stream.hasMeasures() is False:

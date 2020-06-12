@@ -164,8 +164,8 @@ class MainWindow(wx.Frame):
         self.Bind(wx.EVT_MENU, self.menuBar.OnExport_CurrentActorsCurrentZplane, id=1502)
         self.Bind(wx.EVT_MENU, self.menuBar.OnExport_AllCurrentActorsZplanes, id=1503)
         self.Bind(wx.EVT_MENU, self.menuBar.OnExport_Selection, id=1504)
-        self.Bind(wx.EVT_MENU, self.menuBar.OnExport_Colors, id=1505)
-        self.Bind(wx.EVT_MENU, self.menuBar.OnExport_Text, id=1506)
+        #self.Bind(wx.EVT_MENU, self.menuBar.OnExport_Colors, id=1505)
+        self.Bind(wx.EVT_MENU, self.menuBar.OnExport_Text, id=1506)  #TODO Change ids?
         self.Bind(wx.EVT_MENU, self.menuBar.OnExport_Image, id=1507)
         self.Bind(wx.EVT_MENU, self.menuBar.OnExport_PointCloud, id=1508)
 

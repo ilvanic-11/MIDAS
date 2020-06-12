@@ -242,11 +242,15 @@ class PianoRollPanel(wx.Panel):
 
         mv = self.GetTopLevelParent().mayavi_view
 
-        on_points = np.argwhere(mv.CurrentActor()._array3D[:, :, z] >= 1.0)
-        print("On_Points", on_points)
-        for i in on_points:
-            self.pianoroll._table.SetValue(127- i[1], i[0], "0")   #TODO Track mode stuff! What can the 'value' parameter be?
-        mv.CurrentActor()._array3D[:, :, z] = mv.CurrentActor()._array3D[:, :, z] * 0
-        self.pianoroll.ForceRefresh()
-        mv.actors[mv.cur_ActorIndex].array3Dchangedflag += 1
-
+        if mv.CurrentActor() == None:
+            pass
+            #current_actor = self.pianoroll.cur_array3d
+        else:
+            current_actor = mv.CurrentActor()
+            on_points = np.argwhere(current_actor._array3D[:, :, z] >= 1.0)
+            print("On_Points", on_points)
+            for i in on_points:
+                self.pianoroll._table.SetValue(127- i[1], i[0], "0")   #TODO Track mode stuff! What can the 'value' parameter be?
+            current_actor._array3D[:, :, z] = current_actor._array3D[:, :, z] * 0
+            self.pianoroll.ForceRefresh()
+            mv.actors[mv.cur_ActorIndex].array3Dchangedflag += 1
