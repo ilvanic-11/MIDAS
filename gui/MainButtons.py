@@ -206,12 +206,22 @@ class MainButtonsPanel(wx.Panel):
                 num_dict = midiart.separate_pixels_to_coords_by_color(pixels2, mayavi_view.cur_z, nn=True, clrs=mayavi_view.default_color_palette, num_dict=True) #TODO use default_color_palette
                 print('Num_dict:', num_dict)
                 mayavi_view.colors_call += 1
-                mayavi_view.colors_name = dialog.img_name + "_" + "Clrs" + str(mayavi_view.colors_call)
+                #TODO Add colors menu append here.
+                mayavi_view.colors_name = dialog.img_name + "_" + "Clrs"
+
+                #Menu Appends for new menu export method.
+                new_id = wx.NewIdRef()
+                self.GetTopLevelParent().menuBar.colors.Append(new_id, str(mayavi_view.colors_call) + "\tCtrl+Shift+%s" % mayavi_view.colors_call)
+                self.GetTopLevelParent().Bind(wx.EVT_MENU, self.GetTopLevelParent().menuBar.OnExport_Colors, id=new_id)
+
+
                 print("And Here2.")
                 print("Palette", mayavi_color_palette)
 
                 #Main call.
+                num = 1
                 for h in num_dict.keys():
+
                     index = len(mayavi_view.actors)
                     # for i in mayavi_color_palette.keys():
                     #     if mayavi_color_palette[i] == h:
@@ -220,7 +230,9 @@ class MainButtonsPanel(wx.Panel):
 
                     name = "Clrs" + str(mayavi_view.colors_call) + "_" + str(h) + "_" + dialog.img_name
                     actor = self.GetTopLevelParent().pianorollpanel.actorsctrlpanel.actorsListBox.new_actor(index, name)
-                    mayavi_view.actors[index].colors_instance = "Clrs" + str(mayavi_view.colors_call)
+                    colors_instance = "Clrs" + str(mayavi_view.colors_call)
+                    mayavi_view.actors[index].colors_instance = colors_instance
+
                     for j in mayavi_view.actors:
                         if j.name == name:
                             print("Points here?")
@@ -228,6 +240,8 @@ class MainButtonsPanel(wx.Panel):
                                 j.change_points(num_dict[h])
                             print("Color Change:", clr)
                             j.color = clr
+                            j.part_num = num
+                            num += 1
 
 
             elif dialog.MonochromeCheck:
@@ -338,8 +352,6 @@ class MusicodeDialog(wx.Dialog):
         #Musicode name.
         self.name_static = wx.StaticText(self, -1, "Musicode Name",     style=wx.ALIGN_RIGHT)
         self.input_mcname = wx.TextCtrl(self, -1, "", size=(90, -1), style=wx.TE_CENTER)
-
-        #TODO Grey out based on checkbox.
 
         #Shorthand variable name.
         self.sh_static = wx.StaticText(self, -1, "Shorthand", style=wx.ALIGN_RIGHT)

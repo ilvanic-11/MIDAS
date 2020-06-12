@@ -93,13 +93,18 @@ class ActorsControlPanel(wx.Panel):
         self.actorsListBox.new_actor(i)
 
 
-    def OnBtnDelActor(self,evt):
+    def OnBtnDelActor(self, evt, cur=None,):
         #TODO Make dynamic for all cases.
         #Note: These deletions delete by index, not by actor name.
-
-
         current = self.mayavi_view.cur_ActorIndex
+        if cur is None:
+            pass
+        else:
+            current = cur
+
         self.mayavi_view.cur_ActorIndex = current - 1
+
+        self.mayavi_view.deleting_actor = self.mayavi_view.actors[current].colors_instance
 
         #Remove from actorsListBox
         self.actorsListBox.DeleteItem(current)
@@ -113,6 +118,9 @@ class ActorsControlPanel(wx.Panel):
         self.mayavi_view.actors.remove(self.mayavi_view.actors[current])
 
         self.GetTopLevelParent().pianorollpanel.ClearZPlane(self.GetTopLevelParent().pianorollpanel.currentZplane)
+
+
+        self.mayavi_view.actor_deleted_flag = not self.mayavi_view.actor_deleted_flag
 
         # if len(self.mayavi_view.actors) != 0:
         # 	self.mayavi_view.cur = len(self.mayavi_view.actors) - 1
@@ -138,6 +146,9 @@ class ActorsControlPanel(wx.Panel):
             self.mayavi_view.actors.remove(self.mayavi_view.actors[index_0])
 
         self.GetTopLevelParent().pianorollpanel.ClearZPlane(self.GetTopLevelParent().pianorollpanel.currentZplane)
+        for j in self.GetTopLevelParent().menuBar.colors.GetMenuItems():
+            self.GetTopLevelParent().menuBar.colors.Delete(j)
+        self.GetTopLevelParent().pianorollpanel.pianoroll.ForceRefresh()
 
     ###POPUP MENU Function (keep this at bottom of class)
     # --------------------------------------
@@ -166,7 +177,7 @@ class ActorsControlPanel(wx.Panel):
             self.Bind(wx.EVT_MENU, self.OnPopupThree, id=self.popupID3)
             self.Bind(wx.EVT_MENU, self.OnPopupFour, id=self.popupID4)
             self.Bind(wx.EVT_MENU, self.OnPopupFive, id=self.popupID5)
-            self.Bind(wx.EVT_MENU, self.OnPopupSix, id=self.popupID6)
+            self.Bind(wx.EVT_MENU, self.OnDeleteSelection, id=self.popupID6)
             self.Bind(wx.EVT_MENU, self.OnPopupSeven, id=self.popupID7)
             self.Bind(wx.EVT_MENU, self.OnPopupEight, id=self.popupID8)
             self.Bind(wx.EVT_MENU, self.OnPopupNine, id=self.popupID9)
@@ -183,7 +194,7 @@ class ActorsControlPanel(wx.Panel):
         menu.Append(self.popupID3, "Three")
         menu.Append(self.popupID4, "Four")
         menu.Append(self.popupID5, "Five")
-        menu.Append(self.popupID6, "Six")
+        menu.Append(self.popupID6, "Delete Selection")
         # make a submenu
         sm = wx.Menu()
         sm.Append(self.popupID8, "sub item 1")
@@ -210,8 +221,14 @@ class ActorsControlPanel(wx.Panel):
     def OnPopupFive(self, event):
         pass
 
-    def OnPopupSix(self, event):
-        pass
+    def OnDeleteSelection(self, event):
+        #Deletes 'selected' not 'activated' actors.
+        alb = self.GetTopLevelParent().pianorollpanel.actorsctrlpanel.actorsListBox
+        for j in range(len(self.mayavi_view.actors), -1, -1):
+            if alb.IsSelected(j):
+                self.OnBtnDelActor(evt=None, cur=j)
+                print("Seletion %s Deleted." % j)
+        self.GetTopLevelParent().pianorollpanel.pianoroll.ForceRefresh()
 
     def OnPopupSeven(self, event):
         pass
