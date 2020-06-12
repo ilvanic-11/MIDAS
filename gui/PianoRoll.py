@@ -6,6 +6,7 @@ import music21
 import copy
 import logging
 import numpy as np
+from wx._core import PaintDC
 import math
 from midas_scripts import musicode, music21funcs
 
@@ -132,6 +133,13 @@ class PianoRollDataTable(wx.grid.GridTableBase):
             z = self.pianorollpanel.currentZplane
             self.pianorollpanel.GetTopLevelParent().mayavi_view.CurrentActor()._array3D[col][127-row][z] = int(value)
 
+    # def AppendCols(self, numCols=1, updateLables=True):
+    #     self.AppendCols(numCols, updateLables)
+    #
+    # def DeleteCols(self, pos=0, numCols=1, updateLables=True):  #Overload duplicates original here.
+    #     self.DeleteCols(pos, numCols, updateLables)
+
+
 # Main Class for the PianoRoll, based orn wx.Grid
 class PianoRoll(wx.grid.Grid, glr.GridWithLabelRenderersMixin):
     log = logging.getLogger("PianoRoll")
@@ -143,17 +151,27 @@ class PianoRoll(wx.grid.Grid, glr.GridWithLabelRenderersMixin):
 
         self.stream = music21.stream.Stream()
 
-        #mayavi_view references
+        #mayavi_view reference
         self.m_v = self.GetTopLevelParent().mayavi_view
 
         #self.CreateGrid(NUM_TONES,512)
         self._table = PianoRollDataTable(self.GetParent().GetParent())
 
-        self.SetTable(self._table,True)
+        #current array_3d
+        self.cur_array3d = None
+
+        self.SetTable(self._table, True)
 
         glr.GridWithLabelRenderersMixin.__init__(self)
         # self.SetDefaultEditor(wx.grid.GridCellBoolEditor())
-        self.SetDefaultRenderer(PianoRollCellRenderer())
+        self.PCR = PianoRollCellRenderer(self)
+        self.SetDefaultRenderer(self.PCR)
+        print("BDC", self.PCR.bdc)
+
+        # upd = wx.RegionIterator(self.GetUpdateRegion())
+        # print("UPD", upd)
+        # #wx.RegionIterator
+
 
 
         self.max_x = 600  # max zoom-in
@@ -161,7 +179,7 @@ class PianoRoll(wx.grid.Grid, glr.GridWithLabelRenderersMixin):
 
         self.zoom_interval = 4
 
-        self.drawing = 1 # Used for click and drag to draw notes
+        self.drawing = 1  # Used for click and drag to draw notes
 
         self.draw_cell_size = 1
         self._cells_per_qrtrnote = 4
@@ -180,7 +198,7 @@ class PianoRoll(wx.grid.Grid, glr.GridWithLabelRenderersMixin):
 
         # Set up the "piano" with note labels
         for i in reversed(range(self.NumberRows)):
-            self.SetRowSize(i,10)
+            self.SetRowSize(i, 10)
             #crazy fuck math I'll never remember to label the piano roll notes and octaves
             self.SetRowLabelValue(i, SEMITONE_NOTES[(NUM_TONES - 1 - i) % 12] + str(10 - int((i+4)/12)))
 
@@ -203,6 +221,7 @@ class PianoRoll(wx.grid.Grid, glr.GridWithLabelRenderersMixin):
        # self.Bind(wx.grid.EVT_GRID_CELL_CHANGED, self.OnCellChanged)
         self.Bind(wx.EVT_MOUSEWHEEL, self.OnMouseWheel)
 
+
     def DrawColumnLabels(self):
         # Set up column labels to have measure numbers and stuff
         for i in range(self.NumberCols):
@@ -222,16 +241,10 @@ class PianoRoll(wx.grid.Grid, glr.GridWithLabelRenderersMixin):
     def ClearGrid(self):
         #TODO Is this working? ResetGridCellSizes has 'spans' that haven't been touched in a while....
         print("ClearGrid():")
+        #TODO Clear using self.cur_array3d
         super().ClearGrid()
-        self.ResetGridCellSizes()
-
-
-
-    #TODO
-    # def ClearAllGrids(self):
-    #     for i in range(0, 127):
-    #         self.ClearGrid(z)
-
+        print("Here.")
+        #self.ResetGridCellSizes()  #TODO This breaks ChangeCellsPerQrtrNote.
 
 
     def ChangeCellsPerQrtrNote(self, newvalue):
@@ -241,27 +254,28 @@ class PianoRoll(wx.grid.Grid, glr.GridWithLabelRenderersMixin):
         self._cells_per_qrtrnote = newvalue
 
         # Clear grid
-        self.ClearGrid()
+        #self.ClearGrid()
 
         #Change number of columns
-        oldNumCols = self.GetNumberCols()
+        oldNumCols = self._table.GetNumberCols()
         newNumCols = int((newvalue / oldvalue) * oldNumCols)
         if newNumCols > oldNumCols:
             self.AppendCols(newNumCols - oldNumCols, False)
         elif oldNumCols > newNumCols:
             self.DeleteCols(0, oldNumCols - newNumCols, False)
 
+
         self.DrawColumnLabels()
 
         # Draw notes based on the saved stream
-        self.StreamToGrid(self.stream)
+        #self.StreamToGrid(self.stream) #TODO WE don't use a stream here anymore?
 
     def GetCellsPerQrtrNote(self):
         return self._cells_per_qrtrnote
 
 
     def ResetGridCellSizes(self):
-        noUpdates = wx.grid.GridUpdateLocker(self)
+        #noUpdates = wx.grid.GridUpdateLocker(self)
 
         #TODO Haven't touched spans in a while. Return to this when we deal with cellspans\stream durations.
 
@@ -386,9 +400,10 @@ class PianoRoll(wx.grid.Grid, glr.GridWithLabelRenderersMixin):
             self.AppendCols(matrix.shape[0] - self.GetNumberCols())
 
         noUpdates = wx.grid.GridUpdateLocker(self)
+
         for x in range(0, matrix.shape[0]):
             for y in range(0, matrix.shape[1]):
-                self.SetCellValue(y, x, str(matrix[x][y]))
+                self._table.SetValue(y, x, str(matrix[x][y]))
 
         self.UpdateStream()
 
@@ -593,27 +608,73 @@ class PianoRoll(wx.grid.Grid, glr.GridWithLabelRenderersMixin):
         s += "(" + v + "," + span_print[span] + "," + repr(sx) + "," + repr(sy) + ") "
         return s
 
+# class MyGridCellAttributerProvider(wx.grid.GridCellAttrProvider)
+#     def __init__(self):
+
+
 class PianoRollCellRenderer(wx.grid.GridCellRenderer):
-    def __init__(self):
+    def __init__(self, parent):
         wx.grid.GridCellRenderer.__init__(self)
+        #self.window = wx.Window()
+        #self.new_dc = wx._core.PaintDC(self.window)
+        self.parent = parent
 
+        self.pdc = None
+        self.bdc = None
+        self.PRClientSize = self.parent.GetClientSize()
+        #self.bitmap.Create()
+        self.bitmap = wx.Bitmap(self.PRClientSize[0], self.PRClientSize[1])
+
+        # print("BitSize", self.bitmap.GetSize())
+        # self.ndc = None
+        #self.mdc = wx.MemoryDC(self.bitmap)
+        # self.mdc.SetBrush(wx.Brush("BLACK", wx.SOLID))
+        #
+        #     #self.mdc.SetClippingRegion(rect.x, rect.y, rect.width, rect.height)
+        # self.mdc.SetPen(wx.TRANSPARENT_PEN)
+        # self.mdc.SelectObject(self.bitmap)
+        #self.mdc.Blit()
     def Draw(self, grid, attr, dc, rect, row, col, isSelected):
+        # self.bitmap.SetSize(wx.Size(rect.width, rect.height))
+        # print("ori", dc.DeviceOrigin)
+        #print("Grid", grid)
+        #print("RECT", rect)
+        #def Intercept(dc, Draw=self.Draw):
+            #self.bdc = wx.BufferedDC(dc, self.bitmap, style=wx.BUFFER_VIRTUAL_AREA)
+        if self.pdc is None:
+            self.pdc = dc
+
+        if self.bdc is None:
+            self.bdc = wx.BufferedDC(dc, self.bitmap, style=wx.BUFFER_CLIENT_AREA)
+        else:
+            pass
+        #print("DC", type(dc), dc)
+
+        #dc = self.new_dc
+        #if self.ndc is not None:
+        #self.ndc = dc
+        #dc = self.mdc
+        #print("BITMAP Draw?")
+        #dc.CanDrawBitmap()
+        #print(self.GetRefCount())
 
 
-        value = grid.GetCellValue( row, col )
+        value = grid.GetCellValue(row, col)
         if value >= "1":
             dc.SetBrush(wx.Brush("BLACK", wx.SOLID))
         elif value >= "2":
-            dc.SetBrush(wx.Brush("GREEN", wx.SOLID))
+            dc.SetBrush(wx.Brush("GREEN", wx.SOLID)) #TODO Not used atm.
         else:
             dc.SetBrush(wx.Brush("WHITE", wx.SOLID))
         try:
             dc.SetClippingRegion(rect.x, rect.y, rect.width, rect.height)
             dc.SetPen(wx.TRANSPARENT_PEN)
+            #print("rx, ry, rw, rh", rect.x, rect.y, rect.width, rect.height)
+            #dc.DrawIcon(wx.Icon('black', type=wx.BITMAP_TYPE_ANY, desiredWidth=rect.width, desiredHeight=rect.height), rect.x, rect.y)
             dc.DrawRectangle(rect.x, rect.y, rect.width, rect.height)
         finally:
             dc.SetPen(wx.NullPen)
             dc.SetBrush(wx.NullBrush)
             dc.DestroyClippingRegion()
-
+        #dc.UnMask()
 
