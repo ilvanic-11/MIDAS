@@ -55,14 +55,15 @@ class CustomMenuBar(wx.MenuBar):
         self.export.Append(1502, "&Current Actor's Current Zplane\tCtrl+E+3")
         self.export.Append(1503, "&All Actor's Zplanes\tCtrl+E+4")
         self.export.Append(1504, "&Selection\tCtrl+E+5")
-        self.export.Append(1505, "&Colors\tCtrl+E+6")
-        self.export.Append(1506, "&Text\tCtrl+E+7")
-        self.export.Append(1507, "&Image\tCtrl+E+8")
-        self.export.Append(1508, "&Point Cloud\tCtrl+E+9")
-
-        self.filemenu.Append(107, "Export...", self.export)  # Current Actor        self.filemenu.Append(108, "&Export As Directory\tCtrl+Shift+E")  # All Actors
-        self.filemenu.Append(109, "&Export Musicode\tCtrl+Shift+M")  # All Actors
-        self.filemenu.Append(110, "&Export Movie\tCtrl+Alt+E")  # All Actors
+        self.colors = wx.Menu()
+        self.export.Append(1505, "&Colors", self.colors)
+        self.export.Append(1506, "&Text\tCtrl+E+6")
+        self.export.Append(1507, "&Image\tCtrl+E+7")
+        self.export.Append(1508, "&Point Cloud\tCtrl+E+8")
+        # Current Actor        self.filemenu.Append(108, "&Export As Directory\tCtrl+Shift+E")  # All Actors
+        self.filemenu.Append(107, "Export...", self.export)
+        self.filemenu.Append(109, "&Export Musicode\tCtrl+Shift+M")
+        self.filemenu.Append(110, "&Export Movie\tCtrl+Alt+E")
         self.filemenu.Append(111, "&Preferences\tCtrl+P")
         self.filemenu.Append(112, "&Intermediary Path\t")  # The Default Save path for all files. Found in resources.
         self.filemenu.AppendSeparator()
@@ -280,28 +281,44 @@ class CustomMenuBar(wx.MenuBar):
                     self.m_v.actors[i]._stream.write('mid', output)
         pass
 
+
     def OnExport_Colors(self, event):
         print("Exporting Colors....")
         self.mv = self.GetTopLevelParent().mayavi_view
+        self.mv.colors_call = int(self.GetTopLevelParent().menuBar.colors.FindItemById(event.GetId()).Name)
+        num = -16
         for i in range(0, len(self.mv.actors)):
             if "Clrs%s" % str(self.mv.colors_call) == self.mv.actors[i].colors_instance:
                 self.mv.actors[i]._stream = midiart3D.extract_xyz_coordinates_to_stream(self.mv.actors[i]._points, part=True)
-                self.mv.actors[i]._stream.partsName = i
-
+                self.mv.actors[i]._stream.partsName = self.mv.actors[i].part_num
+                self.mv.actors[i].priority = num
                 self.mv.stream.append(self.mv.actors[i]._stream)
+                num += 1
             else:
                 pass
         print("MainStream Length:", len(self.mv.stream))
-        # if len(main_stream) != 16:
-        #     append_part = music21.stream.Part()
-        #     for i in range(0, 16 - len(main_stream)):
-        #         main_stream.append(copy.deepcopy(append_part))
+        if len(self.mv.stream) != 16:
+            append_priority = set([i for i in range(-1, -17, -1)]).difference(set([i.priority for i in self.mv.stream])).pop()
+
+            append_part = music21.stream.Part()
+            for i in range(0, 16 - len(self.mv.stream)):
+                append_part.priority = append_priority
+                append_part.partsName = append_priority + 17
+                #append_part.partsName = (16-(16-len(self.mv.stream))) + 1
+                self.mv.stream.append(copy.deepcopy(append_part))
+        else:
+            pass
         intermediary_path = os.getcwd() + os.sep + "resources" + os.sep + "intermediary_path" + os.sep
-        filename = self.mv.colors_name
+        filename = self.mv.colors_name + str(self.mv.colors_call)
         output = intermediary_path + filename + ".mid"
         midiart.set_parts_to_midi_channels(self.mv.stream, output)
-        #main_stream.write("")
-        pass
+        # Clear mainstream if it has already been used.
+        if self.mv.stream.hasPartLikeStreams():
+            for i in self.mv.stream:
+                self.mv.stream.remove(i)
+        else:
+            pass
+
 
     def OnExport_Text(self, event):
         #TODO
