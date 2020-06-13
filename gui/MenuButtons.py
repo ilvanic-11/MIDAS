@@ -248,7 +248,7 @@ class CustomMenuBar(wx.MenuBar):
         intermediary_path = os.getcwd() + os.sep + "resources" + os.sep + "intermediary_path" + os.sep
         filename = self.m_v.CurrentActor().name
         output = intermediary_path + filename + ".mid"
-        zplane = midiart3D.get_planes_on_axis(self.m_v.CurrentActor()._points)[
+        zplane = midiart3D.get_planes_on_axis(self.m_v.CurrentActor()._points)[  #Todo user GridToStream()
             eval('self.m_v.cur_z')] #TODO Watch for debug errors here.
         self.m_v.CurrentActor()._stream = midiart3D.extract_xyz_coordinates_to_stream(zplane)
         self.m_v.CurrentActor()._stream.write('mid', output)
@@ -601,11 +601,13 @@ class CustomMenuBar(wx.MenuBar):
 
     def OnDisplayChords(self, evt):
         chord_details_string = ""
-        for i, p in enumerate(self.GetTopLevelParent().pianorollpanel.pianorolls):
-            chord_details_string += f"Layer {i}\n"
-            chord_details_string += music21funcs.print_chords_in_piece(p.stream)
-            chord_details_string += "\n"
+        # for i, p in enumerate(self.GetTopLevelParent().pianorollpanel.pianorolls):
+        #     chord_details_string += f"Layer {i}\n"
+        #     chord_details_string += music21funcs.print_chords_in_piece(p.stream)
+        #     chord_details_string += "\n"
 
+        z_stream = self.GetTopLevelParent().pianorollpanel.pianoroll.GridToStream(update_actor=False)
+        chord_details_string += music21funcs.print_chords_in_piece(z_stream)
         win = RichTextFrame(self, -1, chord_details_string, wx.DefaultPosition,
                             size=(700, 500),
                             style=wx.DEFAULT_FRAME_STYLE, validator=wx.DefaultValidator, name="Chord_Details")
@@ -613,11 +615,13 @@ class CustomMenuBar(wx.MenuBar):
 
     def OnDisplayStreamShowTxt(self, evt):
         stream_details_string = ""
-        for i, p in enumerate(self.GetTopLevelParent().pianorollpanel.pianorolls):
-            stream_details_string += f"Layer {i}\n"
-            stream_details_string += music21funcs.print_show_streamtxt(p.stream)
-            stream_details_string += "\n"
+        # for i, p in enumerate(self.GetTopLevelParent().pianorollpanel.pianorolls):
+        #     stream_details_string += f"Layer {i}\n"
+        #     stream_details_string += music21funcs.print_show_streamtxt(p.stream)
+        #     stream_details_string += "\n"
+        z_stream = self.GetTopLevelParent().pianorollpanel.pianoroll.GridToStream(update_actor=False)
 
+        stream_details_string += music21funcs.print_show_streamtxt(z_stream)
         win = RichTextFrame(self, -1, stream_details_string, wx.DefaultPosition,
                             size=(700, 500),
                             style=wx.DEFAULT_FRAME_STYLE, validator=wx.DefaultValidator, name="Stream_Details")
@@ -625,11 +629,13 @@ class CustomMenuBar(wx.MenuBar):
 
     def OnDisplayMidiData(self, evt):
         midi_details_string = ""
-        for i, p in enumerate(self.GetTopLevelParent().pianorollpanel.pianorolls):
-            midi_details_string += f"Layer {i}\n"
-            midi_details_string += music21funcs.print_midi_data(p.stream)
-            midi_details_string += "\n"
+        # for i, p in enumerate(self.GetTopLevelParent().pianorollpanel.pianorolls):
+        #     midi_details_string += f"Layer {i}\n"
+        #     midi_details_string += music21funcs.print_midi_data(p.stream)
+        #     midi_details_string += "\n"
+        z_stream = self.GetTopLevelParent().pianorollpanel.pianoroll.GridToStream(update_actor=False)
 
+        midi_details_string += music21funcs.print_midi_data(z_stream)
         win = RichTextFrame(self, -1, midi_details_string, wx.DefaultPosition,
                             size=(700, 500),
                             style=wx.DEFAULT_FRAME_STYLE, validator=wx.DefaultValidator, name="Midi_Details")
@@ -637,11 +643,13 @@ class CustomMenuBar(wx.MenuBar):
 
     def OnDisplayCellSizesData(self, evt):
         cell_details_string = ""
-        for i, p in enumerate(self.GetTopLevelParent().pianorollpanel.pianorolls):
-            cell_details_string += f"Layer {i}\n"
-            cell_details_string += self.GetTopLevelParent().pianorollpanel.print_cell_sizes()
-            cell_details_string += "\n"
-
+        # for i, p in enumerate(self.GetTopLevelParent().pianorollpanel.pianorolls):
+        #     cell_details_string += f"Layer {i}\n"
+        #     cell_details_string += self.GetTopLevelParent().pianorollpanel.print_cell_sizes()
+        #     cell_details_string += "\n"
+        #z_stream = self.GetTopLevelParent().pianorollpanel.pianoroll.GridToStream(update_actor=False)
+        #TODO This is slow. Possible fixes?
+        cell_details_string += self.GetTopLevelParent().pianorollpanel.print_cell_sizes()
         win = RichTextFrame(self, -1, cell_details_string, wx.DefaultPosition,
                             size=(700, 500),
                             style=wx.DEFAULT_FRAME_STYLE, validator=wx.DefaultValidator, name="Cell_Sizes_Details")

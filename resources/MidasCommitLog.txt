@@ -216,3 +216,20 @@ In MenuButtons
 --> Adjust export function accordingly for said OBOE error.
 --> Fix export method to not use the "name" property in the listbox, but instead the 'colors_instance' property of the CurrentActor(). Allows user to name anything in the list box whatever they want.
 
+--IP--Commit, June 12th, 2020--
+Continuted from previous commit ----"To Be Ammended"-- These log the changes of both.
+In MainButtons
+-->Complete colors function, implementing use of auto-appended menu buttons for every colors instance. 
+In MenuButtons
+--> Complete submenu button, OnBtnDeleteSlection() function; allows for deletion of arbitrary selections and actor.index attributes are updated accordingly.
+--> Write checks in OnExport_Colors() function that allow for the a colors image to still be exported correctly, order maintained, even after an actor of the colors instance has been deleted.
+--> Restore analyze (stats) functions. Now they operate on the current zplane. (chords, stream.show('txt'), midi_data, cell_sizes)
+In Mayavi3DView
+--> Add trait 'actor_delete_flag' = Bool()
+--> Write traits function @on_trait_change('actor_delete_flag') def colors_menu_delete()
+--> Write traits functions @on_trait_change('actor_delete_flag') def reset_index_attributes()
+In ActorsCtrlPanel
+--> Add pianoroll.ForceRefresh() calls to every delete actor function.
+In PianoRoll
+--> Research (and hashed out fail attempts) way of speeding up grid draw. Left some code in the PianoRoll default CellRenderer() class. (the Draw() function)
+
