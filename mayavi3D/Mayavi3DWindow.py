@@ -101,7 +101,7 @@ class Actor(HasTraits):
         print("actor_array3D_changed")
         print("actor_index  ", self.index)
         self._points = np.argwhere(self._array3D >= 1.0)
-        
+
         try:
             self.mayavi_view.sources[self.index].mlab_source.trait_set(points=self._points)
         except IndexError:
