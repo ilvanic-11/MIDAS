@@ -154,6 +154,9 @@ class PianoRoll(wx.grid.Grid, glr.GridWithLabelRenderersMixin):
         #mayavi_view reference
         self.m_v = self.GetTopLevelParent().mayavi_view
 
+        #wx background style
+        self.SetBackgroundStyle(wx.BG_STYLE_PAINT)
+
         #self.CreateGrid(NUM_TONES,512)
         self._table = PianoRollDataTable(self.GetParent().GetParent())
 
@@ -221,6 +224,19 @@ class PianoRoll(wx.grid.Grid, glr.GridWithLabelRenderersMixin):
        # self.Bind(wx.grid.EVT_GRID_CELL_CHANGED, self.OnCellChanged)
         self.Bind(wx.EVT_MOUSEWHEEL, self.OnMouseWheel)
 
+        self.Bind(wx.EVT_PAINT, self.OnPaint)
+
+
+    def OnPaint(self, event):
+        print("Painting, bitch.")
+        pdc = wx.PaintDC(self)
+        PRClientSize = self.GetClientSize()
+        self.bitmap = wx.Bitmap(PRClientSize[0], PRClientSize[1])
+        dc = wx.BufferedPaintDC(self, self.bitmap)
+        #dc = wx.AutoBufferedPaintDC(self)
+        #TODO What Dafuq calls Draw() in the CellRenderer?
+        #TODO Then
+        #TODO DO DRAW SHIT HERE, LICKABITCH
 
     def DrawColumnLabels(self):
         # Set up column labels to have measure numbers and stuff
@@ -673,6 +689,7 @@ class PianoRollCellRenderer(wx.grid.GridCellRenderer):
 
 
         value = grid.GetCellValue(row, col)
+        #values = grid._table.Get
         if value >= "1":
             dc.SetBrush(wx.Brush("BLACK", wx.SOLID))
         elif value >= "2":
