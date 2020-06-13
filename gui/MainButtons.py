@@ -220,6 +220,7 @@ class MainButtonsPanel(wx.Panel):
 
                 #Main call.
                 num = 1
+                priority_num = -16
                 for h in num_dict.keys():
 
                     index = len(mayavi_view.actors)
@@ -241,8 +242,9 @@ class MainButtonsPanel(wx.Panel):
                             print("Color Change:", clr)
                             j.color = clr
                             j.part_num = num
+                            j.priority = priority_num
                             num += 1
-
+                            priority_num += 1
 
             elif dialog.MonochromeCheck:
                 stream = midiart.make_midi_from_grayscale_pixels(pixels, gran, False, note_pxl_value=0)

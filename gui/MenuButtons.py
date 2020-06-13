@@ -286,38 +286,48 @@ class CustomMenuBar(wx.MenuBar):
         print("Exporting Colors....")
         self.mv = self.GetTopLevelParent().mayavi_view
         self.mv.colors_call = int(self.GetTopLevelParent().menuBar.colors.FindItemById(event.GetId()).Name)
-        num = -16
+
+        #In the mv.actors list, get all actor that are part of a colors import instance.
         for i in range(0, len(self.mv.actors)):
-            if "Clrs%s" % str(self.mv.colors_call) == self.mv.actors[i].colors_instance:
+            if "Clrs%s" % str(self.mv.colors_call) == self.mv.actors[i].colors_instance:   #  (if is colors_instance  is "Clrs1"...)
+                #Make _stream from _points, name it's part correctly, set it's music21 sort priority, then append it to the main export mv.stream.
                 self.mv.actors[i]._stream = midiart3D.extract_xyz_coordinates_to_stream(self.mv.actors[i]._points, part=True)
                 self.mv.actors[i]._stream.partsName = self.mv.actors[i].part_num
-                self.mv.actors[i].priority = num
-                self.mv.stream.append(self.mv.actors[i]._stream)
-                num += 1
+                self.mv.actors[i]._stream.priority = self.mv.actors[i].priority
+                self.mv.stream.insert(0.0, self.mv.actors[i]._stream)
+
             else:
                 pass
         print("MainStream Length:", len(self.mv.stream))
-        if len(self.mv.stream) != 16:
-            append_priority = set([i for i in range(-1, -17, -1)]).difference(set([i.priority for i in self.mv.stream])).pop()
-
-            append_part = music21.stream.Part()
-            for i in range(0, 16 - len(self.mv.stream)):
-                append_part.priority = append_priority
-                append_part.partsName = append_priority + 17
+        #This block of code executes if we deleted an actor.
+        if len(self.mv.stream) != 16:       #If no 16 actors...
+            for i in range(0, 16 - len(self.mv.stream)):     #Then in the range of missing parts....
+                #Get the 'priority' int value for our deleted part(s) using a list(set.difference) method, then
+                #sorting the result, and lastly calling pop() on the result, which returns our missing "priority."
+                new_list = list(set([i for i in range(-1, -17, -1)]).difference(set([i.priority for i in self.mv.stream]))) #TODO Is pop() reliable here? (Console testing said yes, but internet said meh...)
+                new_list.sort()
+                print("New_priority_list", new_list)
+                append_priority = new_list.pop()
+                print("Pop", append_priority)
+                #Create replacement empty part.
+                append_part = music21.stream.Part()
+                append_part.priority = append_priority   #Set the empty parts priority to that value so it sorts to the deleted spot in the stream.
+                append_part.partsName = append_priority + 17   #Set the partsName based on that priority value. Will always be consistent.
                 #append_part.partsName = (16-(16-len(self.mv.stream))) + 1
-                self.mv.stream.append(copy.deepcopy(append_part))
+                self.mv.stream.insert(0.0, append_part)  #Copy deepcopy, for multiple new parts, handling multiple deletions.
         else:
             pass
+        #self.mv.stream.sort()
         intermediary_path = os.getcwd() + os.sep + "resources" + os.sep + "intermediary_path" + os.sep
         filename = self.mv.colors_name + str(self.mv.colors_call)
         output = intermediary_path + filename + ".mid"
         midiart.set_parts_to_midi_channels(self.mv.stream, output)
         # Clear mainstream if it has already been used.
-        if self.mv.stream.hasPartLikeStreams():
-            for i in self.mv.stream:
-                self.mv.stream.remove(i)
-        else:
-            pass
+        # if self.mv.stream.hasPartLikeStreams():
+        #     for i in self.mv.stream:
+        #         self.mv.stream.remove(i)
+        # else:
+        #     pass
 
 
     def OnExport_Text(self, event):
