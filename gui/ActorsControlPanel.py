@@ -117,7 +117,8 @@ class ActorsControlPanel(wx.Panel):
         #Remove from actors list
         self.mayavi_view.actors.remove(self.mayavi_view.actors[current])
 
-        self.GetTopLevelParent().pianorollpanel.ClearZPlane(self.GetTopLevelParent().pianorollpanel.currentZplane)
+        self.GetTopLevelParent().pianorollpanel.pianoroll.ForceRefresh()
+        #self.GetTopLevelParent().pianorollpanel.ClearZPlane(self.GetTopLevelParent().pianorollpanel.currentZplane)
 
 
         self.mayavi_view.actor_deleted_flag = not self.mayavi_view.actor_deleted_flag
