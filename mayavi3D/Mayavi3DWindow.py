@@ -67,6 +67,7 @@ class Actor(HasTraits):
 
         self.colors_instance = ""  #Denotes to what instance of a loaded color image this actor belongs. (call1, call2, etc.)
         self.part_num = 0  #For stream.Part purposes, used in colors function.
+        self.priority = 0
 
         #CHANGE the float dtype from 64 to 16 manually on init.
         #self._points.dtype = np.float16
@@ -984,6 +985,7 @@ class Mayavi3idiView(HasTraits):
         if self.deleting_actor == '':
             pass
         else:
+            #If all instances of a colors import are deleted, delete the export menu button for it.
             ref_list = [self.actors[j].colors_instance for j in range(0, len(self.actors))]
             if self.deleting_actor in ref_list:
                 pass
@@ -992,11 +994,12 @@ class Mayavi3idiView(HasTraits):
                 self.parent.menuBar.colors.Delete(item_id)
             print("Deletion Check...")
 
-    @on_trait_change('actor_deleted_flag')
-    def reset_index_attributes(self):
+        #Reset actor.index attributes.
         for k in range(0, len(self.actors)):
             self.actors[k].index = k
         print("actor.index attributes reset")
+
+
 
 if __name__ == '__main__':
     pass
