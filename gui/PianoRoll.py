@@ -145,7 +145,7 @@ class PianoRoll(wx.grid.Grid, glr.GridWithLabelRenderersMixin):
     log = logging.getLogger("PianoRoll")
     
     def __init__(self, parent, z, id, pos, size, style, name, log):
-        wx.grid.Grid.__init__(self, parent, id, pos, size, style, name)
+        wx.grid.Grid.__init__(self, parent, id, pos, size, wx.RETAINED, name)
 
         self.log = log
 
@@ -216,15 +216,111 @@ class PianoRoll(wx.grid.Grid, glr.GridWithLabelRenderersMixin):
         self.DisableDragGridSize()
         self.DisableDragRowSize()
 
+
+        self.SetScrollRate(1, 100)  #For precision scrolling, use scrollbar arrows, or scroll-bar right-click-->"Scroll Here"
+
         self.EnableEditing(False)
 
-
+        #EVT Bindings
+        #------------------
         self.Bind(wx.grid.EVT_GRID_CELL_LEFT_CLICK, self.OnGridLClick)
         self.Bind(wx.grid.EVT_GRID_SELECT_CELL, self.OnCellSelected)
-       # self.Bind(wx.grid.EVT_GRID_CELL_CHANGED, self.OnCellChanged)
+        #self.Bind(wx.grid.EVT_GRID_CELL_CHANGED, self.OnCellChanged)
         self.Bind(wx.EVT_MOUSEWHEEL, self.OnMouseWheel)
 
+
+        # self.Bind(wx.grid.EVT_GRID_LABEL_LEFT_CLICK, self.ChangeScrollRate)
+        self.Bind(wx.grid.EVT_GRID_LABEL_LEFT_CLICK, self.OnMeasureLabelsLeftClick)
+        self.Bind(wx.EVT_SCROLLWIN_THUMBTRACK, self.OnThumbDragging)
+        self.Bind(wx.EVT_SCROLLWIN_THUMBRELEASE, self.OnThumbRelease)
+
+
+        self.Bind(wx.EVT_SCROLLWIN, self.OnScroll)
+        # self.Bind(wx.EVT_SCROLLWIN_LINEUP, self.OnScroll)
+        # self.Bind(wx.EVT_SCROLLWIN_LINEDOWN, self.OnScroll)
+
         self.Bind(wx.EVT_PAINT, self.OnPaint)
+
+
+
+    #Functions--------------------
+    def OnThumbDragging(self, event):
+        print("Dragging")
+        #self.m_v.new_reticle_box()
+
+
+    def OnThumbRelease(self, event):
+        print("Thumb Release")
+        #self.m_v.scroll_changed_flag = not self.m_v.scroll_changed_flag
+        #self.m_v.new_reticle_box()
+        event.Skip()
+
+    def OnMeasureLabelsLeftClick(self, event):
+        pos = event.GetPosition()
+        print("Label Event Position:", pos)
+        row = event.GetRow()
+        print("Label Event Row:", row)
+        col = event.GetCol()
+        print("Label Event Col:", col)
+
+
+        s_h = self.GetScrollPos(wx.HORIZONTAL)
+        print("Scroll_H:", s_h)
+        s_v = self.GetScrollPos(wx.VERTICAL)
+        print("Scroll_V:", s_v)
+        s_linex = self.GetScrollLineX()
+        print("Scroll_LineX:", s_linex)
+        s_liney = self.GetScrollLineY()
+        print("Scroll_LineY:", s_liney)
+        c_s = self.GetClientSize()
+        print("ClientSize:", c_s)
+
+        scrollrate_x, scrollrate_y = self.GetScrollPixelsPerUnit()
+        self.SetScrollLineX(1)
+        self.SetScrollRate(1, 1)
+
+        #self.m_v.scrollrate_changed_flag = not self.m_v.scrollrate_changed_flag
+        #time.sleep(1)
+        #GetViewStart after new scrollrate is set; ScrollRate Affects ViewStart.
+        viewstart = self.GetViewStart()
+        print("ViewStart:", viewstart)
+
+        #print("ViewStartinPixels:", v_px, v_py)
+
+        print("SCROLLRATE:", self.GetScrollPixelsPerUnit())
+
+        #if row == -1:
+        #Pixels == Scroll-ticks here.
+        wx.CallAfter(self.Scroll, x=(viewstart[0] + pos[0] - 38), y=-1)  #38 is the label compensation value.
+        wx.CallAfter(self.m_v.new_reticle_box)
+
+        #self.ChangeScrollRate(scrollrate_x, scrollrate_y)
+        #event.Skip()
+
+        #self.m_v.scrollrate_changed_flag = not self.m_v.scrollrate_changed_flag
+
+    def ChangeScrollRate(self, x=1, y=1):
+        self.SetScrollRate(x, y)
+
+
+    def OnScroll(self, event):
+        print("EVT_ID", event.GetId())
+
+        print("Scrolling, bitch.")
+        #TODO Learn Event Stack
+        #self.m_v.reticle = \
+        #self.SetScrollRate(100, 100)
+        if len(self.m_v.highlighter_calls) == 0:
+            pass
+        else:
+            #NOTE: WHEN YOU CHANGE THE SCROLL RATE, the Scrollbars and pixels-per-tick are automatically adjusted accordingly.
+            if self.GetScrollPixelsPerUnit() is not (100, 100):
+                wx.CallAfter(self.ChangeScrollRate, x=100, y=100)
+                #wx.CallAfter(self.Scroll, x=0, y=0)
+            else:
+                pass
+            wx.CallAfter(self.m_v.new_reticle_box)
+            event.Skip()
 
 
     def OnPaint(self, event):
@@ -260,7 +356,7 @@ class PianoRoll(wx.grid.Grid, glr.GridWithLabelRenderersMixin):
         #TODO Clear using self.cur_array3d
         super().ClearGrid()
         print("Here.")
-        #self.ResetGridCellSizes()  #TODO This breaks ChangeCellsPerQrtrNote.
+        #self.ResetGridCellSizes()  #TODO This breaks ChangeCellsPerQrtrNote?
 
 
     def ChangeCellsPerQrtrNote(self, newvalue):
@@ -346,6 +442,8 @@ class PianoRoll(wx.grid.Grid, glr.GridWithLabelRenderersMixin):
                 self.ZoomInHorizontal(1)
             elif event.GetWheelRotation() <= -120:
                 self.ZoomOutHorizontal(1)
+
+
 
         event.Skip()
 
@@ -623,6 +721,8 @@ class PianoRoll(wx.grid.Grid, glr.GridWithLabelRenderersMixin):
         # s += repr(size) + ", "
         s += "(" + v + "," + span_print[span] + "," + repr(sx) + "," + repr(sy) + ") "
         return s
+
+
 
 # class MyGridCellAttributerProvider(wx.grid.GridCellAttrProvider)
 #     def __init__(self):
