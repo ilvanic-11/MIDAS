@@ -252,3 +252,5 @@ class PianoRollPanel(wx.Panel):
             current_actor._array3D[:, :, z] = current_actor._array3D[:, :, z] * 0
             self.pianoroll.ForceRefresh()
             mv.actors[mv.cur_ActorIndex].array3Dchangedflag += 1
+        self.pianoroll.ResetGridCellSizes()
+        self.pianoroll.ForceRefresh()

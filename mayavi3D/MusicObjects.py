@@ -51,6 +51,7 @@ def line_square(length, z_axis):
                          (0, 0, z_axis)))  # *Points repeated for a visual compensation, i.e overlap.
     return linesquare
 
+
 def create_glyph(image_array, x_stretch=1, y_shift=0, z_value=127, downscale=21.12):
     if type(image_array) != np.ndarray: # Can use directory of image file.
         image_array = cv2.imread(image_array)

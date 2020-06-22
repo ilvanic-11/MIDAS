@@ -256,6 +256,7 @@ class MainWindow(wx.Frame):
         self._bind_midiart3D_tools()
         self._bind_music21funcs_tools()
 
+
         self.SetMenuBar(self.menuBar)
 
         # Maxes top_pyshell_split window.
@@ -280,6 +281,8 @@ class MainWindow(wx.Frame):
         self.mainpanel.Bind(wx.EVT_CHAR_HOOK, self.OnKeyDown)
         self.Show(True)
         self.SetFocus()
+
+
 
     #Comprehensive Menu Bind Functions
     def _bind_musicode_tools(self):
@@ -345,7 +348,9 @@ class MainWindow(wx.Frame):
         self.top_mayaviview_split.SetMinimumPaneSize(50)
 
         #TODO Put somewhere else?
+        #Necessary Startup stuff.
         self.mayavi_view.cur_z = 90
+        self.mayavi_view.grid_reticle.mlab_source.points = self.mayavi_view.initial_reticle
 
     def _do_layout(self):
         #self.mainbuttons_stats_split.SplitHorizontally(self.mainbuttonspanel, self.statsdisplaypanel)
