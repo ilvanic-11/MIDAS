@@ -11,7 +11,7 @@ from numpy import array
 import numpy as np
 import random
 import music21
-
+import wx #TODO how to do simpler imports (i.e. just what we need instead of all of wx)
 
 
 
@@ -139,6 +139,7 @@ class Actor(HasTraits):
     @on_trait_change('color')
     def show_color(self):
         print("COLOR TRAIT CHANGED:", self.color)
+        pass
 
     @on_trait_change('position')
     def show_position(self):
@@ -159,6 +160,9 @@ class Mayavi3idiView(HasTraits):
 
     cur_ActorIndex = Int()
     cur_z = Int()
+
+    scroll_changed_flag = Bool()
+
     cur_changed_flag = Int()
 
     actor_deleted_flag = Bool()
@@ -178,7 +182,7 @@ class Mayavi3idiView(HasTraits):
         self.scene = self.engine.scenes[0]
 
         # Common Scene Properties #TODO Should these be traits? (I think grid3d_span should be...at least)
-        self.grid3d_span = 127  # For right now.
+        self.grid3d_span = 254  # For right now.
         self.bpm = 540  # TODO Set based on music21.tempo.Metronome object.
         self.i_div = 2  #Upon further review, i_div IS frames per beat. I'll change this variable name later.
         #self.time_sig = '4/4' #TODO Set based on music21.meter.TimeSignature object.
@@ -256,12 +260,18 @@ class Mayavi3idiView(HasTraits):
         #print("Points", self.Points[:, 2])
 
 
+<<<<<<< HEAD
 
         self.SM_Span = self.midi.highestTime
         self.grid3d_span = self.SM_Span
         self.Points_Span = self.Points.max()
+=======
+        #self.SM_Span = self.midi.highestTime
+        #self.grid3d_span = self.SM_Span
+        #self.Points_Span = self.Points.max()
+>>>>>>> 377502f8 (--To Be Ammended--)
         #Draw Grid
-        self.insert_piano_grid_text_timeplane(self.SM_Span)
+        self.insert_piano_grid_text_timeplane(self.grid3d_span)
         #TODO REFACTOR THIS?
 
         ###SELECT OBJECT
@@ -278,7 +288,7 @@ class Mayavi3idiView(HasTraits):
 
 
         #Highlighter Plane
-        self.establish_highlighter_plane(0, color=(0, 1, 0), length=self.SM_Span)
+        self.establish_highlighter_plane(0, color=(0, 1, 0), length=self.grid3d_span)
 
 
         #self.points = self.Points
@@ -289,7 +299,7 @@ class Mayavi3idiView(HasTraits):
 
         #self.insert_titles()     ##I had a 2nd call for a work session where I lost the camera. I may not need this now...
         self.establish_opening()     #TODO Write in a pass statement for when calls to this function are made from within the program; camera issue. Now Redundant?
-        self.animate(160, self.SM_Span, i_div=2)
+        self.animate(160, self.grid3d_span, i_div=2)
         #print("Animate")
 
         #Animator Instance. Instantiated upon the invocation of self.animate after which the animation is immediately stopped here.
@@ -548,8 +558,21 @@ class Mayavi3idiView(HasTraits):
         #Z-Plane marker.
         z_label = mlab.text3d(-40, 0, 0, "Z-Plane_%s" % z_marker, color=(.55, .55, .55), name="Z_Label", orient_to_camera=False, scale=4)
         self.highlighter_calls.append(z_label)
+        self.initial_reticle = np.vstack(((0, 127-0,  0),
+                             (149, 127-0,  0),
+                             (149, 127-22, 0),
+                             (0, 127-22, 0),
+                             (0, 127-0,  0)))
+
+        ##Red Grid Reticle Box
+        self.grid_reticle = mlab.plot3d( self.initial_reticle[:, 0],  self.initial_reticle[:, 1],  self.initial_reticle[:, 2],
+                                        color=(1,0,0), line_width=2.5, name="Red Edges", opacity=.65, tube_radius=None)
+        self.highlighter_calls.append(self.grid_reticle)
+
+
+
         #INITIAL Highlighter positions.
-        #self.cur_z = 90  #Matches position variable.
+        #Note: self.cur_z = 90 set in MIDAS_wx.py      #Matches position variable.
         for h in self.highlighter_calls:
             if h.name == "Z_Label":
                 h.actor.actor.position = np.array([position[0]-40, position[1], position[2]])
@@ -559,7 +582,9 @@ class Mayavi3idiView(HasTraits):
         #return plane
 
 
-    # TODO Tie this to a button.
+
+
+        # TODO Tie this to a button.
     def remove_highlighter_plane(self):
         for i in self.highlighter_calls:
             # Remove from scene3d.
@@ -588,6 +613,7 @@ class Mayavi3idiView(HasTraits):
 
 
     def set_actor_positions(self, position=np.array([0,0,0]), actors=None, rando=False):
+        self.remove_trait('position')
 
         def random_position():
             list1 = list()
@@ -622,7 +648,14 @@ class Mayavi3idiView(HasTraits):
                             else:
                                 pass   #k.actor.position = pos
 
-                    #print("SECONDCHILD:", vtk_data_source.children[0].ch   ildren[0])
+            #Patch, was missing one. #TODO figure out -- look at set_actor_orientations for answer.
+            if rando is True:
+                pos = random_position()
+            else:
+                pos = position
+            self.highlighter_calls[0].actor.actor.position = pos
+
+                    #print("SECONDCHILD:", vtk_data_source.children[0].children[0])
         elif actors == 'music':
             for i in self.mlab_calls:
                 if rando is True:
@@ -639,6 +672,14 @@ class Mayavi3idiView(HasTraits):
                     pos = position
                 j.actor.actor.position = pos ####Current Actor's Current Z-Plane's Position
 
+
+
+        self.add_trait('position', Array())
+        for l in range(0, len(self.actors)):
+            self.sources[l].actor.actor.sync_trait('position', self, mutual=False)
+        self.on_trait_change(self.highlighter_plane_chase, 'position')
+        self.on_trait_change(self.select_moved_actor, 'position')
+        print("Position trait one-way RE-synced: actor.position ---to---> mayavi_view.position.")
 
     def set_actor_orientations(self, orientation=np.array([0,0,0]), actors=None, rando=False):
 
@@ -669,8 +710,8 @@ class Mayavi3idiView(HasTraits):
                             k.actor.actor.orientation = ori
                         else:
                             pass   #k.actor.position = pos
-
                     #print("SECONDCHILD:", vtk_data_source.children[0].ch   ildren[0])
+
         elif actors == 'music':
             for i in self.mlab_calls:
                 if rando is True:
@@ -851,7 +892,7 @@ class Mayavi3idiView(HasTraits):
         x2 = np.zeros(127)
         x3 = np.zeros(127)
         Grid = np.column_stack((x1, x2, x3))
-        mlab.points3d(Grid[:, 0], Grid[:, 1], Grid[:, 2], color=(1, 0, 0), mode="2dthick_cross", scale_factor=.75)
+        #mlab.points3d(Grid[:, 0], Grid[:, 1], Grid[:, 2], color=(1, 0, 0), mode="2dthick_cross", scale_factor=.75)
         mlab.points3d(Grid[:, 1], Grid[:, 0], Grid[:, 2], color=(1, 0, 0), mode="2ddash", scale_factor=1)
         mlab.points3d(Grid[:, 1], Grid[:, 2], Grid[:, 0], color=(1, 0, 0), mode="2ddash", scale_factor=1)
 
@@ -932,49 +973,22 @@ class Mayavi3idiView(HasTraits):
         if len(self.sources) == 1 and self.cur_ActorIndex == 0:
             pass
         else:
-            for i in self.highlighter_calls:
-                pos = self.sources[self.cur_ActorIndex].actor.actor.position
-                i_z = pos[2]
-                i_y = pos[1]
-                i_x = pos[0]
-                i_z_zerod = (i_z * -1) + i_z
-                i_transformed = i_z_zerod + self.cur_z
-                i_restored = i_transformed + i_z
-                if i.name == "Z_Label":
-                    i_x_zerod = (i_x * -1) + i_x
-                    i_x_transformed = i_x_zerod - 40  # Always will be minus 40 for this label.
-                    i_x_restored = i_x_transformed + i_x
-                    i.actor.actor.position = (i_x_restored, i_y, i_restored)
-                    i.text = "Z-Plane_%s" % self.cur_z
+            self.highlighter_transformation()
+            self.new_reticle_box()
+            #pass
 
-                else:
-                    i.actor.actor.position = np.array([i_x, i_y, i_restored])
-
-
-    @on_trait_change('position')
+    @on_trait_change('position')  #Split for a tested reason.
     def highlighter_actor_chase(self):
-        # Align Positions
+        # Align Highlighter on position change.
         if self.cur_ActorIndex < 0:
             return
         else:
-            for i in self.highlighter_calls:
-                pos = self.position
-                i_z = pos[2]
-                i_y = pos[1]
-                i_x = pos[0]
-                # Zero, transform, restore for z value
-                i_z_zerod = (i_z * -1) + i_z
-                i_transformed = i_z_zerod + self.cur_z
-                i_restored = i_transformed + i_z
-                # Zero, transform, restore for x value
-                if i.name == "Z_Label":
-                    i_x_zerod = (i_x * -1) + i_x
-                    i_x_transformed = i_x_zerod - 40  # Always will be minus 40 for this label.
-                    i_x_restored = i_x_transformed + i_x
-                    i.actor.actor.position = (i_x_restored, i_y, i_restored)
-                    i.text = "Z-Plane_%s" % self.CurrentActor().cur_z
-                else:
-                    i.actor.actor.position = (i_x, i_y, i_restored)
+            self.highlighter_transformation()
+            self.new_reticle_box()
+
+    @on_trait_change('position')  #Split for a tested reason.
+    def select_moved_actor(self):
+        #Select Actor in list box on position change.
         print("Actors Length:", len(self.actors))
         if len(self.actors) is not 0:
             alb = self.parent.pianorollpanel.actorsctrlpanel.actorsListBox
@@ -984,9 +998,10 @@ class Mayavi3idiView(HasTraits):
                     self.parent.pianorollpanel.actorsctrlpanel.actorsListBox.Select(i, on=0)
         else:
             pass
+        self.parent.pianorollpanel.actorsctrlpanel.actorsListBox.Select(self.cur_ActorIndex)
+
         #Then, select the actor whose position was just changed by dragging the actor in the mayavi view.
         #TODO Causes a red error on startup and at some color loading because of pos changes, but non-breaking.
-        self.parent.pianorollpanel.actorsctrlpanel.actorsListBox.Select(self.cur_ActorIndex)
 
 
     @on_trait_change('cur_z')
@@ -994,32 +1009,14 @@ class Mayavi3idiView(HasTraits):
         # Align Z-value
         if self.cur_ActorIndex < 0:
             return
-        for i in self.highlighter_calls:
-            pos = self.sources[self.cur_ActorIndex].actor.actor.position
-            i_z = pos[2]
-            i_y = pos[1]
-            i_x = pos[0]
-            ##--Z
-            #Convert to zero, #Transform from zero, #Add original value back
-            i_z_zerod = (i_z*-1) + i_z
-            i_transformed = i_z_zerod + self.cur_z
-            i_restored = i_transformed + i_z
-            ##--X
-            #Zero, transform, restore for x value
-            if i.name == "Z_Label":
-                i_x_zerod = (i_x * -1) + i_x
-                i_x_transformed = i_x_zerod - 40 #Always will be minus 40 for this label.
-                i_x_restored = i_x_transformed + i_x
-                i.actor.actor.position = np.array([i_x_restored, i_y, i_restored])
-                i.text = "Z-Plane_%s" % self.cur_z
-            else:
-                i.actor.actor.position = np.array([i_x, i_y, i_restored])
-            print("Highlighter Aligned")
+        self.highlighter_transformation()
+        print("Highlighter Aligned")
+        self.new_reticle_box()
+
 
     @on_trait_change('actor_deleted_flag')
     def colors_menu_delete(self):
         #If the deleted actor wasn't part of a colors import, this block won't do anything.
-
         if self.deleting_actor == '':
             pass
         else:
@@ -1032,12 +1029,77 @@ class Mayavi3idiView(HasTraits):
                 self.parent.menuBar.colors.Delete(item_id)
             print("Deletion Check...")
 
+
+    @on_trait_change('actor_deleted_flag')
+    def reset_index_attributes(self):
         #Reset actor.index attributes.
         for k in range(0, len(self.actors)):
             self.actors[k].index = k
         print("actor.index attributes reset")
 
 
+    ###Trait Sub-Functions
+    ##-----------------------------------------------
+    #@on_trait_change('cur_z')
+    def new_reticle_box(self, zplane=None):
+        if zplane is not None:
+            pass
+        else:
+            zplane = 0   ###self.cur_z
+#        if self.parent.parentpianorollpanel:
+
+        mproll = self.parent.pianorollpanel.pianoroll
+        if mproll is not None:
+            s_h = mproll.GetScrollPos(wx.HORIZONTAL)
+            s_v = mproll.GetScrollPos(wx.VERTICAL)
+            s_linex = mproll.GetScrollLineX()
+            s_liney = mproll.GetScrollLineY()
+            c_s = mproll.GetClientSize()
+
+            topleft = mproll.XYToCell(s_h * s_linex, (s_v * s_liney))
+            bottomleft = mproll.XYToCell((s_h * s_linex), (s_v * s_liney) + c_s[1] - 18)
+            bottomright = mproll.XYToCell((s_h * s_linex) + c_s[0] -39, (s_v * s_liney) + c_s[1] - 18)
+            topright = mproll.XYToCell((s_h * s_linex) + c_s[0] -39, (s_v * s_liney))
+            
+            reticle = np.vstack(((topleft[1], 127-topleft[0], 0),
+                                 (topright[1], 127-topright[0], 0),
+                                 (bottomright[1], 127-bottomright[0], 0),
+                                 (bottomleft[1], 127-bottomleft[0], 0),
+                                 (topleft[1], 127-topleft[0], 0)))
+            #Points Update
+            self.grid_reticle.mlab_source.points = reticle
+        else:
+            pass
+
+
+    def remove_grid_reticle(self):
+        for i in self.highlighter_calls:
+            if i == self.grid_reticle:
+                i.remove()
+                self.highlighter_calls.remove(i)
+
+
+    def highlighter_transformation(self):
+        for i in self.highlighter_calls:
+            pos = self.sources[self.cur_ActorIndex].actor.actor.position
+            i_z = pos[2]
+            i_y = pos[1]
+            i_x = pos[0]
+            i_z_zerod = (i_z * -1) + i_z
+            i_transformed = i_z_zerod + self.cur_z
+            i_restored = i_transformed + i_z
+            if i.name == "Z_Label":
+                i_x_zerod = (i_x * -1) + i_x
+                i_x_transformed = i_x_zerod - 40  # Always will be minus 40 for this label.
+                i_x_restored = i_x_transformed + i_x
+                i.actor.actor.position = (i_x_restored, i_y, i_restored)
+                i.text = "Z-Plane_%s" % self.cur_z
+            else:
+                i.actor.actor.position = np.array([i_x, i_y, i_restored])
+
+    @on_trait_change('scroll_changed_flag')
+    def update_reticle(self):
+        self.new_reticle_box()
 
 if __name__ == '__main__':
     pass
