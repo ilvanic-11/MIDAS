@@ -322,12 +322,12 @@ class CustomMenuBar(wx.MenuBar):
         filename = self.mv.colors_name + str(self.mv.colors_call)
         output = intermediary_path + filename + ".mid"
         midiart.set_parts_to_midi_channels(self.mv.stream, output)
-        # Clear mainstream if it has already been used.
-        # if self.mv.stream.hasPartLikeStreams():
-        #     for i in self.mv.stream:
-        #         self.mv.stream.remove(i)
-        # else:
-        #     pass
+        ##Clear mainstream if it has already been used.
+        if self.mv.stream.hasPartLikeStreams():
+            for i in self.mv.stream:
+                self.mv.stream.remove(i)
+        else:
+            pass
 
 
     def OnExport_Text(self, event):
