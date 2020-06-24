@@ -175,7 +175,10 @@ class PianoRoll(wx.grid.Grid, glr.GridWithLabelRenderersMixin):
         # print("UPD", upd)
         # #wx.RegionIterator
 
-
+        self.cur_scrollrate = self.GetScrollPixelsPerUnit()
+        self.last_known_pos = None
+        self.last_known_scrollX = None
+        self.last_known_scrollY = None
 
         self.max_x = 600  # max zoom-in
         self.max_y = 400  # max zoom-in
@@ -189,7 +192,7 @@ class PianoRoll(wx.grid.Grid, glr.GridWithLabelRenderersMixin):
 
         self.SetColMinimalAcceptableWidth(3)
         self.SetRowMinimalAcceptableHeight(3)
-        self.RowLabelSize = 40
+        self.RowLabelSize = 60  #was 40
         self.ColLabelSize = 20
 
 
@@ -209,12 +212,13 @@ class PianoRoll(wx.grid.Grid, glr.GridWithLabelRenderersMixin):
                 self.SetRowLabelRenderer(i, PianoRollRowLabelRenderer("WHITE"))
             else:
                 self.SetRowLabelRenderer(i, PianoRollRowLabelRenderer("BLACK"))
-            self.DisableRowResize(i)
+            #self.DisableRowResize(i)
 
         self.DisableDragColMove()
         self.DisableDragColSize()
         self.DisableDragGridSize()
         self.DisableDragRowSize()
+
 
 
         self.SetScrollRate(1, 100)  #For precision scrolling, use scrollbar arrows, or scroll-bar right-click-->"Scroll Here"
@@ -256,17 +260,16 @@ class PianoRoll(wx.grid.Grid, glr.GridWithLabelRenderersMixin):
         event.Skip()
 
     def OnMeasureLabelsLeftClick(self, event):
-        pos = event.GetPosition()
-        print("Label Event Position:", pos)
+        self.last_known_pos = event.GetPosition()
+        print("Label Event Position:", self.last_known_pos)
         row = event.GetRow()
         print("Label Event Row:", row)
         col = event.GetCol()
         print("Label Event Col:", col)
 
-
-        s_h = self.GetScrollPos(wx.HORIZONTAL)
+        s_h = self.GetScrollPos(wx.HORIZONTAL)  #cur scrollunitsperpixel here is 100
         print("Scroll_H:", s_h)
-        s_v = self.GetScrollPos(wx.VERTICAL)
+        s_v = self.GetScrollPos(wx.VERTICAL)    #cur scrollunitsperpixel here is 100
         print("Scroll_V:", s_v)
         s_linex = self.GetScrollLineX()
         print("Scroll_LineX:", s_linex)
@@ -275,32 +278,31 @@ class PianoRoll(wx.grid.Grid, glr.GridWithLabelRenderersMixin):
         c_s = self.GetClientSize()
         print("ClientSize:", c_s)
 
+        #Acquire scrollunitsperpixel as tuple.
         scrollrate_x, scrollrate_y = self.GetScrollPixelsPerUnit()
+
+        #SetScrollRate so pixels==scrollticks.
         self.SetScrollLineX(1)
         self.SetScrollRate(1, 1)
 
-        #self.m_v.scrollrate_changed_flag = not self.m_v.scrollrate_changed_flag
-        #time.sleep(1)
-        #GetViewStart after new scrollrate is set; ScrollRate Affects ViewStart.
+        #Store scroll positions after scrollrate change.
+        self.last_known_scrollX = self.GetScrollPos(wx.HORIZONTAL)    #cur scrollunitsperpixel here is 1
+        self.last_known_scrollY = self.GetScrollPos(wx.VERTICAL)      #cur scrollunitsperpixel here is 1
+
         viewstart = self.GetViewStart()
         print("ViewStart:", viewstart)
-
-        #print("ViewStartinPixels:", v_px, v_py)
-
         print("SCROLLRATE:", self.GetScrollPixelsPerUnit())
 
-        #if row == -1:
         #Pixels == Scroll-ticks here.
-        wx.CallAfter(self.Scroll, x=(viewstart[0] + pos[0] - 38), y=-1)  #38 is the label compensation value.
+        self.Scroll((viewstart[0] + self.last_known_pos[0] - 60), self.last_known_scrollY * scrollrate_y)  #38 is the label compensation value.    new_s_v-19
+        #wx.CallLater(1000, self.SetScrollRate, x=100, y=100)
         wx.CallAfter(self.m_v.new_reticle_box)
 
+        #Reestablish after event.
+        self.last_known_scrollY = self.GetScrollPos(wx.HORIZONTAL)  #cur h_scrollunitsperpixel here is 1
+        self.last_known_scrollX = self.GetScrollPos(wx.VERTICAL)    #cur v_scrollunitsperpixel here is 1
         #self.ChangeScrollRate(scrollrate_x, scrollrate_y)
         #event.Skip()
-
-        #self.m_v.scrollrate_changed_flag = not self.m_v.scrollrate_changed_flag
-
-    def ChangeScrollRate(self, x=1, y=1):
-        self.SetScrollRate(x, y)
 
 
     def OnScroll(self, event):
@@ -308,17 +310,13 @@ class PianoRoll(wx.grid.Grid, glr.GridWithLabelRenderersMixin):
 
         print("Scrolling, bitch.")
         #TODO Learn Event Stack
-        #self.m_v.reticle = \
-        #self.SetScrollRate(100, 100)
+
+        s_h = self.GetScrollPos(wx.HORIZONTAL)
+        s_v = self.GetScrollPos(wx.VERTICAL)
+
         if len(self.m_v.highlighter_calls) == 0:
             pass
         else:
-            #NOTE: WHEN YOU CHANGE THE SCROLL RATE, the Scrollbars and pixels-per-tick are automatically adjusted accordingly.
-            if self.GetScrollPixelsPerUnit() is not (100, 100):
-                wx.CallAfter(self.ChangeScrollRate, x=100, y=100)
-                #wx.CallAfter(self.Scroll, x=0, y=0)
-            else:
-                pass
             wx.CallAfter(self.m_v.new_reticle_box)
             event.Skip()
 

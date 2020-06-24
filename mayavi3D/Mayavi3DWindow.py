@@ -558,11 +558,11 @@ class Mayavi3idiView(HasTraits):
         #Z-Plane marker.
         z_label = mlab.text3d(-40, 0, 0, "Z-Plane_%s" % z_marker, color=(.55, .55, .55), name="Z_Label", orient_to_camera=False, scale=4)
         self.highlighter_calls.append(z_label)
-        self.initial_reticle = np.vstack(((0, 127-0,  0),
+        self.initial_reticle = np.asarray(np.vstack(((0, 127-0,  0),
                              (149, 127-0,  0),
                              (149, 127-22, 0),
                              (0, 127-22, 0),
-                             (0, 127-0,  0)))
+                             (0, 127-0,  0))), dtype=np.float32)
 
         ##Red Grid Reticle Box
         self.grid_reticle = mlab.plot3d( self.initial_reticle[:, 0],  self.initial_reticle[:, 1],  self.initial_reticle[:, 2],
@@ -1048,6 +1048,8 @@ class Mayavi3idiView(HasTraits):
             zplane = 0   ###self.cur_z
 #        if self.parent.parentpianorollpanel:
 
+        #TODO Needs Cells per quarter note factored in. ----Once CellsPerQuarterNote is fixed.
+
         mproll = self.parent.pianorollpanel.pianoroll
         if mproll is not None:
             s_h = mproll.GetScrollPos(wx.HORIZONTAL)
@@ -1058,16 +1060,20 @@ class Mayavi3idiView(HasTraits):
 
             topleft = mproll.XYToCell(s_h * s_linex, (s_v * s_liney))
             bottomleft = mproll.XYToCell((s_h * s_linex), (s_v * s_liney) + c_s[1] - 18)
-            bottomright = mproll.XYToCell((s_h * s_linex) + c_s[0] -39, (s_v * s_liney) + c_s[1] - 18)
-            topright = mproll.XYToCell((s_h * s_linex) + c_s[0] -39, (s_v * s_liney))
+            bottomright = mproll.XYToCell((s_h * s_linex) + c_s[0] -60, (s_v * s_liney) + c_s[1] - 18)
+            topright = mproll.XYToCell((s_h * s_linex) + c_s[0] -60, (s_v * s_liney))
             
-            reticle = np.vstack(((topleft[1], 127-topleft[0], 0),
+            reticle = np.asarray(np.vstack(((topleft[1], 127-topleft[0], 0),
                                  (topright[1], 127-topright[0], 0),
                                  (bottomright[1], 127-bottomright[0], 0),
                                  (bottomleft[1], 127-bottomleft[0], 0),
-                                 (topleft[1], 127-topleft[0], 0)))
+                                 (topleft[1], 127-topleft[0], 0))), dtype=np.float32)
+            #In place slice reassignment.
+            #reticle[:, 0] = reticle[:, 0] / self.parent.pianorollpanel.pianoroll._cells_per_qrtrnote  #TODO Once cpqn is fixed.
+
             #Points Update
-            self.grid_reticle.mlab_source.points = reticle
+            self.grid_reticle.mlab_source.trait_set(points=reticle)
+
         else:
             pass
 
@@ -1100,6 +1106,7 @@ class Mayavi3idiView(HasTraits):
     @on_trait_change('scroll_changed_flag')
     def update_reticle(self):
         self.new_reticle_box()
+
 
 if __name__ == '__main__':
     pass
