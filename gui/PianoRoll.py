@@ -174,6 +174,7 @@ class PianoRoll(wx.grid.Grid, glr.GridWithLabelRenderersMixin):
         # upd = wx.RegionIterator(self.GetUpdateRegion())
         # print("UPD", upd)
         # #wx.RegionIterator
+        self.SetScrollRate(1, 1)  #For precision scrolling, use scrollbar arrows, or scroll-bar right-click-->"Scroll Here"
 
         self.cur_scrollrate = self.GetScrollPixelsPerUnit()
         self.last_known_pos = None
@@ -219,9 +220,6 @@ class PianoRoll(wx.grid.Grid, glr.GridWithLabelRenderersMixin):
         self.DisableDragGridSize()
         self.DisableDragRowSize()
 
-
-
-        self.SetScrollRate(1, 100)  #For precision scrolling, use scrollbar arrows, or scroll-bar right-click-->"Scroll Here"
 
         self.EnableEditing(False)
 
@@ -303,6 +301,7 @@ class PianoRoll(wx.grid.Grid, glr.GridWithLabelRenderersMixin):
         self.last_known_scrollX = self.GetScrollPos(wx.VERTICAL)    #cur v_scrollunitsperpixel here is 1
         #self.ChangeScrollRate(scrollrate_x, scrollrate_y)
         #event.Skip()
+
 
 
     def OnScroll(self, event):
