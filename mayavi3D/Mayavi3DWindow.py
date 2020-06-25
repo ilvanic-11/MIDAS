@@ -143,8 +143,6 @@ class Mayavi3idiView(HasTraits):
     cur_ActorIndex = Int()
     cur_z = Int()
 
-    scroll_changed_flag = Bool()
-
     cur_changed_flag = Int()
 
     actor_deleted_flag = Bool()
@@ -270,6 +268,9 @@ class Mayavi3idiView(HasTraits):
 
         self.insert_titles()
         #self.insert_note_text("3-Dimensional Music", 0, 164, 0, color=(1,0,1), opacity=.12, orient_to_camera=False, scale=3
+
+        #Mayavi zoom to coordinates.
+        self.scene.on_mouse_pick(self.zoom_to_coordinates, type='point', button='Middle')
 
     # @mlab.clf
     # def clear_lists(self):
@@ -430,6 +431,8 @@ class Mayavi3idiView(HasTraits):
                               scale=7)
         ###Note: affected by top_mayaviview_split sash position.
         self.title = self.insert_title("3-Dimensional Music", color=(1, 0, 1), height=.82, opacity=.12, size=.65)
+
+
 
     #Volume Slice Functions
     def insert_volume_slice(self, length=127):
@@ -731,6 +734,28 @@ class Mayavi3idiView(HasTraits):
         # Restore to a coords_array.
         Restored_Points = midiart3D.restore_coords_array_from_ordered_dict(Points_Odict)
         return Restored_Points
+
+
+    def zoom_to_coordinates(self, picker):
+        print("Point", picker.point_id)
+        picker.tolerance = 0.01
+        picked = picker.actors
+        print("Picker", picked)
+        print("Zach is penis breath.")
+        print(picker.trait_names())
+        print("Selection Point:", picker.pick_position)
+        x = picker.pick_position[0]
+        y = picker.pick_position[1]
+        z = picker.pick_position[2]
+        print("Coord", x, y, z)
+        mproll = self.parent.pianorollpanel.pianoroll
+        if mproll is not None:
+
+            #Zooms on middle click.  #TODO Math is not exact yet.....Conversions for cells, coords, and scrollunits?    
+            mproll.Scroll(int(x)*10, (127-int(y))*10)
+            self.new_reticle_box()
+        else:
+            pass
 
 
     ###DEFINE MUSIC ANIMATION
@@ -1059,9 +1084,9 @@ class Mayavi3idiView(HasTraits):
             else:
                 i.actor.actor.position = np.array([i_x, i_y, i_restored])
 
-    @on_trait_change('scroll_changed_flag')
-    def update_reticle(self):
-        self.new_reticle_box()
+
+
+
 
 
 if __name__ == '__main__':
