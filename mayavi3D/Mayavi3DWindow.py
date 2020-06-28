@@ -241,6 +241,8 @@ class Mayavi3idiView(HasTraits):
     @on_trait_change('scene3d.activated')
     def create_3dmidiart_display(self):
 
+        self.scene3d.disable_render = True
+
         self.midi = music21.converter.parse(r".\resources\Spark4.mid")
         #self.midi = midiart3D.extract_xyz_coordinates_to_array(self.midi)
 
@@ -258,16 +260,11 @@ class Mayavi3idiView(HasTraits):
         #print("Points", self.Points[:, 2])
 
 
-<<<<<<< HEAD
 
-        self.SM_Span = self.midi.highestTime
-        self.grid3d_span = self.SM_Span
-        self.Points_Span = self.Points.max()
-=======
         #self.SM_Span = self.midi.highestTime
         #self.grid3d_span = self.SM_Span
         #self.Points_Span = self.Points.max()
->>>>>>> 377502f8 (--To Be Ammended--)
+
         #Draw Grid
         self.insert_piano_grid_text_timeplane(self.grid3d_span)
         #TODO REFACTOR THIS?
@@ -314,6 +311,10 @@ class Mayavi3idiView(HasTraits):
         #Mayavi zoom to coordinates.
         self.scene.on_mouse_pick(self.zoom_to_coordinates, type='point', button='Middle')
 
+        self.scene3d.disable_render = False
+
+
+
     # @mlab.clf
     # def clear_lists(self):
     #     self.sources.clear()
@@ -323,6 +324,7 @@ class Mayavi3idiView(HasTraits):
     #     self.text3d_default_positions.clear()
 
     def clear_all_and_redraw(self):
+        self.scene3d.disable_render = True
         mlab.clf()
         self.sources.clear()
         self.mlab_calls.clear()
@@ -330,13 +332,16 @@ class Mayavi3idiView(HasTraits):
         self.text3d_calls.clear()
         self.text3d_default_positions.clear()
         self.create_3dmidiart_display()
+        self.scene3d.disable_render = False
         #TODO Add delete_actors stuff here too. New Session function?! :)
 
 
     #TODO Redundant now?
     def redraw_mayaviview(self):
+        self.scene3d.disable_render = True
         mlab.clf()
         self.create_3dmidiart_display()
+        self.scene3d.disable_render = False
 
 
     def remove_mlab_actor(self, actor_child): #TODO Write from scenes[0].children stuff. CHECK--Use child.remove()
@@ -358,6 +363,8 @@ class Mayavi3idiView(HasTraits):
 
     def append_actor(self, name, color):
         # self.add_trait(actor_name,Actor())
+        #self.scene3d.disable_render = False
+
         print("append_actor")
         print('1')
 
@@ -394,6 +401,8 @@ class Mayavi3idiView(HasTraits):
         print("Position synced.")
 
         self.cur_changed_flag = not self.cur_changed_flag
+
+        #self.scene3d.disable_render = False
 
     @on_trait_change('cur')
     def current_actor_changed(self):
@@ -480,6 +489,8 @@ class Mayavi3idiView(HasTraits):
     def insert_volume_slice(self, length=127):
         # Time_ScrollPlane
         # x,y,z = np.mgrid[0:127, 0:127, 0:127]
+        self.scene3d.disable_render = True
+
         if self.grid3d_span is not None:
             length = self.grid3d_span
         else:
@@ -498,7 +509,10 @@ class Mayavi3idiView(HasTraits):
         self.image_plane_widget.ipw.point2 = array([0.0, 0.0, 127.])
         self.image_plane_widget.ipw.slice_position = 1
         self.image_plane_widget.ipw.slice_position = 0
-        #self.loop_end = False
+
+
+        self.scene3d.disable_render = False
+
         return self.volume_slice
 
 
@@ -512,6 +526,7 @@ class Mayavi3idiView(HasTraits):
 
     #Highlighter Plane functions.
     def establish_highlighter_plane(self, z_points=0, z_marker=0, position = np.array([0, 0, 90]), color=(0, 1, 0), grandstaff=True, length=None):
+        self.scene3d.disable_render = True
         if length is not None:
             length = length
         else:
@@ -571,6 +586,7 @@ class Mayavi3idiView(HasTraits):
         self.grid_reticle = mlab.plot3d( self.initial_reticle[:, 0],  self.initial_reticle[:, 1],  self.initial_reticle[:, 2],
                                         color=(1,0,0), line_width=2.5, name="Red Edges", opacity=.65, tube_radius=None)
         self.highlighter_calls.append(self.grid_reticle)
+        self.scene3d.disable_render = False
 
 
 
@@ -786,15 +802,39 @@ class Mayavi3idiView(HasTraits):
         print("Zach is penis breath.")
         print(picker.trait_names())
         print("Selection Point:", picker.pick_position)
+
+        mproll = self.parent.pianorollpanel.pianoroll
+
         x = picker.pick_position[0]
         y = picker.pick_position[1]
         z = picker.pick_position[2]
+
+        #In scrollunits, which should == to pixels.
+
+        #TODO..Conversions for cells, coords, and scrollunits?
+        #10 pixels per cell
+        #ScrollRate = Pixels/Scrollunit
+
+        #Pixels to Cell --- User Grid.XYToCell()
+        #Cell to Pixels -- Cell Row\Col * 10
+
+        #Cell to ScrollUnits -- Cell * 10 / ScrollRate
+        #Measure to ScrollUnits -- Measure * (Cell * PixelsperCell-->10 * CellsperMeasure-->(timesig_numerator*cellsperqrtrnote))
+
+        #Cell to Mayavi_Coords --  Synced as ints.
+        #MayaviCoords to Cell -- Synced as ints.
+
+        #( 160 * 10) / (160 / 4 * (4 * 10)
+        scroll_x = (int(x) *10) / mproll.GetScrollPixelsPerUnit()[0]  #Scrollrate / cells per measure ()
+        scroll_y = ((127-int(y)) * 10) / mproll.GetScrollPixelsPerUnit()[1]   #Scrollrate Y / cells per two octaves == 24
+        if scroll_y > 1040:   #Caps of scrolling at the bottom, so the rectangle doesn't go funky.
+            scroll_y = 1040    #Sash position affects this because num of pixels in client view relates to ViewStart().
+
         print("Coord", x, y, z)
-        mproll = self.parent.pianorollpanel.pianoroll
         if mproll is not None:
 
-            #Zooms on middle click.  #TODO Math is not exact yet.....Conversions for cells, coords, and scrollunits?    
-            mproll.Scroll(int(x)*10, (127-int(y))*10)
+            #Zooms on middle click.  #TODO Math is not exact yet...
+            mproll.Scroll(scroll_x, scroll_y)
             self.new_reticle_box()
         else:
             pass
@@ -906,6 +946,7 @@ class Mayavi3idiView(HasTraits):
         PianoBlackNotes = MusicObjects.piano_black_notes()
         PianoWhiteNotes = MusicObjects.piano_white_notes()
         # Render Piano
+        self.scene3d.disable_render = True
         mlab.points3d(PianoBlackNotes[:, 0], PianoBlackNotes[:, 1], (PianoBlackNotes[:, 2] / 4), color=(0, 0, 0),
                       mode='cube', scale_factor=1)
         mlab.points3d(PianoWhiteNotes[:, 0], PianoWhiteNotes[:, 1], (PianoWhiteNotes[:, 2] / 4), color=(1, 1, 1),
@@ -947,6 +988,7 @@ class Mayavi3idiView(HasTraits):
             self.text3d_calls.append(measures)
             self.text3d_default_positions.append(measures.actor.actor.position)
         self.volume_slice = self.insert_volume_slice(length)
+        self.scene3d.disable_render = True
 
 
 
@@ -980,7 +1022,8 @@ class Mayavi3idiView(HasTraits):
     ###---------------------------------------------------------
 
     @on_trait_change('cur_changed_flag')
-    def sync_positions(self):
+    def sync_positions_and_update(self):
+        #On Current Actor activation.
 
         #self.remove_trait('position')
         print("Cur:", self.cur_ActorIndex)
