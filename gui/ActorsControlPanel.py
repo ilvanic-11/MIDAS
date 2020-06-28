@@ -151,6 +151,21 @@ class ActorsControlPanel(wx.Panel):
             self.GetTopLevelParent().menuBar.colors.Delete(j)
         self.GetTopLevelParent().pianorollpanel.pianoroll.ForceRefresh()
 
+    def OnBtnDelEmtpyActors(self, evt):
+        #TODO Make a button?
+        empty_actors = [i.index for i in self.mayavi_view.actors if i._points.size is 0]
+        alb = self.GetTopLevelParent().pianorollpanel.actorsctrlpanel.actorsListBox
+        #for i in self.mayavi_view.actors:
+        #print(empty_actors)
+            #print(i._points)
+        for j in empty_actors:
+            alb.Select(j)
+        self.OnDeleteSelection(event=None)
+
+            # if i.index == j:  #Compare check here works around the readjusting of actor indices.
+            #     self.GetTopLevelParent().pianorollpanel.actorsctrlpanel.OnBtnDelActor(evt=None, cur=j)
+
+
     ###POPUP MENU Function (keep this at bottom of class)
     # --------------------------------------
     def OnActorRightClick(self, evt):
