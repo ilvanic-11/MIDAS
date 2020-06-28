@@ -361,7 +361,7 @@ class MainWindow(wx.Frame):
         
         self.pianoroll_mainbuttons_split.SetSashPosition(120)
         #self.mainbuttons_stats_split.SetSashPosition(400)
-        self.top_pyshell_split.SetSashPosition(300)
+        self.top_pyshell_split.SetSashPosition(306)  ## 2 Octaves are in view perfectly with this setting.
         self.top_mayaviview_split.SetSashPosition(600)  ###Affects 3D title insert
         
         self.top_mayaviview_split.SetSashGravity(0.5)
