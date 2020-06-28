@@ -174,7 +174,9 @@ class PianoRoll(wx.grid.Grid, glr.GridWithLabelRenderersMixin):
         # upd = wx.RegionIterator(self.GetUpdateRegion())
         # print("UPD", upd)
         # #wx.RegionIterator
-        self.SetScrollRate(1, 1)  #For precision scrolling, use scrollbar arrows, or scroll-bar right-click-->"Scroll Here"
+
+        #One measure and one octave at a time.
+        self.SetScrollRate(160, 120)  #For precision scrolling, use scrollbar arrows, or scroll-bar right-click-->"Scroll Here"
 
         self.cur_scrollrate = self.GetScrollPixelsPerUnit()
         self.last_known_pos = None

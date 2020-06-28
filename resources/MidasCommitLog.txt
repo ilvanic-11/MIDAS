@@ -233,3 +233,25 @@ In ActorsCtrlPanel
 In PianoRoll
 --> Research (and hashed out fail attempts) way of speeding up grid draw. Left some code in the PianoRoll default CellRenderer() class. (the Draw() function)
 
+--IP--Commit, June 28st, 2020--
+--Includes All Previous 3 Commits--ToBeAmmended 1,2 and 3
+In Mayavi3DView
+--> Write new_reticle_box() function. Draws red lines in the mayavi view to show viewing\composing area of the Grid Client.
+--> Write mayavi on_mouse_bind function def zoom_to_coordinates(). Works around grid scrolling extremely well.
+--> Write remove_grid_reticle() function.
+--> Clean up Traits functions' writing.
+--> Add self.mayavi_view.scened3d.disable_render = True, then = False to the beginnings and ends of all functions that create actor\glyphs in the mayavi_view. (i.e. highlighterplane, volume slice)
+In PianoRoll
+--> Write OnMeasureLabelsLeftClick() function. (Note: This function resets the scrollrate.)
+--> Write OnScroll() function. (for new_reticle_box() to update)
+--> Experiment with Scroll\Paint functions and bindings. Left there in the module for reference.
+In ActorsCtrlPanel
+--> Write OnBtnDeleteEmptyActors function. (Needs actual button and binding)
+In MainButtons
+--> Add self.mayavi_view.scened3d.disable_render = True, then = False to the beginnings and ends of all main button translation functions that call "new_actor." Speeds things waaay up.
+In Midas_wx
+--> Change self.top_pyshell_split.SetSashPosition() to a value of 306 so that EXACTLy two octaves of cells are displayed. 
+
+
+
+

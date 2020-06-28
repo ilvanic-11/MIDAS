@@ -189,12 +189,14 @@ class MainButtonsPanel(wx.Panel):
                 index = len(mayavi_view.actors)
                 name = str(len(mayavi_view.actors)) + "_" + "Edges" + "_" + dialog.img_name
                 #clr = color_palette[random.randint(1, 16)]  #TODO Random color of 16 possible for now?
+                mayavi_view.disable_render = True
                 actor = self.GetTopLevelParent().pianorollpanel.actorsctrlpanel.actorsListBox.new_actor(index, name)
                 #self.GetTopLevelParent().pianorollpanel.pianoroll.StreamToGrid(stream)
                 for j in mayavi_view.actors:
                     if j.name == name:
                         print("Points here?")
                         j.change_points(points)
+                mayavi_view.disable_render = False
 
 
             elif dialog.ColorsCheck:
@@ -221,6 +223,7 @@ class MainButtonsPanel(wx.Panel):
                 #Main call.
                 num = 1
                 priority_num = -16
+                mayavi_view.scene3d.disable_render = True
                 for h in num_dict.keys():
 
                     index = len(mayavi_view.actors)
@@ -245,6 +248,7 @@ class MainButtonsPanel(wx.Panel):
                             j.priority = priority_num
                             num += 1
                             priority_num += 1
+                mayavi_view.scene3d.disable_render = False
 
             elif dialog.MonochromeCheck:
                 stream = midiart.make_midi_from_grayscale_pixels(pixels, gran, False, note_pxl_value=0)
@@ -253,12 +257,14 @@ class MainButtonsPanel(wx.Panel):
                 index = len(mayavi_view.actors)
                 name = str(len(mayavi_view.actors)) + "_" + "QR-BW" + "_" + dialog.img_name
                 # clr = color_palette[random.randint(1, 16)]  #TODO Random color of 16 possible for now.
+                mayavi_view.disable_render = True
                 actor = self.GetTopLevelParent().pianorollpanel.actorsctrlpanel.actorsListBox.new_actor(index, name)
                 # self.GetTopLevelParent().pianorollpanel.pianoroll.StreamToGrid(stream)
                 for j in mayavi_view.actors:
                     if j.name == name:
                         print("Points here?")
                         j.change_points(points)
+                mayavi_view.disable_render = False
                 #self.GetTopLevelParent().pianorollpanel.pianoroll.StreamToGrid(stream)
 
 
@@ -282,12 +288,14 @@ class MainButtonsPanel(wx.Panel):
             index = len(mayavi_view.actors)
             name = str(len(mayavi_view.actors)) + "_" + "Midi" + "_" + dialog.midi_name
             # clr = color_palette[random.randint(1, 16)]  #TODO Random color of 16 possible for now.
+            mayavi_view.disable_render = True
             actor = self.GetTopLevelParent().pianorollpanel.actorsctrlpanel.actorsListBox.new_actor(index, name)
             # self.GetTopLevelParent().pianorollpanel.pianoroll.StreamToGrid(stream)
             for j in mayavi_view.actors:
                 if j.name == name:
                     print("Points here?")
                     j.change_points(points)
+            mayavi_view.disable_render = False
             #self.GetTopLevelParent().pianorollpanel.pianoroll.StreamToGrid(stream)
 
 
@@ -321,12 +329,14 @@ class MainButtonsPanel(wx.Panel):
                 #TODO Acquire from dialog
                 i = len(mayavi_view.actors)
                 name = str(len(mayavi_view.actors)) + "_" + "PointCloud" + "_" + dialog.ply_name
+                mayavi_view.disable_render = True
                 actor = self.GetTopLevelParent().pianorollpanel.actorsctrlpanel.actorsListBox.new_actor(i, name)
 
                 for j in mayavi_view.actors:
                     if j.name == name:
                         print("Points here?")
                         j.change_points(points)
+                mayavi_view.disable_render = False
             else:
                 pass
                 #index_list = [k for k in planes_dict.keys()]
