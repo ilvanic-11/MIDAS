@@ -1026,7 +1026,7 @@ def separate_pixels_to_coords_by_color(image, z_value, nn=False, dimensionalize=
                 clr = (tuple((image[y][x] / 255).flatten()))
                 #If it compares to the key, place a tuple(x,y) for the location of that color into clr_list.
                 if clr == q:
-                    clr_list.append((x, 127-y))  #127- thing for inverted iterations
+                    clr_list.append((x, 127-y))  #127- thing for inverted wx grid iterations
                     #Exit loop.
         #Turn that q clr_list into an np.array().
         odict1[q] = np.array(clr_list)
@@ -1068,17 +1068,22 @@ def separate_pixels_to_coords_by_color(image, z_value, nn=False, dimensionalize=
     else:
         return odict1
 
+
 #MA-16
-def get_color_palettes(mypath=None):
+def get_color_palettes(mypath=None, ncp=False):
     """
         This function creates a dictionary of dictionaries of colors derived from Midas's color_palettes folder. One can
     specify another folder of colors if desired. The colors in the desired folder should be .jpgs or .pngs of 1x16
     pixels of different colors.
 
-    Colors acquired from: ---->
+    Colors acquired from: ----> https://lospec.com/palette-list
 
     :param mypath:  Should generally be r".\\Midas\\resources\\color_palettes folder".
+    :param ncp:     If True, create FL studio ".ncp" files from the created palettes. Folder is default specified.
     :return:        A dictionary of dictionaries of color tuples.
+
+    Note: For ncp=True, once you have created the ncp files for use with FL Studio, you must place them in the
+    appropriate FL \Note color palettes\ folder.
     """
     if mypath is None:
         mypath = r".\resources\color_palettes\\"
@@ -1092,7 +1097,12 @@ def get_color_palettes(mypath=None):
         for i, x in enumerate(k[0]):
             dict[i+1] = tuple(x)
         dict_list[name] = dict
+    if ncp is True:
+        convert_rgb_to_ncp(dict_list)
+    else:
+        pass
     return dict_list
+
 
 def convert_dict_colors(colors_dict):
     """
@@ -1104,6 +1114,31 @@ def convert_dict_colors(colors_dict):
     new_dict = copy.deepcopy(colors_dict)
     for i in new_dict.keys():
         #print(colors_92[i])
-        new_color = tuple([new_dict[i][0]/255, new_dict[i][1]/255, new_dict[i][2]/255])
+        new_color = tuple([new_dict[i][0]/255, new_dict[i][1]/255, new_dict[i][2]/255])  ## Inverts the color tuple.
         new_dict[i] = new_color
     return new_dict
+
+
+def convert_rgb_to_ncp(palettes=None):
+    if palettes is None:
+        palettes = get_color_palettes()
+    else:
+        palettes = palettes
+    for i in palettes.keys():
+        new_file = open(os.getcwd() + os.sep + 'resources' + os.sep + 'color_palettes' + os.sep + 'ncp_palettes'
+                        + os.sep + i + ".ncp", "w")
+        text_list = []
+        num = 0
+        for j in palettes[i]:
+            color_num = 'Color%s' % num
+            string = '=FF%02x%02x%02x' % (palettes[i][j])
+            upper_string = string.upper()
+            final_string = color_num + upper_string + '\n'
+            text_list.append(final_string)
+            num += 1
+            #new_file.write()
+        new_file.writelines(text_list)
+        new_file.close()
+
+        #print(i)
+

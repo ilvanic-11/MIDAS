@@ -877,10 +877,13 @@ class CustomMenuBar(wx.MenuBar):
                 self.GetTopLevelParent().mayavi_view.default_color_palette = midiart.FLStudioColors
                 self.GetTopLevelParent().mayavi_view.default_mayavi_palette = \
                     midiart.convert_dict_colors(self.GetTopLevelParent().mayavi_view.default_color_palette)
+                self.GetTopLevelParent().mayavi_view.current_palette_name = "FLStudioColors"
             else:
                 self.GetTopLevelParent().mayavi_view.default_color_palette = midiart.get_color_palettes()[dialog.popupCtrl.GetStringValue()]
                 self.GetTopLevelParent().mayavi_view.default_mayavi_palette = \
                     midiart.convert_dict_colors(self.GetTopLevelParent().mayavi_view.default_color_palette)
+                    #A tuple R\B switch happens here; tuple is inverted.
+                self.GetTopLevelParent().mayavi_view.current_palette_name = dialog.popupCtrl.GetStringValue()
 
     def _OnHelpDialogClosed(self, dialog, evt):
         val = evt.GetReturnCode()
