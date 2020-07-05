@@ -33,12 +33,14 @@ class ActorsControlPanel(wx.Panel):
         bmp_newactor = wx.ArtProvider.GetBitmap(wx.ART_ADD_BOOKMARK, wx.ART_TOOLBAR, btn_size)
         bmp_delactor = wx.ArtProvider.GetBitmap(wx.ART_DEL_BOOKMARK, wx.ART_TOOLBAR, btn_size)
         bmp_delallactors = wx.ArtProvider.GetBitmap(wx.ART_DEL_BOOKMARK, wx.ART_TOOLBAR, btn_size)
+        bmp_delemptyactors = wx.ArtProvider.GetBitmap(wx.ART_DEL_BOOKMARK, wx.ART_TOOLBAR, btn_size)
 
 
         id_showall = 10
         id_newactor = 20
         id_delactor = 30
         id_delallactors = 40
+        id_delemptyactors = 50
 
 
         self.toolbar.AddTool(id_showall, "ShowAll", bmp_showall,
@@ -49,12 +51,15 @@ class ActorsControlPanel(wx.Panel):
                                 shortHelp="Delete Current Actor", kind=wx.ITEM_NORMAL)
         self.toolbar.AddTool(id_delallactors, "Delete All Actors", bmp_delallactors,
                                 shortHelp="Delete All Actors", kind=wx.ITEM_NORMAL)
+        self.toolbar.AddTool(id_delemptyactors, "Delete Empty Actors", bmp_delemptyactors,
+                                        shortHelp="Delete Empty Actors", kind=wx.ITEM_NORMAL)
 
 
         self.Bind(wx.EVT_TOOL, self.OnToolBarClick, id=id_showall)
         self.Bind(wx.EVT_TOOL, self.OnToolBarClick, id=id_newactor)
         self.Bind(wx.EVT_TOOL, self.OnToolBarClick, id=id_delactor)
         self.Bind(wx.EVT_TOOL, self.OnToolBarClick, id=id_delallactors)
+        self.Bind(wx.EVT_TOOL, self.OnToolBarClick, id=id_delemptyactors)
         #RightClickSubmenu
         self.Bind(wx.EVT_LIST_ITEM_RIGHT_CLICK, self.OnActorRightClick)
 
@@ -76,6 +81,8 @@ class ActorsControlPanel(wx.Panel):
             self.OnBtnDelActor(event)
         elif event.GetId() == 40:
             self.OnBtnDelAllActors(event)
+        elif event.GetId() == 50:
+            self.OnBtnDelEmtpyActors(event)
         else:
             pass
 
@@ -93,9 +100,11 @@ class ActorsControlPanel(wx.Panel):
         self.actorsListBox.new_actor(i)
 
 
-    def OnBtnDelActor(self, evt, cur=None,):
+    def OnBtnDelActor(self, evt, cur=None):
         #TODO Make dynamic for all cases.
         #Note: These deletions delete by index, not by actor name.
+        self.mayavi_view.scene3d.disable_render=True
+
         current = self.mayavi_view.cur_ActorIndex
         if cur is None:
             pass
@@ -129,8 +138,11 @@ class ActorsControlPanel(wx.Panel):
             #self.mayavi_view.cur = -1#Condition for single actor case.
             #self.actorsListBox.new_actor("0", 0)
             #Clear Piano
+        self.mayavi_view.scene3d.disable_render=False
+
 
     def OnBtnDelAllActors(self, evt):
+        #self.mayavi_view.scene3d.disable_render=True
         for j in range(0, len(self.mayavi_view.actors)):
             #This function deletes by index 0 the number of times of the loop's range, not by self.mayavi_view.cur.
 
@@ -150,9 +162,13 @@ class ActorsControlPanel(wx.Panel):
         for j in self.GetTopLevelParent().menuBar.colors.GetMenuItems():
             self.GetTopLevelParent().menuBar.colors.Delete(j)
         self.GetTopLevelParent().pianorollpanel.pianoroll.ForceRefresh()
+        #self.mayavi_view.scene3d.disable_render=False
+
 
     def OnBtnDelEmtpyActors(self, evt):
         #TODO Make a button?
+        self.mayavi_view.scene3d.disable_render=True
+
         empty_actors = [i.index for i in self.mayavi_view.actors if i._points.size is 0]
         alb = self.GetTopLevelParent().pianorollpanel.actorsctrlpanel.actorsListBox
         #for i in self.mayavi_view.actors:
@@ -161,6 +177,8 @@ class ActorsControlPanel(wx.Panel):
         for j in empty_actors:
             alb.Select(j)
         self.OnDeleteSelection(event=None)
+        self.mayavi_view.scene3d.disable_render=False
+
 
             # if i.index == j:  #Compare check here works around the readjusting of actor indices.
             #     self.GetTopLevelParent().pianorollpanel.actorsctrlpanel.OnBtnDelActor(evt=None, cur=j)
