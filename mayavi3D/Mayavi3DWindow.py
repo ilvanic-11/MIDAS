@@ -192,7 +192,7 @@ class Mayavi3idiView(HasTraits):
 
         self.default_mayavi_palette = midiart.convert_dict_colors(self.default_color_palette)
         #TODO Should this be in main MIDAS_wx?
-
+        self.current_palette_name = ""
 
         #Grid Construct
         self.mlab_calls = []  #TODO Note: mlab.clf() in the pyshell does not clear this list.
