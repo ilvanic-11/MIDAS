@@ -230,7 +230,9 @@ class MainButtonsPanel(wx.Panel):
                     # for i in mayavi_color_palette.keys():
                     #     if mayavi_color_palette[i] == h:
                             #Get the color we are on.
-                    clr = mayavi_color_palette[h]
+                    #R and B color values are swapped. This is fixed here, for now.
+                    #TODO Fix inverted color tuples in color dicts?
+                    clr = tuple([mayavi_color_palette[h][2], mayavi_color_palette[h][1], mayavi_color_palette[h][0]])
 
                     name = "Clrs" + str(mayavi_view.colors_call) + "_" + str(h) + "_" + dialog.img_name
                     actor = self.GetTopLevelParent().pianorollpanel.actorsctrlpanel.actorsListBox.new_actor(index, name)

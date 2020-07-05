@@ -210,7 +210,7 @@ In Musicode
 --IP--Commit, June 6th, 2020--
 In MainButtons
 -->Fix OBOE error in the clrs transcribing function in _OnMidiartDialogClosed
-In midiart
+In Midiart
 --> Modify the separate_pixels_to_coords_by_color function for said OBOE fix.
 In MenuButtons
 --> Adjust export function accordingly for said OBOE error.
@@ -252,6 +252,17 @@ In MainButtons
 In Midas_wx
 --> Change self.top_pyshell_split.SetSashPosition() to a value of 306 so that EXACTLy two octaves of cells are displayed. 
 
+--IP--Commit, July 5th, 2020--
+In ActorsCtrlPanel
+--> Make button for OnBtnDelEmptyActors() function.
+In Mayavi3DView
+--> Make string attribute mayavi_view.current_pallete_name that tells what color is current.
+In Midiart
+--> Create def convert_rgb_to_ncp(palettes=None) function. Creates FL .ncp files from our .png color palettes.
+In MainButtons
+--> Fixed bug where R and B color tuple values were swapped. 
+In MenuButtons
+--> Added code for updating the .current_pallete_name string when selecting desired color palette.
 
 
 
