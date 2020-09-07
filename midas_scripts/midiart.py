@@ -1083,7 +1083,7 @@ def get_color_palettes(mypath=None, ncp=False):
     :return:        A dictionary of dictionaries of color tuples.
 
     Note: For ncp=True, once you have created the ncp files for use with FL Studio, you must place them in the
-    appropriate FL \Note color palettes\ folder.
+    appropriate FL \\Note color palettes\ folder.
     """
     if mypath is None:
         mypath = r".\resources\color_palettes\\"
