@@ -264,5 +264,16 @@ In MainButtons
 In MenuButtons
 --> Added code for updating the .current_pallete_name string when selecting desired color palette.
 
+--IP--Commit, 
+In Main Buttons
+--> Make Monochrome image loading load to the session's "cur_z" current zplane.  (Line 258---->points = midiart3D.extract_xyz_coordinates_to_array(stream, velocities=mayavi_view.cur_z))
+--> Make Edges the same for loading to the current zplane. (Line 188---->points = midiart3D.extract_xyz_coordinates_to_array(stream, velocities=mayavi_view.cur_z)
+In Mayavi3DView
+--> Fixed 'line_width' and 'opacity' in some mlab calls to compensate for a "jaggies" error from the update.
+In the TRELLO
+--> Added a card that contains information on how to temporarily 'patch' up problems with the 'mayavi' popup at the top left of the mayavi split.
+--> Patched the update, temporarily, so to continue research.
+In MenuButtons
+-->Small fix -- Export CurrentActorsCurrentZplane now includes the zplane in exported midifile's name. (i.e. 0_Actor_Z-90.mid)
 
 

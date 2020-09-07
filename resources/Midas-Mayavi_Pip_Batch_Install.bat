@@ -13,10 +13,11 @@ python -m pip install --upgrade pyqt5 --user
 python -m pip install --upgrade pyface --user
 python -m pip install --upgrade wxpython --user
 python -m pip install vtk==8.1.2 --user
-::python -m pip install --upgrade vtk==8.1.2 --user
+::python -m pip install --upgrade vtk --user
 python -m pip install --upgrade traits --user
 python -m pip install --upgrade traitsui --user
-python -m pip install --upgrade mayavi --user
+::python -m pip install --upgrade mayavi --user
+python -m pip install mayavi=4.7.1 --user
 python -m pip install --upgrade open3d-python --user
 python -m pip install --upgrade pillow --user
 python -m pip install --upgrade opencv-python --user
