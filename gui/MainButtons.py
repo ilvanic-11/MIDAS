@@ -185,7 +185,7 @@ class MainButtonsPanel(wx.Panel):
 
                 print("EdgeStream:", stream)
                 stream.show('txt')
-                points = midiart3D.extract_xyz_coordinates_to_array(stream)
+                points = midiart3D.extract_xyz_coordinates_to_array(stream, velocities=mayavi_view.cur_z)
                 index = len(mayavi_view.actors)
                 name = str(len(mayavi_view.actors)) + "_" + "Edges" + "_" + dialog.img_name
                 #clr = color_palette[random.randint(1, 16)]  #TODO Random color of 16 possible for now?
@@ -255,7 +255,7 @@ class MainButtonsPanel(wx.Panel):
             elif dialog.MonochromeCheck:
                 stream = midiart.make_midi_from_grayscale_pixels(pixels, gran, False, note_pxl_value=0)
                 stream.show('txt')
-                points = midiart3D.extract_xyz_coordinates_to_array(stream)
+                points = midiart3D.extract_xyz_coordinates_to_array(stream, velocities=mayavi_view.cur_z)
                 index = len(mayavi_view.actors)
                 name = str(len(mayavi_view.actors)) + "_" + "QR-BW" + "_" + dialog.img_name
                 # clr = color_palette[random.randint(1, 16)]  #TODO Random color of 16 possible for now.

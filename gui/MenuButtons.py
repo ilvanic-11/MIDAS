@@ -246,9 +246,9 @@ class CustomMenuBar(wx.MenuBar):
     def OnExport_CurrentActorsCurrentZplane(self, event):
         print("Exporting Current Actor's Current Zplane....")
         intermediary_path = os.getcwd() + os.sep + "resources" + os.sep + "intermediary_path" + os.sep
-        filename = self.m_v.CurrentActor().name
+        filename = self.m_v.CurrentActor().name + "_" +"Z-" + str(self.m_v.CurrentActor().cur_z)
         output = intermediary_path + filename + ".mid"
-        zplane = midiart3D.get_planes_on_axis(self.m_v.CurrentActor()._points)[  #Todo user GridToStream()
+        zplane = midiart3D.get_planes_on_axis(self.m_v.CurrentActor()._points)[  #Todo use GridToStream()
             eval('self.m_v.cur_z')] #TODO Watch for debug errors here.
         self.m_v.CurrentActor()._stream = midiart3D.extract_xyz_coordinates_to_stream(zplane)
         self.m_v.CurrentActor()._stream.write('mid', output)
@@ -320,7 +320,7 @@ class CustomMenuBar(wx.MenuBar):
         #self.mv.stream.sort()
         intermediary_path = os.getcwd() + os.sep + "resources" + os.sep + "intermediary_path" + os.sep
         filename = self.mv.colors_name + str(self.mv.colors_call)
-        output = intermediary_path + filename + ".mid"
+        output = intermediary_path + filename + "---" + self.mv.current_palette_name + ".mid"
         midiart.set_parts_to_midi_channels(self.mv.stream, output)
         ##Clear mainstream if it has already been used.
         if self.mv.stream.hasPartLikeStreams():
@@ -435,6 +435,10 @@ class CustomMenuBar(wx.MenuBar):
 
     def OnExportMovie(self, event):
         print("Exporting Movie Frames as .jpgs...")
+        #TODO TEST this anti-aliasing = 0    --09\06\20
+
+        self.m_v.scene3d.anti_aliasing_frames = 0
+
         movie_maker = self.m_v.engine.scenes[0].scene.movie_maker
         length = (self.m_v.grid3d_span)
         bpm_speed = self.GetTopLevelParent().mayavi_view.bpm    ###+ 60
@@ -455,11 +459,12 @@ class CustomMenuBar(wx.MenuBar):
         #Enable frame saving.
         if movie_maker.record is False:
             movie_maker.record = True
+
         self.m_v.animate(length, bpm_speed, i_div, sleep = 0)
         animator_instance = self.m_v.animate1
         animator_instance._start_fired()
         time.sleep(1)
-        #TODO set movie_maker back False in animate function after loop completes.
+        #TODO set movie_maker back to False in animate function after loop completes. CHECK--after loop completes, mayaviview is redrawn, setting it back to false.
         print("In Blender, set FPS to:", midiart3D.BPM_to_FPS(bpm_speed, i_div)) ##((bpm_speed * (i_div/4) /60)))
         pass
 
