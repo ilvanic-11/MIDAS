@@ -215,6 +215,10 @@ class Mayavi3idiView(HasTraits):
     @on_trait_change('scene3d.activated')
     def create_3dmidiart_display(self):
         self.scene3d.disable_render = True
+
+
+        #self.scene.render_window.line_smoothing = True
+
         self.midi = music21.converter.parse(r".\resources\Spark4.mid")
         #self.midi = midiart3D.extract_xyz_coordinates_to_array(self.midi)
 
@@ -271,11 +275,17 @@ class Mayavi3idiView(HasTraits):
         #self.insert_note_text("3-Dimensional Music", 0, 164, 0, color=(1,0,1), opacity=.12, orient_to_camera=False, scale=3
 
         #Mayavi zoom to coordinates.
+        #self.rebind_picker()
+
         self.scene.on_mouse_pick(self.zoom_to_coordinates, type='point', button='Middle')
+        #TODO ERROR---this doesn't trigger after deleting and redrawing the mayavi view. July 30th, 2020.
+        #TODO Does mlab.clf() eliminate the picker object?
 
         self.scene3d.disable_render = False
 
-
+    @on_trait_change('scene3d.activated')
+    def rebind_picker(self):
+        self.scene.on_mouse_pick(self.zoom_to_coordinates, type='point', button='Middle')
 
     # @mlab.clf
     # def clear_lists(self):
@@ -511,7 +521,7 @@ class Mayavi3idiView(HasTraits):
         self.highlighter_calls.append(plane)
         #White Edges
         plane_edges = mlab.plot3d(linebox[:, 0], linebox[:, 1], linebox[:, 2]+.25,
-                                         color=(1,1,1), line_width=2.5, name="White Edges", opacity=.35, tube_radius=None)
+                                         color=(1,1,1), line_width=.5, name="White Edges", opacity=1., tube_radius=None)
         self.highlighter_calls.append(plane_edges)
         #self.mlab_calls.append(plane_edges)
         if grandstaff:
@@ -520,7 +530,7 @@ class Mayavi3idiView(HasTraits):
             fclef = MusicObjects.create_glyph(r".\resources\BassClef.png", y_shift=44.3, z_value = z_points)
             #for j in grandstaff:
             #Grand Staff Lines
-            self.gscalls = mlab.plot3d(stafflines[:, 0], stafflines[:, 1], stafflines[:, 2], color=(0,1,0), name="Staff Lines", opacity=.65, tube_radius=None)
+            self.gscalls = mlab.plot3d(stafflines[:, 0], stafflines[:, 1], stafflines[:, 2], color=(0,1,0), line_width=.5, name="Staff Lines", opacity=1., tube_radius=None)
             #Treble Clef
             self.gclef_call = mlab.points3d(gclef[:, 0], gclef[:, 1], gclef[:, 2], color=(0,1,0), mode='cube', name="Treble Clef", opacity=.015, scale_factor=.25)
             #Bass Clef
@@ -544,7 +554,7 @@ class Mayavi3idiView(HasTraits):
 
         ##Red Grid Reticle Box
         self.grid_reticle = mlab.plot3d( self.initial_reticle[:, 0],  self.initial_reticle[:, 1],  self.initial_reticle[:, 2],
-                                        color=(1,0,0), line_width=2.5, name="Red Edges", opacity=.65, tube_radius=None)
+                                        color=(1,0,0), line_width=2., name="Red Edges", opacity=1., tube_radius=None, tube_sides=12)
         self.highlighter_calls.append(self.grid_reticle)
         self.scene3d.disable_render = False
 
@@ -760,8 +770,7 @@ class Mayavi3idiView(HasTraits):
         picker.tolerance = 0.01
         picked = picker.actors
         print("Picker", picked)
-        print("Zach is penis breath.")
-        print(picker.trait_names())
+        #print(picker.trait_names())
         print("Selection Point:", picker.pick_position)
 
         mproll = self.parent.pianorollpanel.pianoroll
@@ -872,6 +881,8 @@ class Mayavi3idiView(HasTraits):
                     #Might change this later, for playback stuff.
                     if self.loop_end is True:
                         self.scene.scene.movie_maker.record = False
+
+                    self.m_v.scene3d.anti_aliasing_frames = 8
                     #pass
                     return i, print("True")
                 else:
@@ -1029,7 +1040,7 @@ class Mayavi3idiView(HasTraits):
 
         #Then, select the actor whose position was just changed by dragging the actor in the mayavi view.
         #TODO Causes a red error on startup and at some color loading because of pos changes, but non-breaking.
-
+            ###This: >>> "4:19:02 AM: Error: Couldn't retrieve information about list control item 0."
 
     @on_trait_change('cur_z')
     def highlighter_plane_chase(self):
