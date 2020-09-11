@@ -1,7 +1,7 @@
 import wx
 from traits.etsconfig.api import ETSConfig
 ETSConfig.toolkit = 'wx'
-from gui import MenuButtons, MainButtons, PianoRollPanel,Musical_Matrix_Rain,Preferences
+from gui import MenuButtons, MainButtons, PianoRollPanel, Musical_Matrix_Rain, Preferences
 from wx.adv import SplashScreen as SplashScreen
 #from mayavi3D import Mayavi3idiArtAnimation
 from mayavi3D import Mayavi3DWindow, MusicObjects
