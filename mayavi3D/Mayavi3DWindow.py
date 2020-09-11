@@ -996,7 +996,7 @@ class Mayavi3idiView(HasTraits):
 
         # Add Measure Number Text to X Axis
         for i, m in enumerate(range(0, int(length), 4)):
-            measures = mlab.text3d(m, 0, -2, str(i+1), color=(1, 1, 0), scale=1.65)
+            measures = mlab.text3d(m - 1, 0, -2, str(i+1), color=(1, 1, 0), scale=1.65)   #TODO m-1 lines up measures perfectly. When cpqn is fixed, remember to scale this value accordingly.
             self.text3d_calls.append(measures)
             self.text3d_default_positions.append(measures.actor.actor.position)
         self.volume_slice = self.insert_volume_slice(length)

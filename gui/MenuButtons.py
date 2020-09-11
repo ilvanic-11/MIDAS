@@ -30,8 +30,9 @@ class CustomMenuBar(wx.MenuBar):
     def __init__(self, parent):
         super().__init__(style=0)
         self.parent = parent
-        #A help dialog instance
-        self.helper = HelpDialog(self, -1, "Help Window")
+
+        #A help dialog instance #TODO What the fuck was I thinking?
+        #self.helper = HelpDialog(self, -1, "Help Window")
 
         #mayavi_view reference
         self.m_v = self.parent.mayavi_view
@@ -470,7 +471,9 @@ class CustomMenuBar(wx.MenuBar):
 
 
     def OnPreferences(self, event):
-        dlg = Preferences.PreferencesDialog(self, -1, "Midas Preferences")
+        #Bug note: for the help and preferences dialog, I made the 'parent' set to mainbuttonspanel. Twas a layout direction error.
+        #I basically made it so 'mainbuttonspanel' is the parent for all dialog classes we've created.
+        dlg = Preferences.PreferencesDialog(self.GetTopLevelParent().mainbuttonspanel, -1, "Midas Preferences")
         dlg.ShowWindowModal()
         #pass
 
@@ -494,7 +497,7 @@ class CustomMenuBar(wx.MenuBar):
         # dialog is set up to change the current working directory to the path chosen.
         dlg = wx.FileDialog(
             self, message="Choose a file",
-            defaultDir=r".\resources\intermediary_path",
+            defaultDir=r".\resources\intermediary_path\\",
             defaultFile="",
             wildcard=wildcard,
             style=wx.FC_OPEN | wx.FD_MULTIPLE |
@@ -623,7 +626,7 @@ class CustomMenuBar(wx.MenuBar):
 
         z_stream = self.GetTopLevelParent().pianorollpanel.pianoroll.GridToStream(update_actor=False)
         chord_details_string += music21funcs.print_chords_in_piece(z_stream)
-        win = RichTextFrame(self, -1, chord_details_string, wx.DefaultPosition,
+        win = RichTextFrame(self.GetTopLevelParent().mainbuttonspanel, -1, chord_details_string, wx.DefaultPosition,
                             size=(700, 500),
                             style=wx.DEFAULT_FRAME_STYLE, validator=wx.DefaultValidator, name="Chord_Details")
         win.Show(True)
@@ -637,7 +640,7 @@ class CustomMenuBar(wx.MenuBar):
         z_stream = self.GetTopLevelParent().pianorollpanel.pianoroll.GridToStream(update_actor=False)
 
         stream_details_string += music21funcs.print_show_streamtxt(z_stream)
-        win = RichTextFrame(self, -1, stream_details_string, wx.DefaultPosition,
+        win = RichTextFrame(self.GetTopLevelParent().mainbuttonspanel, -1, stream_details_string, wx.DefaultPosition,
                             size=(700, 500),
                             style=wx.DEFAULT_FRAME_STYLE, validator=wx.DefaultValidator, name="Stream_Details")
         win.Show(True)
@@ -651,7 +654,7 @@ class CustomMenuBar(wx.MenuBar):
         z_stream = self.GetTopLevelParent().pianorollpanel.pianoroll.GridToStream(update_actor=False)
 
         midi_details_string += music21funcs.print_midi_data(z_stream)
-        win = RichTextFrame(self, -1, midi_details_string, wx.DefaultPosition,
+        win = RichTextFrame(self.GetTopLevelParent().mainbuttonspanel, -1, midi_details_string, wx.DefaultPosition,
                             size=(700, 500),
                             style=wx.DEFAULT_FRAME_STYLE, validator=wx.DefaultValidator, name="Midi_Details")
         win.Show(True)
@@ -665,7 +668,7 @@ class CustomMenuBar(wx.MenuBar):
         #z_stream = self.GetTopLevelParent().pianorollpanel.pianoroll.GridToStream(update_actor=False)
         #TODO This is slow. Possible fixes?
         cell_details_string += self.GetTopLevelParent().pianorollpanel.print_cell_sizes()
-        win = RichTextFrame(self, -1, cell_details_string, wx.DefaultPosition,
+        win = RichTextFrame(self.GetTopLevelParent().mainbuttonspanel, -1, cell_details_string, wx.DefaultPosition,
                             size=(700, 500),
                             style=wx.DEFAULT_FRAME_STYLE, validator=wx.DefaultValidator, name="Cell_Sizes_Details")
         win.Show(True)
@@ -763,14 +766,16 @@ class CustomMenuBar(wx.MenuBar):
     #---------------------------------------------
 
     def OnSearchHelp(self, event):
-        dlg = self.helper
+        # Bug note: for the help and preferences dialog, I made the 'parent' set to mainbuttonspanel. Twas a layout direction error.
+        #I basically made it so 'mainbuttonspanel' is the parent for all dialog classes we've created.
+        dlg = HelpDialog(self.GetTopLevelParent().mainbuttonspanel, -1, "Help Dialog")
         dlg.ShowWindowModal()
 
 
     def OnAboutMidas(self, event):
         #TODO Better method? Better about?
         about_midas = music21funcs.about_midas()
-        win = RichTextFrame(self, -1, about_midas, wx.DefaultPosition,
+        win = RichTextFrame(self.GetTopLevelParent().mainbuttonspanel, -1, about_midas, wx.DefaultPosition,
                             size=(700, 500),
                             style=wx.DEFAULT_FRAME_STYLE, validator=wx.DefaultValidator, name="About Midas")
         win.Show(True)
@@ -907,7 +912,7 @@ class CustomMenuBar(wx.MenuBar):
         if type(dialog) is Preferences.PreferencesDialog:
             self._OnPreferencesDialogClosed(dialog, evt)
 
-    def _OnHelpDialogCloser(self, dialog, evt):
+    def _OnHelpDialogCloser(self, evt):
         dialog = evt.GetDialog()
         if type(dialog) is HelpDialog:
             self._OnHelpDialogClosed(dialog, evt)
@@ -927,7 +932,8 @@ class RichTextFrame(wx.Frame):
 
 class HelpDialog(wx.Dialog):
     def __init__(self, parent, id, title, size=wx.DefaultSize,
-                 pos=wx.DefaultPosition, style=wx.DEFAULT_DIALOG_STYLE, name='MIDI Art 3D'):
+                 pos=wx.DefaultPosition, style=wx.DEFAULT_DIALOG_STYLE, name='Help Dialog'):
+
         wx.Dialog.__init__(self)
         self.Create(parent, id, title, pos, size, style, name)
 
@@ -936,7 +942,7 @@ class HelpDialog(wx.Dialog):
 
         #Static Text
         self.description = self.name_static = wx.StaticText(self, -1, "Type in a python module\class\object name. "
-                                                        "Then choose a help method.",     style=wx.ALIGN_CENTER_HORIZONTAL)
+                                                        "Then choose a help method. \n\n Note: Not all python objects will work for every help method.",     style=wx.ALIGN_CENTER_HORIZONTAL)
 
         #Text Query
         self.inputtxt = wx.TextCtrl(self, -1, "", size=(250, -1), name="Help Query")
@@ -960,16 +966,16 @@ class HelpDialog(wx.Dialog):
         btnsizer.Realize()
 
         sizer1 = wx.BoxSizer(wx.HORIZONTAL)
-        sizer1.Add(self.helpbutton, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL, 20)
-        sizer1.Add(self.methodsbutton, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL, 20)
-        sizer1.Add(self.membersbutton, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL, 20)
-        sizer1.Add(self.argsbutton, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL, 20)
+        sizer1.Add(self.helpbutton, 0, wx.ALL | wx.ALIGN_CENTER, 20)
+        sizer1.Add(self.methodsbutton, 0, wx.ALL | wx.ALIGN_CENTER, 20)
+        sizer1.Add(self.membersbutton, 0, wx.ALL | wx.ALIGN_CENTER, 20)
+        sizer1.Add(self.argsbutton, 0, wx.ALL | wx.ALIGN_CENTER, 20)
 
         sizerMain = wx.BoxSizer(wx.VERTICAL)
-        sizerMain.Add(self.description, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL, 20)
-        sizerMain.Add(self.inputtxt, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL, 20)
-        sizerMain.Add(sizer1,  0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL, 20)
-        sizerMain.Add(btnsizer, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL, 20)
+        sizerMain.Add(self.description, 0, wx.ALL | wx.ALIGN_CENTER, 20)
+        sizerMain.Add(self.inputtxt, 0, wx.ALL | wx.ALIGN_CENTER, 20)
+        sizerMain.Add(sizer1,  0, wx.ALL | wx.ALIGN_CENTER, 20)
+        sizerMain.Add(btnsizer, 0, wx.ALL | wx.ALIGN_CENTER, 20)
         self.SetSizerAndFit(sizerMain)
 
 

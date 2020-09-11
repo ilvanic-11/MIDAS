@@ -401,10 +401,10 @@ class MusicodeDialog(wx.Dialog):
         sizer2.Add(self.translate_musicode, 0, wx.ALL | wx.ALIGN_TOP, 20)
         sizer2.Add(self.create_musicode, 0, wx.ALL | wx.ALIGN_TOP, 20)
 
-        sizer3.Add(self.name_static, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL, 20)
-        sizer3.Add(self.input_mcname, 0, wx.ALL | wx.ALIGN_RIGHT, 20)
+        sizer3.Add(self.name_static, 0, wx.ALL | wx.ALIGN_CENTER, 20)
+        sizer3.Add(self.input_mcname, 0, 20)
 
-        sizer4.Add(self.sh_static, 0, wx.ALL | wx.ALIGN_LEFT, 20)
+        sizer4.Add(self.sh_static, 0, 20)
         sizer4.Add(self.input_sh, 0, wx.ALL | wx.ALIGN_CENTER, 20)
 
         sizer.Add(sizer2, 0, wx.ALL | wx.ALIGN_TOP, 20)
@@ -514,10 +514,10 @@ class MIDIArtDialog(wx.Dialog):
 
 
         keysizer = wx.BoxSizer(wx.HORIZONTAL)
-        keysizer.Add(self.txtKey, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL, 20)
-        keysizer.Add(self.inputKey, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL, 20)
+        keysizer.Add(self.txtKey, 0, wx.ALL | wx.ALIGN_CENTER, 20)
+        keysizer.Add(self.inputKey, 0, wx.ALL | wx.ALIGN_CENTER, 20)
         sizerCtrls.Add(keysizer, 0, wx.ALIGN_CENTER | wx.ALL, 5)
-        sizerCtrls.Add(self.rdbtnGranularity, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL, 20)
+        sizerCtrls.Add(self.rdbtnGranularity, 0, wx.ALL | wx.ALIGN_CENTER, 20)
 
 
         btnsizer = wx.StdDialogButtonSizer()
