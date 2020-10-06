@@ -39,7 +39,7 @@ class PianoRollPanel(wx.Panel):
 
         self.currentZplane = 90
         
-     
+        self.mayavi_view = self.GetTopLevelParent().mayavi_view
         
         self.pianorollSplit = wx.SplitterWindow(self, wx.ID_ANY, style=wx.SP_3DSASH | wx.SP_BORDER)
         self.ctrlpanelSplit = wx.SplitterWindow(self.pianorollSplit, wx.ID_ANY, style=wx.SP_3DSASH | wx.SP_BORDER)
@@ -87,6 +87,8 @@ class PianoRollPanel(wx.Panel):
     
     def OnMotion(self, evt):
         #self.log.debug("OnMotion: Drawing=%d " % self.pianoroll.drawing)
+        cpqn = self.pianoroll._cells_per_qrtrnote
+        z = self.currentZplane
 
         if evt.Dragging() and evt.LeftIsDown():
             x, y = self.pianoroll.CalcUnscrolledPosition(evt.GetPosition())
@@ -98,12 +100,30 @@ class PianoRollPanel(wx.Panel):
             if self.pianoroll.drawing == 0:
                 if (self.pianoroll.GetCellValue(row, col) == "1" or span == wx.grid.Grid.CellSpan_Inside):
                     self.pianoroll.EraseCell(row, col)
+                    #self.mayavi_view.CurrentActor()._array3D[int(col / cpqn), int(127 - row), int(z)] = 0
             elif self.pianoroll.drawing == 1:
                 if (self.pianoroll.GetCellValue(row, col) == "0" and span != wx.grid.Grid.CellSpan_Inside):
                     self.pianoroll.DrawCell("1", row, col, 1, self.pianoroll.draw_cell_size)
-
+                    #self.mayavi_view.CurrentActor()._array3D[int(col / cpqn), int(127 - row), int(z)] = 1
             # print("x=%d, y=%d, row=%d, col=%d" % (x,y,row,col))
         evt.Skip()
+
+
+    def OnMouseLeftUp(self, evt):
+        """
+        On mouse left up, flags the change of array3d.  #Todo Do as trait events.
+        :param evt:
+        :return:
+        """
+        self.log.info("OnMouseLeftUp():")
+        print("On Mouse Left Up:")
+        #self.currentpianoroll.UpdateStream()
+        mv = self.GetTopLevelParent().mayavi_view
+        print("Flag not changed yet.", mv.CurrentActor().array3Dchangedflag)
+        mv.CurrentActor().array3Dchangedflag = not mv.CurrentActor().array3Dchangedflag
+        print("Flag changed now.", mv.CurrentActor().array3Dchangedflag)
+        evt.Skip()
+
 
     def SetupToolbar(self):
 
@@ -128,6 +148,7 @@ class PianoRollPanel(wx.Panel):
         cbID = 101
         lblID = 1011
         lbl = wx.StaticText(self.toolbar, lblID, label="Cell Draw Size: ")
+
         self.toolbar.AddControl(lbl, "")
         self.cbDrawCellSize = wx.ComboBox(self.toolbar, cbID, "1", wx.DefaultPosition, wx.DefaultSize,
                                           choices=["1", "2", "4", "8"],
@@ -141,8 +162,9 @@ class PianoRollPanel(wx.Panel):
         cbID1 = 102
         lblID1 = 1021
         lbl1 = wx.StaticText(self.toolbar, lblID1, label="Cells Per Qrtr Note: ")
+
         self.toolbar.AddControl(lbl1, "")
-        self.cbCellsPerQrtrNote = wx.ComboBox(self.toolbar, cbID1, "1", wx.DefaultPosition, wx.DefaultSize,
+        self.cbCellsPerQrtrNote = wx.ComboBox(self.toolbar, cbID1, "4", wx.DefaultPosition, wx.DefaultSize,
                                               choices=["1", "2", "4", "8", "16", "32"],
                                               style=wx.CB_DROPDOWN | wx.CB_READONLY)
         self.toolbar.AddControl(self.cbCellsPerQrtrNote)
@@ -173,17 +195,27 @@ class PianoRollPanel(wx.Panel):
         self.toolbar.Realize()
         return self.toolbar
 
+
     def OnCellsPerQrtrNoteChanged(self, event):
         print("OnCellsPerQrtrNoteChanged(): new size = %s" % self.cbCellsPerQrtrNote.GetValue())
 
         newvalue = int(self.cbCellsPerQrtrNote.GetValue())
+        self.mayavi_view.cpqn = newvalue
+        print("Changing CPQN, updating grid reticle.")
 
         # need to redraw current piano roll and update stream
         self.pianoroll.ChangeCellsPerQrtrNote(newvalue)
 
+        #self.pianoroll.ForceRefresh()
+
+        #I don't fully understand, but this call needs to happen at the end of the function.
+        self.mayavi_view.cpqn_changed_flag = not self.mayavi_view.cpqn_changed_flag
+
+
     def OnDrawCellSizeChanged(self, event):
         print("OnDrawCellSizeChanged(): new size = %s" % self.cbDrawCellSize.GetValue())
         self.pianoroll.draw_cell_size = int(self.cbDrawCellSize.GetValue())
+
 
     def OnToolBarClick(self, event):
         """
@@ -209,18 +241,10 @@ class PianoRollPanel(wx.Panel):
     def OnSelectMode(self, event):
         self.log.info("OnSelectMode():")
 
+
     def OnDrawMode(self, event):
         self.log.info("OnDrawMode():")
 
-    def OnMouseLeftUp(self, evt):
-        self.log.info("OnMouseLeftUp():")
-        print("On Mouse Left Up:")
-        #self.currentpianoroll.UpdateStream()
-        mv = self.GetTopLevelParent().mayavi_view
-        print("Flag not changed yet.", mv.CurrentActor().array3Dchangedflag)
-        mv.CurrentActor().array3Dchangedflag = not mv.CurrentActor().array3Dchangedflag
-        print("Flag changed now.", mv.CurrentActor().array3Dchangedflag)
-        evt.Skip()
 
     def print_cell_sizes(self):  #TODO Redundant? Consider deleting this button.
         s = ""
@@ -233,6 +257,7 @@ class PianoRollPanel(wx.Panel):
             f.write(s)
 
             return s
+
 
     def ClearZPlane(self, z):
         # for x in range(0, self.pianoroll._table.GetNumberCols()):
@@ -251,7 +276,7 @@ class PianoRollPanel(wx.Panel):
             print("On_Points", on_points)
             for i in on_points:
                 self.pianoroll._table.SetValue(127- i[1], i[0], "0")   #TODO Track mode stuff! What can the 'value' parameter be?
-            current_actor._array3D[:, :, z] = current_actor._array3D[:, :, z] * 0
+            current_actor._array3D[:, :, z] = current_actor._array3D[:, :, z] * 0   #TODO Different way to write this? Multiply whole array3d by 0?
             self.pianoroll.ForceRefresh()
             mv.actors[mv.cur_ActorIndex].array3Dchangedflag += 1
 
