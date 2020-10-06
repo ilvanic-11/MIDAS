@@ -243,7 +243,7 @@ def make_midi_from_grayscale_pixels(pixels, granularity, connect=False, note_pxl
     return out_stream
 
 
-###TODO Figure out threshold ranges. K-D Trees stuff.
+###TODO Figure out threshold ranges. K-D Trees stuff. (by threshold ranges, at the time, I was processing the how-to of this function in a different way then it ended up 09/25/20)
 def set_to_nn_colors(im_array, clrs=None):
     """
         This function takes a 3D numpy color array(i.e an image), and converts all of the color tuples of that image to
@@ -276,7 +276,7 @@ def set_to_nn_colors(im_array, clrs=None):
     for ix in range(1, len(clrs)):
         p_lizt.append(clrs[ix])
     p_array = np.array(p_lizt)
-    pcloud.points = open3d.Vector3dVector(p_array)
+    pcloud.points = open3d.utility.Vector3dVector(p_array)
     kd_tree = open3d.geometry.KDTreeFlann(pcloud)
 
     # work_cloud = musicode.mc.array_to_lists_of(clean_cloud)

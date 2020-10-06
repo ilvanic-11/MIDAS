@@ -80,6 +80,7 @@ class Actor(HasTraits):
         HasTraits.__init__(self)
         self.index = index
         self.mayavi_view = mayavi_view
+        self.toplevel = self.mayavi_view.parent
 
         self.colors_instance = ""  #Denotes to what instance of a loaded color image this actor belongs. (call1, call2, etc.)
         self.part_num = 0  #For stream.Part purposes, used in colors function.
@@ -117,10 +118,15 @@ class Actor(HasTraits):
     def actor_array3D_changed(self):
         print("actor_array3D_changed")
         print("actor_index  ", self.index)
+
+        cpqn = self.toplevel.pianorollpanel.pianoroll._cells_per_qrtrnote
+
+
         self._points = np.argwhere(self._array3D >= 1.0)
+        self._points[:, 0] =  self._points[:, 0]  #Account for cpqn.  X axis "Slice" rebound here.
 
         try:
-            self.mayavi_view.sources[self.index].mlab_source.trait_set(points=self._points)
+            self.mayavi_view.sources[self.index].mlab_source.trait_set(points=self._points) #Traitset happens of x axis slice rebinding.
         except IndexError:
             pass
 
@@ -129,9 +135,13 @@ class Actor(HasTraits):
     def actor_points_changed(self):
         print("actor_points_changed")
         print("actor_index ", self.index)
+
+        cpqn = self.toplevel.pianorollpanel.pianoroll._cells_per_qrtrnote
+        print("CPQN", cpqn)
+
         new_array3D = np.zeros(self._array3D.shape, dtype=np.int8)
         for p in self._points:
-            new_array3D[int(p[0]), int(p[1]), int(p[2])] = 1.0
+            new_array3D[int(p[0]), int(p[1]), int(p[2])] = 1.0   #TODO Account for cpqn. * cpqn
         self.mayavi_view.parent.pianorollpanel.pianoroll.cur_array3d = self._array3D = new_array3D
         self.mayavi_view.sources[self.index].mlab_source.trait_set(points=self._points)
         print("sources trait_set after actor_points_changed")
@@ -160,6 +170,10 @@ class Mayavi3idiView(HasTraits):
 
     cur_ActorIndex = Int()
     cur_z = Int()
+
+    cpqn = Int(4)   #Startup cpqn
+
+    cpqn_changed_flag = Bool()
 
     cur_changed_flag = Int()
 
@@ -192,6 +206,10 @@ class Mayavi3idiView(HasTraits):
         #For a trait function, this lets user know what if it's a 'colors' actor before it's actually destroyed.
         self.deleting_actor = ''
 
+        #For another traits function.
+        self.ret_x = 0
+        self.ret_y = 0
+        self.ret_z = 0
 
 
 
@@ -489,7 +507,7 @@ class Mayavi3idiView(HasTraits):
 
     # Leave this here for now.
     def insert_titles(self):
-        self.insert_note_text("The Midas 3idiArt Display", 0, 137, 0, color=(1, 1, 0), orient_to_camera=True,
+        self.insert_note_text("The Midas Display", 0, 137, 0, color=(1, 1, 0), orient_to_camera=True,
                               scale=7)
         ###Note: affected by top_mayaviview_split sash position.
         self.title = self.insert_title("3-Dimensional Music", color=(1, 0, 1), height=.82, opacity=.12, size=.65)
@@ -595,7 +613,7 @@ class Mayavi3idiView(HasTraits):
 
         ##Red Grid Reticle Box
         self.grid_reticle = mlab.plot3d( self.initial_reticle[:, 0],  self.initial_reticle[:, 1],  self.initial_reticle[:, 2],
-                                        color=(1,0,0), line_width=2., name="Red Edges", opacity=1., tube_radius=None, tube_sides=12)
+                                        color=(1,.42, 0), line_width=2., name="Red Edges", opacity=1., tube_radius=None, tube_sides=12)
         self.highlighter_calls.append(self.grid_reticle)
         self.scene3d.disable_render = False
 
@@ -620,6 +638,7 @@ class Mayavi3idiView(HasTraits):
             # Remove from scene3d.
             i.remove()
             #Remove's the entire vtk_data_source and all nested objects of that instance.
+            #TODO Still need to figure out proper mayavi object removal. 09\25\20
             #Makes highlighterplane work correctly.
             #print("Parent", i.parent)
             #i.parent.parent.remove()
@@ -815,9 +834,9 @@ class Mayavi3idiView(HasTraits):
 
         mproll = self.parent.pianorollpanel.pianoroll
 
-        x = picker.pick_position[0]
-        y = picker.pick_position[1]
-        z = picker.pick_position[2]
+        self.ret_x = picker.pick_position[0] * self.cpqn  #Account for cpqn here.
+        self.ret_y = picker.pick_position[1]
+        self.ret_z = picker.pick_position[2]
 
         #In scrollunits, which should == to pixels.
 
@@ -835,16 +854,17 @@ class Mayavi3idiView(HasTraits):
         #MayaviCoords to Cell -- Synced as ints.
 
         #( 160 * 10) / (160 / 4 * (4 * 10)
-        scroll_x = (int(x) *10) / mproll.GetScrollPixelsPerUnit()[0]  #Scrollrate / cells per measure ()
-        scroll_y = ((127-int(y)) * 10) / mproll.GetScrollPixelsPerUnit()[1]   #Scrollrate Y / cells per two octaves == 24
-        if scroll_y > 1040:   #Caps of scrolling at the bottom, so the rectangle doesn't go funky.
-            scroll_y = 1040    #Sash position affects this because num of pixels in client view relates to ViewStart().
+        self.cur_scroll_x = (int(self.ret_x) *10) / mproll.GetScrollPixelsPerUnit()[0]  #Scrollrate / cells per measure ()
+        self.cur_scroll_y = ((127-int(self.ret_y)) * 10) / mproll.GetScrollPixelsPerUnit()[1]   #Scrollrate Y / cells per two octaves == 24
+        #TODO Fix this limit cap.
+        if self.cur_scroll_y > 1040:   #Caps of scrolling at the bottom, so the rectangle doesn't go funky.
+            self.cur_scroll_y = 1040    #Sash position affects this because num of pixels in client view relates to ViewStart().
 
-        print("Coord", x, y, z)
+        print("Coord", self.ret_x, self.ret_y, self.ret_z)
         if mproll is not None:
 
             #Zooms on middle click.  #TODO Math is not exact yet...
-            mproll.Scroll(scroll_x, scroll_y)
+            mproll.Scroll(self.cur_scroll_x, self.cur_scroll_y)
             self.new_reticle_box()
         else:
             pass
@@ -895,7 +915,7 @@ class Mayavi3idiView(HasTraits):
             #The "+ 1" in this range is a compensation value. For some unknown reason, the correct range is not being
             # fully animated. It's always 2 'i' range values off (which is 8 iterations if i_div is 4 because we're
             # incrementing at fractional step values) The desired range is still x_length, we just made it go a little
-            #over that to make darn sure the whole range is captured.
+            #over that to make darn sure the whole range is captured, which makes it work as desired.
             for i in np.arange(0, (x_length + 1), 1/i_div):
                 # print("%f %d" % (i, time.time_ns()))
                 interval = delay
@@ -1117,10 +1137,22 @@ class Mayavi3idiView(HasTraits):
             self.actors[k].index = k
         print("actor.index attributes reset")
 
+    @on_trait_change('cpqn_changed_flag')
+    def OnCellsPerQuarterNote_Changed(self):
+        #self.highlighter_transformation()
+        self.new_reticle_box()
+        print("Establishing New Reticle Box...")
+
+        #Reset orange reticle box. CHECK
+        #Scale_factor for all actors.
+        #Reset x-axis scaling?
+
+        #for i in self.actors:
+
 
     ###Trait Sub-Functions
     ##-----------------------------------------------
-    #@on_trait_change('cur_z')
+    #@on_trait_change('cpqn_changed_flag')
     def new_reticle_box(self, zplane=None):
         if zplane is not None:
             pass
@@ -1149,10 +1181,24 @@ class Mayavi3idiView(HasTraits):
                                  (bottomleft[1], 127-bottomleft[0], 0),
                                  (topleft[1], 127-topleft[0], 0))), dtype=np.float32)
             #In place slice reassignment.
-            #reticle[:, 0] = reticle[:, 0] / self.parent.pianorollpanel.pianoroll._cells_per_qrtrnote  #TODO Once cpqn is fixed.
+            reticle[:, 0] = reticle[:, 0] / self.parent.pianorollpanel.pianoroll._cells_per_qrtrnote  #TODO Once cpqn is fixed. CHECK-- Now that cpqn is fixed, create a trait event for it so that this reticle--
+                                                                                                      #TODO---(among other things) updates automatically when cpqn is changed.
+            #Traits notification
+            self.grid_reticle.mlab_source.trait_set(points=reticle)
 
             #Points Update
-            self.grid_reticle.mlab_source.trait_set(points=reticle)
+            #self.grid_reticle.mlab_source.points = reticle
+
+
+
+            #TODO ALWAYS is behind be one update....FIXED!!!!
+            #Compensatory scroll here.
+            #self.cur_scroll_x = (int(self.ret_x) * 10) / mproll.GetScrollPixelsPerUnit()[0]
+            #self.cur_scroll_y = ((127 - int(self.ret_y)) * 10) / mproll.GetScrollPixelsPerUnit()[1]
+            #mproll.Scroll(1, 1)
+            #mproll.Scroll(0, 0)
+            #self.parent.pianorollpanel.pianoroll.Scroll(s_linex - 1, s_liney - 1)
+            #self.parent.pianorollpanel.pianoroll.Scroll(s_linex, s_liney)
 
         else:
             pass

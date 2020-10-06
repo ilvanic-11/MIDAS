@@ -67,9 +67,35 @@ class MainButtonsPanel(wx.Panel):
 
         self.Bind(wx.EVT_WINDOW_MODAL_DIALOG_CLOSED, self.OnDialogClosed)
 
+        self.AccelerateMainButtons()
+        self.SetFocus()
+
         #Update user-generated name.
         # self.mc_dialog = MusicodeDialog()
         # self.mc_dialog.user_named = self.GetTopLevelParent().musicode.musicode_name
+
+    def AccelerateMainButtons(self):
+
+        entries = [wx.AcceleratorEntry() for i in range(0, 4)]
+
+        new_id1 = wx.NewId()
+        new_id2 = wx.NewId()
+        new_id3 = wx.NewId()
+        new_id4 = wx.NewId()
+
+        self.Bind(wx.EVT_MENU, self.OnMusic21ConverterParseDialog, id=new_id1)
+        self.Bind(wx.EVT_MENU, self.OnMusicodeDialog, id=new_id2)
+        self.Bind(wx.EVT_MENU, self.OnMIDIArtDialog, id=new_id3)
+        self.Bind(wx.EVT_MENU, self.OnMIDIArt3DDialog, id=new_id4)
+
+        #Shift into which gear.
+        entries[0].Set(wx.ACCEL_NORMAL, wx.WXK_F1, new_id1)
+        entries[1].Set(wx.ACCEL_NORMAL, wx.WXK_F2, new_id2)
+        entries[2].Set(wx.ACCEL_NORMAL, wx.WXK_F3, new_id3)
+        entries[3].Set(wx.ACCEL_NORMAL, wx.WXK_F4, new_id4)
+
+        accel = wx.AcceleratorTable(entries)
+        self.SetAcceleratorTable(accel)
 
     #TODO Redundant?
     def OnGridToStream(self, evt):

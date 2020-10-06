@@ -1,4 +1,5 @@
 import time
+
 from importlib import reload
 print("Imported function", reload)
 from traits.etsconfig.api import ETSConfig
@@ -14,6 +15,8 @@ import sympy
 print("Imported", sympy)
 import music21
 print("Imported", music21)
+import locale
+locale.setlocale(locale.LC_ALL, 'en_US')
 import open3d
 print("Imported", open3d)
 import cv2
