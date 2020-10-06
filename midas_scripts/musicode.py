@@ -71,7 +71,7 @@ class Musicode():
 							'forwardslash']
 		for l in range(0, len(self.Punct_Symbols)):
 			self.Punct_Workaround[self.Punct_Symbols[l]] = self.Punct_Names[l]
-		print("Punct_Dict:", self.Punct_Workaround)
+		#print("Punct_Dict:", self.Punct_Workaround)
 
 
 	set_path = r"musicode_libraries"

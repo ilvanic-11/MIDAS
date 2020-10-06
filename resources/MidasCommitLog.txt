@@ -277,17 +277,41 @@ In the TRELLO
 In MenuButtons
 -->Small fix -- Export CurrentActorsCurrentZplane now includes the zplane in exported midifile's name. (i.e. 0_Actor_Z-90.mid)
 
---IP--Commit, 
+--IP--Commit, September 11th, 2020--
 In Mayavi3DView
 --> Made the tiniest tweak to line up the measure numbers with their apparent starting point better. Much better.
 In MenuButtons
 --> Added "\\" to the end of the defaultDir path, was buggy.
 --> Modify HelpDialog class to account for changes to wxpython.
 --> Modify layout (i.e. ALIGN_CENTER_HORIZONTAL) flags stuff to account for changes in wxpython update.
---> Modify OnDisplayChords, OnDisplayStreamShowTxt, OnDisplayMidiData, OnDisplayCellSizesData to inherit from 'mainbuttonspanel', solving wx update bug. (window layout direction)
+--> Modify OnDisplayChords, OnDisplayStreamShowTxt, OnDisplayMidiData, OnDisplayCellSizesData to inherit from 'mainbuttonspanel', solving wx update bug. *(window layout direction)
 In Preferences
 --> Hardcoded 4 patches for the vtk\mayavi\pyface\wxpython updates. They reside in the Preferences.py module, the last 4 lines of code.
 --> Modify PreferencesDialog class to account for changes to wxpython.
 --> Modify layout (i.e. ALIGN_CENTER_HORIZONTAL) flags stuff to account for changes in wxpython update. (Any horizontal flags inside a wx.Sizer(wx.HORIZONTAL) are ignored and raise an error)
 
-
+--IP--Commit, October
+In MenuButtons
+--> In OnExport_Colors --> Changed  methdo ".Name" to ".GetItemLabel" text (line 290 as of this commit) as necessary for wx(4.1.0)
+--> Fix: The parent inheritance *(window layout direction) for the "ToolsDialog" as well, now. Adjusted errors accordingly for wx.4.1.0 update. (horizontal alignment flags, some wx.Menu methods were renamed: i.e. 'GetName()' was changed to 'GetItemLabelText()')
+In Preferences
+--> Added another patch for wx(4.1.0)
+--> Modify OnPreferences function to once again instantiate the Preferences.PreferencesDialog class with a different parent. (wx4.1.0) related.
+--> Change string text in PreferencesDialog from "Default Color Palette" to "Current Color Palette"
+In ActorsCtrlPanel
+--> In OnDeleteSlection (ln 258) Modify function to account for a wx._core assertion (wx4.1.0) error. (OBOE errors.)
+In Midas_Startup_Configs
+--> Added a patch for wx4.1.0 again. (some strptime thing, upon some imports, gets a "locale" error. Final stack trace message -->"ValueError: unknown locale: en-US") # Todo figure out complete solution.)
+---- Patch Addition: --> import locale \n locale.setlocale(locale.LC_ALL, 'en_US')
+In PianoRoll
+--> Fix wx method-override bug that was causing ChangeCellsPerQrtrNote(self, newvalue) to break.
+--> Fix bug where startup cpqn starting value in the drop down box was incorrect.
+In Midiart
+--> Fixed a bug upon an open3d update: from--> open3d.Vector3dVector(p_array) to --> open3d.utility.Vector3dVector(p_array)
+In Mayavi3DView and PianoRollPanel
+--> Fixed event bug that made the grid_reticle not update on que.
+In MainButtons
+--> Added the Four Main Buttons ("midi\Score Import", "Musicode", "Midiart", "3idiArt") to the mainbuttonspanel's accelerator table. They are not hotkeyed to F1, F2, F3, and F4 respectively.
+In Midas_wx
+-->Added mayavi_view.new_reticle_box() to the SetSash hotkey functions.
+-->Added OnScroll_ActorsandZplanes Feature.

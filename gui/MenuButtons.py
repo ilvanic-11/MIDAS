@@ -51,16 +51,16 @@ class CustomMenuBar(wx.MenuBar):
         self.filemenu.Append(105, "&Import...\tCtrl+I")
         self.filemenu.Append(106, "&Import Directory\tCtrl+Shift+I")
         self.export = wx.Menu()
-        self.export.Append(1500, "&Current Actor\tCtrl+E+1")
-        self.export.Append(1501, "&All Actors\tCtrl+E+2")
-        self.export.Append(1502, "&Current Actor's Current Zplane\tCtrl+E+3")
-        self.export.Append(1503, "&All Actor's Zplanes\tCtrl+E+4")
-        self.export.Append(1504, "&Selection\tCtrl+E+5")
+        self.export.Append(1500, "&Current Actor\tCtrl+1")  #TODO BUG!!!!! Mixes up with the other accelerator table. Fix?
+        self.export.Append(1501, "&All Actors\tCtrl+2")
+        self.export.Append(1502, "&Current Actor's Current Zplane\tCtrl+3")
+        self.export.Append(1503, "&All Actor's Zplanes\tCtrl+4")
+        self.export.Append(1504, "&Selection\tCtrl+5")
         self.colors = wx.Menu()
         self.export.Append(1505, "&Colors", self.colors)
-        self.export.Append(1506, "&Text\tCtrl+E+6")
-        self.export.Append(1507, "&Image\tCtrl+E+7")
-        self.export.Append(1508, "&Point Cloud\tCtrl+E+8")
+        self.export.Append(1506, "&Text\tCtrl+6")
+        self.export.Append(1507, "&Image\tCtrl+7")
+        self.export.Append(1508, "&Point Cloud\tCtrl+8")
         # Current Actor        self.filemenu.Append(108, "&Export As Directory\tCtrl+Shift+E")  # All Actors
         self.filemenu.Append(107, "Export...", self.export)
         self.filemenu.Append(109, "&Export Musicode\tCtrl+Shift+M")
@@ -240,7 +240,7 @@ class CustomMenuBar(wx.MenuBar):
                 filename = self.m_v.actors[i].name
                 output = intermediary_path + filename + ".mid"
                 self.m_v.actors[i]._stream = midiart3D.extract_xyz_coordinates_to_stream(self.m_v.actors[i]._points)
-                self.m_v.actors[i].write('mid', output)
+                self.m_v.actors[i]._stream.write('mid', output)
         pass
 
     #TODO *Be mindful of 'track mode' vs 'velocity mode' for later; when we have those modes for each zplane.
@@ -286,7 +286,8 @@ class CustomMenuBar(wx.MenuBar):
     def OnExport_Colors(self, event):
         print("Exporting Colors....")
         self.mv = self.GetTopLevelParent().mayavi_view
-        self.mv.colors_call = int(self.GetTopLevelParent().menuBar.colors.FindItemById(event.GetId()).Name)
+        print("evid", event.GetId())
+        self.mv.colors_call = int(self.GetTopLevelParent().menuBar.colors.FindItemById(event.GetId()).GetItemLabelText())  ##.Name in wx(4.0.7)
 
         #In the mv.actors list, get all actor that are part of a colors import instance.
         for i in range(0, len(self.mv.actors)):
@@ -473,7 +474,8 @@ class CustomMenuBar(wx.MenuBar):
     def OnPreferences(self, event):
         #Bug note: for the help and preferences dialog, I made the 'parent' set to mainbuttonspanel. Twas a layout direction error.
         #I basically made it so 'mainbuttonspanel' is the parent for all dialog classes we've created.
-        dlg = Preferences.PreferencesDialog(self.GetTopLevelParent().mainbuttonspanel, -1, "Midas Preferences")
+        #Might not be necessary for this OnPreferences function.....
+        dlg = Preferences.PreferencesDialog(self.GetTopLevelParent(), -1, "Midas Preferences")
         dlg.ShowWindowModal()
         #pass
 
@@ -678,7 +680,8 @@ class CustomMenuBar(wx.MenuBar):
     def OnToolSelection(self, event):
         print(event.Id)
         print("ass ass ass ass")
-        dlg = Preferences.ToolsDialog(self, -1, "Midas Dynamic Tool")
+        #Layout direction error here too. Fix with 'mainbuttonspanel' as parent.
+        dlg = Preferences.ToolsDialog(self.GetTopLevelParent().mainbuttonspanel, -1, "Midas Dynamic Tool")
         dlg.func_id = event.Id
         # Generate custom tool-based layout here.
         dlg._generate_layout(event.Id)
@@ -862,6 +865,7 @@ class CustomMenuBar(wx.MenuBar):
 
 
     def _OnPreferencesDialogClosed(self, dialog, evt):
+        print("Fuck")
         val = evt.GetReturnCode()
         print("Val %d: " % val)
         try:
@@ -869,6 +873,7 @@ class CustomMenuBar(wx.MenuBar):
                    wx.ID_CANCEL: "Cancel"}[val]
         except KeyError:
             btn = '<unknown>'
+        print("Fuck2")
         #self.GetTopLevelParent().mayavi_view
         if btn == "OK":
             if dialog.input_span.GetLineText(0) == None:
@@ -888,12 +893,14 @@ class CustomMenuBar(wx.MenuBar):
                 self.GetTopLevelParent().mayavi_view.default_mayavi_palette = \
                     midiart.convert_dict_colors(self.GetTopLevelParent().mayavi_view.default_color_palette)
                 self.GetTopLevelParent().mayavi_view.current_palette_name = "FLStudioColors"
+                print("FL Fuck")
             else:
                 self.GetTopLevelParent().mayavi_view.default_color_palette = midiart.get_color_palettes()[dialog.popupCtrl.GetStringValue()]
                 self.GetTopLevelParent().mayavi_view.default_mayavi_palette = \
                     midiart.convert_dict_colors(self.GetTopLevelParent().mayavi_view.default_color_palette)
                     #A tuple R\B switch happens here; tuple is inverted.
                 self.GetTopLevelParent().mayavi_view.current_palette_name = dialog.popupCtrl.GetStringValue()
+                print("Fuck3")
 
     def _OnHelpDialogClosed(self, dialog, evt):
         val = evt.GetReturnCode()
@@ -909,7 +916,9 @@ class CustomMenuBar(wx.MenuBar):
     def _OnPrefDialogCloser(self, evt):
         # One for Preferences, bound in MainWindow.
         dialog = evt.GetDialog()
+        print("FUCKADONKEY")
         if type(dialog) is Preferences.PreferencesDialog:
+            print("FUCK_1")
             self._OnPreferencesDialogClosed(dialog, evt)
 
     def _OnHelpDialogCloser(self, evt):

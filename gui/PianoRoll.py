@@ -93,8 +93,9 @@ class PianoRollDataTable(wx.grid.GridTableBase):
     # need to store a reference to the piano roll panel.  GridTableBase does not store gui parents.
     
     #def SetRefToPianoRollPanel(self, pianorollpanel):
-    
-        
+
+
+
     def GetNumberCols(self):
         #print("GetNumberCols(): {}".format(self.parent.GetTopLevelParent().mayavi_view.CurrentActor()._array3D.shape[0]))
         if self.pianorollpanel.GetTopLevelParent().mayavi_view.CurrentActor():
@@ -113,7 +114,7 @@ class PianoRollDataTable(wx.grid.GridTableBase):
         else:
             return 128
         
-    def GetValue(self,row,col):
+    def GetValue(self, row, col):
     
         if self.pianorollpanel.GetTopLevelParent().mayavi_view.CurrentActor():
             if (self.pianorollpanel):
@@ -126,19 +127,22 @@ class PianoRollDataTable(wx.grid.GridTableBase):
         else:
             return ""
 
-    def SetValue(self,row,col,value):
+    def SetValue(self, row, col, value):
         self.log.info(f"PianoRollDataTable.SetValue(): ({col},{row}),val={value}")
 
         if self.pianorollpanel.GetTopLevelParent().mayavi_view.CurrentActor():
             z = self.pianorollpanel.currentZplane
             self.pianorollpanel.GetTopLevelParent().mayavi_view.CurrentActor()._array3D[col][127-row][z] = int(value)
 
-    # def AppendCols(self, numCols=1, updateLables=True):
-    #     self.AppendCols(numCols, updateLables)
+    def AppendCols(self, numCols=1, updateLables=True):
+        #print("Super", super())
+        #wx.grid.GridTableBase.AppendCols(self, numCols)
+        pass #TODO WHY does this have to be pass when overriding? I don't fully understand this.
     #
-    # def DeleteCols(self, pos=0, numCols=1, updateLables=True):  #Overload duplicates original here.
-    #     self.DeleteCols(pos, numCols, updateLables)
-
+    def DeleteCols(self, pos=0, numCols=1, updateLables=True):  #Overload duplicates original here.
+        #print("Super", super())
+        #wx.grid.GridTableBase.DeleteCols(self, pos, numCols)
+        pass
 
 # Main Class for the PianoRoll, based orn wx.Grid
 class PianoRoll(wx.grid.Grid, glr.GridWithLabelRenderersMixin):
@@ -205,6 +209,7 @@ class PianoRoll(wx.grid.Grid, glr.GridWithLabelRenderersMixin):
 
         self.DrawColumnLabels()
 
+        #TODO Why isn't this a function? 9/23/20
         # Set up the "piano" with note labels
         for i in reversed(range(self.NumberRows)):
             self.SetRowSize(i, 10)
@@ -258,6 +263,7 @@ class PianoRoll(wx.grid.Grid, glr.GridWithLabelRenderersMixin):
         #self.m_v.scroll_changed_flag = not self.m_v.scroll_changed_flag
         #self.m_v.new_reticle_box()
         event.Skip()
+
 
     def OnMeasureLabelsLeftClick(self, event):
         self.last_known_pos = event.GetPosition()
@@ -333,6 +339,7 @@ class PianoRoll(wx.grid.Grid, glr.GridWithLabelRenderersMixin):
         #TODO Then
         #TODO DO DRAW SHIT HERE, LICKABITCH
 
+
     def DrawColumnLabels(self):
         # Set up column labels to have measure numbers and stuff
         for i in range(self.NumberCols):
@@ -349,13 +356,15 @@ class PianoRoll(wx.grid.Grid, glr.GridWithLabelRenderersMixin):
                 self.SetColLabelValue(i, "")
                 self.SetColLabelRenderer(i, PianoRollColLabelRenderer("LIGHT STEEL BLUE", "BLACK"))
 
+
     def ClearGrid(self):
         #TODO Is this working? ResetGridCellSizes has 'spans' that haven't been touched in a while....
         print("ClearGrid():")
         #TODO Clear using self.cur_array3d
         super().ClearGrid()
         print("Here.")
-        #self.ResetGridCellSizes()  #TODO This breaks ChangeCellsPerQrtrNote?
+        self.ResetGridCellSizes()  #TODO This breaks ChangeCellsPerQrtrNote?
+        #print("Here5.")
 
 
     def ChangeCellsPerQrtrNote(self, newvalue):
@@ -365,39 +374,48 @@ class PianoRoll(wx.grid.Grid, glr.GridWithLabelRenderersMixin):
         self._cells_per_qrtrnote = newvalue
 
         # Clear grid
-        #self.ClearGrid()
-
+        self.ClearGrid()
+        #print("Here5.1")
         #Change number of columns
         oldNumCols = self._table.GetNumberCols()
+        #print("Here5.2")
         newNumCols = int((newvalue / oldvalue) * oldNumCols)
+        #print("Here5.3")
         if newNumCols > oldNumCols:
-            self.AppendCols(newNumCols - oldNumCols, False)
+            #print("Here5.4, --newNumCols is >")
+            self._table.AppendCols(newNumCols - oldNumCols, True)
+            #print("Here5.5.")
         elif oldNumCols > newNumCols:
-            self.DeleteCols(0, oldNumCols - newNumCols, False)
-
+            #print("Here5.4, --newNumCols is <")
+            self._table.DeleteCols(0, oldNumCols - newNumCols, True)
+            #print("Here5.6.")
 
         self.DrawColumnLabels()
+        #print("Here6.")
 
         # Draw notes based on the saved stream
         #self.StreamToGrid(self.stream) #TODO WE don't use a stream here anymore?
+
 
     def GetCellsPerQrtrNote(self):
         return self._cells_per_qrtrnote
 
 
     def ResetGridCellSizes(self):
-        #noUpdates = wx.grid.GridUpdateLocker(self)
+        noUpdates = wx.grid.GridUpdateLocker(self)
 
         #TODO Haven't touched spans in a while. Return to this when we deal with cellspans\stream durations.
-
+        print("Here2")
         for y in range(self._table.GetNumberRows()):
             for x in range(self._table.GetNumberCols()):
                 span,r,c = self.GetCellSize(x,y)
 
+                #print("Here3")
                 if span == wx.grid.Grid.CellSpan_Main:
                     print("({},{})".format(x, y))
                     self.SetCellSize(x,y,1,1)
                    # msg = wx.grid.GridTableMessage(self,wx.grid.GRIDNO
+        print("Here4")
 
 
     def UpdateStream(self):
@@ -424,6 +442,7 @@ class PianoRoll(wx.grid.Grid, glr.GridWithLabelRenderersMixin):
     #     n.duration.quarterLength = self.pix_note_size * self.current_note_draw_size
     #     self.stream.insert(col, n)
 
+
     def OnMouseWheel(self, event):
         if event.GetWheelAxis() == wx.MOUSE_WHEEL_HORIZONTAL or event.GetWheelDelta() < 120:
             event.Skip()
@@ -446,6 +465,7 @@ class PianoRoll(wx.grid.Grid, glr.GridWithLabelRenderersMixin):
 
         event.Skip()
 
+
     def ZoomInVertical(self, intervals):
         cur = self.GetRowSize(1)
         if (cur - intervals * self.zoom_interval) > 1:
@@ -460,6 +480,7 @@ class PianoRoll(wx.grid.Grid, glr.GridWithLabelRenderersMixin):
         #but it would take writing a new function.
         self.SetLabelFont(wx.Font(newfontsize, wx.DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL))
 
+
     def ZoomOutVertical(self, intervals):
         cur = self.GetRowSize(1)
         if (cur + intervals * self.zoom_interval) < self.max_y:
@@ -471,6 +492,7 @@ class PianoRoll(wx.grid.Grid, glr.GridWithLabelRenderersMixin):
         # but it would take writing a new function.
         self.SetLabelFont(wx.Font(newfontsize, wx.DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL))
 
+
     def ZoomInHorizontal(self, intervals):
         cur = self.GetColSize(1)
         if (cur - intervals * self.zoom_interval) > 1:
@@ -479,6 +501,7 @@ class PianoRoll(wx.grid.Grid, glr.GridWithLabelRenderersMixin):
         else:
             for c in range(0, self.GetNumberCols()):
                 self.SetColSize(c, 1)
+
 
     def ZoomOutHorizontal(self, intervals):
         cur = self.GetColSize(1)
@@ -520,14 +543,19 @@ class PianoRoll(wx.grid.Grid, glr.GridWithLabelRenderersMixin):
 
         self.UpdateStream()
 
+
     def OnCellSelected(self, evt):
         self.log.info("onCellSelected():")
         #self.SetCellValue(evt.Row, evt.Col, "1")
         self.DeselectCell(evt.GetRow(), evt.GetCol())
         evt.Skip()
 
+
     def OnGridLClick(self, evt):
 
+        z = self.GetTopLevelParent().pianorollpanel.currentZplane
+        current_actor = self.m_v.CurrentActor()
+        cpqn = self._cells_per_qrtrnote
 
         row = evt.GetRow()
         col = evt.GetCol()
@@ -539,12 +567,31 @@ class PianoRoll(wx.grid.Grid, glr.GridWithLabelRenderersMixin):
         #y = evt.GetCol()
         if self._table.GetValue(row, col) == "1":
             self.EraseCell( row, col)
+            current_actor._array3D[int(row / cpqn), int(127-col), int(z)] =  0
             self.drawing = 0
         elif self._table.GetValue(row, col) == "0":
+            #print("ROW", row)
+            #print("COL", col)
             self.DrawCell("1", row, col, 1, int(self.draw_cell_size))
+            #current_actor._array3D[int(row / cpqn), int(127-col), int(z)] = 1
             self.drawing = 1
 
         evt.Skip()
+        self.m_v.actors[self.m_v.cur_ActorIndex].array3Dchangedflag += 1
+
+        #After the drawing event, update the array_3d accordingly.
+
+        # on_points = np.argwhere(current_actor._array3D[row, col, z] >= 1.0)
+        # print("On_Points", on_points)
+        # for i in on_points:
+        #     self._table.SetValue(127 - i[1], i[0], eval("self.drawing"))
+        #
+        # current_actor._array3D[:, :, z] = current_actor._array3D[:, :, z] * 0
+        # self.ForceRefresh()
+        # self.m_v.actors[self.m_v.cur_ActorIndex].array3Dchangedflag += 1
+        # self.ResetGridCellSizes()
+        # self.ForceRefresh()
+
 
     def EraseCell(self, row, col):
         cur_span, cur_sy, cur_sx = self.GetCellSize(row, col)
@@ -592,12 +639,12 @@ class PianoRoll(wx.grid.Grid, glr.GridWithLabelRenderersMixin):
             y += 1
 
         print(f"  {row},{col} = {val}")
-        #self._table.SetValue(row, 127-col, val)
-        self.SetCellValue(row, col, val)
-        #self.m_v.CurrentActor()._array3D[x, 127 - y, layer] = 1
+        self._table.SetValue(row, col, val)
+        #self.SetCellValue(row, col, val)
+        #print("X", x)
+        #self.m_v.CurrentActor()._array3D[x * self._cells_per_qrtrnote, 127 - y, val] = 1
+        #self.m_v.CurrentActor().array3Dchangedflag = not self.m_v.CurrentActor().array3Dchangedflag
         self.SetCellSize(row, col, new_sy, new_sx)
-
-
 
 
     def StreamToGrid(self, in_stream, z=None):

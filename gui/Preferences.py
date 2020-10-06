@@ -16,6 +16,7 @@ from pyface.util import fix_introspect_bug
 from tvtk.pyface.ui.wx import decorated_scene
 from traitsui.wx import tree_editor
 from traitsui.wx import helper
+from traitsui.wx import file_editor
 from pyface.ui.wx.action import menu_manager
 
 
@@ -28,7 +29,7 @@ class PreferencesDialog(wx.Dialog):
 
         self.comboCtrl = wx.ComboCtrl(self, wx.ID_ANY, "", (20, 20))
 
-        self.static_color = self.name_static = wx.StaticText(self, -1, "Default Color Palette")
+        self.static_color = self.name_static = wx.StaticText(self, -1, "Current Color Palette")
 
 
         self.popupCtrl = ListCtrlComboPopup()
@@ -198,7 +199,7 @@ class ToolsDialog(wx.Dialog):
     def _generate_layout(self, event_id):
         self.func_id = event_id
         print("Gen_ID", self.func_id)
-        self.func_name = str(self.GetParent().FindItemById(self.func_id).GetName())
+        self.func_name = str(super().GetParent().GetTopLevelParent().menuBar.FindItemById(self.func_id).GetItemLabelText())
         print("Gen_func_name", self.func_name)
         #self.musicode_workaround = super().GetParent().GetTopLevelParent().musicode
         #print("Gen_mc_func_name:", self.musicode_workaround)
@@ -211,16 +212,16 @@ class ToolsDialog(wx.Dialog):
         self.func_txt = wx.StaticText(self, -1, self.func_name)
         self.sizerMain = wx.BoxSizer(wx.VERTICAL)
         self.sizerHorizontal = wx.BoxSizer(wx.HORIZONTAL)
-        self.sizerHorizontal.Add(self.func_txt, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL, 20)
+        self.sizerHorizontal.Add(self.func_txt, 0, wx.ALL | wx.ALIGN_CENTER, 20)
         #self.sizerMain.Add(self.ass, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL, 20)
         #print(eval("self.func_module.translate"))
         print("self.func_module" + '.' + "%s" % self.func_name)
         for argskwargs in [j for j in inspect.getfullargspec(eval(str("self.func_module" + '.' + "%s" % self.func_name)))][0]:
             argSizer = wx.BoxSizer(wx.VERTICAL)
             argkwargname = wx.StaticText(self, 0, argskwargs)
-            argkwarginput = wx.TextCtrl(self, 0, argskwargs, size=(70, -1), style=wx.ALIGN_CENTER_HORIZONTAL, name=argskwargs)
-            argSizer.Add(argkwargname, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL, 20)
-            argSizer.Add(argkwarginput, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL, 20)
+            argkwarginput = wx.TextCtrl(self, 0, argskwargs, size=(70, -1), style=wx.ALIGN_CENTER, name=argskwargs)
+            argSizer.Add(argkwargname, 0, wx.ALL | wx.ALIGN_CENTER, 20)
+            argSizer.Add(argkwarginput, 0, wx.ALL | wx.ALIGN_CENTER, 20)
             self.sizerHorizontal.Add(argSizer)
 
         btnsizer = wx.StdDialogButtonSizer()
@@ -232,7 +233,7 @@ class ToolsDialog(wx.Dialog):
         btnsizer.Realize()
 
         self.sizerMain.Add(self.sizerHorizontal)
-        self.sizerMain.Add(btnsizer, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL, 20)
+        self.sizerMain.Add(btnsizer, 0, wx.ALL | wx.ALIGN_CENTER, 20)
         self.SetSizerAndFit(self.sizerMain)
 
 
@@ -372,10 +373,55 @@ def _is_pasteable(self, object):
 
     return self._menu_node.can_add(object, clipboard.object_type)
 
+def init_1(self, parent):
+    """ Finishes initializing the editor by creating the underlying toolkit
+        widget.
+    """
+    self.control = panel = helper.TraitsUIPanel(parent, -1)
+    sizer = wx.BoxSizer(wx.HORIZONTAL)
+    factory = self.factory
+
+    if factory.entries > 0:
+        from traitsui.wx.history_control import HistoryControl
+
+        self.history = HistoryControl(
+            entries=factory.entries, auto_set=factory.auto_set
+        )
+        control = self.history.create_control(panel)
+        pad = 3
+        button = wx.Button(panel, -1, "...", size=wx.Size(28, -1))
+    else:
+        if factory.enter_set:
+            control = wx.TextCtrl(panel, -1, "", style=wx.TE_PROCESS_ENTER)
+            panel.Bind(wx.EVT_TEXT_ENTER, self.update_object, id=control.GetId())
+        else:
+            control = wx.TextCtrl(panel, -1, "")
+
+        control.Bind(wx.EVT_KILL_FOCUS, self.update_object)
+
+        if factory.auto_set:
+            panel.Bind(wx.EVT_TEXT, self.update_object, id=control.GetId())
+
+        bmp = wx.ArtProvider.GetBitmap(wx.ART_FOLDER_OPEN, size=(15, 15))
+        button = wx.BitmapButton(panel, -1, bitmap=bmp)
+
+        pad = 8
+
+    self._file_name = control
+    sizer.Add(control, 1, wx.EXPAND)   #MIDAS bug fix
+    sizer.Add(button, 0, wx.LEFT, pad)
+    panel.Bind(wx.EVT_BUTTON, self.show_file_dialog, id=button.GetId())
+    panel.SetDropTarget(file_editor.FileDropTarget(self))
+    panel.SetSizerAndFit(sizer)
+    self._button = button
+
+    self.set_tooltip(control)
+
+
 #Method overwrite.
 #Permanent fix to the broken attribute auto-complete bug for our pycrust.
 
-#####PATCHES########
+#####PATCHES######## (for wx(4.0.7)
 fix_introspect_bug.getAllAttributeNames = getAllAttributeNames
 
 #Method bug.
@@ -386,3 +432,6 @@ helper.restore_window = restore_window
 menu_manager.MenuManager.add_to_menu = add_to_menu
 tree_editor.SimpleEditor._is_pasteable = _is_pasteable
 
+#for wx(4.1.0)
+#wx error over alignment flags that are now irrelevant and throw an error. (i.e. wx.ALL | ALIGN_CENTER_RIGHT)
+file_editor.SimpleEditor.init = init_1
