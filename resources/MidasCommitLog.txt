@@ -279,7 +279,7 @@ In MenuButtons
 
 --IP--Commit, September 11th, 2020--
 In Mayavi3DView
---> Made the tiniest tweak to line up the measure numbers with their apparent starting point better. Much better.
+--> Made the tiniest tweak to line up the yellow measure numbers with their apparent starting point better. Much better.
 In MenuButtons
 --> Added "\\" to the end of the defaultDir path, was buggy.
 --> Modify HelpDialog class to account for changes to wxpython.
@@ -290,7 +290,7 @@ In Preferences
 --> Modify PreferencesDialog class to account for changes to wxpython.
 --> Modify layout (i.e. ALIGN_CENTER_HORIZONTAL) flags stuff to account for changes in wxpython update. (Any horizontal flags inside a wx.Sizer(wx.HORIZONTAL) are ignored and raise an error)
 
---IP--Commit, October
+--IP--Commit, October 6th, 2020--
 In MenuButtons
 --> In OnExport_Colors --> Changed  methdo ".Name" to ".GetItemLabel" text (line 290 as of this commit) as necessary for wx(4.1.0)
 --> Fix: The parent inheritance *(window layout direction) for the "ToolsDialog" as well, now. Adjusted errors accordingly for wx.4.1.0 update. (horizontal alignment flags, some wx.Menu methods were renamed: i.e. 'GetName()' was changed to 'GetItemLabelText()')
@@ -311,7 +311,30 @@ In Midiart
 In Mayavi3DView and PianoRollPanel
 --> Fixed event bug that made the grid_reticle not update on que.
 In MainButtons
---> Added the Four Main Buttons ("midi\Score Import", "Musicode", "Midiart", "3idiArt") to the mainbuttonspanel's accelerator table. They are not hotkeyed to F1, F2, F3, and F4 respectively.
+--> Added the Four Main Buttons ("midi\Score Import", "Musicode", "Midiart", "3idiArt") to the mainbuttonspanel's accelerator table. They are now hotkeyed to F1, F2, F3, and F4 respectively.
 In Midas_wx
 -->Added mayavi_view.new_reticle_box() to the SetSash hotkey functions.
 -->Added OnScroll_ActorsandZplanes Feature.
+-->SetFocus() sets the focus on the mainbuttonspanel on startup now.
+
+
+--IP--Commit, November....
+In Mayavi3idiView
+--> Add "Actor_Label" to the highlighter plane. Reads text as the GetItemText() title of the current actor in the actorListBox.
+--> Add mainbuttonspanel.SetFocus() to the function redraw_mayaviview()
+--> Add feature that changes the "Actor_Label's" color to whatever the CurrentActor's() color is. (helps with keeping track) --(line 1206 --> i.actor.property.color = self.CurrentActor().color)
+In Midas_wx
+--> Change color of the startup "Earth." (I'm playing with it, seeing what I like.)
+In PianoRollPanel
+--> Add "Grid Highlighting" Feature. Acquires selected "area of cells" as well as "cells-activated" within that area (self.selected_cells and self.selected_cells_activated)
+--> Improve on "Grid Highlighting" feature so the "unselected" cells are actually removed from "self.selected_cells"
+In PianoRoll
+--> Change the ZoomInHorizontal() scroll binding form "Ctrl" to "Alt." ("Ctrl conflicts with the 'OnScroll_ActorsandZplanes' feature.")
+In MenuBar
+--> Add mainbuttonspanel.SetFocus() to OnPreferencesDialogClosed().
+In ZplanesListBox
+--> Disable SINGLE_SEL: allows selecting of multiple list items(this will be useful for functions acting on selections of multiple zplanes in the zplane list box. Adjusted actors\zplane list box scroll hotkey function accordingly.
+In MenuButtons:
+--> SetFocus() added to the end of OnPreferencesDialogClosed. Once I select a color in the PreferencesDialog and close it, I can use the "F" hotkeys right away.
+In MainButtons:
+--> Adjust spacing of the "Midi\Score Import" dialog layout, as well as the title. (Aesthetic change.)
