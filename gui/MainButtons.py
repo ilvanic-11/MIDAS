@@ -117,7 +117,7 @@ class MainButtonsPanel(wx.Panel):
         self.GetTopLevelParent().pianorollpanel.pianoroll.stream.show('txt')
 
     def OnMusic21ConverterParseDialog(self, evt):
-        dlg = Music21ConverterParseDialog(self, -1, "       music21.converter.parse") #Spaces deliberate here.
+        dlg = Music21ConverterParseDialog(self, -1, "         music21.converter.parse") #9 Spaces deliberate here.
         dlg.ShowWindowModal()
 
     def OnMusicodeDialog(self, evt):
@@ -376,6 +376,57 @@ class MainButtonsPanel(wx.Panel):
         #r"C:\Program Files\MuseScore 3\bin\MuseScore3.exe"
 
 
+class Music21ConverterParseDialog(wx.Dialog):
+    def __init__(self, parent, id, title, size=wx.DefaultSize,
+                 pos=wx.DefaultPosition, style=wx.DEFAULT_DIALOG_STYLE, name='Traditional Music'):
+        wx.Dialog.__init__(self)
+        self.Create(parent, id, title, pos, size, style, name)
+        #self.ctrlsPanel = wx.Panel(self, -1, wx.DefaultPosition, style=wx.BORDER_RAISED)
+
+        self.help_static = wx.StaticText(self, -1, "Import a midi file or a score file.", style=wx.ALIGN_CENTER)
+
+        self.btnLoadMidi = wx.Button(self, -1, "Load Midi\\Score")
+        self.Bind(wx.EVT_BUTTON, self.OnLoadMidi, self.btnLoadMidi)
+
+
+
+        btnsizer = wx.StdDialogButtonSizer()
+        btn = wx.Button(self, wx.ID_OK)
+        btn.SetDefault()
+        btnsizer.AddButton(btn)
+        btn = wx.Button(self, wx.ID_CANCEL)
+        btnsizer.AddButton(btn)
+        btnsizer.Realize()
+
+        sizerMain = wx.BoxSizer(wx.VERTICAL)
+        #sizerMain.Add(sizerHor, 30)
+        sizerMain.Add(self.help_static, 0, wx.ALL | wx.ALIGN_CENTER, 20)
+        sizerMain.Add(self.btnLoadMidi, 0, wx.ALL | wx.ALIGN_CENTER, 10)
+        sizerMain.Add(btnsizer, 0, wx.ALIGN_CENTER | wx.ALL, 10)
+
+        #sizerCtrls = wx.BoxSizer(wx.VERTICAL)
+
+        self.SetSizerAndFit(sizerMain)
+
+
+    def OnLoadMidi(self, evt):
+        with wx.FileDialog(self, "Open Midi file", wildcard="Midi files (*.mid)|*.mid",
+                           style=wx.FD_OPEN | wx.FD_FILE_MUST_EXIST) as fileDialog:
+
+            if fileDialog.ShowModal() == wx.ID_CANCEL:
+                return  # the user changed their mind
+
+            # Proceed loading the file chosen by the user
+            pathname = fileDialog.GetPath()
+            print(pathname)
+            try:
+                self.midi = pathname
+                self.midi_name = os.path.basename(pathname)
+            except IOError:
+                wx.LogError("Cannot open file '%s'." % pathname)
+
+
+
 class MusicodeDialog(wx.Dialog):
     def __init__(self,parent,id,title, size=wx.DefaultSize,
                  pos=wx.DefaultPosition, style=wx.DEFAULT_DIALOG_STYLE, name='Musicode' ):
@@ -485,9 +536,10 @@ class MusicodeDialog(wx.Dialog):
         #     self.translate_musicode.SetValue(True)
 
 
+
 class MIDIArtDialog(wx.Dialog):
     def __init__(self,parent,id,title, size=wx.DefaultSize,
-                 pos=wx.DefaultPosition, style=wx.DEFAULT_DIALOG_STYLE, name='MIDI Art' ):
+                 pos=wx.DefaultPosition, style=wx.DEFAULT_DIALOG_STYLE, name='MidiArt' ):
 
         wx.Dialog.__init__(self)
         self.Create(parent, id, title, pos, size, style, name)
@@ -631,9 +683,12 @@ class MIDIArtDialog(wx.Dialog):
 
 class MIDIArt3DDialog(wx.Dialog):
     def __init__(self, parent, id, title, size=wx.DefaultSize,
-                 pos=wx.DefaultPosition, style=wx.DEFAULT_DIALOG_STYLE, name='MIDI Art 3D'):
+                 pos=wx.DefaultPosition, style=wx.DEFAULT_DIALOG_STYLE, name='3idiArt'):
         wx.Dialog.__init__(self)
         self.Create(parent, id, title, pos, size, style, name)
+
+        #Help Text
+        self.help_static = wx.StaticText(self, -1, "Load a point cloud and manipulate its 3-dimensional aspects as music.")
 
         #LoadPly
         self.btnLoadPly = wx.Button(self, -1, "Load Point Cloud")
@@ -641,6 +696,24 @@ class MIDIArt3DDialog(wx.Dialog):
         #Redraw MayaviView
         self.btnRedrawMayaviView = wx.Button(self, -1, "Redraw Mayavi Figure")
         self.Bind(wx.EVT_BUTTON, self.On3DDisplayRedraw, self.btnRedrawMayaviView)
+
+        #Standard Reorientation
+        self.btnStandardReo = wx.Button(self, -1, "Standard Reorientation")
+        # self.Bind(wx.EVT_BUTTON, self.
+
+        #Trim
+        self.btnTrim = wx.Button(self, -1, "Trim Points")
+        #self.Bind(wx.EVT_BUTTON, self.
+        #Rotate
+        self.btnRotate = wx.Button(self, -1, "Rotate Points")
+        #self.Bind(wx.EVT_BUTTON, self.
+
+        #Scale
+        self.btnScale = wx.Button(self, -1, "Scale Points")
+        #self.Bind(wx.EVT_BUTTON, self.
+
+        #new_points = Standard_Reorientation
+
 
         btnsizer = wx.StdDialogButtonSizer()
         btn = wx.Button(self, wx.ID_OK)
@@ -652,8 +725,12 @@ class MIDIArt3DDialog(wx.Dialog):
 
         sizerMain = wx.BoxSizer(wx.VERTICAL)
         # sizerMain.Add(sizerHor, 30)
-
+        sizerMain.Add(self.help_static, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL, 20)
         sizerMain.Add(self.btnLoadPly, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL, 20)
+        sizerMain.Add(self.btnStandardReo, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL, 20)
+        sizerMain.Add(self.btnTrim, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL, 20)
+        sizerMain.Add(self.btnScale, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL, 20)
+        sizerMain.Add(self.btnRotate, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL, 20)
         sizerMain.Add(self.btnRedrawMayaviView, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL, 20)
         sizerMain.Add(btnsizer, 0, wx.ALIGN_CENTER_HORIZONTAL | wx.ALL, 1)
 
@@ -680,58 +757,6 @@ class MIDIArt3DDialog(wx.Dialog):
         super().GetParent().GetTopLevelParent().mayavi_view.redraw_mayaviview()
 
 
-class Music21ConverterParseDialog(wx.Dialog):
-    def __init__(self, parent, id, title, size=wx.DefaultSize,
-                 pos=wx.DefaultPosition, style=wx.DEFAULT_DIALOG_STYLE, name='MIDI Art 3D'):
-        wx.Dialog.__init__(self)
-        self.Create(parent, id, title, pos, size, style, name)
-
-        #self.ctrlsPanel = wx.Panel(self, -1, wx.DefaultPosition, style=wx.BORDER_RAISED)
-
-        self.btnLoadMidi = wx.Button(self, -1, "Load Midi\\Score")
-
-        self.Bind(wx.EVT_BUTTON, self.OnLoadMidi, self.btnLoadMidi)
-
-        btnsizer = wx.StdDialogButtonSizer()
-
-        # if wx.Platform != "__WXMSW__":
-        #btn = wx.ContextHelpButton(self)
-        # btnsizer.AddButton(btn)
-
-        btn = wx.Button(self, wx.ID_OK)
-        btn.SetDefault()
-        btnsizer.AddButton(btn)
-        btn = wx.Button(self, wx.ID_CANCEL)
-        btnsizer.AddButton(btn)
-        btnsizer.Realize()
-
-        sizerMain = wx.BoxSizer(wx.VERTICAL)
-        #sizerMain.Add(sizerHor, 30)
-        sizerMain.Add(self.btnLoadMidi, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL, 20)
-
-        sizerMain.Add(btnsizer, 0, wx.ALIGN_CENTER_HORIZONTAL | wx.ALL, 1) #5
-
-        #sizerCtrls = wx.BoxSizer(wx.VERTICAL)
-
-
-        self.SetSizerAndFit(sizerMain)
 
 
 
-
-
-    def OnLoadMidi(self, evt):
-        with wx.FileDialog(self, "Open Midi file", wildcard="Midi files (*.mid)|*.mid",
-                           style=wx.FD_OPEN | wx.FD_FILE_MUST_EXIST) as fileDialog:
-
-            if fileDialog.ShowModal() == wx.ID_CANCEL:
-                return  # the user changed their mind
-
-            # Proceed loading the file chosen by the user
-            pathname = fileDialog.GetPath()
-            print(pathname)
-            try:
-                self.midi = pathname
-                self.midi_name = os.path.basename(pathname)
-            except IOError:
-                wx.LogError("Cannot open file '%s'." % pathname)

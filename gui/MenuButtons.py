@@ -901,6 +901,9 @@ class CustomMenuBar(wx.MenuBar):
                     #A tuple R\B switch happens here; tuple is inverted.
                 self.GetTopLevelParent().mayavi_view.current_palette_name = dialog.popupCtrl.GetStringValue()
                 print("Fuck3")
+            #Set the focus on the mainbuttonspanel so "F" hotkeys will work immediately.
+            self.GetTopLevelParent().mainbuttonspanel.SetFocus()
+
 
     def _OnHelpDialogClosed(self, dialog, evt):
         val = evt.GetReturnCode()
