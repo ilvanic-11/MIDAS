@@ -38,7 +38,9 @@ class PianoRollPanel(wx.Panel):
         self.tb = self.SetupToolbar()
 
         self.currentZplane = 90
-        
+
+        self.mode = 1  ### "1" for Draw, 0 for Select
+
         self.mayavi_view = self.GetTopLevelParent().mayavi_view
         
         self.pianorollSplit = wx.SplitterWindow(self, wx.ID_ANY, style=wx.SP_3DSASH | wx.SP_BORDER)
@@ -57,23 +59,29 @@ class PianoRollPanel(wx.Panel):
                                              self.log
                                              )
 
-        self.pianoroll.GetGridWindow().Bind(wx.EVT_MOTION, self.OnMotion)
-        self.pianoroll.GetGridWindow().Bind(wx.EVT_LEFT_UP, self.OnMouseLeftUp)
 
         mainSizer = wx.BoxSizer(wx.VERTICAL)
         mainSizer.Add(self.tb, 1, wx.EXPAND)
         mainSizer.Add(self.pianorollSplit, 1, wx.EXPAND)
-        
+
         self.pianorollSplit.SplitVertically(self.ctrlpanelSplit, self.pianoroll)
         self.ctrlpanelSplit.SplitVertically(self.actorsctrlpanel, self.zplanesctrlpanel)
         self.ctrlpanelSplit.SetSashGravity(0.5)
-        
+
         self.pianorollSplit.SetSashPosition(240)
         self.ctrlpanelSplit.SetSashPosition(120)
 
         self.pianorollSplit.SetMinimumPaneSize(240)
         #self.ctrlpanelSplit.SetMinimumPaneSize(10)
-        
+
+        #For Draw feature(s).
+        self.pianoroll.GetGridWindow().Bind(wx.EVT_MOTION, self.OnMotion)
+        self.pianoroll.GetGridWindow().Bind(wx.EVT_LEFT_UP, self.OnMouseLeftUp)
+
+        #For Highlight Selection feature.
+        self.pianoroll.Bind(wx.grid.EVT_GRID_SELECT_CELL, self.onSingleSelect)
+        self.pianoroll.Bind(wx.grid.EVT_GRID_RANGE_SELECT, self.onDragSelection)
+
 
         self.Layout()
         self.SetSizerAndFit(mainSizer)
@@ -89,21 +97,25 @@ class PianoRollPanel(wx.Panel):
         #self.log.debug("OnMotion: Drawing=%d " % self.pianoroll.drawing)
         cpqn = self.pianoroll._cells_per_qrtrnote
         z = self.currentZplane
+        if self.mode == 1:  ##If mode is "Draw Mode".....
+            if evt.Dragging() and evt.LeftIsDown():
+                x, y = self.pianoroll.CalcUnscrolledPosition(evt.GetPosition())
+                row = self.pianoroll.YToRow(y)
+                col = self.pianoroll.XToCol(x)
+                (span, sx, sy) = self.pianoroll.GetCellSize(row, col)
+                # print(f"row={row},col={col}" + self.pianorolls[self.currentpianoroll].print_cell_info(row,col))
 
-        if evt.Dragging() and evt.LeftIsDown():
-            x, y = self.pianoroll.CalcUnscrolledPosition(evt.GetPosition())
-            row = self.pianoroll.YToRow(y)
-            col = self.pianoroll.XToCol(x)
-            (span, sx, sy) = self.pianoroll.GetCellSize(row, col)
-            # print(f"row={row},col={col}" + self.pianorolls[self.currentpianoroll].print_cell_info(row,col))
-
-            if self.pianoroll.drawing == 0:
-                if (self.pianoroll.GetCellValue(row, col) == "1" or span == wx.grid.Grid.CellSpan_Inside):
-                    self.pianoroll.EraseCell(row, col)
-                    #self.mayavi_view.CurrentActor()._array3D[int(col / cpqn), int(127 - row), int(z)] = 0
-            elif self.pianoroll.drawing == 1:
-                if (self.pianoroll.GetCellValue(row, col) == "0" and span != wx.grid.Grid.CellSpan_Inside):
-                    self.pianoroll.DrawCell("1", row, col, 1, self.pianoroll.draw_cell_size)
+                if self.pianoroll.drawing == 0:
+                    if (self.pianoroll.GetCellValue(row, col) == "1" or span == wx.grid.Grid.CellSpan_Inside):
+                        self.pianoroll.EraseCell(row, col)
+                        #self.mayavi_view.CurrentActor()._array3D[int(col / cpqn), int(127 - row), int(z)] = 0
+                elif self.pianoroll.drawing == 1:
+                    if (self.pianoroll.GetCellValue(row, col) == "0" and span != wx.grid.Grid.CellSpan_Inside):
+                        self.pianoroll.DrawCell("1", row, col, 1, self.pianoroll.draw_cell_size)
+        elif self.mode == 0:  ##if Select Mode...
+            pass
+        else:
+            pass
                     #self.mayavi_view.CurrentActor()._array3D[int(col / cpqn), int(127 - row), int(z)] = 1
             # print("x=%d, y=%d, row=%d, col=%d" % (x,y,row,col))
         evt.Skip()
@@ -115,13 +127,17 @@ class PianoRollPanel(wx.Panel):
         :param evt:
         :return:
         """
-        self.log.info("OnMouseLeftUp():")
-        print("On Mouse Left Up:")
-        #self.currentpianoroll.UpdateStream()
-        mv = self.GetTopLevelParent().mayavi_view
-        print("Flag not changed yet.", mv.CurrentActor().array3Dchangedflag)
-        mv.CurrentActor().array3Dchangedflag = not mv.CurrentActor().array3Dchangedflag
-        print("Flag changed now.", mv.CurrentActor().array3Dchangedflag)
+        if self.mode == 1: ##If "Draw Mode"....
+            #TODO Account for cpqn here?
+            self.log.info("OnMouseLeftUp():")
+            print("On Mouse Left Up:")
+            #self.currentpianoroll.UpdateStream()
+            mv = self.GetTopLevelParent().mayavi_view
+            print("Flag not changed yet.", mv.CurrentActor().array3Dchangedflag)
+            mv.CurrentActor().array3Dchangedflag = not mv.CurrentActor().array3Dchangedflag
+            print("Flag changed now.", mv.CurrentActor().array3Dchangedflag)
+        else:
+            pass
         evt.Skip()
 
 
@@ -131,16 +147,16 @@ class PianoRollPanel(wx.Panel):
         self.toolbar = wx.ToolBar(self, -1, wx.DefaultPosition, wx.DefaultSize, style=wx.TB_HORIZONTAL)
         self.toolbar.SetToolBitmapSize(btn_size)
 
-        bmp_selectmode = wx.ArtProvider.GetBitmap(wx.ART_GO_FORWARD, wx.ART_TOOLBAR, btn_size)
-        bmp_drawmode = wx.ArtProvider.GetBitmap(wx.ART_COPY, wx.ART_TOOLBAR, btn_size)
+        bmp_drawmode = wx.ArtProvider.GetBitmap(wx.ART_GO_FORWARD, wx.ART_TOOLBAR, btn_size)
+        bmp_selectmode = wx.ArtProvider.GetBitmap(wx.ART_COPY, wx.ART_TOOLBAR, btn_size)
 
-        id_selectmode = 10
-        self.toolbar.AddRadioTool(id_selectmode, "Select", bmp_selectmode, wx.NullBitmap, "Select Mode", "Change to Select Mode",None)
-        self.Bind(wx.EVT_TOOL, self.OnToolBarClick, id=id_selectmode)
-
-        id_drawmode = 20
-        self.toolbar.AddRadioTool(id_drawmode, "Draw", bmp_drawmode, wx.NullBitmap, "Draw Mode", "Change to Draw Mode",None)
+        id_drawmode = 10
+        self.toolbar.AddRadioTool(id_drawmode, "Select", bmp_drawmode, wx.NullBitmap, "Draw Mode", "Change to Select Mode",None)
         self.Bind(wx.EVT_TOOL, self.OnToolBarClick, id=id_drawmode)
+
+        id_selectmode = 20
+        self.toolbar.AddRadioTool(id_selectmode, "select", bmp_selectmode, wx.NullBitmap, "Select Mode", "Change to Draw Mode",None)
+        self.Bind(wx.EVT_TOOL, self.OnToolBarClick, id=id_selectmode)
 
         self.toolbar.AddSeparator()
         self.toolbar.AddSeparator()
@@ -208,7 +224,7 @@ class PianoRollPanel(wx.Panel):
 
         #self.pianoroll.ForceRefresh()
 
-        #I don't fully understand, but this call needs to happen at the end of the function.
+        #I don't fully understand, but this call needs to happen at the end of the function. (On-que, reticle update bugfix.)
         self.mayavi_view.cpqn_changed_flag = not self.mayavi_view.cpqn_changed_flag
 
 
@@ -225,9 +241,9 @@ class PianoRollPanel(wx.Panel):
         """
         print("OnToolBarClick():")
         if event.GetId() == 10:
-            self.OnSelectMode(event)
-        elif event.GetId() == 20:
             self.OnDrawMode(event)
+        elif event.GetId() == 20:
+            self.OnSelectMode(event)
         elif event.GetId() == 30:
             #self.InsertNewPianoRoll(len(self.pianorolls))
             pass
@@ -238,12 +254,13 @@ class PianoRollPanel(wx.Panel):
             pass
 
 
-    def OnSelectMode(self, event):
-        self.log.info("OnSelectMode():")
-
-
     def OnDrawMode(self, event):
+        self.log.info("OnSelectMode():")
+        self.mode = 1
+
+    def OnSelectMode(self, event):
         self.log.info("OnDrawMode():")
+        self.mode = 0
 
 
     def print_cell_sizes(self):  #TODO Redundant? Consider deleting this button.
@@ -282,4 +299,125 @@ class PianoRollPanel(wx.Panel):
 
         self.pianoroll.ResetGridCellSizes()
         self.pianoroll.ForceRefresh()
+
+
+
+    ####FOR HIGHLIGHT-SELECTION FEATURE
+    # ----------------------------------------------------------------------
+    def onDragSelection(self, event):
+        """
+        Gets the cells that are selected by holding the left
+        mouse button down and dragging
+        """
+        # import inspect
+        # for i in inspect.getmembers(event):
+        #     print("EVENT", i[0], i[1])
+        if event.ShiftDown() and self.mode == 0:
+            if self.pianoroll.GetSelectionBlockTopLeft():
+                top_left = self.pianoroll.GetSelectionBlockTopLeft()[0]
+                bottom_right = self.pianoroll.GetSelectionBlockBottomRight()[0]
+                self.highlightSelectedCells(top_left, bottom_right, event)
+            # for i in self.selected_cells:
+            #     if self.pianoroll.GetCellValue(i[0], i[1]) != '1':
+            #         self.pianoroll.SetCellValue(i[0], i[1], '2')
+
+        elif not event.ShiftDown() and self.mode == 0:
+            if self.pianoroll.GetSelectionBlockTopLeft():
+                top_left = self.pianoroll.GetSelectionBlockTopLeft()[0]
+                bottom_right = self.pianoroll.GetSelectionBlockBottomRight()[0]
+                self.highlightSelectedCells(top_left, bottom_right, event)
+            # if self.selected_cells:
+            #     for i in self.selected_cells:
+            #         if self.pianoroll.GetCellValue(i[0], i[1]) == '2':
+            #             self.pianoroll.SetCellValue(i[0], i[1], '0')
+            else:
+                pass
+    # ----------------------------------------------------------------------
+    def onGetSelection(self, event):
+        """
+        Get whatever cells are currently selected
+        """
+        cells = self.pianoroll.GetSelectedCells()
+        if not cells:
+            if self.pianoroll.GetSelectionBlockTopLeft():
+                top_left = self.pianoroll.GetSelectionBlockTopLeft()[0]
+                bottom_right = self.pianoroll.GetSelectionBlockBottomRight()[0]
+                self.highlightSelectedCells(top_left, bottom_right, event)
+            else:
+                print(self.currentlySelectedCell)
+        else:
+            print(cells)
+
+    # ----------------------------------------------------------------------
+    def onSingleSelect(self, event):
+        """
+        Get the selection of a single cell by clicking or
+        moving the selection with the arrow keys
+        """
+        print("You selected Row %s, Col %s" % (event.GetRow(), event.GetCol()))
+
+        self.currentlySelectedCell = (event.GetRow(),
+                                      event.GetCol())
+        event.Skip()
+
+    # ----------------------------------------------------------------------
+    def highlightSelectedCells(self, top_left, bottom_right, event):
+        """
+        Based on code from http://ginstrom.com/scribbles/2008/09/07/getting-the-selected-cells-from-a-wxpython-grid/
+        """
+
+
+
+
+
+        rows_start = top_left[0]
+        rows_end = bottom_right[0]
+        cols_start = top_left[1]
+        cols_end = bottom_right[1]
+        rows = range(rows_start, rows_end + 1)
+        cols = range(cols_start, cols_end + 1)
+
+        if event.ShiftDown() and self.mode == 0:
+            self.selected_cells = []
+            for row in rows:
+                for col in cols:
+                ###This v-block-v 'colors' the 'highlight' area a "LIGHT BLUE" color by setting the cells "Value" to "2". (191, 216, 216)
+                    self.selected_cells.extend([(row, col)])
+                    if self.pianoroll.GetCellValue(row, col) != '1':
+                        self.pianoroll.SetCellValue(row, col, '2')
+        elif not event.ShiftDown() and self.mode == 0:
+            self.unselecting_cells = []
+            for row in rows:
+                for col in cols:
+                    self.unselecting_cells.extend([(row, col)])
+                    if self.pianoroll.GetCellValue(row, col) == '2':
+                        self.pianoroll.SetCellValue(row, col, '0')
+                    #This "if" removes cells being "unselected" from the stored self.selected_cells.
+                    #If there is a selection....
+                    try:
+
+                        if (row, col) in self.selected_cells:
+                            self.selected_cells.remove((row, col))
+                            #Remove unselectings...
+                        else:
+                            pass
+                    except AttributeError as i:
+                        #print(i)
+                        pass
+            # for deselect in self.selected_cells:
+            #     if deselect in self.unselecting_cells:
+            #         self.selected_cells.remove(deselect)
+
+         # self.selected_cells.extend([(row, col)
+         #               for row in rows
+         #               for col in cols])
+
+        #print("You selected the following cells: ", self.selected_cells)
+
+        # for cell in self.selected_cells:
+        #     row, col = cell
+        #     print("Cell's Value", self.pianoroll.GetCellValue(row, col))
+
+        self.selected_cells_activated = [i for i in self.selected_cells if int(self.pianoroll.GetCellValue(i[0], i[1])) == 1]
+        print("Number of DRAWN cells in selection:", len(self.selected_cells_activated))
 

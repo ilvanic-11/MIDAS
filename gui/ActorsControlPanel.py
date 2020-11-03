@@ -311,6 +311,6 @@ class CustomActorsListBox(wx.ListCtrl):
         if name is None:
             name = str(i) + "_" + "Actor"
         self.log.info(f"new_actor() {name} {i}")
+        self.InsertItem(i, name)                        #TODO Does the order of these matter? -10/8/20
         self.mayavi_view.append_actor(name, (0, 1, 0))  #Subsequent actors red.
-        self.InsertItem(i, name)
-
+        #self.mayavi_view.highlighter_transformation()

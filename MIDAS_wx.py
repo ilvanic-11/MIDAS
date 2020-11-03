@@ -108,6 +108,7 @@ class MainWindow(wx.Frame):
         #Actor on startup.
         self.pianorollpanel.actorsctrlpanel.actorsListBox.new_actor(0)
         self.mayavi_view.actors[0].change_points(MusicObjects.earth())
+        self.mayavi_view.sources[0].actor.property.color = (0, 1., .75)
 
         sizer = wx.BoxSizer(wx.VERTICAL)
         sizer.Add(self.top_mayaviview_split, 1, wx.EXPAND)
@@ -148,6 +149,7 @@ class MainWindow(wx.Frame):
         ##wx Restriction ---    Note: To respond to a menu selection, provide a handler for wx.EVT_MENU
         # in the frame that contains the menu bar.
 
+
         # File
         #Note -- Conflicting\Double ids will cause the function call to fail\not exist.
         self.Bind(wx.EVT_MENU, self.menuBar.OnNewSession, id=101)
@@ -157,6 +159,7 @@ class MainWindow(wx.Frame):
         self.Bind(wx.EVT_MENU, self.menuBar.OnImport, id=105)
         self.Bind(wx.EVT_MENU, self.menuBar.OnImportDirectory, id=106)
 
+
         #self.Bind(wx.EVT_MENU, self.menuBar.OnExport, id=107)  #TODO Free id available; 107
         #Export Submenu
         self.Bind(wx.EVT_MENU, self.menuBar.OnExport_CurrentActor, id=1500)
@@ -164,6 +167,7 @@ class MainWindow(wx.Frame):
         self.Bind(wx.EVT_MENU, self.menuBar.OnExport_CurrentActorsCurrentZplane, id=1502)
         self.Bind(wx.EVT_MENU, self.menuBar.OnExport_AllCurrentActorsZplanes, id=1503)
         self.Bind(wx.EVT_MENU, self.menuBar.OnExport_Selection, id=1504)
+
         #self.Bind(wx.EVT_MENU, self.menuBar.OnExport_Colors, id=1505)
         self.Bind(wx.EVT_MENU, self.menuBar.OnExport_Text, id=1506)  #TODO Change ids?
         self.Bind(wx.EVT_MENU, self.menuBar.OnExport_Image, id=1507)
@@ -346,58 +350,30 @@ class MainWindow(wx.Frame):
         event.Skip()
 
 
-
-    # def OnScrollZplanes(self, event):
-    #     if event.GetWheelAxis() == wx.MOUSE_WHEEL_HORIZONTAL or event.GetWheelDelta() < 120:
-    #         event.Skip()
-    #         return
-    #
-    #     mousestate = wx.GetMouseState()
-    #     #keystate_z = wx.GetKeyState(wx.WXK_CONTROL_Z)
-    #     #keystate_a = wx.GetKeyState(wx.WXK_CONTROL_A)
-    #     #TODO Use Select(), Focus() and maybe GetTopItem(). Also use wx.GetKeyState()
-    #
-    #     ##ZPLANES List Box
-    #     #if event.GetUnicodeKey() == ord('Z'):
-    #     if mousestate.ControlDown():    #HOLD CTRL
-    #         if mousestate.AltDown():    #HOLD ALT AND SCROLL TO DESIRED Z-PLANE LIST ITEM   # and event.ShiftDown():
-    #             if event.GetWheelRotation() >= 120:
-    #                 if self.zplane_scrolled == 0:
-    #                     pass
-    #                 else:
-    #                     self.zplane_scrolled -= 1
-    #                 print("Zplane Scrolled -->", self.zplane_scrolled)
-    #                 self.pianorollpanel.zplanesctrlpanel.ZPlanesListBox.Select(self.zplane_scrolled)
-    #                 self.pianorollpanel.zplanesctrlpanel.ZPlanesListBox.Focus(self.zplane_scrolled)
-    #                 #self.pianorollpanel.actorsctrlpanel.actorsListBox.Select
-    #
-    #             elif event.GetWheelRotation() <= -120:
-    #                 if self.zplane_scrolled == 127:
-    #                     pass
-    #                 else:
-    #                     self.zplane_scrolled += 1
-    #                 print("Zplane Scrolled -->", self.zplane_scrolled)
-    #                 self.pianorollpanel.zplanesctrlpanel.ZPlanesListBox.Select(self.zplane_scrolled)
-    #                 self.pianorollpanel.zplanesctrlpanel.ZPlanesListBox.Focus(self.zplane_scrolled)
-    #         else:  #SROLL ONE MORE TIME HERE TO ACTIVATE, IN EITHER DIRECTION.
-    #             print(f"zplane = {self.zplane_scrolled}")
-    #             self.GetTopLevelParent().pianorollpanel.currentZplane = self.zplane_scrolled
-    #             self.GetTopLevelParent().mayavi_view.cur_z = self.zplane_scrolled
-    #             self.GetTopLevelParent().mayavi_view.CurrentActor().cur_z = self.zplane_scrolled
-    #             self.GetTopLevelParent().pianorollpanel.pianoroll.ForceRefresh()
-    #
-    #     event.Skip()
-
     def OnScrollActors_Zplanes(self, event):
+        """
+        :param event:
+        :return:
+        This function allows for rapid selection of actors and zplanes via a CTRL+SHIFT\CTRL+ALL hotkey combination while scrolling the mousewheel.
+        Ctrl+Shift+Scroll up and down will scroll through the actors listbox while Ctrl+Alt+Scroll will scroll through the zplanes list box. Upon scrolling
+        to the desired item, release the respective SHIFT or ALT will stop the scroll process; then, while CTRL is still held, Ctrl+Scroll UP to 'activate' selected
+        actor, and Ctrl+Scroll DOWN to activate selected Zplane.
+        Notes:
+        1*--This loop prevents multiple-select while trying to scroll through the listboxes using this function.
+        """
         if event.GetWheelAxis() == wx.MOUSE_WHEEL_HORIZONTAL or event.GetWheelDelta() < 120:
             event.Skip()
             return
 
         mousestate = wx.GetMouseState()
+
+        #TODO FIgure out way to activate one at a time.
+
         ##ACTORS List Box
         #if event.GetUnicodeKey() == ord('A'):
         if mousestate.ControlDown():  #HOLD CTRL
             if mousestate.ShiftDown():  #HOLD SHIFT AND SCROLL TO DESIRED ACTOR LIST ITEM
+                #self.IsActorScrolling = True
                 alb = self.pianorollpanel.actorsctrlpanel.actorsListBox
                 alb.SetFocus()
                 if event.GetWheelRotation() >= 120:
@@ -408,12 +384,15 @@ class MainWindow(wx.Frame):
                     print("Actor Scrolled -->", self.actor_scrolled)
                     alb.Select(self.actor_scrolled)
                     alb.Focus(self.actor_scrolled)
+                    #1*
                     for i in range(0, len(self.mayavi_view.actors)):
                         # If it's selected, unselect it.
                         if alb.IsSelected(i) and i != self.actor_scrolled:
                             alb.Select(i, on=0)
+                        # If not, pass.
                         elif alb.IsSelected(i) and i == self.actor_scrolled:
                             pass
+                        #Else, select the current.
                         else:
                             alb.Select(self.actor_scrolled, on=1)
                     # self.pianorollpanel.actorsctrlpanel.actorsListBox.Select
@@ -425,15 +404,19 @@ class MainWindow(wx.Frame):
                     print("Actor Scrolled -->", self.actor_scrolled)
                     alb.Select(self.actor_scrolled)
                     alb.Focus(self.actor_scrolled)
+                    #1*
                     for i in range(0, len(self.mayavi_view.actors)):
                         # If it's selected, unselect it.
                         if alb.IsSelected(i) and i != self.actor_scrolled:
                             alb.Select(i, on=0)
+                        # If not, pass.
                         elif alb.IsSelected(i) and i == self.actor_scrolled:
                             pass
+                        #Else, select the current.
                         else:
                             alb.Select(self.actor_scrolled, on=1)
             elif mousestate.AltDown():  # HOLD ALT AND SCROLL TO DESIRED Z-PLANE LIST ITEM   # and event.ShiftDown():
+                #self.IsZPlaneScrolling = True
                 zlb = self.pianorollpanel.zplanesctrlpanel.ZPlanesListBox
                 if event.GetWheelRotation() >= 120:
                     if self.zplane_scrolled == 0:
@@ -443,6 +426,17 @@ class MainWindow(wx.Frame):
                     print("Zplane Scrolled -->", self.zplane_scrolled)
                     zlb.Select(self.zplane_scrolled)
                     zlb.Focus(self.zplane_scrolled)
+                    #1*
+                    for i in range(0, 128):
+                        # If it's selected, unselect it.
+                        if zlb.IsSelected(i) and i != self.zplane_scrolled:
+                            zlb.Select(i, on=0)
+                        # If not, pass.
+                        elif zlb.IsSelected(i) and i == self.zplane_scrolled:
+                            pass
+                        #Else, select the current.
+                        else:
+                            zlb.Select(self.zplane_scrolled, on=1)
                     # self.pianorollpanel.actorsctrlpanel.actorsListBox.Select
                 elif event.GetWheelRotation() <= -120:
                     if self.zplane_scrolled == 127:
@@ -452,24 +446,40 @@ class MainWindow(wx.Frame):
                     print("Zplane Scrolled -->", self.zplane_scrolled)
                     zlb.Select(self.zplane_scrolled)
                     zlb.Focus(self.zplane_scrolled)
+                    #1*
+                    for i in range(0, 128):
+                        # If it's selected, unselect it.
+                        if zlb.IsSelected(i) and i != self.zplane_scrolled:
+                            zlb.Select(i, on=0)
+                        # If not, pass.
+                        elif zlb.IsSelected(i) and i == self.zplane_scrolled:
+                            pass
+                        #Else, select the current.
+                        else:
+                            zlb.Select(self.zplane_scrolled, on=1)
 
             else:  #RELEASE SHIFT, SCROLL ONE MORE TIME HERE, IN EITHER DIRECTION, TO ACTIVATE.
+                #TODO SCROLL UP FOR ACTOR? SCROLL DOWN FOR ZPLANE? Brilliant....
                 #Correct Highlight all.
-
+                self.IsActorScrolling = False
+                self.IsZPlaneScrolling = False
                 #alb = self.pianorollpanel.actorsctrlpanel.actorsListBox
+                if event.GetWheelRotation() >= 120:
+                    #if not self.IsActorScrolling:
+                    print(f"actor = {self.actor_scrolled}")
+                    self.mayavi_view.cur_ActorIndex = self.actor_scrolled
+                    self.mayavi_view.cur_z = self.mayavi_view.actors[self.actor_scrolled].cur_z
+                    self.mayavi_view.cur_changed_flag = not self.mayavi_view.cur_changed_flag
+                    self.GetTopLevelParent().pianorollpanel.pianoroll.ForceRefresh()
 
-                print(f"actor = {self.actor_scrolled}")
-                self.mayavi_view.cur_ActorIndex = self.actor_scrolled
-                self.mayavi_view.cur_z = self.mayavi_view.actors[self.actor_scrolled].cur_z
-                self.mayavi_view.cur_changed_flag = not self.mayavi_view.cur_changed_flag
-                self.GetTopLevelParent().pianorollpanel.pianoroll.ForceRefresh()
 
-
-                print(f"zplane = {self.zplane_scrolled}")
-                self.GetTopLevelParent().pianorollpanel.currentZplane = self.zplane_scrolled
-                self.GetTopLevelParent().mayavi_view.cur_z = self.zplane_scrolled
-                self.GetTopLevelParent().mayavi_view.CurrentActor().cur_z = self.zplane_scrolled
-                self.GetTopLevelParent().pianorollpanel.pianoroll.ForceRefresh()
+                elif event.GetWheelRotation() <= -120:
+                    #if not self.IsZPlaneScrolling:
+                    print(f"zplane = {self.zplane_scrolled}")
+                    self.GetTopLevelParent().pianorollpanel.currentZplane = self.zplane_scrolled
+                    self.GetTopLevelParent().mayavi_view.cur_z = self.zplane_scrolled
+                    self.GetTopLevelParent().mayavi_view.CurrentActor().cur_z = self.zplane_scrolled
+                    self.GetTopLevelParent().pianorollpanel.pianoroll.ForceRefresh()
 
         event.Skip()
 
@@ -494,6 +504,8 @@ class MainWindow(wx.Frame):
         #Actor and Zplane scrolling attributes.
         self.zplane_scrolled = 0
         self.actor_scrolled = 0
+        # self.IsActorScrolling = False
+        # self.IsZPlaneScrolling = False
 
         #Accelerator table additions:
         self.mainbuttonspanel.AccelerateMainButtons()
