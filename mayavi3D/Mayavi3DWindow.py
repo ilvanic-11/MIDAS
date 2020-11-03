@@ -106,8 +106,8 @@ class Actor(HasTraits):
         cpqn = self.toplevel.pianorollpanel.pianoroll._cells_per_qrtrnote
 
 
-        self._points = np.argwhere(self._array3D >= 1.0)
-        self._points[:, 0] =  self._points[:, 0]  #Account for cpqn.  X axis "Slice" rebound here.
+        self._points = np.argwhere(self._array3D == 1.0)
+        self._points[:, 0] =  self._points[:, 0] /cpqn #Account for cpqn.  X axis "Slice" rebound here.
 
         try:
             self.mayavi_view.sources[self.index].mlab_source.trait_set(points=self._points) #Traitset happens of x axis slice rebinding.
@@ -125,7 +125,7 @@ class Actor(HasTraits):
 
         new_array3D = np.zeros(self._array3D.shape, dtype=np.int8)
         for p in self._points:
-            new_array3D[int(p[0]), int(p[1]), int(p[2])] = 1.0   #TODO Account for cpqn. * cpqn
+            new_array3D[int(p[0]) * cpqn, int(p[1]), int(p[2])] = 1.0   #TODO Account for cpqn. * cpqn
         self.mayavi_view.parent.pianorollpanel.pianoroll.cur_array3d = self._array3D = new_array3D
         self.mayavi_view.sources[self.index].mlab_source.trait_set(points=self._points)
         print("sources trait_set after actor_points_changed")
@@ -209,6 +209,7 @@ class Mayavi3idiView(HasTraits):
         self.default_color_palette = midiart.FLStudioColors
 
         self.default_mayavi_palette = midiart.convert_dict_colors(self.default_color_palette)
+
         #TODO Should this be in main MIDAS_wx?
         self.current_palette_name = ""
 
@@ -332,7 +333,8 @@ class Mayavi3idiView(HasTraits):
         mlab.clf()
         self.create_3dmidiart_display()
         self.scene3d.disable_render = False
-
+        #Set focus on mbp for fast use of "F" hotkeys.
+        self.GetTopLevelParent().mainbuttonspanel.SetFocus()
 
     def remove_mlab_actor(self, actor_child): #TODO Write from scenes[0].children stuff. CHECK--Use child.remove()
         actor_child.remove()  #Must be an actor_child found in scene3d.engine.scenes[0].children. Use subscript for it.
@@ -562,8 +564,13 @@ class Mayavi3idiView(HasTraits):
             #self.gclef_call.actor.actor.position = np.array([0, 59, 0])
             #self.fclef_call.actor.actor.position = np.array([0, 44.3, 0])
         #Z-Plane marker.
+        #a_marker = self.parent.pianorollpanel.actorsctrlpanel.actorsListBox.GetItemText(self.cur_ActorIndex)
+
+        a_label = mlab.text3d(-40, -10, 0, "Actor_0", color=(.5, .5, 1.), name="Actor_Label", orient_to_camera=False, scale=4)
         z_label = mlab.text3d(-40, 0, 0, "Z-Plane_%s" % z_marker, color=(.55, .55, .55), name="Z_Label", orient_to_camera=False, scale=4)
+        self.highlighter_calls.append(a_label)
         self.highlighter_calls.append(z_label)
+
         self.initial_reticle = np.asarray(np.vstack(((0, 127-0,  0),
                              (149, 127-0,  0),
                              (149, 127-22, 0),
@@ -578,12 +585,15 @@ class Mayavi3idiView(HasTraits):
 
 
 
-        #INITIAL Highlighter positions.
+        #INITIAL Highlighter positions AND redraw_mayaviview positions.
         #Note: self.cur_z = 90 set in MIDAS_wx.py      #Matches position variable.
         for h in self.highlighter_calls:
             if h.name == "Z_Label":
                 h.actor.actor.position = np.array([position[0]-40, position[1], position[2]])
                 h.text = "Z-Plane_%s" % str(90)
+            elif h.name == "Actor_Label":
+                h.actor.actor.position = np.array([position[0]-40, position[1]-10, position[2]])
+                h.text = self.parent.pianorollpanel.actorsctrlpanel.actorsListBox.GetItemText(self.cur_ActorIndex)
             else:
                 h.actor.actor.position = position
         #return plane
@@ -851,6 +861,31 @@ class Mayavi3idiView(HasTraits):
         :param i_div:           Number of planescrolls per second: this determines the fineness of your animation.
 
         :return:
+
+        IMPORTANT MATH:
+        What is the equation for fps given the bpm and the frames per beat?
+
+        VARIABLES:
+        bpmm = beats per measure
+
+        steps value = 1/i_div
+
+        4 steps == 1 Measure
+
+        i_div*bpmm = frames per measure
+        fpm/bpmm = frames per beat
+
+        COMPLETE LOGIC:
+        **(bpm * ((i_div*bpmm)/bpmm))/60 = fps **
+
+        Therefore, fpb == i_div.
+
+        REDUCED EQUATION:
+        (bpm * fpb)/60 = fps  (time signature does not matter here.)
+
+        EXAMPLE:
+        150*4 = 600fpm / 60s = 10fps
+        10fps
         """
         import time
         if bpm is None or 0:
@@ -1017,7 +1052,7 @@ class Mayavi3idiView(HasTraits):
 
         #self.remove_trait('position')
         print("Cur:", self.cur_ActorIndex)
-        print(self.sources)
+        #print("GlyphSources:", self.sources)
         print("Sources length:", len(self.sources))
         #Note: There is the option to remove trait_syncing.
         #NOTE: removing a sync didn't seem to be working.....
@@ -1176,16 +1211,27 @@ class Mayavi3idiView(HasTraits):
             i_y = pos[1]
             i_x = pos[0]
             i_z_zerod = (i_z * -1) + i_z
-            i_transformed = i_z_zerod + self.cur_z
-            i_restored = i_transformed + i_z
+            i_z_transformed = i_z_zerod + self.cur_z
+            i_z_restored = i_z_transformed + i_z
             if i.name == "Z_Label":
                 i_x_zerod = (i_x * -1) + i_x
                 i_x_transformed = i_x_zerod - 40  # Always will be minus 40 for this label.
                 i_x_restored = i_x_transformed + i_x
-                i.actor.actor.position = (i_x_restored, i_y, i_restored)
+                i.actor.actor.position = (i_x_restored, i_y, i_z_restored)
                 i.text = "Z-Plane_%s" % self.cur_z
+            elif i.name == "Actor_Label":
+                i_x_zerod = (i_x * -1) + i_x
+                i_x_transformed = i_x_zerod - 40  # Always will be minus 40 for this label.
+                i_x_restored = i_x_transformed + i_x
+                i_y_zerod = (i_y * -1) + i_y
+                i_y_transformed = i_y_zerod - 10
+                i_y_restored = i_y_transformed + i_y
+                i.actor.actor.position = (i_x_restored, i_y_restored, i_z_restored)  #Actor Label acts as "origin marker."
+                i.text = self.parent.pianorollpanel.actorsctrlpanel.actorsListBox.GetItemText(self.cur_ActorIndex)
+                #Actor label gets the same color as the "Current Actor's" color.
+                i.actor.property.color = self.CurrentActor().color
             else:
-                i.actor.actor.position = np.array([i_x, i_y, i_restored])
+                i.actor.actor.position = np.array([i_x, i_y, i_z_restored])
 
 
 
