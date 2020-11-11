@@ -1,5 +1,5 @@
 import wx
-from midas_scripts import musicode, midiart, music21funcs, midiart3D
+from midas_scripts import midiart, music21funcs, midiart3D
 from gui import Preferences
 import music21
 from mayavi import mlab
@@ -67,35 +67,127 @@ class MainButtonsPanel(wx.Panel):
 
         self.Bind(wx.EVT_WINDOW_MODAL_DIALOG_CLOSED, self.OnDialogClosed)
 
-        self.AccelerateMainButtons()
-        self.SetFocus()
+        #self.AccelerateHotkeys()
+        self.SetFocus() #THIS HERE IS ACTUALLY THE STARTUP FOCS.
 
         #Update user-generated name.
         # self.mc_dialog = MusicodeDialog()
         # self.mc_dialog.user_named = self.GetTopLevelParent().musicode.musicode_name
 
-    def AccelerateMainButtons(self):
+    def AccelerateHotkeys(self):
 
-        entries = [wx.AcceleratorEntry() for i in range(0, 4)]
+        entries = [wx.AcceleratorEntry() for i in range(0, 10)]
 
-        new_id1 = wx.NewId()
-        new_id2 = wx.NewId()
-        new_id3 = wx.NewId()
-        new_id4 = wx.NewId()
+
+        new_id1 = wx.NewIdRef()
+        new_id2 = wx.NewIdRef()
+        new_id3 = wx.NewIdRef()
+        new_id4 = wx.NewIdRef()
+        new_id5 = wx.NewIdRef()
+        new_id6 = wx.NewIdRef()
+        new_id7 = wx.NewIdRef()
+        new_id8 = wx.NewIdRef()
+        new_id9 = wx.NewIdRef()
+        new_id10 = wx.NewIdRef()
 
         self.Bind(wx.EVT_MENU, self.OnMusic21ConverterParseDialog, id=new_id1)
         self.Bind(wx.EVT_MENU, self.OnMusicodeDialog, id=new_id2)
         self.Bind(wx.EVT_MENU, self.OnMIDIArtDialog, id=new_id3)
         self.Bind(wx.EVT_MENU, self.OnMIDIArt3DDialog, id=new_id4)
+        #TODO These aren't working as desired.....
+        self.Bind(wx.EVT_MENU, self.focus_on_actors_listbox, id=new_id5)
+        self.Bind(wx.EVT_MENU, self.focus_on_zplanes, id=new_id6)
+        self.Bind(wx.EVT_MENU, self.focus_on_pianorollpanel, id=new_id7)
+        self.Bind(wx.EVT_MENU, self.focus_on_pycrust, id=new_id8)
+        self.Bind(wx.EVT_MENU, self.focus_on_mayavi_view, id=new_id9)
+        self.GetTopLevelParent().mayavi_view_control_panel.Bind(wx.EVT_MENU, self.GetTopLevelParent().mainbuttonspanel.focus_on_mainbuttonspanel, id=new_id10)
 
         #Shift into which gear.
         entries[0].Set(wx.ACCEL_NORMAL, wx.WXK_F1, new_id1)
         entries[1].Set(wx.ACCEL_NORMAL, wx.WXK_F2, new_id2)
         entries[2].Set(wx.ACCEL_NORMAL, wx.WXK_F3, new_id3)
         entries[3].Set(wx.ACCEL_NORMAL, wx.WXK_F4, new_id4)
+        #TODO THESE aren't working as desired...
+        entries[4].Set(wx.ACCEL_NORMAL, wx.WXK_F5, new_id5)
+        entries[5].Set(wx.ACCEL_NORMAL, wx.WXK_F6, new_id6)
+        entries[6].Set(wx.ACCEL_NORMAL, wx.WXK_F7, new_id7)
+        entries[7].Set(wx.ACCEL_NORMAL, wx.WXK_F8, new_id8)
+        entries[8].Set(wx.ACCEL_NORMAL, wx.WXK_F9, new_id9)
+
+        entries[9].Set(wx.ACCEL_NORMAL, wx.WXK_F11, new_id10)
+
 
         accel = wx.AcceleratorTable(entries)
         self.SetAcceleratorTable(accel)
+
+    ##Focus Functions
+    ###-----------------------
+
+    def focus_on_actors_listbox(self, event):
+        """
+        This function binds to F5 and sets the user focus to the panel containing the pycrust python console.
+
+        :return:
+        """
+        print("Focusing on actorsListBox")
+
+        self.GetTopLevelParent().pianorollpanel.actorsctrlpanel.actorsListBox.SetFocus()
+
+    def focus_on_zplanes(self, event):
+        """
+        This function binds to F6 and sets the user focus to the panel containing the pycrust python console.
+
+        :return:
+        """
+        print("Focusing on ZPlanesListBox")
+
+        self.GetTopLevelParent().pianorollpanel.zplanesctrlpanel.ZPlanesListBox.SetFocus()
+
+    def focus_on_pianorollpanel(self, event):
+        """
+        This function binds to F7 and sets the user focus to the panel containing the pianoroll grid class.
+
+        :return:
+        """
+        print("Focusing on pianorollpanel")
+
+        self.GetTopLevelParent().pianorollpanel.pianoroll.SetFocus()
+
+    def focus_on_pycrust(self, event):
+        """
+        This function binds to F8 and sets the user focus to the panel containing the pycrust python console.
+
+        :return:
+        """
+        print("Focusing on pyshellpanel")
+
+        self.GetTopLevelParent().pyshellpanel.SetFocus()
+
+
+    def focus_on_mayavi_view(self, event):
+        """
+        This function binds to F9 and sets the user focus to the panel containing the mayavi visualization.
+        :return:
+        """
+        print("Focusing on mayavai_view_control_panel")
+
+        self.GetTopLevelParent().mayavi_view_control_panel.SetFocus()
+
+
+    def focus_on_mainbuttonspanel(self, event):
+        """
+        This function binds to F12 and sets the user focus to back to the mainbuttonspanel.
+        NOTE: THIS IS KIND OF LIKE A HOME FEATURE; The rest of the hotkeys in this accelerator cannot be called unless the focus is already on the mainbuttons panel.
+        #TODO Fix.
+        :return:
+        """
+
+        print("Focusing home on mainbuttonspanel.")
+
+        self.SetFocus()
+        #self.parent.mainbuttonspanel.SetFocus()
+
+    ##--------------------------------------------------
 
     #TODO Redundant?
     def OnGridToStream(self, evt):
@@ -153,22 +245,25 @@ class MainButtonsPanel(wx.Panel):
                    wx.ID_CANCEL: "Cancel"}[val]
         except KeyError:
             btn = '<unknown>'
-        #Variables..
-        # musicode_name = self.GetTopLevelParent().musicode.musicode_name
-        # shorthand_name = self.GetTopLevelParent().musicode.sh
+
+
         musicode_name = dialog.input_mcname.GetLineText(0)
+
         if dialog.input_mcname.GetLineText(0) == "" or None:
             musicode_name = "User_Generated"
+
         shorthand_name = dialog.input_sh.GetLineText(0)
         if dialog.input_sh.GetLineText(0) == "" or None:
             shorthand_name = "ug"
+
+
         if dialog.create_musicode.GetValue() is True and btn == "OK":
             print("DialogCheck:", dialog.create_musicode.GetValue())
             stream = self.GetTopLevelParent().pianorollpanel.pianoroll.GridToStream(update_actor=False)
             self.GetTopLevelParent().musicode.make_musicode(stream, musicode_name, shorthand_name, filepath=None,
                                      selection=str(dialog.inputTxt.GetLineText(0)), write=False, timeSig=None)
             self.GetTopLevelParent().pianorollpanel.ClearZPlane(self.GetTopLevelParent().mayavi_view.cur_z)
-            #print("DialogCheck:", dialog.createMusicode.GetValue())
+
         elif dialog.create_musicode.GetValue() is False and btn == "OK":
             print("DialogCheck:", dialog.create_musicode.GetValue())
             stream = self.GetTopLevelParent().musicode.translate(
@@ -176,7 +271,6 @@ class MainButtonsPanel(wx.Panel):
                 dialog.inputTxt.GetLineText(0))
             print("LINETEXT:", dialog.inputTxt.GetLineText(0))
             self.GetTopLevelParent().pianorollpanel.pianoroll.StreamToGrid(stream)
-
 
 
     def _OnMIDIArtDialogClosed(self, dialog, evt):
@@ -441,11 +535,11 @@ class MusicodeDialog(wx.Dialog):
         self.create_musicode.SetValue(True)  ##Set to translate at the ready by default.
 
         #Musicode name.
-        self.name_static = wx.StaticText(self, -1, "Musicode Name",     style=wx.ALIGN_RIGHT)
+        self.name_static = wx.StaticText(self, -1, "Musicode Name",     style=wx.ALIGN_LEFT)
         self.input_mcname = wx.TextCtrl(self, -1, "", size=(90, -1), style=wx.TE_CENTER)
 
         #Shorthand variable name.
-        self.sh_static = wx.StaticText(self, -1, "Shorthand", style=wx.ALIGN_RIGHT)
+        self.sh_static = wx.StaticText(self, -1, "Shorthand", style=wx.ALIGN_LEFT)
         self.input_sh = wx.TextCtrl(self, -1, "", size=(30, -1), style=wx.TE_CENTER)
 
         #self.inputTxt2 = wx.TextCtrl(self, -1, "", size=(250,-1))
@@ -453,7 +547,7 @@ class MusicodeDialog(wx.Dialog):
         self.user_named = super().GetParent().GetTopLevelParent().musicode.musicode_name  #Thith is the coolest thing I have ever theen.
         print("User_Named:", self.user_named)
 
-        self.musicodesList = sorted(list(musicode.mc.shorthand.keys()))
+        self.musicodesList = sorted(list(super().GetParent().GetTopLevelParent().musicode.shorthand.keys()))
         self.musicodesList.append(self.user_named)
 
 
@@ -478,18 +572,18 @@ class MusicodeDialog(wx.Dialog):
         sizer2.Add(self.translate_musicode, 0, wx.ALL | wx.ALIGN_TOP, 20)
         sizer2.Add(self.create_musicode, 0, wx.ALL | wx.ALIGN_TOP, 20)
 
-        sizer3.Add(self.name_static, 0, wx.ALL | wx.ALIGN_CENTER, 20)
-        sizer3.Add(self.input_mcname, 0, 20)
+        sizer3.Add(self.name_static, 15, wx.ALL | wx.ALIGN_LEFT, 5)
+        sizer3.Add(self.input_mcname, 10, 10, 10)
 
-        sizer4.Add(self.sh_static, 0, 20)
-        sizer4.Add(self.input_sh, 0, wx.ALL | wx.ALIGN_CENTER, 20)
+        sizer4.Add(self.sh_static, 15, wx.ALL | wx.ALIGN_LEFT, 5)
+        sizer4.Add(self.input_sh, 10, 50, 10)
 
-        sizer.Add(sizer2, 0, wx.ALL | wx.ALIGN_TOP, 20)
-        sizer.Add(sizer3, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL, 20)
-        sizer.Add(sizer4, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL, 20)
+        sizer.Add(sizer2, 0, wx.ALL | wx.ALIGN_TOP, 15)
+        sizer.Add(sizer3, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL, 30)
+        sizer.Add(sizer4, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL, 40)
 
-        sizer.Add(self.inputTxt,0, wx.ALL|wx.ALIGN_CENTER_HORIZONTAL, 20)
-        sizer.Add(self.rdbtnMusicodeChoice,0, wx.ALL|wx.ALIGN_CENTER_HORIZONTAL, 20)
+        sizer.Add(self.inputTxt, 0, wx.ALL|wx.ALIGN_CENTER_HORIZONTAL, 20)
+        sizer.Add(self.rdbtnMusicodeChoice, 0, wx.ALL|wx.ALIGN_CENTER_HORIZONTAL, 20)
 
 
         btnsizer = wx.StdDialogButtonSizer()
@@ -755,6 +849,8 @@ class MIDIArt3DDialog(wx.Dialog):
 
     def On3DDisplayRedraw(self, evt):
         super().GetParent().GetTopLevelParent().mayavi_view.redraw_mayaviview()
+
+
 
 
 
