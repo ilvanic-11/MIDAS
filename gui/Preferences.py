@@ -237,6 +237,9 @@ class ToolsDialog(wx.Dialog):
         self.SetSizerAndFit(self.sizerMain)
 
 
+#####PATCHES
+###########################################
+#################################################################
 #Attribute autocomplete function rewrite.
 def getAllAttributeNames(object):
     """Return dict of all attributes, including inherited, for an object.

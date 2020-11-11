@@ -71,11 +71,59 @@ class MyCrust(wx.py.crust.Crust):
                        locals, InterpClass, startupScript, execStartupScript)
 
         self.Bind(wx.EVT_SPLITTER_DCLICK, self.OnSashDClick)
-        
+
+
+
     def OnSashDClick(self, event):
         # do nothing.  overloads pycrust's default implementation which is to unsplit when double clicking the sash
         pass
-    
+
+    ###F Hotkeys for this panel.
+    # -----------------------------------------
+    def AccelerateHotkeys(self):
+
+        entries = [wx.AcceleratorEntry() for i in range(0, 10)]
+
+
+        new_id1 = wx.NewIdRef()
+        new_id2 = wx.NewIdRef()
+        new_id3 = wx.NewIdRef()
+        new_id4 = wx.NewIdRef()
+        new_id5 = wx.NewIdRef()
+        new_id6 = wx.NewIdRef()
+        new_id7 = wx.NewIdRef()
+        new_id8 = wx.NewIdRef()
+        new_id9 = wx.NewIdRef()
+        new_id10 = wx.NewIdRef()
+
+        self.Bind(wx.EVT_MENU, self.GetTopLevelParent().mainbuttonspanel.OnMusic21ConverterParseDialog, id=new_id1)
+        self.Bind(wx.EVT_MENU, self.GetTopLevelParent().mainbuttonspanel.OnMusicodeDialog, id=new_id2)
+        self.Bind(wx.EVT_MENU, self.GetTopLevelParent().mainbuttonspanel.OnMIDIArtDialog, id=new_id3)
+        self.Bind(wx.EVT_MENU, self.GetTopLevelParent().mainbuttonspanel.OnMIDIArt3DDialog, id=new_id4)
+        # TODO These aren't working as desired.....
+        self.Bind(wx.EVT_MENU, self.GetTopLevelParent().mainbuttonspanel.focus_on_actors_listbox, id=new_id5)
+        self.Bind(wx.EVT_MENU, self.GetTopLevelParent().mainbuttonspanel.focus_on_zplanes, id=new_id6)
+        self.Bind(wx.EVT_MENU, self.GetTopLevelParent().mainbuttonspanel.focus_on_pianorollpanel, id=new_id7)
+        self.Bind(wx.EVT_MENU, self.GetTopLevelParent().mainbuttonspanel.focus_on_pycrust, id=new_id8)
+        self.Bind(wx.EVT_MENU, self.GetTopLevelParent().mainbuttonspanel.focus_on_mayavi_view, id=new_id9)
+        self.Bind(wx.EVT_MENU, self.GetTopLevelParent().mainbuttonspanel.focus_on_mainbuttonspanel, id=new_id10)
+
+        # Shift into which gear.
+        entries[0].Set(wx.ACCEL_NORMAL, wx.WXK_F1, new_id1)
+        entries[1].Set(wx.ACCEL_NORMAL, wx.WXK_F2, new_id2)
+        entries[2].Set(wx.ACCEL_NORMAL, wx.WXK_F3, new_id3)
+        entries[3].Set(wx.ACCEL_NORMAL, wx.WXK_F4, new_id4)
+        # TODO THESE aren't working as desired...
+        entries[4].Set(wx.ACCEL_NORMAL, wx.WXK_F5, new_id5)
+        entries[5].Set(wx.ACCEL_NORMAL, wx.WXK_F6, new_id6)
+        entries[6].Set(wx.ACCEL_NORMAL, wx.WXK_F7, new_id7)
+        entries[7].Set(wx.ACCEL_NORMAL, wx.WXK_F8, new_id8)
+        entries[8].Set(wx.ACCEL_NORMAL, wx.WXK_F9, new_id9)
+
+        entries[9].Set(wx.ACCEL_NORMAL, wx.WXK_F11, new_id10)
+
+        accel = wx.AcceleratorTable(entries)
+        self.SetAcceleratorTable(accel)
         
 class MainWindow(wx.Frame):
     log = logging.getLogger(__name__)
@@ -98,8 +146,8 @@ class MainWindow(wx.Frame):
 
 
         self.mayavi_view = Mayavi3DWindow.Mayavi3idiView(self)
+
         self.mayavi_view_control_panel = self.mayavi_view.edit_traits(parent=self.top_mayaviview_split, kind='subpanel').control
-       
         self.pyshellpanel = MyCrust(self.top_pyshell_split, startupScript=str(os.getcwd() + "\\\\resources\\\\" + "Midas_Startup_Configs.py"))
         self.pianorollpanel = PianoRollPanel.PianoRollPanel(self.pianoroll_mainbuttons_split, self.log)
         self.mainbuttonspanel = MainButtons.MainButtonsPanel(self.pianoroll_mainbuttons_split, self.log)
@@ -120,8 +168,10 @@ class MainWindow(wx.Frame):
         self.icon.LoadFile(r".\resources\TrebleClefIcon.bmp", type=wx.BITMAP_TYPE_ANY)     #, desiredHeight=10, desiredWidth=10)
         #self.icon.SetHeight(25)
         #self.icon.SetWidth(25)
+
         print("W", self.icon.GetWidth())
         print("H", self.icon.GetHeight())
+
         self.SetIcon(self.icon)
 
         #Status Bar
@@ -361,6 +411,11 @@ class MainWindow(wx.Frame):
         Notes:
         1*--This loop prevents multiple-select while trying to scroll through the listboxes using this function.
         """
+
+        # if self.FindFocus() != type('gui.MainButtons.MainButtonsPanel'):
+        #     self.mainbuttonspanel.SetFocus()
+
+
         if event.GetWheelAxis() == wx.MOUSE_WHEEL_HORIZONTAL or event.GetWheelDelta() < 120:
             event.Skip()
             return
@@ -508,7 +563,7 @@ class MainWindow(wx.Frame):
         # self.IsZPlaneScrolling = False
 
         #Accelerator table additions:
-        self.mainbuttonspanel.AccelerateMainButtons()
+        #self.mainbuttonspanel.AccelerateMainButtons_Keys()
 
 
     def _do_layout(self):
@@ -525,8 +580,23 @@ class MainWindow(wx.Frame):
         
         self.top_mayaviview_split.SetSashGravity(0.5)
         self.top_pyshell_split.SetSashGravity(0.5)
+
+        #Shows the zplanes on startup.
+        self.pianorollpanel.zplanesctrlpanel.OnBtnShowAll(event=None)
+
+        #These give the user 'F" hotkey control from any panel.
+        #self.menuBar.AccelerateHotkeys()
+        self.mainbuttonspanel.AccelerateHotkeys()
+        self.pianorollpanel.actorsctrlpanel.actorsListBox.AccelerateHotkeys()
+        self.pianorollpanel.zplanesctrlpanel.ZPlanesListBox.AccelerateHotkeys()
+        self.pianorollpanel.pianoroll.AccelerateHotkeys()
+        self.pyshellpanel.AccelerateHotkeys()
+        self.mayavi_view.AccelerateHotkeys()
+
+
         self.mainpanel.Layout()
         self.Layout()
+
 
 
 if __name__ == '__main__':

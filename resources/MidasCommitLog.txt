@@ -318,7 +318,7 @@ In Midas_wx
 -->SetFocus() sets the focus on the mainbuttonspanel on startup now.
 
 
---IP--Commit, November....
+--IP--Commit, November 3rd, 2020--
 In Mayavi3idiView
 --> Add "Actor_Label" to the highlighter plane. Reads text as the GetItemText() title of the current actor in the actorListBox.
 --> Add mainbuttonspanel.SetFocus() to the function redraw_mayaviview()
@@ -338,3 +338,30 @@ In MenuButtons:
 --> SetFocus() added to the end of OnPreferencesDialogClosed. Once I select a color in the PreferencesDialog and close it, I can use the "F" hotkeys right away.
 In MainButtons:
 --> Adjust spacing of the "Midi\Score Import" dialog layout, as well as the title. (Aesthetic change.)
+
+
+--IP--Commit, November 10th, 2020--
+
+In Mayavi3idiView
+-->Redrawing mayavi view "Actor_Label" color default needs to be reset.
+-->In function redraw_mayaviview(), fixed parent inheritance bug. 
+-->Fixed miscellaneous small bugs, code wording.
+In MainButtonsPanel, PianoRoll(the grid class), pyshellpanel(mycrust class), mayavi_view(control panel), ZPlanesListBox, AND actorListBox
+-->Added 5 new "F" hotkeys that set the focus to the various panels of Midas from ANY of the other main panels in the application (from basically everywhere, one is able to setfocus via hotkey to somewhere else.) 
+--> Hotkey list ----> (F5 -> pianorollpanel, F6-> pyshellpanel, F7->mayavi_view_control_panel, F8->actorListBox, F9->, ZplanesListBox)
+In PianoRollPanel
+--> Changed and improved on "Grid Highlighting Feature". Now allows for "clearing out" on 'new highlight' instances. Data is still correctly acquired in the form of self.select_notes.
+In MainButtons Panel
+--> Addressed syntax of OnMusicodeDialog (wx.4.1.0 update), which fixed some small musicodedialog layout problems.
+In Musicode
+--> Revamped the whole module. Kept old method of establishing our musicode dicts. ALSO, created a new one.
+--> Cleaned up hash\garbage.
+-->Fixed many bugs within mc.make_musicode function.
+In Entire Project
+-->Cleaned up some redundant imports at the tops of each module. (mostly musicode related for now.)
+In PianoRoll, ActorsControlPanel, ZPlanesControlPanel
+-->Implented right click popup menus for each panel for quick functions(later.)
+
+
+
+
