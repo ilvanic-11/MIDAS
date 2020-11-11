@@ -1,7 +1,11 @@
 
 import sys, os
+<<<<<<< HEAD
 
 from midas_scripts import musicode, midiart, midiart3D, music21funcs
+=======
+from midas_scripts import midiart, midiart3D     ###,  music21funcs
+>>>>>>> 3f98aa81 (--IP--Commit, November 10th, 2020--)
 
 from traits.etsconfig.api import ETSConfig
 ETSConfig.toolkit = 'wx'
@@ -167,6 +171,7 @@ class Mayavi3idiView(HasTraits):
                 resizable=True)
     actor = Any()
     actors = List(Actor)
+
 
     cur_ActorIndex = Int()
     cur_z = Int()
@@ -373,7 +378,7 @@ class Mayavi3idiView(HasTraits):
         self.create_3dmidiart_display()
         self.scene3d.disable_render = False
         #Set focus on mbp for fast use of "F" hotkeys.
-        self.GetTopLevelParent().mainbuttonspanel.SetFocus()
+        self.parent.mainbuttonspanel.SetFocus()
 
     def remove_mlab_actor(self, actor_child): #TODO Write from scenes[0].children stuff. CHECK--Use child.remove()
         actor_child.remove()  #Must be an actor_child found in scene3d.engine.scenes[0].children. Use subscript for it.
@@ -416,10 +421,12 @@ class Mayavi3idiView(HasTraits):
         self.mlab_calls.append(self.appending_data)
         print('6')
 
-        # TODO self.on_trait_change(self.actor_stream_changed, 'actors.streamchangedflag')
 
         #TODO Move this to actor class?
-        self.on_trait_change(self.actor_list_changed, 'actors[]')
+        #TODO Dahfuq was this?! 11/08/20
+        self.on_trait_change(self.actor_stream_changed, 'actors.streamchangedflag')
+        #self.on_trait_change(self.actor_list_changed, 'actors[]')
+
 
         a.name = name
         a.color = color
@@ -451,14 +458,15 @@ class Mayavi3idiView(HasTraits):
     #         print(e)
     #         pass
 
-
-    #TODO def actor_stream_changed(self):
-        #print("actor_stream_changed")
+    # TODO Decide if still doing this.
+    def actor_stream_changed(self):
+        print("actor_stream_changed")
+        pass
 
 
     def actor_list_changed(self):
         print("actor_list_changed")
-
+        pass
 
     ###MAYAVI_VIEW INSERT AND MANIPULATION FUNCTIONS
     #-------------------
@@ -485,7 +493,7 @@ class Mayavi3idiView(HasTraits):
 
 
     def insert_text_data(self, mc, text, color=(0., 0., 0.), mode="cube", name='', scale_factor=1):
-        text_stream = musicode.mc.translate(mc, text)
+        text_stream = self.parent.musicode.mc.translate(mc, text)
         text_array = midiart3D.extract_xyz_coordinates_to_array(text_stream)
         mlab_data = mlab.points3d(text_array[:, 0], text_array[:, 1], text_array[:, 2], color=color, mode=mode, name=name,
                                   scale_factor=scale_factor)
@@ -607,7 +615,7 @@ class Mayavi3idiView(HasTraits):
         #Z-Plane marker.
         #a_marker = self.parent.pianorollpanel.actorsctrlpanel.actorsListBox.GetItemText(self.cur_ActorIndex)
 
-        a_label = mlab.text3d(-40, -10, 0, "Actor_0", color=(.5, .5, 1.), name="Actor_Label", orient_to_camera=False, scale=4)
+        a_label = mlab.text3d(-40, -10, 0, "Actor_0", color=(0, 1., .75), name="Actor_Label", orient_to_camera=False, scale=4)
         z_label = mlab.text3d(-40, 0, 0, "Z-Plane_%s" % z_marker, color=(.55, .55, .55), name="Z_Label", orient_to_camera=False, scale=4)
         self.highlighter_calls.append(a_label)
         self.highlighter_calls.append(z_label)
@@ -1276,7 +1284,54 @@ class Mayavi3idiView(HasTraits):
                 i.actor.actor.position = np.array([i_x, i_y, i_z_restored])
 
 
+    ###
+    ######------------------------------------------------
 
+
+    def AccelerateHotkeys(self):
+
+        entries = [wx.AcceleratorEntry() for i in range(0, 10)]
+
+
+        new_id1 = wx.NewIdRef()
+        new_id2 = wx.NewIdRef()
+        new_id3 = wx.NewIdRef()
+        new_id4 = wx.NewIdRef()
+        new_id5 = wx.NewIdRef()
+        new_id6 = wx.NewIdRef()
+        new_id7 = wx.NewIdRef()
+        new_id8 = wx.NewIdRef()
+        new_id9 = wx.NewIdRef()
+        new_id10 = wx.NewIdRef()
+
+        self.parent.mayavi_view_control_panel.Bind(wx.EVT_MENU, self.parent.mainbuttonspanel.OnMusic21ConverterParseDialog, id=new_id1)
+        self.parent.mayavi_view_control_panel.Bind(wx.EVT_MENU, self.parent.mainbuttonspanel.OnMusicodeDialog, id=new_id2)
+        self.parent.mayavi_view_control_panel.Bind(wx.EVT_MENU, self.parent.mainbuttonspanel.OnMIDIArtDialog, id=new_id3)
+        self.parent.mayavi_view_control_panel.Bind(wx.EVT_MENU, self.parent.mainbuttonspanel.OnMIDIArt3DDialog, id=new_id4)
+        # TODO These aren't working as desired.....
+        self.parent.mayavi_view_control_panel.Bind(wx.EVT_MENU, self.parent.mainbuttonspanel.focus_on_actors_listbox, id=new_id5)
+        self.parent.mayavi_view_control_panel.Bind(wx.EVT_MENU, self.parent.mainbuttonspanel.focus_on_zplanes, id=new_id6)
+        self.parent.mayavi_view_control_panel.Bind(wx.EVT_MENU, self.parent.mainbuttonspanel.focus_on_pianorollpanel, id=new_id7)
+        self.parent.mayavi_view_control_panel.Bind(wx.EVT_MENU, self.parent.mainbuttonspanel.focus_on_pycrust, id=new_id8)
+        self.parent.mayavi_view_control_panel.Bind(wx.EVT_MENU, self.parent.mainbuttonspanel.focus_on_mayavi_view, id=new_id9)
+        self.parent.mayavi_view_control_panel.Bind(wx.EVT_MENU, self.parent.mainbuttonspanel.focus_on_mainbuttonspanel, id=new_id10)
+
+        # Shift into which gear.
+        entries[0].Set(wx.ACCEL_NORMAL, wx.WXK_F1, new_id1)
+        entries[1].Set(wx.ACCEL_NORMAL, wx.WXK_F2, new_id2)
+        entries[2].Set(wx.ACCEL_NORMAL, wx.WXK_F3, new_id3)
+        entries[3].Set(wx.ACCEL_NORMAL, wx.WXK_F4, new_id4)
+        # TODO THESE aren't working as desired...
+        entries[4].Set(wx.ACCEL_NORMAL, wx.WXK_F5, new_id5)
+        entries[5].Set(wx.ACCEL_NORMAL, wx.WXK_F6, new_id6)
+        entries[6].Set(wx.ACCEL_NORMAL, wx.WXK_F7, new_id7)
+        entries[7].Set(wx.ACCEL_NORMAL, wx.WXK_F8, new_id8)
+        entries[8].Set(wx.ACCEL_NORMAL, wx.WXK_F9, new_id9)
+        #F10 is already used.... goes to the menubar
+        entries[9].Set(wx.ACCEL_NORMAL, wx.WXK_F11, new_id10)
+
+        accel = wx.AcceleratorTable(entries)
+        self.parent.mayavi_view_control_panel.SetAcceleratorTable(accel)
 
 
 

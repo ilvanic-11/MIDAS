@@ -1,0 +1,12 @@
+list.txt
+musicode_pt_backslash.mid
+musicode_pt_colon.mid
+musicode_pt_comma.mid
+musicode_pt_doublequotationmark.mid
+musicode_pt_exclamationmark.mid
+musicode_pt_hyphen.mid
+musicode_pt_openclosebracket.mid
+musicode_pt_opencloseparenthesis.mid
+musicode_pt_period.mid
+musicode_pt_semicolon.mid
+musicode_pt_singlequotationmark.mid
