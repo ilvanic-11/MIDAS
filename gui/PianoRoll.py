@@ -8,7 +8,7 @@ import logging
 import numpy as np
 from wx._core import PaintDC
 import math
-from midas_scripts import musicode, music21funcs
+#from midas_scripts import musicode, music21funcs
 
 import time
 
@@ -115,15 +115,19 @@ class PianoRollDataTable(wx.grid.GridTableBase):
             return 128
         
     def GetValue(self, row, col):
-    
+
+
         if self.pianorollpanel.GetTopLevelParent().mayavi_view.CurrentActor():
             if (self.pianorollpanel):
                 z = self.pianorollpanel.currentZplane
             else:
                 z = 0
+            if z < 0:
+                return ""
             self.log.debug(f"ZZZ = {z} type:")
             self.log.debug(type(z))
             return str(int(self.pianorollpanel.GetTopLevelParent().mayavi_view.CurrentActor()._array3D[col][127-row][z]))
+
         else:
             return ""
 
@@ -230,7 +234,7 @@ class PianoRoll(wx.grid.Grid, glr.GridWithLabelRenderersMixin):
 
         self.EnableEditing(False)  #TODO What does this do? 11/2/20 (read-only something, someshit....)
 
-        self.SetSelectionBackground(wx.Colour(0, 255, 0, 50)) #Since we have our own CellRenderer, I believe this doesn't work...
+        #self.SetSelectionBackground(wx.Colour(0, 255, 0, 50)) #Since we have our own CellRenderer, I believe this doesn't work...
 
         self.SetSelectionForeground(wx.Colour(0, 255, 0, 50)) ##Green Edges
 
@@ -246,7 +250,10 @@ class PianoRoll(wx.grid.Grid, glr.GridWithLabelRenderersMixin):
 
 
         # self.Bind(wx.grid.EVT_GRID_LABEL_LEFT_CLICK, self.ChangeScrollRate)
+
+        #--Left Click on Labels scrolls the client area. #TODO Fix and do better.
         self.Bind(wx.grid.EVT_GRID_LABEL_LEFT_CLICK, self.OnMeasureLabelsLeftClick)
+
         self.Bind(wx.EVT_SCROLLWIN_THUMBTRACK, self.OnThumbDragging)
         self.Bind(wx.EVT_SCROLLWIN_THUMBRELEASE, self.OnThumbRelease)
 
@@ -555,7 +562,7 @@ class PianoRoll(wx.grid.Grid, glr.GridWithLabelRenderersMixin):
     def OnCellSelected(self, evt):
         self.log.info("onCellSelected():")
         #self.SetCellValue(evt.Row, evt.Col, "1")
-        self.DeselectCell(evt.GetRow(), evt.GetCol())
+        #self.DeselectCell(evt.GetRow(), evt.GetCol())
         evt.Skip()
 
 
@@ -868,6 +875,54 @@ class PianoRoll(wx.grid.Grid, glr.GridWithLabelRenderersMixin):
 # class MyGridCellAttributerProvider(wx.grid.GridCellAttrProvider)
 #     def __init__(self):
 
+    ###
+    ######
+    #########--------------------------------------------
+    def AccelerateHotkeys(self):
+
+        entries = [wx.AcceleratorEntry() for i in range(0, 10)]
+
+
+        new_id1 = wx.NewIdRef()
+        new_id2 = wx.NewIdRef()
+        new_id3 = wx.NewIdRef()
+        new_id4 = wx.NewIdRef()
+        new_id5 = wx.NewIdRef()
+        new_id6 = wx.NewIdRef()
+        new_id7 = wx.NewIdRef()
+        new_id8 = wx.NewIdRef()
+        new_id9 = wx.NewIdRef()
+        new_id10 = wx.NewIdRef()
+
+        self.Bind(wx.EVT_MENU, self.GetTopLevelParent().mainbuttonspanel.OnMusic21ConverterParseDialog, id=new_id1)
+        self.Bind(wx.EVT_MENU, self.GetTopLevelParent().mainbuttonspanel.OnMusicodeDialog, id=new_id2)
+        self.Bind(wx.EVT_MENU, self.GetTopLevelParent().mainbuttonspanel.OnMIDIArtDialog, id=new_id3)
+        self.Bind(wx.EVT_MENU, self.GetTopLevelParent().mainbuttonspanel.OnMIDIArt3DDialog, id=new_id4)
+        # TODO These aren't working as desired.....
+        self.Bind(wx.EVT_MENU, self.GetTopLevelParent().mainbuttonspanel.focus_on_actors_listbox, id=new_id5)
+        self.Bind(wx.EVT_MENU, self.GetTopLevelParent().mainbuttonspanel.focus_on_zplanes, id=new_id6)
+        self.Bind(wx.EVT_MENU, self.GetTopLevelParent().mainbuttonspanel.focus_on_pianorollpanel, id=new_id7)
+        self.Bind(wx.EVT_MENU, self.GetTopLevelParent().mainbuttonspanel.focus_on_pycrust, id=new_id8)
+        self.Bind(wx.EVT_MENU, self.GetTopLevelParent().mainbuttonspanel.focus_on_mayavi_view, id=new_id9)
+        self.Bind(wx.EVT_MENU, self.GetTopLevelParent().mainbuttonspanel.focus_on_mainbuttonspanel, id=new_id10)
+
+        # Shift into which gear.
+        entries[0].Set(wx.ACCEL_NORMAL, wx.WXK_F1, new_id1)
+        entries[1].Set(wx.ACCEL_NORMAL, wx.WXK_F2, new_id2)
+        entries[2].Set(wx.ACCEL_NORMAL, wx.WXK_F3, new_id3)
+        entries[3].Set(wx.ACCEL_NORMAL, wx.WXK_F4, new_id4)
+        # TODO THESE aren't working as desired...
+        entries[4].Set(wx.ACCEL_NORMAL, wx.WXK_F5, new_id5)
+        entries[5].Set(wx.ACCEL_NORMAL, wx.WXK_F6, new_id6)
+        entries[6].Set(wx.ACCEL_NORMAL, wx.WXK_F7, new_id7)
+        entries[7].Set(wx.ACCEL_NORMAL, wx.WXK_F8, new_id8)
+        entries[8].Set(wx.ACCEL_NORMAL, wx.WXK_F9, new_id9)
+
+        entries[9].Set(wx.ACCEL_NORMAL, wx.WXK_F11, new_id10)
+
+        accel = wx.AcceleratorTable(entries)
+        self.SetAcceleratorTable(accel)
+
 
 class PianoRollCellRenderer(wx.grid.GridCellRenderer):
     def __init__(self, parent):
@@ -922,11 +977,13 @@ class PianoRollCellRenderer(wx.grid.GridCellRenderer):
 
         ##NOTE: "value" is a string.
         if value == "1":
-            dc.SetBrush(wx.Brush("BLACK", wx.SOLID))
-        elif int(value) >= 2:
-            dc.SetBrush(wx.Brush(self.grid_highlight_color, wx.SOLID)) #TODO Not used atm.
+            dc.SetBrush(wx.Brush("BLACK", wx.BRUSHSTYLE_SOLID))
+        elif int(value) == 2:
+            dc.SetBrush(wx.Brush(self.grid_highlight_color, wx.BRUSHSTYLE_SOLID))
+        elif int(value) >= 3:
+            dc.SetBrush(wx.Brush("GREEN", wx.BRUSHSTYLE_SOLID))
         else:
-            dc.SetBrush(wx.Brush("WHITE", wx.SOLID))
+            dc.SetBrush(wx.Brush("WHITE", wx.BRUSHSTYLE_SOLID))
         try:
             dc.SetClippingRegion(rect.x, rect.y, rect.width, rect.height)
             dc.SetPen(wx.TRANSPARENT_PEN)

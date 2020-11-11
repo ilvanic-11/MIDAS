@@ -74,7 +74,7 @@ import random
 import numpy as np
 import math
 import fractions
-from midas_scripts import musicode
+#from midas_scripts import musicode
 from collections import OrderedDict
 
 ##TRANSPOSE_FUNCTIONS
