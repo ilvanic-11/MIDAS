@@ -12,6 +12,8 @@ import numpy
 import numpy as np
 print("Imported (and as 'np')", numpy)
 import sympy
+import numpy_indexed as npi
+print("Imported (and as 'npi'", npi)
 print("Imported", sympy)
 import music21
 print("Imported", music21)
@@ -44,7 +46,8 @@ print("Imported", copy)
 import inspect
 print("Imported", inspect)
 import pydoc
-print("Imported", pydoc)
+print("Imported", pydoc)\
+
 
 ###Main path.
 script = "Midas_Startup_Configs.py"

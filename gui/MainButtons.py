@@ -1,5 +1,5 @@
 import wx
-from midas_scripts import midiart, music21funcs, midiart3D
+from midas_scripts import midiart, midiart3D   #musicode, music21funcs,
 from gui import Preferences
 import music21
 from mayavi import mlab
@@ -351,11 +351,12 @@ class MainButtonsPanel(wx.Panel):
                     #     if mayavi_color_palette[i] == h:
                             #Get the color we are on.
                     #R and B color values are swapped. This is fixed here, for now.
-                    #TODO Fix inverted color tuples in color dicts?
+                    #TODO Fix inverted color tuples in color dicts? (this is still relevant. It's complicated -- 11/25/20)
                     clr = tuple([mayavi_color_palette[h][2], mayavi_color_palette[h][1], mayavi_color_palette[h][0]])
 
                     name = "Clrs" + str(mayavi_view.colors_call) + "_" + str(h) + "_" + dialog.img_name
                     actor = self.GetTopLevelParent().pianorollpanel.actorsctrlpanel.actorsListBox.new_actor(index, name)
+                    mayavi_view.number_of_noncolorscall_actors -= 1 #Cancels += within new_actor() #TODO Make this a kwarg. 11/25/2020
                     colors_instance = "Clrs" + str(mayavi_view.colors_call)
                     mayavi_view.actors[index].colors_instance = colors_instance
 

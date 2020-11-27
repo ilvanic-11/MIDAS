@@ -11,6 +11,7 @@ from gui import ZPlanesControlPanel, ActorsControlPanel
 from traits.api import HasTraits, on_trait_change
 from traits.trait_numeric import AbstractArray
 from collections import OrderedDict
+#import numpy_indexed as npi
 import time
 import logging
 
@@ -38,10 +39,15 @@ class PianoRollPanel(wx.Panel):
         self.log.info("PianoRollPanel.__init__()")
         self.tb = self.SetupToolbar()
 
+        #mayavi_view reference
+        self.m_v = self.GetTopLevelParent().mayavi_view
+
         self.currentZplane = 90
 
         self.draw_mode = 1
         self.select_mode = 0
+
+        self.z_pushnpull = 1  #For the zplane\velocity push n pull scrolling
 
         self.mode = self.draw_mode  ### "1" for Draw, 0 for Select
 
@@ -80,6 +86,7 @@ class PianoRollPanel(wx.Panel):
         # For Draw feature(s).
         self.pianoroll.GetGridWindow().Bind(wx.EVT_MOTION, self.OnMotion)
         self.pianoroll.GetGridWindow().Bind(wx.EVT_LEFT_UP, self.OnMouseLeftUp)
+        self.pianoroll.Bind(wx.EVT_MOUSEWHEEL, self.Scroll_ZPlanesVelocities)
 
         # For Highlight Selection feature.
 
@@ -252,23 +259,255 @@ class PianoRollPanel(wx.Panel):
         # self.pianoroll._table.SetValue(y, x, "0")
         # self.GetTopLevelParent().mayavi_view.CurrentActor()._array3D[x, 127 - y, z] = 0
 
-        mv = self.GetTopLevelParent().mayavi_view
-        if mv.CurrentActor() == None:
+
+        if self.m_v.CurrentActor() == None:
             pass
             # current_actor = self.pianoroll.cur_array3d
         else:
-            current_actor = mv.CurrentActor()
+            current_actor = self.m_v.CurrentActor()
             on_points = np.argwhere(current_actor._array3D[:, :, z] >= 1.0)
             print("On_Points", on_points)
             for i in on_points:
+                #Grid set.
                 self.pianoroll._table.SetValue(127 - i[1], i[0],
                                                "0")  # TODO Track mode stuff! What can the 'value' parameter be?
+            #array3D set.
             current_actor._array3D[:, :, z] = current_actor._array3D[:, :,
                                               z] * 0  # TODO Different way to write this? Multiply whole array3d by 0?
             self.pianoroll.ForceRefresh()
-            mv.actors[mv.cur_ActorIndex].array3Dchangedflag += 1
+            self.m_v.actors[self.m_v.cur_ActorIndex].array3Dchangedflag += 1
         self.pianoroll.ResetGridCellSizes()
         self.pianoroll.ForceRefresh()
+
+
+    def Scroll_ZPlanesVelocities(self, event):
+        #TODO Doc strings.
+
+        print("Push Scrolling HERE.")
+        try:
+            self.last_push = self.last_push
+        except AttributeError as i:
+            print(i, "You don't have a last push yet.")
+            self.last_push = self.m_v.CurrentActor().cur_z  #Because in order to highlight-select some notes, the cur_z will always be current.
+
+        if not self.pianoroll.HasFocus():
+            event.Skip()
+            pass
+        else:
+            print("Push Scrolling HERE2.")
+            if not self.selected_notes:
+                return
+            else:
+                #notes = np.argwhere(self.m_v.CurrentActor()._array3D == 3.0)
+                if event.GetWheelAxis() == wx.MOUSE_WHEEL_HORIZONTAL or event.GetWheelDelta() < 120:
+                    event.Skip()
+                    return
+                scroll = self.z_pushnpull  #equals 1 on init.
+
+                state = wx.GetMouseState()
+
+                if state.ControlDown() and state.AltDown() and state.ShiftDown():   #CHANGED FROM ControlDown to avoid conflicting with other scrolling function(s).
+                    if event.GetWheelRotation() >= 120:   #Scroll foward makes smaller.
+
+                        self.Selection_Send(self.selected_notes, scroll * -1, event)
+                        #self.z_pushnpull += 1
+                        #self.cur_push -= 1
+                    elif event.GetWheelRotation() <= -120:   #Scroll forward
+
+                        self.Selection_Send(self.selected_notes, scroll, event)
+                        #self.z_pushnpull += 1
+                        #self.cur_push += 1
+            print("Push Scrolling HERE3.")
+
+    def Selection_Send(self, selected_notes, scroll_value, event=None, carry_to_z=False, carry_to_actor=False):
+        """
+        This function is intended to take highlighted grid 'selections' of notes and push and/or pull them between our actor/zplanes based on a user-defined value.\
+        If both scroll_to_z and scroll_to_actor are False, this function functions incrementally. (+1 or -1 on the current actor). If one or both is true, the 'self.selected_notes' will
+        be 'sent' directly TO the scroll_value, instead of scrolling BY that value.
+        :param scroll_value: The z_plane scroll pushnpull value.
+        :param event: Passed in event, for more writing options.
+        :param carry_to_z: Bool determining scroll method; scroll by increment or scroll to z value itself.
+        :param carry_to_actor: Bool determing scrool method; scroll to self.GTLP.actor_scrolled actor, else remain on current actor.
+        :return: None
+        """
+
+        #If we don't have selected_notes, break here.
+        assert not not self.selected_notes, "You do not have selected_notes yet."
+
+        if carry_to_z or carry_to_actor:
+            try:
+                #The last scroll value.
+                self.last_push = self.last_push
+                self.last_actor = self.last_actor
+            except AttributeError as i:
+                print(i, "You don't have a last push yet.")
+                #self.last_push = self.GetTopLevelParent().zplane_scrolled #Because in order to highlight-select some notes, the cur_z will always be current.
+                self.last_push = scroll_value  #(
+                self.last_actor = self.m_v.cur_ActorIndex
+        else:
+            pass
+
+        #Carry method.
+        #(Carry_to_z or carry_to_actor allows carrying for shift GrabNSend to scrolled_actor alt GrabnSend to scrolled_zplane
+        # AND carry==False will allow for Scroll_Zplanes_Velocities() and GrabnSend() to pyshell)
+        if carry_to_z is True or carry_to_actor is True:
+            carry = True
+        else:
+            carry = False
+
+        #Make selected_notes ((Y,X) cells) into a np.array.
+        self.ArrayFromSelection(selection=selected_notes, scroll_value=scroll_value, carry=carry)
+
+        #CORE-------------------------------------------------------------------------
+        #array3D method
+        for i in self.selection_array:
+            if carry_to_actor is False:
+                if carry_to_z is True:
+
+                    self.m_v.CurrentActor()._array3D[i[0], i[1], i[2]] = 1.0  # Scrolled-to plane notes become activated.
+                    #TODO HERE>
+
+                    # This condition block accounts for the first miss.
+                    if i[2] == self.last_push:
+                        self.m_v.CurrentActor()._array3D[i[0], i[1], self.m_v.CurrentActor().cur_z] = 0.
+                    elif i[2] != self.last_push:
+                        self.m_v.CurrentActor()._array3D[i[0], i[1], self.last_push] = 0.
+
+                    #Abandoned plane notes are zero'd.
+                    #
+                    #self.m_v.CurrentActor()._points[]
+                elif carry_to_z is False:
+                    self.m_v.CurrentActor()._array3D[i[0], i[1], i[2]] = 1.0  # Scrolled-to plane notes become activated.
+
+                    self.m_v.CurrentActor()._array3D[i[0], i[1], i[2] - scroll_value] = 0.   #Abandoned plane notes are zero'd.
+                    #
+                    #self.m_v.CurrentActor()._points[]
+            #TODO To Here Works.
+
+            elif carry_to_actor is True: #If carry_to_actor is True....    #Scroll-to_actor method.
+
+                if carry_to_z is True:
+                    # index = npi.indices(self.m_v.CurrentActor()._points, ),
+                    self.m_v.actors[self.GetTopLevelParent().actor_scrolled]._array3D[i[0], i[1], i[2]] = 1.0  # Scrolled-to plane notes become activated.
+
+                    # This condition block accounts for the first miss.
+                    # if i[2] == self.last_push:
+                    #     self.m_v.actors[self.last_actor]._array3D[i[0], i[1], self.m_v.CurrentActor().cur_z] = 0.
+                    # elif i[2] != self.last_push:
+                    self.m_v.actors[self.last_actor]._array3D[i[0], i[1], self.last_push] = 0.   # Abandoned plane notes are zero'd.
+
+                elif carry_to_z is False:
+                    self.m_v.actors[self.GetTopLevelParent().actor_scrolled]._array3D[i[0], i[1], self.m_v.CurrentActor().cur_z] = 1.0  # Scrolled-to plane notes become activated.
+
+
+                    self.m_v.actors[self.last_actor]._array3D[
+                        i[0], i[1], self.last_push] = 0.  # Abandoned plane notes are zero'd.
+                    #
+                    # self.m_v.CurrentActor()._points[]
+
+
+        ####Flags and refreshes -----------------------------------------------------------
+        #TODO Clean this up better.   --- 11/25/20
+        #Direct-to-points method.
+        if carry_to_z and carry_to_actor: #Send-to-z method or Send-to-actor method.
+            # self.m_v.actors[self.m_v.cur_ActorIndex].array3Dchangedflag = not self.m_v.actors[
+            #             self.m_v.cur_ActorIndex].array3Dchangedflag
+
+            self.m_v.actors[self.last_actor].array3Dchangedflag = not self.m_v.actors[
+                self.last_actor].array3Dchangedflag
+
+            self.m_v.actors[self.GetTopLevelParent().actor_scrolled].array3Dchangedflag = not self.m_v.actors[
+                self.GetTopLevelParent().actor_scrolled].array3Dchangedflag
+
+            self.actorsctrlpanel.actorsListBox.Activate_Actor(self.GetTopLevelParent().actor_scrolled)  #Then, got to new actor.
+            self.last_actor = self.m_v.cur_ActorIndex
+
+            self.last_push = self.GetTopLevelParent().zplane_scrolled
+            self.pianoroll.ForceRefresh()
+
+
+        elif not carry_to_actor and carry_to_z:
+            self.m_v.actors[self.last_actor].array3Dchangedflag = not self.m_v.actors[
+                self.last_actor].array3Dchangedflag
+
+            self.m_v.actors[self.GetTopLevelParent().actor_scrolled].array3Dchangedflag = not self.m_v.actors[
+                self.GetTopLevelParent().actor_scrolled].array3Dchangedflag
+
+            self.last_actor = self.m_v.cur_ActorIndex
+
+            self.last_push = self.GetTopLevelParent().zplane_scrolled
+            self.pianoroll.ForceRefresh()
+
+
+        # Carry-to-z method or Carry-to-actor method.
+        elif carry_to_actor and not carry_to_z:
+            self.m_v.actors[self.last_actor].array3Dchangedflag = not self.m_v.actors[self.last_actor].array3Dchangedflag
+
+            self.m_v.actors[self.GetTopLevelParent().actor_scrolled].array3Dchangedflag = not self.m_v.actors[
+                        self.GetTopLevelParent().actor_scrolled].array3Dchangedflag
+
+
+            self.actorsctrlpanel.actorsListBox.Activate_Actor(self.GetTopLevelParent().actor_scrolled)  #Then, got to new actor.
+            self.last_actor = self.m_v.cur_ActorIndex #Establish as self.last_actor.
+
+            self.last_push = self.GetTopLevelParent().zplane_scrolled
+            self.pianoroll.ForceRefresh()
+        #TODO Correct actor update after selected_points move.
+
+        # Remain on current.
+        else:
+            if event.GetWheelRotation() >= 120:
+                self.last_push -= 1
+            elif event.GetWheelRotation() <= -120:
+                self.last_push += 1
+            self.m_v.actors[self.m_v.cur_ActorIndex].array3Dchangedflag = not self.m_v.actors[
+                        self.m_v.cur_ActorIndex].array3Dchangedflag
+            self.pianoroll.ForceRefresh()
+
+
+    def ArrayFromSelection(self, selection, scroll_value, carry=False):
+        #TODO Doc strings.
+
+        # Establish selected_notes as a numpy array.
+        selected_array = np.array(selection)
+
+        # Because our selected_notes are (Y, X), we flip them with numpy.flip(sn, axis=1)
+        selected_array = np.flip(selection,
+                                 1)  # TODO Got an error with this line. Reproduce?   #numpy.AxisError: axis 1 is out of bounds for array of dimension 1 (Because we didn't have a selection?)
+
+        # 127-y compensation.
+        selected_array[:, 1] = 127 - selected_array[:, 1]
+
+        # Next, we create an array full of our cur_z value, and transform that by our pushnpull value.
+        # ones = np.ones((len(selected_notes), 1), dtype=np.float32)
+        # TODO Condition here?
+
+        if carry is True:
+            full_array = np.full((len(selected_array), 1), scroll_value, dtype=np.float32)
+            push_pull = full_array
+        else:
+            full_array = np.full((len(selected_array), 1), self.last_push, dtype=np.float32)
+            push_pull = full_array + scroll_value
+
+        # Now, we hstack our selected_array and 'our_push' and create a standard ([[x,y,z]]) np.coords_array.
+        self.selection_array = np.hstack(
+            (selected_array, push_pull))  # When stacking an int array with a float array, all values become floats.
+        self.selection_array = np.asarray(self.selection_array,
+                                          dtype=np.int8)  # So, we change back to dtype=np.int8 here.
+        #print("NEW_PUSH_ARRAY", self.selection_array)
+
+
+        #TODO Figure out why this doesnt work with our points. 11/24/20
+         # For the direct_to_points method, we acquire our indices for our points based on their value using npi.
+        # new_array2 = np.hstack((selected_array, push_pull))
+        # new_array2 = np.asarray(new_array2, dtype=np.float32)
+        # print("NEW_PUSH_ARRAY2", new_array2)
+        ### selection_indices = npi.indices(self.m_v.CurrentActor()._points, [i for i in new_array2], axis=0, missing='mask')
+        # print("SELECTION POINT_INDICES", selection_indices)
+        # index = npi.indices(self.m_v.CurrentActor()._points, ),
+
+        return self.selection_array
+
 
     ####FOR DRAW-SELECTION FEATURE
     ###----------------------------------------------------------------------
@@ -521,7 +760,7 @@ class PianoRollPanel(wx.Panel):
 
         elif self.mode == self.select_mode:
 
-            if evt.ShiftDown():
+            if evt.ShiftDown() and not evt.AltDown() and not evt.ControlDown():
                 print("Shift-Selecting 3")
 
                 # ON SHIFT, selecting_cells gets ADDED to PREVIOUSLY_SELECTED_CELLS, then self.selected_cells becomes self.psc.
@@ -534,47 +773,60 @@ class PianoRollPanel(wx.Panel):
                     self.selected_cells = OrderedDict.fromkeys([i for i in self.selected_cells])
                     self.selected_cells = list([i for i in self.selected_cells.keys()])
 
-                    # Attempt to remember and store 'previous' ACCUMULATING blocks of selections. (so, they STACK if shift-highlighting)
-                    if not self.previously_selected_cells:
-                        self.previously_selected_cells = self.selected_cells
-                    else:
-                        self.previously_selected_cells = self.selected_cells
-                            #self.previously_selected_cells.append(i)
+                    # FINALLY, after the correct self.SELECTED_CELLS exists, we derive our 'selected_notes' from it to use in awesome functions.
+                    self.selected_notes = [i for i in self.selected_cells if
+                                           self.pianoroll.GetCellValue(i[0], i[1]) == '3']
+                    print("Number of DRAWN cells in selection1:", len(self.selected_notes))
+                    # if not self.previously_selected_cells:
+                    #     self.previously_selected_cells = self.selected_cells
+                    # else:
+                    #     self.previously_selected_cells = self.selected_cells
+                    #         #self.previously_selected_cells.append(i)
+
                 except AttributeError as i:
-                    #print(i)
+                    print("Shifted here..", i)
+                    # Attempt to remember and store 'previous' ACCUMULATING blocks of selections. (so, they STACK if shift-highlighting)
+                    self.selected_cells = self.selecting_cells
+                    self.previously_selected_cells = self.selected_cells
+
+                    # FINALLY, after the correct self.SELECTED_CELLS exists, we derive our 'selected_notes' from it to use in awesome functions.
+                    self.selected_notes = [i for i in self.selected_cells if
+                                           self.pianoroll.GetCellValue(i[0], i[1]) == '3']
+                    print("Number of DRAWN cells in selection2:", len(self.selected_notes))
                     pass
+
             elif not evt.ShiftDown():
-
-
-
                 print("Not Shift-Selecting 3")
                 # On not Shift, selected_cells becomes selecting_cells.
                 # self.selected_cells = []  # Overwrite.
-                try:
-                    self.selected_cells = self.selecting_cells
-                except AttributeError:
-                    print("Still no previously_selected_cells.")
-                    pass
-                self.selected_cells = OrderedDict.fromkeys([i for i in self.selected_cells])
+                #try:
+                self.selected_cells = self.selecting_cells
+                #except AttributeError:
+                    #print("Still no previously_selected_cells.")
+                    #pass
+                self.selected_cells = OrderedDict.fromkeys([i for i in self.selected_cells])  #Gets rid of duplicates.
                 self.selected_cells = list([i for i in self.selected_cells.keys()])
 
+                # FINALLY, after the correct self.SELECTED_CELLS exists, we derive our 'selected_notes' from it to use in awesome functions.
+                self.selected_notes = [i for i in self.selected_cells if self.pianoroll.GetCellValue(i[0], i[1]) == '3']
+                print("Number of DRAWN cells in selection3:", len(self.selected_notes))
                 self.previously_selected_cells = self.selected_cells  #(self. previously_selected_cells already condensed here  with ordered dict)
 
+        #if self.first_selection:
 
-            # FINALLY, after the correct self.SELECTED_CELLS exists, we derive our 'selected_notes' from it to use in awesome functions.
-            try:
-                print("self.selected_cells", self.selected_cells)
-                self.selected_notes = [i for i in self.selected_cells if
-                                       self.pianoroll.GetCellValue(i[0], i[1]) == '3']  # If cell is GREEN.
-                print("Number of DRAWN cells in selection:", len(self.selected_notes))
-
-                # Then, we get rid of blue highlight.
-                # for i in self.selected_cells:
-                #     if self.pianoroll.GetCellValue(i[0], i[1]) == '2':  # Blue highlight to...
-                #         self.pianoroll.SetCellValue(i[0], i[1], '0')
-
-            except AttributeError as i:
-                print("Attribute error here.", i)
+            # try:
+            #     print("self.selected_cells", self.selected_cells)
+            #     self.selected_notes = [i for i in self.selected_cells if
+            #                            self.pianoroll.GetCellValue(i[0], i[1]) == '3']  # If cell is GREEN.
+            #
+            #
+            #     # Then, we get rid of blue highlight.
+            #     # for i in self.selected_cells:
+            #     #     if self.pianoroll.GetCellValue(i[0], i[1]) == '2':  # Blue highlight to...
+            #     #         self.pianoroll.SetCellValue(i[0], i[1], '0')
+            #
+            # except AttributeError as i:
+            #     print("Attribute error here.", i)
 
         print("HERE!")
 
