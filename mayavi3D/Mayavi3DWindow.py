@@ -1,11 +1,8 @@
 
 import sys, os
-<<<<<<< HEAD
 
-from midas_scripts import musicode, midiart, midiart3D, music21funcs
-=======
 from midas_scripts import midiart, midiart3D     ###,  music21funcs
->>>>>>> 3f98aa81 (--IP--Commit, November 10th, 2020--)
+
 
 from traits.etsconfig.api import ETSConfig
 ETSConfig.toolkit = 'wx'
@@ -15,7 +12,7 @@ from numpy import array
 import numpy as np
 import random
 import music21
-import wx #TODO how to do simpler imports (i.e. just what we need instead of all of wx)
+import wx    #TODO how to do simpler imports (i.e. just what we need instead of all of wx)
 
 
 
@@ -73,7 +70,7 @@ class Actor(HasTraits):
 
     ##For trait-syncing.
     cur_z = Int(90)  #         #Synced one-way to mayavi_view.cur_z trait.
-    color = Tuple(0., 1., 0.)  #Synced two_way with the pipeline's current_actor.property.color trait.
+    color = Tuple(1., 0., 0.)  #Synced two_way with the pipeline's current_actor.property.color trait.
     position = Array()         #Synced two-way with the pipeline's current_actor.actor.actor.position trait.
 
 
@@ -127,10 +124,10 @@ class Actor(HasTraits):
 
 
         self._points = np.argwhere(self._array3D == 1.0)
-        self._points[:, 0] =  self._points[:, 0] /cpqn #Account for cpqn.  X axis "Slice" rebound here.
+        self._points[:, 0] =  self._points[:, 0] / cpqn #Account for cpqn.  X axis "Slice" rebound here.
 
         try:
-            self.mayavi_view.sources[self.index].mlab_source.trait_set(points=self._points) #Traitset happens of x axis slice rebinding.
+            self.mayavi_view.sources[self.index].mlab_source.trait_set(points=self._points) #Traitset happens on x axis slice rebinding.
         except IndexError:
             pass
 
@@ -216,7 +213,8 @@ class Mayavi3idiView(HasTraits):
         self.ret_y = 0
         self.ret_z = 0
 
-
+        #For color configuring upon creation of new_actor.
+        self.number_of_noncolorscall_actors = 0
 
         # Movie Recording
         self.scene.scene.movie_maker.record = False
@@ -231,13 +229,15 @@ class Mayavi3idiView(HasTraits):
         #Imports Colors
 
         self.clr_dict_list = midiart.get_color_palettes(r".\resources\color_palettes")
-        self.default_color_palette = midiart.FLStudioColors
 
+
+
+        self.default_color_palette = midiart.FLStudioColors
 
         self.default_mayavi_palette = midiart.convert_dict_colors(self.default_color_palette)
 
         #TODO Should this be in main MIDAS_wx?
-        self.current_palette_name = ""
+        self.current_palette_name = "FLStudioColors"   #Palette on startup.
 
 
 
@@ -409,7 +409,7 @@ class Mayavi3idiView(HasTraits):
 
         #self.actor = a
 
-        #TODO Can ALL this v here v go into the actor's init?
+        #TODO Can ALL this v-here-v go into the actor's init?
         print('2')
         # self.sources.append(None)
         self.actors.append(a)
@@ -428,8 +428,6 @@ class Mayavi3idiView(HasTraits):
         #self.on_trait_change(self.actor_list_changed, 'actors[]')
 
 
-        a.name = name
-        a.color = color
 
         #Traits syncing goes here, if desired. (can't go in actor init, because the actor hasn't been appended to any lists yet...)
         #Simplifies access to the pipeline's properties\traits by configuring our "Actor()" class to have these directly.
@@ -437,6 +435,11 @@ class Mayavi3idiView(HasTraits):
         print("Colors synced.")
         self.sources[self.cur_ActorIndex].actor.actor.sync_trait('position', a, mutual=True)
         print("Position synced.")
+
+
+        a.name = name
+        a.color = color
+
 
         self.cur_changed_flag = not self.cur_changed_flag
 
@@ -665,6 +668,7 @@ class Mayavi3idiView(HasTraits):
 
 
     #Position, orientation, and #TODO origin functions.
+    #TODO This is a numpy function. Allocate accordingly?
     def set_z_to_single_value(self, coords, value, index=None):
         if index is None:
             coords_array = coords
@@ -1209,15 +1213,45 @@ class Mayavi3idiView(HasTraits):
         if mproll is not None:
             s_h = mproll.GetScrollPos(wx.HORIZONTAL)
             s_v = mproll.GetScrollPos(wx.VERTICAL)
-            s_linex = mproll.GetScrollLineX()
-            s_liney = mproll.GetScrollLineY()
-            c_s = mproll.GetClientSize()
+            s_linex = mproll.GetScrollLineX()   #Set to 160 in pianroll (the grid), the equivalent of scrolling a full measure of columns..
+            s_liney = mproll.GetScrollLineY()   #Set to 120, the equivalent of scrolling 2 octaves of rows.
+            client_size = mproll.GetClientSize()
+            print("CLIENT_SIZE", client_size)
+            client_rect = mproll.GetClientRect()
+            print("CLIENT_RECT", client_rect)
 
-            topleft = mproll.XYToCell(s_h * s_linex, (s_v * s_liney))
-            bottomleft = mproll.XYToCell((s_h * s_linex), (s_v * s_liney) + c_s[1] - 18)
-            bottomright = mproll.XYToCell((s_h * s_linex) + c_s[0] -60, (s_v * s_liney) + c_s[1] - 18)
-            topright = mproll.XYToCell((s_h * s_linex) + c_s[0] -60, (s_v * s_liney))
-            
+            #s_r = mproll.GetScroll
+
+            #GRID CELL COORDINATES (Y, X)
+            bottomleft = mproll.XYToCell((s_h * s_linex), (s_v * s_liney) + client_size[1] - 18)
+            print("RETICLE_BOTTOM_LEFT", bottomleft)
+
+            bottomright = mproll.XYToCell((s_h * s_linex) + client_size[0] -60, (s_v * s_liney) + client_size[1] - 18)
+            print("RETICLE_BOTTOM_RIGHT", bottomright)
+
+            topleft = mproll.XYToCell((s_h * s_linex), (s_v * s_liney))  #0 times whatever your scroll rate is equal to zero, so the top left at start is (0, 0)
+
+            topright = mproll.XYToCell((s_h * s_linex) + client_size[0] -60, (s_v * s_liney))
+
+            #Limiter, so the reticle doesn't turn into a triangle because of going below the grid area with (-1, -1) values...
+            #If bottom would go below 0, (to -1, as it has been), then force it be zero and adjust top_left and top_right based on client_size from there.
+            if bottomleft[1] == -1 and bottomright[1] == -1:
+
+                topleft = mproll.XYToCell(mproll.CalcUnscrolledPosition(0, 0)) #New Topleft
+                topright = mproll.XYToCell(mproll.CalcUnscrolledPosition(client_size[0], 0)) #New Topright
+                #bottomright = mproll.XYToCell(mproll.CalcUnscrolledPosition(0,0)[0], )
+                #Bottom is ( , 127)
+                bottomleft = (127, topleft[1]) #New Bottomleft
+                bottomright = (127, topright[1]) #New Bottomright
+
+                print("RETICLE_BOTTOM_LEFT2", bottomleft)
+                print("RETICLE_BOTTOM_RIGHT2", bottomright)
+            else:
+                pass
+
+
+
+
             reticle = np.asarray(np.vstack(((topleft[1], 127-topleft[0], 0),
                                  (topright[1], 127-topright[0], 0),
                                  (bottomright[1], 127-bottomright[0], 0),

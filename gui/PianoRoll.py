@@ -184,7 +184,7 @@ class PianoRoll(wx.grid.Grid, glr.GridWithLabelRenderersMixin):
         # #wx.RegionIterator
 
         #One measure and one octave at a time.
-        self.SetScrollRate(160, 120)  #For precision scrolling, use scrollbar arrows, or scroll-bar right-click-->"Scroll Here"
+        self.SetScrollRate(160, 120)  #For precision scrolling, use scrollbar arrows, or scroll-bar right-click-->"Scroll Here" or MIDDLE-CLICK ZOOM SCROLL.
 
         self.cur_scrollrate = self.GetScrollPixelsPerUnit()
         self.last_known_pos = None
@@ -243,6 +243,7 @@ class PianoRoll(wx.grid.Grid, glr.GridWithLabelRenderersMixin):
         self.Bind(wx.grid.EVT_GRID_CELL_LEFT_CLICK, self.OnGridLClick)
         self.Bind(wx.grid.EVT_GRID_SELECT_CELL, self.OnCellSelected)
         #self.Bind(wx.grid.EVT_GRID_CELL_CHANGED, self.OnCellChanged)
+        self.Bind(wx.EVT_MOUSEWHEEL, self.OnMouseWheel)
         self.Bind(wx.EVT_MOUSEWHEEL, self.OnMouseWheel)
 
         #--Right Click menu binding.
@@ -464,21 +465,20 @@ class PianoRoll(wx.grid.Grid, glr.GridWithLabelRenderersMixin):
             return
 
         state = wx.GetMouseState()
-        if state.ShiftDown():
+        if state.ShiftDown() and not state.AltDown() and not state.ControlDown():
             if event.GetWheelRotation() >= 120:
                 self.ZoomInVertical(1)
                 return
             elif event.GetWheelRotation() <= -120:
                 self.ZoomOutVertical(1)
-        elif state.AltDown():   #CHANGED FROM ControlDown to avoid conflicting with other scrolling function(s).
+        elif state.AltDown() and not state.ShiftDown() and not state.ControlDown():   #CHANGED FROM ControlDown to avoid conflicting with other scrolling function(s).
             if event.GetWheelRotation() >= 120:
                 self.ZoomInHorizontal(1)
             elif event.GetWheelRotation() <= -120:
                 self.ZoomOutHorizontal(1)
 
-
-
         event.Skip()
+
 
 
     def ZoomInVertical(self, intervals):
