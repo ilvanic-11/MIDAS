@@ -21,7 +21,7 @@ import os
 import wx._adv, wx._html, wx._xml, wx.py, time
 
 from traits.api import HasTraits
-from midas_scripts import musicode
+from midas_scripts import musicode   ###, midiart3D
 
 
 import logging
@@ -156,7 +156,9 @@ class MainWindow(wx.Frame):
         #Actor on startup.
         self.pianorollpanel.actorsctrlpanel.actorsListBox.new_actor(0)
         self.mayavi_view.actors[0].change_points(MusicObjects.earth())
-        self.mayavi_view.sources[0].actor.property.color = (0, 1., .75)
+        #self.mayavi_view.actors[0].color = (0, 1., .75)
+
+        #self.mayavi_view.sources[0].actor.property.color = (0, 1., .75)
 
         sizer = wx.BoxSizer(wx.VERTICAL)
         sizer.Add(self.top_mayaviview_split, 1, wx.EXPAND)
@@ -335,7 +337,7 @@ class MainWindow(wx.Frame):
         self.mainpanel.Bind(wx.EVT_CHAR_HOOK, self.OnSashKeyDown)
         #self.mainpanel.Bind(wx.EVT_MOUSEWHEEL, self.OnScrollZplanes)
         self.mainpanel.Bind(wx.EVT_MOUSEWHEEL, self.OnScrollActors_Zplanes)
-
+        self.mainpanel.Bind(wx.EVT_CHAR_HOOK, self.OnMiddleClickGrabNSend)
         self.Show(True)
 
         #TODO Return to this? (focus is set on mainbuttonspanel as part of the __main__ loop call at the bottom.
@@ -377,6 +379,8 @@ class MainWindow(wx.Frame):
 
     #Sash Hotkey
     def OnSashKeyDown(self, event):
+        #TODO Doc strings.
+
         #DDprint("OnKeyDown(): {}".format(chr(event.GetUnicodeKey())))
         if event.GetUnicodeKey() == ord('D'):
             if event.AltDown():
@@ -533,7 +537,71 @@ class MainWindow(wx.Frame):
                     self.GetTopLevelParent().mayavi_view.CurrentActor().cur_z = self.zplane_scrolled
                     self.GetTopLevelParent().pianorollpanel.pianoroll.ForceRefresh()
 
+                elif wx.GetMouseState().MiddleIsDown():
+
+                    print("Middle-click zooming...")
+                    self.pianorollpanel.Selection_Send(self.pianorollpanel.selected_notes, self.zplane_scrolled, event=None,
+                                                       carry_to_z=True)
+
         event.Skip()
+
+
+    def OnMiddleClickGrabNSend(self, event):
+        #TODO Doc strings.
+        #print("Middle-click zooming2...")
+        state = wx.GetMouseState()
+        #state2 = wx.KeyboardState()
+        #print("State", state)
+        #print("MiddleDown?", state.MiddleIsDown())
+        #TODO Consider other binding gates, instead of CTRL ALT SHIFT.
+
+        #Send selected notes to self.actor_scrolled.  Works
+        if event.GetKeyCode() == wx.WXK_SHIFT and state.MiddleIsDown():
+            print("Sending to scrolled Actor-->Shift and Middle down here.")
+            pass
+            self.pianorollpanel.Selection_Send(self.pianorollpanel.selected_notes, self.zplane_scrolled, event=None, carry_to_z=True, carry_to_actor=True)
+
+        #Send selected notes to self.zplane_scrolled.  Works
+        elif event.GetKeyCode() == wx.WXK_ALT and state.MiddleIsDown():
+            print("Sending to scrolled Zplane-->Alt and Middle down here.")
+            self.pianorollpanel.Selection_Send(self.pianorollpanel.selected_notes, self.zplane_scrolled, event=None, carry_to_z=True)
+
+        #Send selected notes to the pyshell as an np.array and as a music21.stream.Stream.
+        elif event.GetKeyCode() == wx.WXK_CONTROL and state.MiddleIsDown():
+            #TODO Send selected_notes to pyshell.
+            self.pianorollpanel.ArrayFromSelection(self.pianorollpanel.selected_notes, scroll_value=self.zplane_scrolled, carry=True)
+
+            self.pyshellpanel.shell.Execute("Midas_Array = Midas.pianorollpanel.selection_array")
+            self.pyshellpanel.shell.Execute("Midas_Stream = midiart3D.extract_xyz_coordinates_to_stream(Midas.pianorollpanel.ArrayFromSelection(Midas.pianorollpanel.selected_notes, scroll_value=Midas.zplane_scrolled, carry=True))")
+
+            self.pyshellpanel.shell.Execute("print(Midas_Array)")
+            self.pyshellpanel.shell.Execute("print(Midas_Stream)")
+            self.pyshellpanel.shell.Execute("Midas_Stream.show('txt')")
+        else:
+            event.Skip()
+
+
+    def ShowCurrents(self):
+        try:
+            print("Currently Selected Notes -->", self.pianorollpanel.selected_notes)
+        except AttributeError as i:
+            #print(i)
+            print("Currently Selected Notes -->", "   ___no selected notes___")
+        try:
+            print("Last push -->", self.pianorollpanel.last_push)
+        except AttributeError as i:
+            print("Last push -->", "   ---no last push yet---")
+        try:
+            print("Last actor -->", self.pianorollpanel.last_actor)
+        except AttributeError as i:
+            print("Last actor -->", "   ---no last actor yet---")
+
+        print("\n")
+        print("Current actor zplane -->", self.mayavi_view.CurrentActor().cur_z)
+        print("Current m_v zplane -->", self.mayavi_view.cur_z)
+        print("Current Actor -->", self.mayavi_view.cur_ActorIndex)
+        print("Current actor_scrolled -->", self.actor_scrolled)
+        print("Current zplane_scrolled -->", self.zplane_scrolled)
 
 
 
@@ -554,7 +622,7 @@ class MainWindow(wx.Frame):
         self.mayavi_view.grid_reticle.mlab_source.points = self.mayavi_view.initial_reticle
 
         #Actor and Zplane scrolling attributes.
-        self.zplane_scrolled = 0
+        self.zplane_scrolled = 90
         self.actor_scrolled = 0
         # self.IsActorScrolling = False
         # self.IsZPlaneScrolling = False

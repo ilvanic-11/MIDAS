@@ -1,31 +1,31 @@
 COMMIT LOG
 
 --IP--Commit March 25th, 2020--
--->Create Mayavi3idiView() class function: def set_actor_positions() 
+--> Create Mayavi3idiView() class function: def set_actor_positions() 
 -->Create Mayavi3idiView() class function: def set_text_positions() 
--->Rename PianoDisplay.py to MusicObjects.py
--->Rename color_pallete image names.
--->Create MusicObjects.py module function: def GrandStaffLines()
--->Create MusicObjects.py module function: def GrandStaff()
+--> Rename PianoDisplay.py to MusicObjects.py
+--> Rename color_pallete image names.
+--> Create MusicObjects.py module function: def GrandStaffLines()
+--> Create MusicObjects.py module function: def GrandStaff()
 -->Add "edges" to Mayavi3idiView().establish_highlighterplane function.
--->Create Mayavi3idiView() list self.clr_dict_list
--->Create Mayavi3idiView() list self.mlab_calls
--->Create Mayavi3idiView() list self.text3d_calls
--->Create Mayavi3idiView() list self.text3d_default_positions
--->Add mlab_calls.append("mlab_data") calls to every mlab call.
+--> Create Mayavi3idiView() list self.clr_dict_list
+--> Create Mayavi3idiView() list self.mlab_calls
+--> Create Mayavi3idiView() list self.text3d_calls
+--> Create Mayavi3idiView() list self.text3d_default_positions
+--> Add mlab_calls.append("mlab_data") calls to every mlab call.
 
 
 --IP--Commit April 7th, 2020--
--->Explored Dragscrolling -- Grid has own scroll shit.
--->Set ScrollLine X and Y in piano roll.
--->Discovered "right click" on piano roll panel scroll bar. Needs info 
--->Add 'Menu' Placeholders.
--->Discovered cool workaround--- https://forums.wxwidgets.org/viewtopic.php?t=43175
--->Added an TrebleClef "Icon." 
--->Added a CustomStatusBar.
--->Figured out Animator instance control. 
--->Complete music21funcs.make_musicode() writing to files correctly.
--->Rename some module and class attributes better.
+--> Explored Dragscrolling -- Grid has own scroll shit.
+--> Set ScrollLine X and Y in piano roll.
+--> Discovered "right click" on piano roll panel scroll bar. Needs info 
+--> Add 'Menu' Placeholders.
+--> Discovered cool workaround--- https://forums.wxwidgets.org/viewtopic.php?t=43175
+--> Added an TrebleClef "Icon." 
+--> Added a CustomStatusBar.
+--> Figured out Animator instance control. 
+--> Complete music21funcs.make_musicode() writing to files correctly.
+--> Rename some module and class attributes better.
 
 
 --IP--Commit, April 18th, 2020--
@@ -69,26 +69,26 @@ COMMIT LOG
 
 --IP--Commit, April 20, 2020--
 --In MenuButtons
--->Populate Tools Menus (musicode, midiart, midiart3D, music21funcs) with respective functions.
--->Create Dynamic ToolsDialog(wx.Dialog) for displaying said midas_script functions.
--->Clean up doc strings in all midas_scripts modules.
+--> Populate Tools Menus (musicode, midiart, midiart3D, music21funcs) with respective functions.
+--> Create Dynamic ToolsDialog(wx.Dialog) for displaying said midas_script functions.
+--> Clean up doc strings in all midas_scripts modules.
 --In Documentation submenu
--->Add "Python" to Documentation submenu list.
+--> Add "Python" to Documentation submenu list.
 --In Preferences
--->Add "Default Color Palette" dropdown ComboCtrl box.
--->Populate Color Palettes dropdown with colors from r".\resources\color_palettes."
+--> Add "Default Color Palette" dropdown ComboCtrl box.
+--> Populate Color Palettes dropdown with colors from r".\resources\color_palettes."
 
 
 --IP--Commit, May 22, 2020--
 --In Mayavi3DView
--->Reorganize module layout for readability and cleanness.
--->Write Highlighter Plane trait functions--- working successfully.
+--> Reorganize module layout for readability and cleanness.
+--> Write Highlighter Plane trait functions--- working successfully.
 --In Actors class.
--->Sync cur_z trait one_way with mayavi_view.cur_z --Used in highlighter plane functions.
--->Addition of "stream" trait in preparation for major export features\functionality.
+--> Sync cur_z trait one_way with mayavi_view.cur_z --Used in highlighter plane functions.
+--> Addition of "stream" trait in preparation for major export features\functionality.
 --In ActorsCtrlPanel
--->Fix OBOE errors.
--->Delete actor function now deletes from the ListBox first.
+--> Fix OBOE errors.
+--> Delete actor function now deletes from the ListBox first.
 --In Menu Buttons
 --> Working instance of Menu button "About Midas" made functional. 
 --> Move Stats Buttons to "Tools" menu bar. Stats buttons now named "Analyze" submenu.
@@ -97,9 +97,9 @@ COMMIT LOG
 --> Set default Z-Plane to 90 for music21 reasons.
 --> Eliminate StatsDisplayPanel. Adjust splitter panels accordingly.
 --In music21funcs
--->Write about_midas() function; code used taken from Midas_Startup_Configs.
+--> Write about_midas() function; code used taken from Midas_Startup_Configs.
 
--->Miscellaneous Small fixes for readability.
+--> Miscellaneous Small fixes for readability.
 
 
 --IP--Commit, May 25, 2020--
@@ -129,40 +129,40 @@ In PianoRoll.py
 In Install.bat
 --> Make all pip install commands ""python - m pip install --upgrade 'package' --user""
 In Resources
--->Add MidasCommitLog.txt to resources folder. All current large commits added to MidasCommitLog.txt.
+--> Add MidasCommitLog.txt to resources folder. All current large commits added to MidasCommitLog.txt.
 In midas_scripts/midiart.py
--->Adjust midiart.separate_pixels_to_coords_by_color for export usage.
+--> Adjust midiart.separate_pixels_to_coords_by_color for export usage.
 
 --IP--Commit, May 26, 2020--
 In ActorsCtrlPanel
 --> Minor Tweaks to RightClickPopupMenu buttons.
 In Mayavi3idiView
--->Tweak trait change function for highlighting current actor in listbox upon moving it's 'position' in the view.
+--> Tweak trait change function for highlighting current actor in listbox upon moving it's 'position' in the view.
 In MainButtons
--->Rework logic for the colors function for speed! Optimized using midiart.separate_pixels_to_coords_by_color.
+--> Rework logic for the colors function for speed! Optimized using midiart.separate_pixels_to_coords_by_color.
 In midas_scripts/midiart
--->Small tweaks to midiart.separate_pixels_to_coords_by_color. Added walkthrough #markups for clarity.
+--> Small tweaks to midiart.separate_pixels_to_coords_by_color. Added walkthrough #markups for clarity.
 
 --IP--Commit, May 28, 2020--
 In Midas_wx
--->Restore class instance of self.musicode = musicode.Musicode()
+--> Restore class instance of self.musicode = musicode.Musicode()
 In Mayavi3idiView
--->Fixed a bug where set_actor_positions wouldn't work correctly after remove_highlighter_plane() was called.
--->Rename self.cur to self.cur_ActorIndex
--->Fix recurring missed refactorings of self.cur
--->Add a class variable called self.colors_call that updates(+1) upon subsequent color images being generated in the view. For export purposes.
--->Create a clear_all_and_redraw() function.--clears and redraws the mayavi figure, AND clears all references lists.
+--> Fixed a bug where set_actor_positions wouldn't work correctly after remove_highlighter_plane() was called.
+--> Rename self.cur to self.cur_ActorIndex
+--> Fix recurring missed refactorings of self.cur
+--> Add a class variable called self.colors_call that updates(+1) upon subsequent color images being generated in the view. For export purposes.
+--> Create a clear_all_and_redraw() function.--clears and redraws the mayavi figure, AND clears all references lists.
 In MainButtons
--->Create Working instance of 'Colors' Export function!!!
--->Bug fix: set_to_nn_colors doesn't allow floats for it's color values in its kd-tree search open3d grid thing.
--->Use pianorollpanel.ClearZPlane(self.GetTopLevelParent().mayavi_view.cur_z) instead of ClearGrid() in create_musicode (for now)
+--> Create Working instance of 'Colors' Export function!!!
+--> Bug fix: set_to_nn_colors doesn't allow floats for it's color values in its kd-tree search open3d grid thing.
+--> Use pianorollpanel.ClearZPlane(self.GetTopLevelParent().mayavi_view.cur_z) instead of ClearGrid() in create_musicode (for now)
 In MenuButtons
--->Create working def OnExport_Colors() function.
--->Create working def OnExport_Selection() function.
--->Create working def OnExport_CurrentActor() function.
--->Create working def OnExport_AllActors() function.
+--> Create working def OnExport_Colors() function.
+--> Create working def OnExport_Selection() function.
+--> Create working def OnExport_CurrentActor() function.
+--> Create working def OnExport_AllActors() function.
 In midas_scripts/music21funcs
--->Add 'part=False' parameter to separate_notes_to_parts_by_velocity() function. Nested use adjusted accordingly. Adjusts output stream type.
+--> Add 'part=False' parameter to separate_notes_to_parts_by_velocity() function. Nested use adjusted accordingly. Adjusts output stream type.
 
 --IP--Commit, May 29, 2020--
 In PianoRoll
@@ -170,13 +170,13 @@ In PianoRoll
 In PianoRollPanel
 --> Rewrite ClearZPlane() #Made it fast!!
 In ActorsCtrlPanel
--->Fix some mayavi_view.cur refactor misses. (cur_ActorIndex)
+--> Fix some mayavi_view.cur refactor misses. (cur_ActorIndex)
 
 --IP--Commit, May 30th, 2020--
 In PianoRoll
--->Fix a class variabel self.m_v error (was self.mv)
+--> Fix a class variabel self.m_v error (was self.mv)
 In musicode.py
--->Fix a major error where the users 'selection' when making a new 'musicode' was not being done in order of selection, but rather alphabetical order.
+--> Fix a major error where the users 'selection' when making a new 'musicode' was not being done in order of selection, but rather alphabetical order.
 
 --IP--Commit, May 31, 2020--
 In PianoRoll
@@ -201,7 +201,7 @@ In MainButtons
 --> Change "QR Code" instances of text to "Monochrome"
 --> Fix slider not working for the MidiartDialog
 In MIDAS_wx
--->Change variable bindings to avoid an error when using the animated openings.
+--> Change variable bindings to avoid an error when using the animated openings.
 In MenuButtons
 --> Finish export functions-- CurrentActor'sCurrentZplane and AllActor'sZplane)
 In Musicode
@@ -209,7 +209,7 @@ In Musicode
 
 --IP--Commit, June 6th, 2020--
 In MainButtons
--->Fix OBOE error in the clrs transcribing function in _OnMidiartDialogClosed
+--> Fix OBOE error in the clrs transcribing function in _OnMidiartDialogClosed
 In Midiart
 --> Modify the separate_pixels_to_coords_by_color function for said OBOE fix.
 In MenuButtons
@@ -219,7 +219,7 @@ In MenuButtons
 --IP--Commit, June 12th, 2020--
 Continuted from previous commit ----"To Be Ammended"-- These log the changes of both.
 In MainButtons
--->Complete colors function, implementing use of auto-appended menu buttons for every colors instance. 
+--> Complete colors function, implementing use of auto-appended menu buttons for every colors instance. 
 In MenuButtons
 --> Complete submenu button, OnBtnDeleteSlection() function; allows for deletion of arbitrary selections and actor.index attributes are updated accordingly.
 --> Write checks in OnExport_Colors() function that allow for the a colors image to still be exported correctly, order maintained, even after an actor of the colors instance has been deleted.
@@ -275,7 +275,7 @@ In the TRELLO
 --> Add a card that contains information on how to temporarily 'patch' up problems with the 'mayavi' popup at the top left of the mayavi split.
 --> Patch the update, temporarily, so to continue research.
 In MenuButtons
--->Small fix -- Export CurrentActorsCurrentZplane now includes the zplane in exported midifile's name. (i.e. 0_Actor_Z-90.mid)
+--> Small fix -- Export CurrentActorsCurrentZplane now includes the zplane in exported midifile's name. (i.e. 0_Actor_Z-90.mid)
 
 --IP--Commit, September 11th, 2020--
 In Mayavi3DView
@@ -313,9 +313,9 @@ In Mayavi3DView and PianoRollPanel
 In MainButtons
 --> Added the Four Main Buttons ("midi\Score Import", "Musicode", "Midiart", "3idiArt") to the mainbuttonspanel's accelerator table. They are now hotkeyed to F1, F2, F3, and F4 respectively.
 In Midas_wx
--->Added mayavi_view.new_reticle_box() to the SetSash hotkey functions.
--->Added OnScroll_ActorsandZplanes Feature.
--->SetFocus() sets the focus on the mainbuttonspanel on startup now.
+--> Added mayavi_view.new_reticle_box() to the SetSash hotkey functions.
+--> Added OnScroll_ActorsandZplanes Feature.
+--> SetFocus() sets the focus on the mainbuttonspanel on startup now.
 
 
 --IP--Commit, November 3rd, 2020--
@@ -341,11 +341,10 @@ In MainButtons:
 
 
 --IP--Commit, November 10th, 2020--
-
 In Mayavi3idiView
--->Redrawing mayavi view "Actor_Label" color default needs to be reset.
--->In function redraw_mayaviview(), fixed parent inheritance bug. 
--->Fixed miscellaneous small bugs, code wording.
+--> Redrawing mayavi view "Actor_Label" color default has been reset.
+--> In function redraw_mayaviview(), fixed parent inheritance bug. 
+--> Fixed miscellaneous small bugs, code wording.
 In MainButtonsPanel, PianoRoll(the grid class), pyshellpanel(mycrust class), mayavi_view(control panel), ZPlanesListBox, AND actorListBox
 -->Added 5 new "F" hotkeys that set the focus to the various panels of Midas from ANY of the other main panels in the application (from basically everywhere, one is able to setfocus via hotkey to somewhere else.) 
 --> Hotkey list ----> (F5 -> pianorollpanel, F6-> pyshellpanel, F7->mayavi_view_control_panel, F8->actorListBox, F9->, ZplanesListBox)
@@ -356,12 +355,48 @@ In MainButtons Panel
 In Musicode
 --> Revamped the whole module. Kept old method of establishing our musicode dicts. ALSO, created a new one.
 --> Cleaned up hash\garbage.
--->Fixed many bugs within mc.make_musicode function.
+--> Fixed many bugs within mc.make_musicode function.
 In Entire Project
--->Cleaned up some redundant imports at the tops of each module. (mostly musicode related for now.)
+--> Cleaned up some redundant imports at the tops of each module. (mostly musicode related for now.)
 In PianoRoll, ActorsControlPanel, ZPlanesControlPanel
--->Implented right click popup menus for each panel for quick functions(later.)
+--> Implented right click popup menus for each panel for quick functions(later.)
 
 
+--IP--Commit, THANKSGIVING, November 26th, 2020
+In musicode
+--> In the make_musicode() function, tweaked the directory writing.
+--> In the make_musicode() function, added functionality to export ENTIRE musicode as ONE midifile, ON TOP OF the other method of individual midi files.
+In Mayavi3DView
+--> Fixed the 'triangle' glitch for the red reticle; makes it so it doesn't go outta whack when one scrolls outside the grid's range.
+--> Add attribute 'self.number_of_noncolorscall_actors. Updates +=1 upon calling new_actor(). (Used to *differentiate between actors that are explicitly part of a colors-png import and not.)
+In PianoRoll
+--> In function OnMouseWheel(),(ZoomHorizontal and ZoomVertical related.) added extra 'not' conditions to prevent conflict with other functions that use Shift and Control.
+In PianoRollPanel
+--> Eliminate obsolete buttons. Added "Brush" button (no functionality yet)
+--> Added Z Scrolling functions: --> (Selection_Send(), ArrayFromSelection(), Scroll_ZPlanesVelocities())
+--> Added "import numpy_indexed as npi" to the module's imports.
+In Midas_wx
+--> Added GrabnSend() function. Works in conjunction with Scroll_to_Z.
+--> GrabNSend has three sends: ---> (While holding down middle clickShift, Shift sends to scrolled_actor, Alt sends to scrolled_zplane, and Ctrl sends to the pyshell as a numpy array and a music21.stream.Stream())
+--> Added function ShowCurrents(). (useful for debugging. Shows select_notes, CurrentActor().cur_z, mayavi_view.cur_z, mayavi_view.cur_ActorIndex, Midas.actor_scrolled, Midas.zplane_scrolled, pianoroll.last_push, pianoroll.last_actor)
+In ZPlanesListBox
+--> Added Activate_Zplane() function, derived from self.OnListItemActivated.
+In actorListBox
+--> Added feature: new_actor()s are now color-coded on creation, with exceptions made for colored image imports(they have they're own sorted colors, obviously). The colors are drawn from the current color palette selection based on self.current_pallete_name. 
+--> Added Activate_Actor() function, derived from self.OnListItemActivated.
+In midiart3D
+--> Fixed an import bug (--> ...from vtk.util.numpy_support import *blah ---to---> ....from vtkmodules.util.numpy_support.....]))  (probably vtk update related)
+In music21funcs
+--> Cleaned up some docstrings that may have been confusing upon a novice first glance. (separate_notes_to_parts_by_velocity())
+In Midas_Startup_Configs
+--> Added "import numpy_indexed as npi" to Midas's startup configurations.
+In Midas-Mayavi_Pip_Batch_Install.bat
+--> Updated with numpy_indexed
+In Mayavi3idiArtAnimation(old module, not our Mayavi3DView), MIDAS_UnitTests.py, MIDAS_wx, PianoRoll, PianoRollPanel, Preferences, MainButtons
+--> Hashed out imports not used. 
+In MainButtons
+--> Added a line of '-=' code to the colors import function to prevent color imports from updating 'self.number_of_noncolorscall_actors.' (*see above differentiation.)
 
+##Git adds. Update as needed. (Git adds a LOT at once, separated without commas.)
+git add MIDAS_wx.py gui/ActorsControlPanel.py gui/MainButtons.py gui/PianoRoll.py gui/PianoRollPanel.py gui/Preferences.py gui/ZPlanesControlPanel.py mayavi3D/Mayavi3DWindow.py mayavi3D/Mayavi3idiArtAnimation.py midas_scripts/midiart3D.py midas_scripts/music21funcs.py midas_scripts/musicode.py resources/Midas-Mayavi_Pip_Batch_Install.bat resources/MidasCommitLog.txt resources/Midas_Startup_Configs.py 
 

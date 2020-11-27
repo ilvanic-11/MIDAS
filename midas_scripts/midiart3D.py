@@ -49,9 +49,7 @@ import math
 import open3d
 from collections import OrderedDict
 import vtk
-from vtk.util.numpy_support import numpy_to_vtk
-from vtk.util.numpy_support import vtk_to_numpy
-from vtk.util.numpy_support import numpy_to_vtkIdTypeArray
+from vtkmodules.util.numpy_support import numpy_to_vtk, vtk_to_numpy, numpy_to_vtkIdTypeArray
 import statistics
 from midas_scripts import midiart
 
@@ -118,6 +116,7 @@ def extract_xyz_coordinates_to_stream( coords_array, part=False):
     If note.quarterLength and note.volume.velocity are unassigned, they default to 1.0 and None respectively.
 
     :param coords_array:        A 2D Numpy array of coordinate data.
+    :param part:                A bool kwarg of separate_notes_to_parts_by_velocity().
     :return: parts_stream:      A music21 stream.
     """
 
@@ -472,6 +471,7 @@ def transform_points_by_axis(coords_array, offset=0, axis='y', center_axis=False
 
 
 #TODO Learn more vtk.
+#TODO Vtk update, revisit. 11/26/2020
 #3D-
 def make_vtk_points_mesh( points):
     """

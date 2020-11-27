@@ -9,7 +9,7 @@ sys.path.append( os.path.join( os.path.dirname(__file__), os.path.pardir ) )  #T
 
 #import musicode
 
-from midas_scripts import musicode, midiart, midiart3D, music21funcs
+from midas_scripts import midiart3D     ###, music21funcs, musicode, midiart
 #import Mayavi2_Source_Tests
 #import g
 ##import mayavi
