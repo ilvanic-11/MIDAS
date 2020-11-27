@@ -732,6 +732,7 @@ def separate_notes_to_parts_by_velocity( in_stream, part=False):
     of those notes with those particular velocities into the same-named specified parts within the stream.
 
     :param in_stream:   Stream to be modified.
+    :param part:        Bool determining if 'end_stream' will be a music21.stream.Part().
     :return:            Stream with parts.
     """
     part_stream = music21.stream.Stream()

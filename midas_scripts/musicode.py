@@ -765,6 +765,8 @@ class Musicode():
 				  "Call makeMeasures() --> input_stream.makeMeasures(inPlace=True)")
 			pass
 
+		self.new_stream.write('mid', self.full_new_musicode_path + os.sep + self.musicode_name + ".mid")
+
 		# Account for the " " space string manually, so user is encouraged not to set a musicode for a space.
 		# Append "space_measure" to user-generated musicode.
 		space_measure = music21funcs.empty_measure(timeSig)

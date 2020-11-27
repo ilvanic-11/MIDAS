@@ -1,7 +1,7 @@
 import wx
 import music21
 import inspect
-from midas_scripts import midiart, midiart3D, musicode, music21funcs
+#from midas_scripts import midiart, midiart3D, musicode, music21funcs
 from midas_scripts.musicode import *
 from midas_scripts.midiart import *
 from midas_scripts.midiart3D import *
@@ -185,7 +185,7 @@ class ToolsDialog(wx.Dialog):
 
         self.func_id = 0
 
-        #self.ass = wx.StaticText(self, -1, "ASS ASS ASS ASS")
+        #self.static = wx.StaticText(self, -1, "ASS ASS ASS ASS")
 
         #self.funcname = wx.StaticText(self, -1, str(self.GetParent().FindItemById(self.func_id).GetName()))
 
