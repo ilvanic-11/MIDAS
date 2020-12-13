@@ -100,7 +100,7 @@ class MyCrust(wx.py.crust.Crust):
         self.Bind(wx.EVT_MENU, self.GetTopLevelParent().mainbuttonspanel.OnMusicodeDialog, id=new_id2)
         self.Bind(wx.EVT_MENU, self.GetTopLevelParent().mainbuttonspanel.OnMIDIArtDialog, id=new_id3)
         self.Bind(wx.EVT_MENU, self.GetTopLevelParent().mainbuttonspanel.OnMIDIArt3DDialog, id=new_id4)
-        # TODO These aren't working as desired.....
+
         self.Bind(wx.EVT_MENU, self.GetTopLevelParent().mainbuttonspanel.focus_on_actors_listbox, id=new_id5)
         self.Bind(wx.EVT_MENU, self.GetTopLevelParent().mainbuttonspanel.focus_on_zplanes, id=new_id6)
         self.Bind(wx.EVT_MENU, self.GetTopLevelParent().mainbuttonspanel.focus_on_pianorollpanel, id=new_id7)
@@ -113,7 +113,7 @@ class MyCrust(wx.py.crust.Crust):
         entries[1].Set(wx.ACCEL_NORMAL, wx.WXK_F2, new_id2)
         entries[2].Set(wx.ACCEL_NORMAL, wx.WXK_F3, new_id3)
         entries[3].Set(wx.ACCEL_NORMAL, wx.WXK_F4, new_id4)
-        # TODO THESE aren't working as desired...
+
         entries[4].Set(wx.ACCEL_NORMAL, wx.WXK_F5, new_id5)
         entries[5].Set(wx.ACCEL_NORMAL, wx.WXK_F6, new_id6)
         entries[6].Set(wx.ACCEL_NORMAL, wx.WXK_F7, new_id7)
@@ -147,15 +147,13 @@ class MainWindow(wx.Frame):
 
         self.mayavi_view = Mayavi3DWindow.Mayavi3idiView(self)
 
-        self.mayavi_view_control_panel = self.mayavi_view.edit_traits(parent=self.top_mayaviview_split, kind='subpanel').control
+        self.mayaviviewcontrolpanel = self.mayavi_view.edit_traits(parent=self.top_mayaviview_split, kind='subpanel').control
         self.pyshellpanel = MyCrust(self.top_pyshell_split, startupScript=str(os.getcwd() + "\\\\resources\\\\" + "Midas_Startup_Configs.py"))
         self.pianorollpanel = PianoRollPanel.PianoRollPanel(self.pianoroll_mainbuttons_split, self.log)
         self.mainbuttonspanel = MainButtons.MainButtonsPanel(self.pianoroll_mainbuttons_split, self.log)
         #self.statsdisplaypanel = StatsDisplayPanel.StatsDisplayPanel(self.mainbuttons_stats_split, self.log)
 
-        #Actor on startup.
-        self.pianorollpanel.actorsctrlpanel.actorsListBox.new_actor(0)
-        self.mayavi_view.actors[0].change_points(MusicObjects.earth())
+
         #self.mayavi_view.actors[0].color = (0, 1., .75)
 
         #self.mayavi_view.sources[0].actor.property.color = (0, 1., .75)
@@ -338,6 +336,8 @@ class MainWindow(wx.Frame):
         #self.mainpanel.Bind(wx.EVT_MOUSEWHEEL, self.OnScrollZplanes)
         self.mainpanel.Bind(wx.EVT_MOUSEWHEEL, self.OnScrollActors_Zplanes)
         self.mainpanel.Bind(wx.EVT_CHAR_HOOK, self.OnMiddleClickGrabNSend)
+        from wx import grid
+        self.pianorollpanel.pianoroll.Bind(wx.grid.EVT_GRID_SELECT_CELL, self.PrintOurCell)
         self.Show(True)
 
         #TODO Return to this? (focus is set on mainbuttonspanel as part of the __main__ loop call at the bottom.
@@ -546,6 +546,11 @@ class MainWindow(wx.Frame):
         event.Skip()
 
 
+    def PrintOurCell(self, event):
+        print("Our_X", event.Row)
+        print("Our_Y", event.Col)
+        event.Skip()
+
     def OnMiddleClickGrabNSend(self, event):
         #TODO Doc strings.
         #print("Middle-click zooming2...")
@@ -570,13 +575,61 @@ class MainWindow(wx.Frame):
         elif event.GetKeyCode() == wx.WXK_CONTROL and state.MiddleIsDown():
             #TODO Send selected_notes to pyshell.
             self.pianorollpanel.ArrayFromSelection(self.pianorollpanel.selected_notes, scroll_value=self.zplane_scrolled, carry=True)
-
+            self.selection_print = "Selection sent here to the pyshell as variables Midas_Array and Midas_Stream.\n Midas_Array is an np.array.\n Midas_Stream is a music21.stream.Stream()."
             self.pyshellpanel.shell.Execute("Midas_Array = Midas.pianorollpanel.selection_array")
             self.pyshellpanel.shell.Execute("Midas_Stream = midiart3D.extract_xyz_coordinates_to_stream(Midas.pianorollpanel.ArrayFromSelection(Midas.pianorollpanel.selected_notes, scroll_value=Midas.zplane_scrolled, carry=True))")
 
             self.pyshellpanel.shell.Execute("print(Midas_Array)")
-            self.pyshellpanel.shell.Execute("print(Midas_Stream)")
+            #self.pyshellpanel.shell.Execute("print(Midas_Stream)")
             self.pyshellpanel.shell.Execute("Midas_Stream.show('txt')")
+            self.pyshellpanel.shell.Execute("""print(Midas.selection_print)""")
+
+        #Send selected notes to the selected mouse coordinate on the grid upon pressing 'F'.
+        elif event.GetUnicodeKey() == ord("F") and state.MiddleIsDown():
+            print("Sending to Mouse Focus--> 'F' and Middle down here.")
+
+            ####Method
+            #Get Transforming value
+            cell = self.pianorollpanel.pianoroll.GetCellFromMouseState()
+
+            # assert not not self.pianorollpanel.selected_notes, "You do not have selected_notes yet."
+            #
+            # #Get Selection
+            # #self.pianorollpanel.selected_notes
+            #
+            #
+            # #Transform the grid selection block on top of our self.selected_notes
+            # top_left = self.pianorollpanel.pianoroll.GetSelectionBlockTopLeft()
+            # bottom_right = self.pianorollpanel.pianoroll.GetSelectionBlockBottomRight()
+            #
+            #
+            #
+            #
+            # #Transform here--Since our selection array has had np.flip called on it already from the previous call,
+            # # we must subscript correctly here.
+            # #self.pianorollpanel.selection_array[0] = self.pianorollpanel.selection_array[0] + cell[1]
+            # #self.pianorollpanel.selection_array[1] = self.pianorollpanel.selection_array[1] + cell[0]
+            #
+            #
+            # #Selection To Array
+            # self.pianorollpanel.selection_array = self.pianorollpanel.ArrayFromSelection(self.pianorollpanel.selected_notes, self.mayavi_view.CurrentActor().cur_z, carry=True)
+            #
+            #
+            #
+            # print("TRANSFORMED_SELECTION_ARRAY", self.pianorollpanel.selection_array)
+            #
+            # #Perform send.
+            # self.pianorollpanel.Selection_Send(self.pianorollpanel.selected_notes, self.mayavi_view.CurrentActor().cur_z, event=None,
+            #                                    carry_to_z=True, array=True)
+            # #Midas.GetClientRect()[2] - Midas.pianorollpanel.pianoroll.GetClientRect()[2]
+            # #Midas.GetClientRect()[3] - Midas.pianorollpanel.pianoroll.GetClientRect()[3]
+            # #print("Mouse_y", state.y)
+            # #pass
+            #
+            # #new_top_left = self.pianorollpanel.pianoroll.GetSelectionBlockTopLeft()
+            # self.pianorollpanel.pianoroll.SelectBlock()
+            # self.pianorollpanel.pianoroll.GoToCell(new_top_left)
+
         else:
             event.Skip()
 
@@ -636,7 +689,7 @@ class MainWindow(wx.Frame):
         #self.pianoroll_mainbuttons_split.SplitVertically(self.mainbuttons_stats_split, self.pianorollpanel)
         self.pianoroll_mainbuttons_split.SplitVertically(self.mainbuttonspanel, self.pianorollpanel)
         self.top_pyshell_split.SplitHorizontally(self.pianoroll_mainbuttons_split, self.pyshellpanel)
-        self.top_mayaviview_split.SplitHorizontally(self.top_pyshell_split, self.mayavi_view_control_panel)
+        self.top_mayaviview_split.SplitHorizontally(self.top_pyshell_split, self.mayaviviewcontrolpanel)
         
         self.pianoroll_mainbuttons_split.SetSashPosition(120)
         #self.mainbuttons_stats_split.SetSashPosition(400)
@@ -646,8 +699,16 @@ class MainWindow(wx.Frame):
         self.top_mayaviview_split.SetSashGravity(0.5)
         self.top_pyshell_split.SetSashGravity(0.5)
 
+        # Actor on startup.
+        self.pianorollpanel.actorsctrlpanel.actorsListBox.new_actor(0)
+        self.mayavi_view.actors[0].change_points(MusicObjects.earth())
+
+        #Titles.
+        self.mayavi_view.insert_titles()
+
         #Shows the zplanes on startup.
         self.pianorollpanel.zplanesctrlpanel.OnBtnShowAll(event=None)
+
 
         #These give the user 'F" hotkey control from any panel.
         #self.menuBar.AccelerateHotkeys()

@@ -6,8 +6,8 @@
 # Authors:      Zachary Plovanic - Lead Programmer
 #               Isaac Plovanic - Creator, Director, Programmer
 #
-# Copyright:    MIDAS is Copyright © 2017-2019 Isaac Plovanic and Zachary Plovanic
-#               music21 is Copyright © 2006-19 Michael Scott Cuthbert and the music21
+# Copyright:    MIDAS is Copyright © 2017-2020 Isaac Plovanic and Zachary Plovanic
+#               music21 is Copyright © 2006-2020 Michael Scott Cuthbert and the music21
 #               Project
 # License:      LGPL or BSD, see license.txt
 # ------------------------------------------------------------------------------------
@@ -19,7 +19,7 @@
 # MIDIART_FUNCTIONS
 # ------------------
 # MA-1.  def PRINT_CHORDS_IN_PIECE(stream)
-# MA-2a.  def MAKE_MIDI_FROM_PIXELS(pixels, granularity, connect, keychoice)
+# MA-2a. def MAKE_MIDI_FROM_PIXELS(pixels, granularity, connect, keychoice)
 # MA-2b. def SET_TO_NN_COLORS((im_array, clrs=None, FL=True)
 # MA-2c. def SET_PARTS_TO_MIDI_CHANNELS(in_stream, fptf)
 # MA-3.  def MAKE_PIXELS_FROM_MIDI()
@@ -27,13 +27,20 @@
 # MA-5.  def STRIP_MIDI_BY_PITCHRANGE(stream, directory, range_l, range_h)
 # MA-6.  def STAGGER_PITCH_RANGE(in_stream, stepsize=1, ascending=True, starting_offset=None, range_l=0, range_h=128)
 # MA-7. TODO def STAGGER_OFFSET_RANGE()
-# MA-8.  def TRANSCRIBE_IMAGE_TO_MIDIART(img, height, granularity, midi_path, connect, keychoice=None)
-# MA-9.  def TRANSCRIBE_IMAGE_EDGES_TO_MIDIART(( img, height, granularity, midi_path, connect, keychoice=None)
-# MA-10. def TRANSCRIBE_IMAGE_CLRS_TO_MIDIART(image, outfile) #TODO More parameters.
+# MA-8.  def TRANSCRIBE_COLOR_IMAGE_TO_MIDIART(img, height, granularity, midi_path, connect, keychoice=None)
+# MA-9   def TRANSCRIBE_GRAYSCALE_IMAGE_TO_MIDIART(img, granularity, connect, keychoice=None, note_pxl_value=255,
+                                                # output_path=None)
+# MA-10. def TRANSCRIBE_IMAGE_EDGES_TO_MIDIART(( img, height, granularity, midi_path, connect, keychoice=None)
 # MA-11. def EXTRACT_SUB_MELODIES(stream, keep_dur=False, chop_durs=False, offset_interval=0.25)
 # MA-12. TODO Revise? def GET_RANDOM_MELODY(in_stream)
 # MA-13. def SECTIONALIZE_IMAGE_ARRAY(image_array, sec_root)
 # MA-14. def RECONSTRUCT_IMAGE_SECTIONS(array_list)
+# MA-15. def LISTS_OF_TO_ARRAY(lizt, dim=2)
+# MA-16. def ARRAY_TO_LISTS_OF(coords_array, tupl=True)
+# MA-17. def SEPARATE_PIXELS_TO_COORDS_BY_COLOR(image, z_value, nn=False, dimensionalize=None, display=False, clrs=None, num_dict=False)
+# MA-18. def GET_COLOR_PALETTES(mypath=None, ncp=False)
+# MA-19. def CONVERT_DICT_COLORS(colors_dict)
+# MA-20. def CONVERT_RGB_TO_NCP(palettes=None)
 ###############################################################################
 
 import music21
@@ -152,8 +159,7 @@ def filter_notes_by_key(stream, key, in_place=True):
 # MA-2.
 def make_midi_from_colored_pixels(pixels, granularity, connect=False, colors=None):
     """
-        Make midiart from pixels.  Splits into colors of FLStudio piano roll.
-
+        Make midiart from pixels.  Splits into colors of FLStudio piano roll.  #TODO Redoc this dogshite. 12/01/20
     :param pixels: 			The 2D array of pixel values. each element of 2D array must be a tuple with RGB values (R,G,B)
     :param granularity: 	like music21's quarterlength.  4=each 'pixel' is whole note, 1=quarternote, 0.5=eightnote etc.
     :param connect: 		True means connect adjacent notes.
@@ -210,7 +216,7 @@ def make_midi_from_grayscale_pixels(pixels, granularity, connect=False, note_pxl
     """
         Make midi picture from greyscale\blackandwhite image.
 
-    :param pixels: 		    The 2D array of pixel values. each element is a single grayscale value.  0=Black, 255=White.
+    :param pixels: 		    The 2D array of pixel values. Each element is a single grayscale value.  0=Black, 255=White.
     :param granularity:     like music21's quarterlength. 4= 'pixel' is whole note, 1=quarternote, 0.5=eightnote etc.
     :param connect: 		True means connect adjacent notes.
     :param note_pxl_value:  note_pxl_value determines which pixels will count as notes.
@@ -569,7 +575,7 @@ def transcribe_colored_image_to_midiart(img, granularity=1, connect=False, keych
 
     return s
 
-
+# MA-9.
 def transcribe_grayscale_image_to_midiart(img, granularity, connect, keychoice=None, note_pxl_value=255,
                                           output_path=None):
     """
@@ -611,7 +617,7 @@ def transcribe_grayscale_image_to_midiart(img, granularity, connect, keychoice=N
     return s
 
 
-# MA-9.
+# MA-10.
 def transcribe_image_edges_to_midiart(image_path, height, granularity, midi_path, connect, keychoice=None,
                                       note_pxl_value=255, clrs=False):
     """
@@ -639,6 +645,7 @@ def transcribe_image_edges_to_midiart(image_path, height, granularity, midi_path
         small = cv2.resize(img, (int(height / len(img) * len(img[0])), height), cv2.INTER_AREA)
 
     edges = cv2.Canny(small, 100, 200)
+
     s = make_midi_from_grayscale_pixels(edges, granularity, connect, note_pxl_value)
 
     filter_notes_by_key(s, keychoice, in_place=True)
@@ -773,8 +780,8 @@ def extract_sub_melodies(stream, keep_dur=False, chop_durs=False, offset_interva
     return stream_list
 
 
-# MA-12.
 # TODO Requires revising, possibly is redundant.
+# MA-12.
 def get_random_melody(in_stream):
     """
         A smaller function than extract_sub_melodies, this function creates a stream of one melody at random from an
@@ -840,7 +847,7 @@ def sectionalize_image_array(image_array, sec_root):
     return split_arrays3
 
 
-# MA-13
+# MA-14.
 def reconstruct_image_sections(array_list):
     """
 
@@ -888,7 +895,7 @@ def reconstruct_image_sections(array_list):
 # Picture-wise, hstack for horizontal.
 # Picture-wise, vstack for vertical.
 
-# MA-14.
+# MA-15.
 # TODO Test this function.
 def lists_of_to_array(lizt, dim=2):
     """
@@ -925,7 +932,7 @@ def lists_of_to_array(lizt, dim=2):
         return array
 
 
-# MA-15.
+# MA-16.
 # TODO Test this function.
 def array_to_lists_of(coords_array, tupl=True):
     """
@@ -968,8 +975,8 @@ def array_to_lists_of(coords_array, tupl=True):
         print("Suggested ndim should be 2 or three.")
         return None
 
-#MA-15.
 
+#MA-17.
 def separate_pixels_to_coords_by_color(image, z_value, nn=False, dimensionalize=None, display=False, clrs=None, num_dict=False): ###, stream=False):
     """
         Created for testing purposes, this function takes an input image and returns an Ordered Dictionary of coordinate
@@ -987,6 +994,7 @@ def separate_pixels_to_coords_by_color(image, z_value, nn=False, dimensionalize=
     :param dimensionalize:  Value denoting space along z axis between separated parts.
     :param display:         Displays a standard mayavi mlab visualization of image.
     :param clrs:            16-colors palette to use. FL studio colors used by default when None.
+    :param num_dict         If True, returns a dict with INTS as keys, else COLOR STRINGS as keys.
     :return:                Returns odict, an Ordered Dictionary of coordinates organized by color, and an mlab_list,
                             a list of variables corresponding to the mlab calls made if display=True.
     """
@@ -1048,10 +1056,15 @@ def separate_pixels_to_coords_by_color(image, z_value, nn=False, dimensionalize=
             z_value += dimensionalize
     print("Odict1", odict1)
     print("Clrs:", clrs)
+
     if num_dict:
         # TODO This logic needs to go INSIDE the separte_pixels_to_coords_by_color function.
         numdict = OrderedDict().fromkeys([num for num in clrs.keys()])
-        m_clrs = convert_dict_colors(clrs)
+
+        #Conversion to Mayavi floats.
+        m_clrs = convert_dict_colors(clrs, invert=False)
+
+        #m_clrs = clrs
         for c in m_clrs.keys():
             for e in odict1.keys():
                 if m_clrs[c] == e:
@@ -1069,7 +1082,7 @@ def separate_pixels_to_coords_by_color(image, z_value, nn=False, dimensionalize=
         return odict1
 
 
-#MA-16
+#MA-18
 def get_color_palettes(mypath=None, ncp=False):
     """
         This function creates a dictionary of dictionaries of colors derived from Midas's color_palettes folder. One can
@@ -1095,7 +1108,7 @@ def get_color_palettes(mypath=None, ncp=False):
         dict = {}
         k = cv2.imread(j)
         for i, x in enumerate(k[0]):
-            dict[i+1] = tuple(x)
+            dict[i+1] = tuple(x)   #COULD IT BE HERE?!?!?! WHERE IT ALL GETS FIIIIXED!?!?!?!?!  #SWAP HERE?
         dict_list[name] = dict
     if ncp is True:
         convert_rgb_to_ncp(dict_list)
@@ -1104,22 +1117,41 @@ def get_color_palettes(mypath=None, ncp=False):
     return dict_list
 
 
-def convert_dict_colors(colors_dict):
+#MA-19.
+def convert_dict_colors(colors_dict, invert=False):
     """
         Function to divide dict color tuple values by 255 for use in the mayavi view. Resulting values are floats thus:
         (0.0 <= a floating point number <= 1.0)
     :param colors_dict: Dict of colors, usually of 16 colors.
-    :return:
+    :return: A deep copy of the input Dictionary.
     """
     new_dict = copy.deepcopy(colors_dict)
-    for i in new_dict.keys():
-        #print(colors_92[i])
-        new_color = tuple([new_dict[i][0]/255, new_dict[i][1]/255, new_dict[i][2]/255])  ## Inverts the color tuple.
-        new_dict[i] = new_color
+    if invert is False:
+        for i in new_dict.keys():
+            #print(colors_92[i])
+            new_color = tuple([new_dict[i][0]/255, new_dict[i][1]/255, new_dict[i][2]/255])  ## Converts the color tuple to mayavi floats.
+            new_dict[i] = new_color
+    if invert is True:
+        for i in new_dict.keys():
+            #print(colors_92[i])
+            new_color = tuple([new_dict[i][2], new_dict[i][1], new_dict[i][0]])  ## Converts the color tuple to mayavi floats.
+            new_dict[i] = new_color
+
     return new_dict
 
 
+def invert_dict_colors(colors_dict):
+    new_dict = copy.deepcopy(colors_dict)
+    for i in new_dict.keys():
+        #print(colors_92[i])
+        new_color = tuple([new_dict[i][2], new_dict[i][1], new_dict[i][0]])  ## Converts the color tuple to mayavi floats.
+        new_dict[i] = new_color
+
+    return new_dict
+
+#MA-20.
 def convert_rgb_to_ncp(palettes=None):
+    #TODO Doc string.
     if palettes is None:
         palettes = get_color_palettes()
     else:
@@ -1141,4 +1173,50 @@ def convert_rgb_to_ncp(palettes=None):
         new_file.close()
 
         #print(i)
+
+
+#MA-20.
+def cv2_tuple_reconversion(image, inPlace=False, conversion ='Edges'):
+    """
+    Function to take the cv2.Canny transformation function of opencv-python, and return the equivalent 'original' format
+    np.array for the edges. (same for monochrome, or whatever cv transformation you did.)
+    ---(i.e. Canny, cvtColor(image, cv2.COLOR_BGR2GRAY))
+    The original image is 3D array(2D of color tuples, while a Canny array is a 2D array of single values, the result
+    of the edge detection, which is not the same format as the original.
+
+    :param image:       A cv2.imread(r"filepath") image.
+    :param inPlace:     Bool determining whether to operate on original image in place and return it, or to return a new one.
+    :return:            A 3D np.array (2D of color tuples, most likely will be black and white.
+    """
+    print("IMAGE_CHECK", image[-1, -1])
+    if conversion == "Edges":
+        new_image = cv2.Canny(image, 100, 200)
+    elif conversion == "Monochrome":
+        new_image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+        (thresh, new_image) = cv2.threshold(new_image, 127, 255, cv2.THRESH_BINARY)
+    #elif conversion == "Some other cv2 conversion s(*t, tbd at a later date":
+        #new_image = that conversion
+
+    #image = image
+    #new_array =
+    if inPlace is True:
+        for row in range(0, len(new_image)):
+            for col in range(0, len(new_image[row])):
+                if new_image[row, col] == 255:
+                    image[row, col] = np.asarray([255, 255, 255], dtype=np.uint8)
+                elif new_image[row, col] == 0:
+                    #print("ROW, COL - Here", image[row, col])
+                    image[row, col] = np.asarray([0, 0, 0], dtype=np.uint8)
+        return (new_image, image)
+
+    else:
+        return_image = copy.deepcopy(image)
+        for row in range(0, len(new_image)):
+            for col in range(0, len(new_image[row])):
+                if new_image[row, col] == 255:
+                    return_image[row, col] = np.asarray([255, 255, 255], dtype=np.uint8)
+                elif new_image[row, col] == 0:
+                    #print("ROW, COL - Here", return_image[row, col])
+                    return_image[row, col] = np.asarray([0, 0, 0], dtype=np.uint8)
+        return (new_image, return_image)
 

@@ -172,7 +172,7 @@ class CustomZPlanesListBox(wx.ListCtrl, CheckListCtrlMixin):
 
 
 		self.InsertColumn(0,"Visible", wx.LIST_FORMAT_CENTER, width=50)
-		self.InsertColumn(1,"ZPlane", wx.LIST_FORMAT_CENTER, width=64)
+		self.InsertColumn(1,"ZPlane", wx.LIST_FORMAT_CENTER, width=64)  #1
 		
 		
 		self.showall = False
