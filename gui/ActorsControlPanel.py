@@ -291,7 +291,7 @@ class CustomActorsListBox(wx.ListCtrl):
         self.SetTextColour((191, 191, 191))
 
         self.InsertColumn(0, "Visible", wx.LIST_FORMAT_CENTER, width=50)
-        self.InsertColumn(1, "Actor", wx.LIST_FORMAT_CENTER, width=64)
+        self.InsertColumn(1, "Actor", wx.LIST_FORMAT_CENTER, width=64)    #1
 
         self.showall = True
 
@@ -319,18 +319,36 @@ class CustomActorsListBox(wx.ListCtrl):
 
 
     def new_actor(self, i, name = None):
+
         if name is None:
             name = str(i) + "_" + "Actor"
         self.log.info(f"new_actor() {name} {i}")
         self.InsertItem(i, name)                        #TODO Does the order of these matter? -10/8/20
+        #TODO Double-triple check all this stuff.
+        #TODO Account for noncolorscall deletion.
+        #TODO Make palette calls consistent.
         if self.mayavi_view.number_of_noncolorscall_actors > 16:
-            color = self.mayavi_view.clr_dict_list[self.mayavi_view.current_palette_name][1]
+            color = self.mayavi_view.default_color_palette[1]
+            #SWAP HERE.
             color = tuple([color[2] / 255, color[1] / 255, color[0] / 255])     #TODO THIS explains the colors_dicts inversion bug.... 11/25/2020
-            self.mayavi_view.number_of_noncolorscall_actors = 1
+            self.mayavi_view.number_of_noncolorscall_actors = 1  # The count starts over.
         else:
-            color = self.mayavi_view.default_mayavi_palette[i + 1]
+            if i == 16:
+                color = self.mayavi_view.default_mayavi_palette[i]
+                # SWAP HERE.
+                color = tuple([color[2], color[1], color[0]])
+            elif i > 16:
+                color_index = 0
+                color = self.mayavi_view.default_mayavi_palette[color_index + 1]
+                # SWAP HERE.
+                color = tuple([color[2], color[1], color[0]])
+            else:
+                color = self.mayavi_view.default_mayavi_palette[i + 1]
+                #SWAP HERE.
+                color = tuple([color[2], color[1], color[0]])
         self.mayavi_view.append_actor(name, color) #Subsequent actors selected from color_palette..
         self.mayavi_view.number_of_noncolorscall_actors += 1
+
         #TODO Go by .number_of_noncolor_actors instead of i? ( for the colors)
         #TODO Differentiate between colors_calls new actors and 'normal' new actors?
 

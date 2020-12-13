@@ -1,6 +1,6 @@
 import unittest
 import music21
-from midas_scripts import musicode, midiart, midiart3D, music21funcs
+from midas_scripts import  midiart   ###, midiart3D, music21funcs, musicode
 import cv2
 import numpy as np
 
