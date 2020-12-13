@@ -86,11 +86,13 @@ class PianoRollPanel(wx.Panel):
         # For Draw feature(s).
         self.pianoroll.GetGridWindow().Bind(wx.EVT_MOTION, self.OnMotion)
         self.pianoroll.GetGridWindow().Bind(wx.EVT_LEFT_UP, self.OnMouseLeftUp)
-        self.pianoroll.Bind(wx.EVT_MOUSEWHEEL, self.Scroll_ZPlanesVelocities)
+        #self.pianoroll.Bind(wx.EVT_MOUSEWHEEL, self.Scroll_ZPlanesVelocities)
 
         # For Highlight Selection feature.
 
         self.pianoroll.GetGridWindow().Bind(wx.EVT_LEFT_DOWN, self.onMouseLeftDown)
+        #TODO For Middle-Down drag-n-move.
+        #self.pianoroll.GetGridWindow().Bind(wx.EVT_MIDDLE_DOWN, self.onMouseLeftDown)
 
         self.pianoroll.Bind(wx.grid.EVT_GRID_SELECT_CELL, self.onLeftSelectDown1)
         self.pianoroll.Bind(wx.grid.EVT_GRID_SELECT_CELL, self.onLeftSelectDown2)
@@ -176,11 +178,11 @@ class PianoRollPanel(wx.Panel):
         #Unused
 
 
-        # bmp_DeleteLayer = wx.ArtProvider.GetBitmap(wx.ART_DELETE, wx.ART_TOOLBAR, btn_size)
-        # # btn_DeleteLayer = wx.Button(self, -1, "MIDI Art")
-        # # sizer.Delete(btnDeleteLayer, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL, 10)
-        # self.toolbar.AddTool(id_DeleteLayer, "", bmp_DeleteLayer, shortHelp="Delete Layer", kind=wx.ITEM_NORMAL)
-        # self.Bind(wx.EVT_TOOL, self.OnToolBarClick, id=id_DeleteLayer)
+        # bmp_RedrawMayaviView = wx.ArtProvider.GetBitmap(wx.ART_PLUS, wx.ART_TOOLBAR, btn_size)
+        # # btn_RedrawMayaviView = wx.Button(self, -1, "MIDI Art")
+        # # sizer.Delete(btnRedrawMayaviView, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL, 10)
+        # self.toolbar.AddTool(id_RedrawMayaviView, "", bmp_RedrawMayaviView, shortHelp="Delete Layer", kind=wx.ITEM_NORMAL)
+        # self.Bind(wx.EVT_TOOL, self.OnToolBarClick, id=id_RedrawMayaviView)
 
         id_DeleteAllLayers = 50
         #Unused
@@ -322,17 +324,21 @@ class PianoRollPanel(wx.Panel):
                         self.Selection_Send(self.selected_notes, scroll, event)
                         #self.z_pushnpull += 1
                         #self.cur_push += 1
+                else:
+                    event.Skip()
             print("Push Scrolling HERE3.")
 
-    def Selection_Send(self, selected_notes, scroll_value, event=None, carry_to_z=False, carry_to_actor=False):
+    def Selection_Send(self, selected_notes, scroll_value, event=None, carry_to_z=False, carry_to_actor=False, array=True):
         """
         This function is intended to take highlighted grid 'selections' of notes and push and/or pull them between our actor/zplanes based on a user-defined value.\
         If both scroll_to_z and scroll_to_actor are False, this function functions incrementally. (+1 or -1 on the current actor). If one or both is true, the 'self.selected_notes' will
         be 'sent' directly TO the scroll_value, instead of scrolling BY that value.
-        :param scroll_value: The z_plane scroll pushnpull value.
-        :param event: Passed in event, for more writing options.
-        :param carry_to_z: Bool determining scroll method; scroll by increment or scroll to z value itself.
-        :param carry_to_actor: Bool determing scrool method; scroll to self.GTLP.actor_scrolled actor, else remain on current actor.
+
+        :param scroll_value:    The z_plane scroll pushnpull value.
+        :param event:           Passed in event, for more writing options.
+        :param carry_to_z:      Bool determining scroll method; scroll by increment or scroll to z value itself.
+        :param carry_to_actor:  Bool determing scrool method; scroll to self.GTLP.actor_scrolled actor, else remain on current actor.
+        :param array:           Set this to true if the array input is already a numpy array of np.array(selected_notes)
         :return: None
         """
 
@@ -361,7 +367,10 @@ class PianoRollPanel(wx.Panel):
             carry = False
 
         #Make selected_notes ((Y,X) cells) into a np.array.
-        self.ArrayFromSelection(selection=selected_notes, scroll_value=scroll_value, carry=carry)
+        if array is True:
+            self.selection_array = selected_notes
+        else:
+            self.ArrayFromSelection(selection=selected_notes, scroll_value=scroll_value, carry=carry)
 
         #CORE-------------------------------------------------------------------------
         #array3D method
@@ -387,7 +396,7 @@ class PianoRollPanel(wx.Panel):
                     self.m_v.CurrentActor()._array3D[i[0], i[1], i[2] - scroll_value] = 0.   #Abandoned plane notes are zero'd.
                     #
                     #self.m_v.CurrentActor()._points[]
-            #TODO To Here Works.
+
 
             elif carry_to_actor is True: #If carry_to_actor is True....    #Scroll-to_actor method.
 
@@ -480,17 +489,18 @@ class PianoRollPanel(wx.Panel):
         selected_array = np.flip(selection,
                                  1)  # TODO Got an error with this line. Reproduce?   #numpy.AxisError: axis 1 is out of bounds for array of dimension 1 (Because we didn't have a selection?)
 
-        # 127-y compensation.
+        # 127-y compensation, for iteration reasons.
         selected_array[:, 1] = 127 - selected_array[:, 1]
 
-        # Next, we create an array full of our cur_z value, and transform that by our pushnpull value.
+        # Next, we create an array full of our cur_z value, and transform that by our pushnpull value or transform
+        # to our carr 'scroll_value'
         # ones = np.ones((len(selected_notes), 1), dtype=np.float32)
         # TODO Condition here?
 
-        if carry is True:
+        if carry is True: #Carry to
             full_array = np.full((len(selected_array), 1), scroll_value, dtype=np.float32)
             push_pull = full_array
-        else:
+        else:   #Push by
             full_array = np.full((len(selected_array), 1), self.last_push, dtype=np.float32)
             push_pull = full_array + scroll_value
 

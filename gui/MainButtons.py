@@ -9,6 +9,7 @@ import os
 import subprocess
 import random
 from collections import OrderedDict
+from gui.Preferences import ListCtrlComboPopup
 
 class MainButtonsPanel(wx.Panel):
     def __init__(self, parent, log):
@@ -100,7 +101,7 @@ class MainButtonsPanel(wx.Panel):
         self.Bind(wx.EVT_MENU, self.focus_on_pianorollpanel, id=new_id7)
         self.Bind(wx.EVT_MENU, self.focus_on_pycrust, id=new_id8)
         self.Bind(wx.EVT_MENU, self.focus_on_mayavi_view, id=new_id9)
-        self.GetTopLevelParent().mayavi_view_control_panel.Bind(wx.EVT_MENU, self.GetTopLevelParent().mainbuttonspanel.focus_on_mainbuttonspanel, id=new_id10)
+        self.GetTopLevelParent().mayaviviewcontrolpanel.Bind(wx.EVT_MENU, self.GetTopLevelParent().mainbuttonspanel.focus_on_mainbuttonspanel, id=new_id10)
 
         #Shift into which gear.
         entries[0].Set(wx.ACCEL_NORMAL, wx.WXK_F1, new_id1)
@@ -171,7 +172,7 @@ class MainButtonsPanel(wx.Panel):
         """
         print("Focusing on mayavai_view_control_panel")
 
-        self.GetTopLevelParent().mayavi_view_control_panel.SetFocus()
+        self.GetTopLevelParent().mayaviviewcontrolpanel.SetFocus()
 
 
     def focus_on_mainbuttonspanel(self, event):
@@ -295,7 +296,7 @@ class MainButtonsPanel(wx.Panel):
             print("pixels shape", numpy.shape(pixels))
 
             mayavi_view = self.GetTopLevelParent().mayavi_view
-            default_color_palette = mayavi_view.default_color_palette
+            #default_color_palette = mayavi_view.default_color_palette
             mayavi_color_palette = mayavi_view.default_mayavi_palette
 
             if dialog.EdgesCheck:
@@ -325,8 +326,9 @@ class MainButtonsPanel(wx.Panel):
                 print("Gran", gran)
                 print("Here.")
 
-                num_dict = midiart.separate_pixels_to_coords_by_color(pixels2, mayavi_view.cur_z, nn=True, clrs=mayavi_view.default_color_palette, num_dict=True) #TODO use default_color_palette
-                print('Num_dict:', num_dict)
+                #The default_color_palette is the dictionary of colors by which our coords must be sorted.
+                self.num_dict = midiart.separate_pixels_to_coords_by_color(pixels2, mayavi_view.cur_z, nn=True, clrs=mayavi_view.default_color_palette, num_dict=True) #TODO use default_color_palette
+                print('Num_dict:', self.num_dict)
                 mayavi_view.colors_call += 1
                 #TODO Add colors menu append here.
                 mayavi_view.colors_name = dialog.img_name + "_" + "Clrs"
@@ -344,12 +346,13 @@ class MainButtonsPanel(wx.Panel):
                 num = 1
                 priority_num = -16
                 mayavi_view.scene3d.disable_render = True
-                for h in num_dict.keys():
+                for h in self.num_dict.keys():
 
                     index = len(mayavi_view.actors)
                     # for i in mayavi_color_palette.keys():
                     #     if mayavi_color_palette[i] == h:
-                            #Get the color we are on.
+                    #Get the color we are on.
+
                     #R and B color values are swapped. This is fixed here, for now.
                     #TODO Fix inverted color tuples in color dicts? (this is still relevant. It's complicated -- 11/25/20)
                     clr = tuple([mayavi_color_palette[h][2], mayavi_color_palette[h][1], mayavi_color_palette[h][0]])
@@ -363,8 +366,8 @@ class MainButtonsPanel(wx.Panel):
                     for j in mayavi_view.actors:
                         if j.name == name:
                             print("Points here?")
-                            if num_dict[h] is not None:
-                                j.change_points(num_dict[h])
+                            if self.num_dict[h] is not None:
+                                j.change_points(self.num_dict[h])
                             print("Color Change:", clr)
                             j.color = clr
                             j.part_num = num
@@ -631,6 +634,23 @@ class MusicodeDialog(wx.Dialog):
         #     self.translate_musicode.SetValue(True)
 
 
+class CustomColorsListBox(wx.ListCtrl):
+    def __init__(self, parent, log):
+        wx.ListCtrl.__init__(self, parent, -1,
+                             style=wx.LC_REPORT
+                                   #wx.LC_VIRTUAL |
+                                   # wx.LC_NO_HEADER |
+                                   |wx.LC_SINGLE_SEL  #True for this color selection stuff.
+                             )
+
+        self.log = log
+
+        self.SetBackgroundColour((100, 100, 100))
+        self.SetTextColour((255, 255, 255))
+
+        self.InsertColumn(0, "Color", wx.LIST_FORMAT_CENTER, width=150)
+
+
 
 class MIDIArtDialog(wx.Dialog):
     def __init__(self,parent,id,title, size=wx.DefaultSize,
@@ -639,14 +659,39 @@ class MIDIArtDialog(wx.Dialog):
         wx.Dialog.__init__(self)
         self.Create(parent, id, title, pos, size, style, name)
 
+        #self.comboCtrl = wx.ComboCtrl(self, wx.ID_ANY, "", (20, 20))
+        #self.popupCtrl = ListCtrlComboPopup()
+
+
+        #self.comboCtrl.UseAltPopupWindow(enable=True)
+
+        # It is important to call SetPopupControl() as soon as possible
+        #self.comboCtrl.SetPopupControl(self.popupCtrl)
+        # Populate using wx.ListView methods (populated with colors)
+        #for clrs in midiart.get_color_palettes():
+            #self.listCtrl.Append(clrs)
+            #self.popupCtrl.AddItem(clrs)
+        # One more call for FL Colors:
+        #self.popupCtrl.AddItem("FLStudioColors")
+
         self.ctrlsPanel = wx.Panel(self, -1, wx.DefaultPosition, style=wx.BORDER_RAISED)
         self.imgPreviewPanel = wx.Panel(self, -1, wx.DefaultPosition, (400, 400), style=wx.BORDER_RAISED)
         self.displayImage = None
+
+        self.listCtrl = CustomColorsListBox(self.ctrlsPanel, log=None)
+        self.listCtrl.InsertItem(0, "FLStudioColors")
+        self.index = 1
+        for clrs in midiart.get_color_palettes():
+            self.listCtrl.InsertItem(self.index, clrs)
+            self.index += 1
+        self.static_color = self.name_static = wx.StaticText(self, -1, "Select Color Palette")
+
 
         self.btnLoadImage = wx.Button(self.ctrlsPanel, -1, "Load Image")
 
         self.chbxEdges = wx.CheckBox(self.ctrlsPanel, -1, "Edges")
         self.chbxColorImage = wx.CheckBox(self.ctrlsPanel, -1, "Color Image")
+        self.chbxColorImage.SetValue(not self.chbxColorImage.IsChecked())
         self.chbxMonochorome = wx.CheckBox(self.ctrlsPanel, -1, "Monochrome")
 
 
@@ -676,10 +721,16 @@ class MIDIArtDialog(wx.Dialog):
         self.Bind(wx.EVT_BUTTON, self.OnLoadImage, self.btnLoadImage)
         self.Bind(wx.EVT_SLIDER, self.OnSliderChanged, self.sldrHeight)
         self.Bind(wx.EVT_RADIOBOX, self.OnRadioBoxChanged, self.rdbtnGranularity)
+        self.Bind(wx.EVT_CHECKBOX, self.OnCheckBoxSelection)
+        #self.Bind(wx.EVT_COMBOBOX_CLOSEUP, self.OnChangeColor)
+        self.listCtrl.Bind(wx.EVT_LIST_ITEM_FOCUSED, self.OnChangeColor)
 
         #Sizers
         sizerCtrls = wx.BoxSizer(wx.VERTICAL)
-        sizerCtrls.Add(self.chbxEdges, 0, wx.ALL  | wx.ALIGN_LEFT, 10)
+        sizerCtrls.Add(self.static_color, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL, 10)
+        #sizerCtrls.Add(self.comboCtrl, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL, 1)
+        sizerCtrls.Add(self.listCtrl, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL, 1)
+        sizerCtrls.Add(self.chbxEdges, 0, wx.ALL  | wx.ALIGN_LEFT, 15)
         sizerCtrls.Add(self.chbxColorImage, 0, wx.ALL  | wx.ALIGN_CENTER_HORIZONTAL, 10)
         sizerCtrls.Add(self.chbxMonochorome, 0, wx.ALL | wx.ALIGN_RIGHT, 10)
         sizerCtrls.Add(self.btnLoadImage, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL, 20)
@@ -709,7 +760,7 @@ class MIDIArtDialog(wx.Dialog):
         sizerHor.Add(self.ctrlsPanel)
         sizerHor.Add(self.imgPreviewPanel, 0, wx.ALL, 20)
 
-        sizerMain = wx.BoxSizer(wx.VERTICAL )
+        sizerMain = wx.BoxSizer(wx.VERTICAL)
         sizerMain.Add(sizerHor, 30)
         sizerMain.Add(btnsizer, 0, wx.ALIGN_CENTER_HORIZONTAL | wx.ALL, 20)
 
@@ -727,15 +778,16 @@ class MIDIArtDialog(wx.Dialog):
             pathname = fileDialog.GetPath()
             print(pathname)
             try:
-                self.pathname = pathname
-                self.img = cv2.imread(pathname, 0)
-                self.img2 = cv2.imread(pathname, cv2.IMREAD_COLOR)
-                #print(type(self.img))
-                self.img_name = os.path.basename(pathname)
-
                 self.EdgesCheck = self.chbxEdges.IsChecked()
                 self.ColorsCheck = self.chbxColorImage.IsChecked()
                 self.MonochromeCheck = self.chbxMonochorome.IsChecked()
+
+                self.pathname = pathname
+                self.img = cv2.imread(pathname, 0)  #2D array (2D of only on\off values.)
+                self.img2 = cv2.imread(pathname, cv2.IMREAD_COLOR)   #3D array (2D of color tuples, which makes a 3D array.)
+                #print(type(self.img))
+                self.img_name = os.path.basename(pathname)
+
                 self.UpdatePreview()
             except IOError:
                 wx.LogError("Cannot open file '%s'." % pathname)
@@ -762,19 +814,151 @@ class MIDIArtDialog(wx.Dialog):
         height = int(self.sldrHeight.GetValue())
         width = int(height / len(self.img) * len(self.img[0]))
 
+        #Core Images for passing.
         self.resizedImg = cv2.resize(self.img, (width, height), cv2.INTER_AREA)
         self.resizedImg2 = cv2.resize(self.img2, (width, height), cv2.INTER_AREA)
 
-        self.previewImg = cv2.resize(self.resizedImg, (self.pixScaler*width, height), cv2.INTER_AREA)
 
-        rgb = cv2.cvtColor(self.previewImg, cv2.COLOR_GRAY2RGB)
+        #Preview stuff.
+        preview = cv2.resize(self.img2, (width, height), cv2.INTER_AREA)
+        #self.self.previewImg = cv2.resize(self.resizedImg, (self.pixScaler*width, height), cv2.INTER_AREA)
+        #rgb = cv2.cvtColor(self.previewImg, cv2.COLOR_GRAY2RGB)   ###cv2.COLOR_RGB2BGR)   ### ####cv2.COLOR_BGR2HSV)   ### #cv2.RG
+
+
+        if self.ColorsCheck:
+            preview = cv2.cvtColor(preview, cv2.COLOR_BGR2RGB)
+            #preview = cv2.cvtColor(preview, cv2.COLOR_RGB2BGR)
+
+            mayavi_view = super().GetParent().GetTopLevelParent().mayavi_view
+
+            #preview = midiart.set_to_nn_colors(preview, mayavi_view.clr_dict_list[mayavi_view.current_palette_name])
+
+            #SWAP HERE
+            swaprnb = midiart.convert_dict_colors(mayavi_view.default_color_palette, invert=True)
+            preview = midiart.set_to_nn_colors(preview, swaprnb)
+
+            self.previewImg = cv2.resize(preview, (self.pixScaler * width * 3, height * 3),
+                                         cv2.INTER_AREA)  # * 3 increases the size of the preview.
+
+            h, w = self.previewImg.shape[:2]
+
+            self.preview = wx.ImageFromData(w, h, self.previewImg)
+
+            self.displayImage = wx.StaticBitmap(self.imgPreviewPanel, -1, wx.Bitmap(self.preview), wx.DefaultPosition,
+                                                (w, h), wx.ALIGN_CENTER_HORIZONTAL)
+
+
+        elif self.EdgesCheck:
+            #preview = cv2.Canny(preview, 100, 200)
+            #self.im2 = preview
+            preview = midiart.cv2_tuple_reconversion(preview, inPlace=False, conversion="Edges")
+            self.previewImg = cv2.resize(preview[1], (self.pixScaler * width * 3, height * 3),
+                                         cv2.INTER_AREA)  # * 3 increases the size of the preview.
+
+            h, w = self.previewImg.shape[:2]
+
+            self.preview = wx.ImageFromData(w, h, self.previewImg)
+
+            self.displayImage = wx.StaticBitmap(self.imgPreviewPanel, -1, wx.Bitmap(self.preview), wx.DefaultPosition,
+                                                (w, h), wx.ALIGN_CENTER_HORIZONTAL)
+
+        
+        elif self.MonochromeCheck:
+            preview = midiart.cv2_tuple_reconversion(preview, inPlace=False, conversion="Monochrome")
+
+            print("PREVIEW MC", preview[1])
+            #print("PREVIEW MC THRESH", thresh)
+            self.previewImg = cv2.resize(preview[1], (self.pixScaler * width * 3, height * 3),
+                                         cv2.INTER_AREA)  # * 3 increases the size of the preview.
+            
+            h, w = self.previewImg.shape[:2]
+            print("Monochrome", self.previewImg)
+            print("Ndim", self.previewImg.ndim)
+            self.preview = wx.ImageFromData(w, h, self.previewImg)
+
+            self.displayImage = wx.StaticBitmap(self.imgPreviewPanel, -1, wx.Bitmap(self.preview), wx.DefaultPosition,
+                                                (w, h), wx.ALIGN_CENTER_HORIZONTAL)
+
+            #Overwrite, so any image imported will be converted to black and white.
+            #Images that users sets to monochrome manually will still be more accurate.
+            self.resizedImg = preview[0]
+            #TODO Place this process of transformation in the OnMidiartDialogClosed(). 12/01/20
+             # (This is preview stuff, so, even though things happen twice, it's neater to have the 'preview'
+            # and transformation stuff separate.
+
+    def OnCheckBoxSelection(self, event):
+        # import inspect
+        # for i in inspect.getmembers(event):
+        #     print("EVENT", i[0], i[1])
+        if self.chbxMonochorome.IsChecked():
+            self.MonochromeCheck = True
+            self.chbxEdges.SetValue(False)
+            self.EdgesCheck = False
+            self.chbxColorImage.SetValue(False)
+            self.ColorsCheck = False
+        if self.chbxColorImage.IsChecked():
+            self.ColorsCheck = True
+            self.chbxEdges.SetValue(False)
+            self.EdgesCheck = False
+            self.chbxMonochorome.SetValue(False)
+            self.MonochromeCheck = False
+        if self.chbxEdges.IsChecked():
+            self.EdgesCheck = True
+            self.chbxColorImage.SetValue(False)
+            self.ColorsCheck = False
+            self.chbxMonochorome.SetValue(False)
+            self.MonochromeCheck = False
+
+
+        self.UpdatePreview()
 
         #print("self.edges.shape=", self.edges.shape)
-        h, w = self.previewImg.shape[:2]
-        self.im = wx.ImageFromBuffer(w, h, rgb)
 
-        self.displayImage = wx.StaticBitmap(self.imgPreviewPanel, -1, wx.Bitmap(self.im), wx.DefaultPosition, (w,h), wx.ALIGN_CENTER_HORIZONTAL)
+        #self.im = wx.ImageFromBuffer(w, h, rgb)
 
+    def OnChangeColor(self, event):
+        #This is the greatest thing.
+        mayavi_view = super().GetParent().GetTopLevelParent().mayavi_view
+        #FLStudio Colors
+        #TODO Test color constistency across all views (preview, mayaviview, exported to FL)
+        if self.listCtrl.GetItemText(self.listCtrl.GetFocusedItem()) == "FLStudioColors":
+
+            mayavi_view.default_color_palette = midiart.FLStudioColors
+
+            #Convert
+            mayavi_view.default_mayavi_palette = \
+            midiart.convert_dict_colors(mayavi_view.default_color_palette, invert=False)
+
+            mayavi_view.current_palette_name = "FLStudioColors"
+            print("FL Fuck")
+
+        #Colors Dicts
+        else:
+            #Assign Dict.
+            mayavi_view.default_color_palette= mayavi_view.clr_dict_list[self.listCtrl.GetItemText(self.listCtrl.GetFocusedItem())]
+            #Invert tuples.
+            #mayavi_view.default_color_palette = midiart.convert_dict_colors(mayavi_view.default_color_palette, invert=True)
+
+            #Convert to mayavi floats.
+            mayavi_view.default_mayavi_palette = midiart.convert_dict_colors(mayavi_view.default_color_palette, invert=False)
+
+            #print("MAYAVI PALETTE", mayavi_view.default_mayavi_palette)
+            #mayavi_view.default_mayavi_palette = midiart.convert_dict_colors(mayavi_view.default_mayavi_palette, invert=True)
+            print("MAYAVI PALETTE", mayavi_view.default_mayavi_palette)
+            #palette = \
+            #midiart.convert_dict_colors(mayavi_view.default_color_palette, invert=False)
+            #Invert tuples.
+
+            #Invert Color Tuples (swap R with B)
+            #mayavi_view.default_mayavi_palette = \
+            #midiart.convert_dict_colors(mayavi_view.default_color_palette, invert=True)
+            #A tuple R\B switch happens here; tuple is inverted.
+
+            mayavi_view.current_palette_name = self.listCtrl.GetItemText(self.listCtrl.GetFocusedItem())
+            print("Fuck3")
+
+        print("Current Palette Name Changed", mayavi_view.current_palette_name)
+        self.UpdatePreview()
 
 class MIDIArt3DDialog(wx.Dialog):
     def __init__(self, parent, id, title, size=wx.DefaultSize,

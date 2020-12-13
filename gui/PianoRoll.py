@@ -148,6 +148,27 @@ class PianoRollDataTable(wx.grid.GridTableBase):
         #wx.grid.GridTableBase.DeleteCols(self, pos, numCols)
         pass
 
+    def GetColSize(self, col):  # real signature unknown; restored from __doc__
+        """
+        GetColSize(col) -> int
+
+        Returns the width of the specified column.
+        """
+        #pass
+        return 0
+
+    def GetRowSize(self, row):  # real signature unknown; restored from __doc__
+        """
+        GetRowSize(row) -> int
+
+        Returns the height of the specified row.
+        """
+        return 0
+
+
+    #self.pianorollpanel.pianoroll.GetRowSize()
+
+
 # Main Class for the PianoRoll, based orn wx.Grid
 class PianoRoll(wx.grid.Grid, glr.GridWithLabelRenderersMixin):
     log = logging.getLogger("PianoRoll")
@@ -327,6 +348,30 @@ class PianoRoll(wx.grid.Grid, glr.GridWithLabelRenderersMixin):
         #event.Skip()
 
 
+    def GetCellFromMouseState(self):
+        state = wx.GetMouseState()
+        print("F Pressed Here")
+        print("MOUSESTATE_POS", state.GetPosition())
+        print("Mouse_X", state.X)
+        # print("Mouse_x", state.x)
+        print("Mouse_Y", state.Y)
+        #client_dif_X = self.GetTopLevelParent().GetClientRect()[2] - self.GetClientRect()[2]
+        #client_dif_Y = self.GetTopLevelParent().GetClientRect()[3] - self.GetClientRect()[3]
+
+        #NOW WE HAVE IT, YES!!!
+        pos = state.GetPosition()
+        new_pos = self.ScreenToClient(pos)
+        grid_cell = self.XYToCell(
+            self.CalcGridWindowUnscrolledPosition((new_pos[0] - 59,
+                                                                           new_pos[1] - 19),
+                                                                           gridWindow=self), gridWindow=self)
+
+
+        #THIS WORKS!! But I hate the method. It works because the top of the grid's sash position doesn't change. So that's good.
+        #12/08/2020
+        print("GRIDCELL?", grid_cell)
+        return grid_cell
+
 
     def OnScroll(self, event):
         print("EVT_ID", event.GetId())
@@ -342,6 +387,43 @@ class PianoRoll(wx.grid.Grid, glr.GridWithLabelRenderersMixin):
         else:
             wx.CallAfter(self.m_v.new_reticle_box)
             event.Skip()
+
+
+    def ZoomToHere(self, state=None):
+
+        #Todo You're doing it wrong. THE MOUSE CHANGES COORDS WHEN YOU "CLICK" THE BUTTON!!!!
+        if state is None:
+            state = wx.GetMouseState()
+        else:
+            state=state
+        pos = state.GetPosition()
+        new_pos = self.ScreenToClient(pos)
+        print("POSITION", pos)
+        print("NEW_POS", new_pos)
+        client_dif_X = self.GetTopLevelParent().GetClientRect()[2] - self.GetClientRect()[2]
+        print("Client_dif_X", client_dif_X)
+        client_dif_Y = self.GetTopLevelParent().GetClientRect()[3] - self.GetClientRect()[3]
+        print("Client_dif_Y", client_dif_Y)
+
+        scroll_target = self.CalcUnscrolledPosition(new_pos)
+        print("SCROLL_TARGET", scroll_target)
+        # scroll_target = self.CalcGridWindowUnscrolledPosition((new_pos[0],
+        #                                                                    new_pos[1]),
+        #                                                                     gridWindow=self)
+        self.Scroll(scroll_target[0] - 59, scroll_target[1] - 19)
+        #self.Scroll(new_pos[0]-59, new_pos[1]-19)
+
+        self.m_v.new_reticle_box()
+
+
+    def ScrollHome(self):
+        self.Scroll(0, 0)
+        self.m_v.new_reticle_box()
+
+
+    def SendToHere(self, selected_notes):
+
+        pass
 
 
     def OnPaint(self, event):
@@ -581,8 +663,10 @@ class PianoRoll(wx.grid.Grid, glr.GridWithLabelRenderersMixin):
        # x = evt.GetRow()
         #y = evt.GetCol()
         if self._table.GetValue(row, col) == "1":
-            self.EraseCell( row, col)
-            current_actor._array3D[int(row / cpqn), int(127-col), int(z)] =  0
+            self.EraseCell(row, col)
+            #print("ROW", row)
+            #print("COL", col)
+            #current_actor._array3D[int(row), int(127-col), int(z)] = 0      #/ cpqn
             self.drawing = 0
         elif self._table.GetValue(row, col) == "0":
             #print("ROW", row)
@@ -592,9 +676,9 @@ class PianoRoll(wx.grid.Grid, glr.GridWithLabelRenderersMixin):
             self.drawing = 1
 
         evt.Skip()
+        #After the drawing event, update the array_3d accordingly.
         self.m_v.actors[self.m_v.cur_ActorIndex].array3Dchangedflag += 1
 
-        #After the drawing event, update the array_3d accordingly.
 
         # on_points = np.argwhere(current_actor._array3D[row, col, z] >= 1.0)
         # print("On_Points", on_points)
@@ -785,6 +869,10 @@ class PianoRoll(wx.grid.Grid, glr.GridWithLabelRenderersMixin):
         return s
 
     def OnCellRightClick(self, evt):
+        self.right_click_state = wx.GetMouseState()
+        #pos = state.GetPosition()
+
+
         # def OnContextMenu(self, event):
         # self.log.WriteText("OnContextMenu\n")
 
@@ -805,12 +893,12 @@ class PianoRoll(wx.grid.Grid, glr.GridWithLabelRenderersMixin):
             self.popupID9 = wx.NewIdRef()
 
             self.Bind(wx.EVT_MENU, self.OnPopup_Properties, id=self.popupID1)
-            self.Bind(wx.EVT_MENU, self.OnPopupTwo, id=self.popupID2)
-            self.Bind(wx.EVT_MENU, self.OnPopupThree, id=self.popupID3)
+            self.Bind(wx.EVT_MENU, self.OnPopup_ScrollHere, id=self.popupID2)
+            self.Bind(wx.EVT_MENU, self.OnPopup_ScrollHome, id=self.popupID3)
             self.Bind(wx.EVT_MENU, self.OnPopupFour, id=self.popupID4)
             self.Bind(wx.EVT_MENU, self.OnPopupFive, id=self.popupID5)
-            self.Bind(wx.EVT_MENU, self.OnDeleteSelection, id=self.popupID6)
-            self.Bind(wx.EVT_MENU, self.OnPopupSeven, id=self.popupID7)
+            self.Bind(wx.EVT_MENU, self.OnPopupSix, id=self.popupID6)
+            #self.Bind(wx.EVT_MENU, self.OnPopupSeven, id=self.popupID7)
             self.Bind(wx.EVT_MENU, self.OnPopupEight, id=self.popupID8)
             self.Bind(wx.EVT_MENU, self.OnPopupNine, id=self.popupID9)
 
@@ -822,16 +910,16 @@ class PianoRoll(wx.grid.Grid, glr.GridWithLabelRenderersMixin):
         # item.SetBitmap(bmp)
         menu.Append(item)
         # add some other items
-        menu.Append(self.popupID2, "Two")
-        menu.Append(self.popupID3, "Three")
+        menu.Append(self.popupID2, "Scroll Here")
+        menu.Append(self.popupID3, "Scroll Home")
         menu.Append(self.popupID4, "Four")
         menu.Append(self.popupID5, "Five")
-        menu.Append(self.popupID6, "Delete Selection")
+        menu.Append(self.popupID6, "Six")
         # make a submenu
         sm = wx.Menu()
-        sm.Append(self.popupID8, "sub item 1")
-        sm.Append(self.popupID9, "sub item 1")
-        menu.Append(self.popupID7, "Test Submenu", sm)
+        menu.Append(self.popupID7, "Set Scroll Rate...", sm)
+        sm.Append(self.popupID8, "...To (1,1)")
+        sm.Append(self.popupID9, "...To Default (160, 120)")
 
         # Popup the menu.  If an item is selected then its handler
         # will be called before PopupMenu returns.
@@ -841,11 +929,14 @@ class PianoRoll(wx.grid.Grid, glr.GridWithLabelRenderersMixin):
     def OnPopup_Properties(self, event):
         pass
 
-    def OnPopupTwo(self, event):
+    def OnPopup_ScrollHere(self, event):
+        self.ZoomToHere(state=self.right_click_state)
+
+
         pass
 
-    def OnPopupThree(self, event):
-        pass
+    def OnPopup_ScrollHome(self, event):
+        self.ScrollHome()
 
     def OnPopupFour(self, event):
         pass
@@ -853,25 +944,27 @@ class PianoRoll(wx.grid.Grid, glr.GridWithLabelRenderersMixin):
     def OnPopupFive(self, event):
         pass
 
-    def OnDeleteSelection(self, event):
-        # Deletes 'selected' not 'activated' actors.
-        alb = self.GetTopLevelParent().pianorollpanel.actorsctrlpanel.actorsListBox
-        print("J_list", [j for j in range(len(self.mayavi_view.actors), -1, -1)])
-        for j in range(len(self.mayavi_view.actors), 0, -1):  # Fucking OBOE errors...
-            print("J", j)
-            if alb.IsSelected(j - 1):
-                self.OnBtnDelActor(evt=None, cur=j - 1)
-                print("Seletion %s Deleted." % (j - 1))
-        self.GetTopLevelParent().pianorollpanel.pianoroll.ForceRefresh()
-
-    def OnPopupSeven(self, event):
+    def OnPopupSix(self, event):
         pass
+        # # Deletes 'selected' not 'activated' actors.
+        # alb = self.GetTopLevelParent().pianorollpanel.actorsctrlpanel.actorsListBox
+        # print("J_list", [j for j in range(len(self.mayavi_view.actors), -1, -1)])
+        # for j in range(len(self.mayavi_view.actors), 0, -1):  # Fucking OBOE errors...
+        #     print("J", j)
+        #     if alb.IsSelected(j - 1):
+        #         self.OnBtnDelActor(evt=None, cur=j - 1)
+        #         print("Seletion %s Deleted." % (j - 1))
+        # self.GetTopLevelParent().pianorollpanel.pianoroll.ForceRefresh()
+
+    # def OnPopupSeven(self, event):
+    #     pass
 
     def OnPopupEight(self, event):
-        pass
+        self.SetScrollRate(1, 1)
+
 
     def OnPopupNine(self, event):
-        pass
+        self.SetScrollRate(160, 120)
 
 # class MyGridCellAttributerProvider(wx.grid.GridCellAttrProvider)
 #     def __init__(self):
@@ -980,6 +1073,7 @@ class PianoRollCellRenderer(wx.grid.GridCellRenderer):
         if value == "1":
             dc.SetBrush(wx.Brush("BLACK", wx.BRUSHSTYLE_SOLID))
         elif int(value) == 2:
+            #ValueError: invalid literal for int() with base 10: '' THIS is the error acquired when you try do draw without an actor.
             dc.SetBrush(wx.Brush(self.grid_highlight_color, wx.BRUSHSTYLE_SOLID))
         elif int(value) >= 3:
             dc.SetBrush(wx.Brush("GREEN", wx.BRUSHSTYLE_SOLID))

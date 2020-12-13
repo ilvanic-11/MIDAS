@@ -54,7 +54,7 @@ class CustomMenuBar(wx.MenuBar):
         self.export.Append(1500, "&Current Actor\tCtrl+1")  #TODO BUG!!!!! Mixes up with the other accelerator table. Fix?
         self.export.Append(1501, "&All Actors\tCtrl+2")
         self.export.Append(1502, "&Current Actor's Current Zplane\tCtrl+3")
-        self.export.Append(1503, "&All Actor's Zplanes\tCtrl+4")
+        self.export.Append(1503, "&All Actors' Zplanes\tCtrl+4")
         self.export.Append(1504, "&Selection\tCtrl+5")
         self.colors = wx.Menu()
         self.export.Append(1505, "&Colors", self.colors)
@@ -66,7 +66,7 @@ class CustomMenuBar(wx.MenuBar):
         self.filemenu.Append(109, "&Export Musicode\tCtrl+Shift+M")
         self.filemenu.Append(110, "&Export Movie\tCtrl+Alt+E")
         self.filemenu.Append(111, "&Preferences\tCtrl+P")
-        self.filemenu.Append(112, "&Intermediary Path\t")  # The Default Save path for all files. Found in resources.
+        self.filemenu.Append(112, "&Intermediary Path\tCtrl+Alt+I")  # The Default Save path for all files. Found in resources.
         self.filemenu.AppendSeparator()
         self.filemenu.Append(113, "&Exit", "Close this frame")
         # Add menu to the menu bar
@@ -888,19 +888,21 @@ class CustomMenuBar(wx.MenuBar):
                 pass
             else:
                 self.GetTopLevelParent().mayavi_view.i_div = float(dialog.input_i_div.GetLineText(0))
+
             if dialog.popupCtrl.GetStringValue() == "FLStudioColors":
                 self.GetTopLevelParent().mayavi_view.default_color_palette = midiart.FLStudioColors
                 self.GetTopLevelParent().mayavi_view.default_mayavi_palette = \
-                    midiart.convert_dict_colors(self.GetTopLevelParent().mayavi_view.default_color_palette)
+                    midiart.convert_dict_colors(self.GetTopLevelParent().mayavi_view.default_color_palette, invert=False)
                 self.GetTopLevelParent().mayavi_view.current_palette_name = "FLStudioColors"
-                print("FL Fuck")
+                #print("FL Fuck")
             else:
                 self.GetTopLevelParent().mayavi_view.default_color_palette = midiart.get_color_palettes()[dialog.popupCtrl.GetStringValue()]
+
                 self.GetTopLevelParent().mayavi_view.default_mayavi_palette = \
-                    midiart.convert_dict_colors(self.GetTopLevelParent().mayavi_view.default_color_palette)
+                    midiart.convert_dict_colors(self.GetTopLevelParent().mayavi_view.default_color_palette, invert=False)
                     #A tuple R\B switch happens here; tuple is inverted.
                 self.GetTopLevelParent().mayavi_view.current_palette_name = dialog.popupCtrl.GetStringValue()
-                print("Fuck3")
+                # print("Fuck3")
             #Set the focus on the mainbuttonspanel so "F" hotkeys will work immediately.
             self.GetTopLevelParent().mainbuttonspanel.SetFocus()
 

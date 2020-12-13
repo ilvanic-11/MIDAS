@@ -363,7 +363,7 @@ In PianoRoll, ActorsControlPanel, ZPlanesControlPanel
 
 
 --IP--Commit, THANKSGIVING, November 26th, 2020
-In musicode
+In Musicode
 --> In the make_musicode() function, tweaked the directory writing.
 --> In the make_musicode() function, added functionality to export ENTIRE musicode as ONE midifile, ON TOP OF the other method of individual midi files.
 In Mayavi3DView
@@ -397,6 +397,31 @@ In Mayavi3idiArtAnimation(old module, not our Mayavi3DView), MIDAS_UnitTests.py,
 In MainButtons
 --> Added a line of '-=' code to the colors import function to prevent color imports from updating 'self.number_of_noncolorscall_actors.' (*see above differentiation.)
 
-##Git adds. Update as needed. (Git adds a LOT at once, separated without commas.)
+
+--IP--Commit, December 12, 2020
+In MidasCommitLog
+--> At the bottom of the log, there is a ##Git adds. It is a copyable line of code that can be thrown in to git with ctrl v to git add a lot of changes quickly. Subject to change, and updates. (Things commonly committed will be added to this line of code.)
+In MenuButtons
+--> Assigned "Ctrl+Alt+I" to toggle the "Intermediary_Path" folder.
+In MainButtons
+--> Revamped and Changed the UpdatePreview() dialog function so that, when a selection (colors, edges, monochrome) is True, the actual transformation from (set_to_nn_colors, canny,  will appear as the preview. (MAJOR time saver.)
+--> Created the functions self.OnCheckBoxSelection() and self.OnChangeColor(). They are used to trigger self.UpdatePreview() based on color selection and the above checkboxes.
+--> Implemented use of wx.ListCtrl for the selection of the current_pallete_name within the MidiartDialog.
+--> Ensured consistency of "views" across the board for the colors process flow. (preview, mayavi_view, FL Studio midi export view.) #TODO Fix core tuple inversion problem.
+In midiart
+--> Updated (for all current midiart functions) the table of contents. All are now listed.
+--> Created function def cv2_reconversion() so that I could display the edge detection in the MidiartDialog preview.
+In Midas_wx
+--> Fixed startup bug where titles in the mayavi_view weren't working.
+In Mayavi3DWindow
+--> Refactored function select_moved_actor(), more readable. (a traits function) Made a small tweak where Focus() happens as well as select. (Difficult to see blue 'selection' against black in alb)
+In PianoRoll
+--> Wrote function self.ZoomToHere(state=None) (which is invoked inside of the right-click menu function OnPopup_ScrollHere())  Note: SetScrollRate(1,1) for this function to work.
+--> Wrote function self.ScrollHome() (invoked inside OnPopup_ScrollHome)
+--> Renamed irrelevant menu button functions inside OnCellRightClick() (which summons the menu bar)
+--> #TODO Midas.SendToHere()
+--> Wrote variable functions self.SetScrollRate()----> Sets to (1,1) for precision scrolling or to default (160, 120) == (Two Octaves, One Measure)
+
+##Git adds. Update as needed. (Git can adds a LOT at once, if separated without commas.)
 git add MIDAS_wx.py gui/ActorsControlPanel.py gui/MainButtons.py gui/PianoRoll.py gui/PianoRollPanel.py gui/Preferences.py gui/ZPlanesControlPanel.py mayavi3D/Mayavi3DWindow.py mayavi3D/Mayavi3idiArtAnimation.py midas_scripts/midiart3D.py midas_scripts/music21funcs.py midas_scripts/musicode.py resources/Midas-Mayavi_Pip_Batch_Install.bat resources/MidasCommitLog.txt resources/Midas_Startup_Configs.py 
 

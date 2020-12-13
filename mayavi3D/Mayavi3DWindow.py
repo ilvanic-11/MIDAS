@@ -15,7 +15,7 @@ import music21
 import wx    #TODO how to do simpler imports (i.e. just what we need instead of all of wx)
 
 
-
+from vtkmodules import vtkRenderingCore
 
 from mayavi import mlab, modules, sources, core, components
 from mayavi.components import actor
@@ -124,7 +124,7 @@ class Actor(HasTraits):
 
 
         self._points = np.argwhere(self._array3D == 1.0)
-        self._points[:, 0] =  self._points[:, 0] / cpqn #Account for cpqn.  X axis "Slice" rebound here.
+        self._points[:, 0] =  self._points[:, 0]  / cpqn #Account for cpqn.  X axis "Slice" rebound here.
 
         try:
             self.mayavi_view.sources[self.index].mlab_source.trait_set(points=self._points) #Traitset happens on x axis slice rebinding.
@@ -142,7 +142,7 @@ class Actor(HasTraits):
 
         new_array3D = np.zeros(self._array3D.shape, dtype=np.int8)
         for p in self._points:
-            new_array3D[int(p[0]) * cpqn, int(p[1]), int(p[2])] = 1.0   #TODO Account for cpqn. * cpqn
+            new_array3D[int(p[0] * cpqn) , int(p[1]), int(p[2])] = 1.0   #TODO Account for cpqn.
         self.mayavi_view.parent.pianorollpanel.pianoroll.cur_array3d = self._array3D = new_array3D
         self.mayavi_view.sources[self.index].mlab_source.trait_set(points=self._points)
         print("sources trait_set after actor_points_changed")
@@ -164,8 +164,12 @@ class Actor(HasTraits):
 
 class Mayavi3idiView(HasTraits):
     scene3d = Instance(MlabSceneModel, ())
+
+    #scene2 = Instance(MlabSceneModel, ())
+
     view = View(Item('scene3d', editor=SceneEditor(scene_class=MayaviScene), resizable=True, show_label=False),
                 resizable=True)
+
     actor = Any()
     actors = List(Actor)
 
@@ -229,16 +233,17 @@ class Mayavi3idiView(HasTraits):
         #Imports Colors
 
         self.clr_dict_list = midiart.get_color_palettes(r".\resources\color_palettes")
+        #Append FLStudioColors to clr_dict_list
+        self.clr_dict_list.update([("FLStudioColors", midiart.FLStudioColors)])
 
 
+        self.default_color_palette = self.clr_dict_list["FLStudioColors"]
+        self.default_mayavi_palette = midiart.convert_dict_colors(self.default_color_palette, invert=False)
 
-        self.default_color_palette = midiart.FLStudioColors
 
-        self.default_mayavi_palette = midiart.convert_dict_colors(self.default_color_palette)
 
         #TODO Should this be in main MIDAS_wx?
         self.current_palette_name = "FLStudioColors"   #Palette on startup.
-
 
 
 
@@ -262,8 +267,9 @@ class Mayavi3idiView(HasTraits):
         pass
 
     #Grid Establisher.
+    #@on_trait_change('scene3d.engine.current_scene.scene.activated')
     @on_trait_change('scene3d.activated')
-    def create_3dmidiart_display(self):
+    def create_3dmidiart_display(self, scene):
 
         self.scene3d.disable_render = True
 
@@ -339,16 +345,23 @@ class Mayavi3idiView(HasTraits):
 
         #Mayavi zoom to coordinates.
         #self.rebind_picker()
+        #new_picker = vtkRenderingCore.vtkPointPicker()
 
-        self.scene.on_mouse_pick(self.zoom_to_coordinates, type='point', button='Middle')
         #TODO ERROR---this doesn't trigger after deleting and redrawing the mayavi view. July 30th, 2020.
         #TODO Does mlab.clf() eliminate the picker object?
 
         self.scene3d.disable_render = False
 
+    #This did a double picker add, so not what we want. (this trait is fired twice on Midas load.)
+    # @on_trait_change('scene3d.engine.current_scene.scene.activated')
+    # def real_picker_rebind(self):
+    #     self.scene.on_mouse_pick(self.zoom_to_coordinates, type='point', button='Middle')
+
     @on_trait_change('scene3d.activated')
     def rebind_picker(self):
-        self.scene.on_mouse_pick(self.zoom_to_coordinates, type='point', button='Middle')
+
+        #self.scene.on_mouse_pick(self.zoom_to_coordinates, type='point', button='Middle', remove=True)
+        self.scene.on_mouse_pick(self.zoom_to_coordinates, type='point', button='Middle', remove=False)
 
     # @mlab.clf
     # def clear_lists(self):
@@ -725,6 +738,7 @@ class Mayavi3idiView(HasTraits):
             else:
                 pos = position
             self.highlighter_calls[0].actor.actor.position = pos
+            self.highlighter_transformation(labels_only=True)
 
                     #print("SECONDCHILD:", vtk_data_source.children[0].children[0])
         elif actors == 'music':
@@ -734,6 +748,7 @@ class Mayavi3idiView(HasTraits):
                 else:
                     pos = position
                 i.actor.actor.position = pos
+            self.highlighter_transformation()
 
         elif actors == 'highlighter':
             for j in self.highlighter_calls:
@@ -847,16 +862,18 @@ class Mayavi3idiView(HasTraits):
 
 
     def zoom_to_coordinates(self, picker):
+        print("PICKER", picker)
+        print("PICKER_TYPE", type(picker))
         print("Point", picker.point_id)
         picker.tolerance = 0.01
         picked = picker.actors
-        print("Picker", picked)
+        print("Picked", picked)
         #print(picker.trait_names())
         print("Selection Point:", picker.pick_position)
 
         mproll = self.parent.pianorollpanel.pianoroll
 
-        self.ret_x = picker.pick_position[0] * self.cpqn  #Account for cpqn here.
+        self.ret_x = picker.pick_position[0] * self.cpqn  ######Account for cpqn here.
         self.ret_y = picker.pick_position[1]
         self.ret_z = picker.pick_position[2]
 
@@ -876,10 +893,11 @@ class Mayavi3idiView(HasTraits):
         #MayaviCoords to Cell -- Synced as ints.
 
         #( 160 * 10) / (160 / 4 * (4 * 10)
-        self.cur_scroll_x = (int(self.ret_x) *10) / mproll.GetScrollPixelsPerUnit()[0]  #Scrollrate / cells per measure ()
+        self.cur_scroll_x = (int(self.ret_x) *10) / mproll.GetScrollPixelsPerUnit()[0]  #Scrollrate / cells per measure #TODO CPQN FACTORED IN HERE -- Acounted for above.
         self.cur_scroll_y = ((127-int(self.ret_y)) * 10) / mproll.GetScrollPixelsPerUnit()[1]   #Scrollrate Y / cells per two octaves == 24
+
         #TODO Fix this limit cap.
-        if self.cur_scroll_y > 1040:   #Caps of scrolling at the bottom, so the rectangle doesn't go funky.
+        if self.cur_scroll_y > 1040:   #Caps off scrolling at the bottom, so the rectangle doesn't go funky.
             self.cur_scroll_y = 1040    #Sash position affects this because num of pixels in client view relates to ViewStart().
 
         print("Coord", self.ret_x, self.ret_y, self.ret_z)
@@ -1015,7 +1033,7 @@ class Mayavi3idiView(HasTraits):
 
 
     #Grid Constructor
-    def insert_piano_grid_text_timeplane(self, length):
+    def insert_piano_grid_text_timeplane(self, length, figure=None):
         ###Piano
         # MayaviPianoBlack = music21.converter.parse(r"C:\Users\Isaac's\Desktop\Neo Mp3s-Wavs-and-Midi\FL Midi Files\MidiPianoBlack.mid")
         # MayaviPianoWhite = music21.converter.parse(r"C:\Users\Isaac's\Desktop\Neo Mp3s-Wavs-and-Midi\FL Midi Files\MidiPianoWhite.mid")
@@ -1075,7 +1093,7 @@ class Mayavi3idiView(HasTraits):
     ###-----------------
     ###Script Widget Shrink and Initial Camera Angle
     def establish_opening(self):
-        scene = self.scene
+        #scene = self.scene
         # scene.scene.x_minus_view()
         #self.image_plane_widget = self.engine.scenes[0].children[6].children[0].children[0]
         print("IPW TYPE:", type(self.image_plane_widget))
@@ -1084,14 +1102,14 @@ class Mayavi3idiView(HasTraits):
         self.image_plane_widget.ipw.point2 = array([0.0, 0.0, 127.])
         self.image_plane_widget.ipw.slice_position = 1      #These calls eliminate those "white lines" created in the
         self.image_plane_widget.ipw.slice_position = 0      #construction and repositioning of the volume_slice.
-        scene.scene.z_plus_view()
-        scene.scene.camera.position = [-75.6380940108963, 154.49428308844531, 497.79655837964555]
-        scene.scene.camera.focal_point = [132.7793834578315, 47.95558391240606, 44.03267908678528]
-        scene.scene.camera.view_angle = 30.0
-        scene.scene.camera.view_up = [0.04985772050601139, 0.9771694895609155, -0.20652843963290976]
-        scene.scene.camera.clipping_range = [210.11552421145498, 882.5056024983969]
-        scene.scene.camera.compute_view_plane_normal()
-        scene.scene.render()
+        self.scene.scene.z_plus_view()
+        self.scene.scene.camera.position = [-75.6380940108963, 154.49428308844531, 497.79655837964555]
+        self.scene.scene.camera.focal_point = [132.7793834578315, 47.95558391240606, 44.03267908678528]
+        self.scene.scene.camera.view_angle = 30.0
+        self.scene.scene.camera.view_up = [0.04985772050601139, 0.9771694895609155, -0.20652843963290976]
+        self.scene.scene.camera.clipping_range = [210.11552421145498, 882.5056024983969]
+        self.scene.scene.camera.compute_view_plane_normal()
+        self.scene.scene.render()
 
 
 
@@ -1137,16 +1155,18 @@ class Mayavi3idiView(HasTraits):
     def select_moved_actor(self):
         #Select Actor in list box on position change.
         print("Actors Length:", len(self.actors))
+        alb = self.parent.pianorollpanel.actorsctrlpanel.actorsListBox
         if len(self.actors) is not 0:
-            alb = self.parent.pianorollpanel.actorsctrlpanel.actorsListBox
             for i in range(0, len(self.actors)):
                 #If it's selected, unselect it.
                 if alb.IsSelected(i):
-                    self.parent.pianorollpanel.actorsctrlpanel.actorsListBox.Select(i, on=0)
+                    alb.Select(i, on=0)
+
         else:
             pass
-        self.parent.pianorollpanel.actorsctrlpanel.actorsListBox.Select(self.cur_ActorIndex)
 
+        alb.Select(self.cur_ActorIndex, on=1)
+        alb.Focus(self.cur_ActorIndex)
         #Then, select the actor whose position was just changed by dragging the actor in the mayavi view.
         #TODO Causes a red error on startup and at some color loading because of pos changes, but non-breaking.
             ###This: >>> "4:19:02 AM: Error: Couldn't retrieve information about list control item 0."
@@ -1223,15 +1243,15 @@ class Mayavi3idiView(HasTraits):
             #s_r = mproll.GetScroll
 
             #GRID CELL COORDINATES (Y, X)
-            bottomleft = mproll.XYToCell((s_h * s_linex), (s_v * s_liney) + client_size[1] - 18)
+            bottomleft = mproll.XYToCell((s_h * s_linex), (s_v * s_liney) + client_size[1] - 18)    #18 (techincally 20) IS THE PIXEL HIGHT IF THE LABEL BAR AT THE TOP.
             print("RETICLE_BOTTOM_LEFT", bottomleft)
 
-            bottomright = mproll.XYToCell((s_h * s_linex) + client_size[0] -60, (s_v * s_liney) + client_size[1] - 18)
+            bottomright = mproll.XYToCell((s_h * s_linex) + client_size[0] - 58, (s_v * s_liney) + client_size[1] - 18)    #60 IS THE PIXEL WIDGTH OF THE PIANO
             print("RETICLE_BOTTOM_RIGHT", bottomright)
 
             topleft = mproll.XYToCell((s_h * s_linex), (s_v * s_liney))  #0 times whatever your scroll rate is equal to zero, so the top left at start is (0, 0)
 
-            topright = mproll.XYToCell((s_h * s_linex) + client_size[0] -60, (s_v * s_liney))
+            topright = mproll.XYToCell((s_h * s_linex) + client_size[0] - 58, (s_v * s_liney))
 
             #Limiter, so the reticle doesn't turn into a triangle because of going below the grid area with (-1, -1) values...
             #If bottom would go below 0, (to -1, as it has been), then force it be zero and adjust top_left and top_right based on client_size from there.
@@ -1288,7 +1308,7 @@ class Mayavi3idiView(HasTraits):
                 self.highlighter_calls.remove(i)
 
 
-    def highlighter_transformation(self):
+    def highlighter_transformation(self, labels_only=False):
         for i in self.highlighter_calls:
             pos = self.sources[self.cur_ActorIndex].actor.actor.position
             i_z = pos[2]
@@ -1299,24 +1319,28 @@ class Mayavi3idiView(HasTraits):
             i_z_restored = i_z_transformed + i_z
             if i.name == "Z_Label":
                 i_x_zerod = (i_x * -1) + i_x
-                i_x_transformed = i_x_zerod - 40  # Always will be minus 40 for this label.
+                i_x_transformed = i_x_zerod - 40  # Always will be minus 40 for this label. Moved left for readability.
                 i_x_restored = i_x_transformed + i_x
                 i.actor.actor.position = (i_x_restored, i_y, i_z_restored)
                 i.text = "Z-Plane_%s" % self.cur_z
             elif i.name == "Actor_Label":
                 i_x_zerod = (i_x * -1) + i_x
-                i_x_transformed = i_x_zerod - 40  # Always will be minus 40 for this label.
+                i_x_transformed = i_x_zerod - 40  # Always will be minus 40 for this label as well.
                 i_x_restored = i_x_transformed + i_x
                 i_y_zerod = (i_y * -1) + i_y
-                i_y_transformed = i_y_zerod - 10
+                i_y_transformed = i_y_zerod - 10  # Actor Label lowered here, to just below the grid.
                 i_y_restored = i_y_transformed + i_y
                 i.actor.actor.position = (i_x_restored, i_y_restored, i_z_restored)  #Actor Label acts as "origin marker."
                 i.text = self.parent.pianorollpanel.actorsctrlpanel.actorsListBox.GetItemText(self.cur_ActorIndex)
                 #Actor label gets the same color as the "Current Actor's" color.
                 i.actor.property.color = self.CurrentActor().color
             else:
-                i.actor.actor.position = np.array([i_x, i_y, i_z_restored])
+                if labels_only is True:
+                    pass
+                else:
+                    i.actor.actor.position = np.array([i_x, i_y, i_z_restored])
 
+    #def z_and_actor_move(self):
 
     ###
     ######------------------------------------------------
@@ -1338,17 +1362,17 @@ class Mayavi3idiView(HasTraits):
         new_id9 = wx.NewIdRef()
         new_id10 = wx.NewIdRef()
 
-        self.parent.mayavi_view_control_panel.Bind(wx.EVT_MENU, self.parent.mainbuttonspanel.OnMusic21ConverterParseDialog, id=new_id1)
-        self.parent.mayavi_view_control_panel.Bind(wx.EVT_MENU, self.parent.mainbuttonspanel.OnMusicodeDialog, id=new_id2)
-        self.parent.mayavi_view_control_panel.Bind(wx.EVT_MENU, self.parent.mainbuttonspanel.OnMIDIArtDialog, id=new_id3)
-        self.parent.mayavi_view_control_panel.Bind(wx.EVT_MENU, self.parent.mainbuttonspanel.OnMIDIArt3DDialog, id=new_id4)
+        self.parent.mayaviviewcontrolpanel.Bind(wx.EVT_MENU, self.parent.mainbuttonspanel.OnMusic21ConverterParseDialog, id=new_id1)
+        self.parent.mayaviviewcontrolpanel.Bind(wx.EVT_MENU, self.parent.mainbuttonspanel.OnMusicodeDialog, id=new_id2)
+        self.parent.mayaviviewcontrolpanel.Bind(wx.EVT_MENU, self.parent.mainbuttonspanel.OnMIDIArtDialog, id=new_id3)
+        self.parent.mayaviviewcontrolpanel.Bind(wx.EVT_MENU, self.parent.mainbuttonspanel.OnMIDIArt3DDialog, id=new_id4)
         # TODO These aren't working as desired.....
-        self.parent.mayavi_view_control_panel.Bind(wx.EVT_MENU, self.parent.mainbuttonspanel.focus_on_actors_listbox, id=new_id5)
-        self.parent.mayavi_view_control_panel.Bind(wx.EVT_MENU, self.parent.mainbuttonspanel.focus_on_zplanes, id=new_id6)
-        self.parent.mayavi_view_control_panel.Bind(wx.EVT_MENU, self.parent.mainbuttonspanel.focus_on_pianorollpanel, id=new_id7)
-        self.parent.mayavi_view_control_panel.Bind(wx.EVT_MENU, self.parent.mainbuttonspanel.focus_on_pycrust, id=new_id8)
-        self.parent.mayavi_view_control_panel.Bind(wx.EVT_MENU, self.parent.mainbuttonspanel.focus_on_mayavi_view, id=new_id9)
-        self.parent.mayavi_view_control_panel.Bind(wx.EVT_MENU, self.parent.mainbuttonspanel.focus_on_mainbuttonspanel, id=new_id10)
+        self.parent.mayaviviewcontrolpanel.Bind(wx.EVT_MENU, self.parent.mainbuttonspanel.focus_on_actors_listbox, id=new_id5)
+        self.parent.mayaviviewcontrolpanel.Bind(wx.EVT_MENU, self.parent.mainbuttonspanel.focus_on_zplanes, id=new_id6)
+        self.parent.mayaviviewcontrolpanel.Bind(wx.EVT_MENU, self.parent.mainbuttonspanel.focus_on_pianorollpanel, id=new_id7)
+        self.parent.mayaviviewcontrolpanel.Bind(wx.EVT_MENU, self.parent.mainbuttonspanel.focus_on_pycrust, id=new_id8)
+        self.parent.mayaviviewcontrolpanel.Bind(wx.EVT_MENU, self.parent.mainbuttonspanel.focus_on_mayavi_view, id=new_id9)
+        self.parent.mayaviviewcontrolpanel.Bind(wx.EVT_MENU, self.parent.mainbuttonspanel.focus_on_mainbuttonspanel, id=new_id10)
 
         # Shift into which gear.
         entries[0].Set(wx.ACCEL_NORMAL, wx.WXK_F1, new_id1)
@@ -1365,7 +1389,7 @@ class Mayavi3idiView(HasTraits):
         entries[9].Set(wx.ACCEL_NORMAL, wx.WXK_F11, new_id10)
 
         accel = wx.AcceleratorTable(entries)
-        self.parent.mayavi_view_control_panel.SetAcceleratorTable(accel)
+        self.parent.mayaviviewcontrolpanel.SetAcceleratorTable(accel)
 
 
 
