@@ -118,11 +118,24 @@ class ActorsControlPanel(wx.Panel):
         #Remove from actorsListBox
         self.actorsListBox.DeleteItem(current)
         #Remove from scene(the mayavi pipeline)
+        self.mayavi_view.sources[current].parent.stop()
+        self.mayavi_view.sources[current].parent.remove()
+        self.mayavi_view.sources[current].parent.update()
+        self.mayavi_view.sources[current].parent.parent.stop()
+        self.mayavi_view.sources[current].parent.parent.remove()
+        self.mayavi_view.sources[current].parent.parent.update()
+        self.mayavi_view.sources[current].stop()
         self.mayavi_view.sources[current].remove()
+        self.mayavi_view.sources[current].update_data()
+        self.mayavi_view.sources[current].update_pipeline()
+
+
         #Remove from mlab_calls list
         self.mayavi_view.mlab_calls.remove(self.mayavi_view.sources[current])
         #Remove from source list
         self.mayavi_view.sources.remove(self.mayavi_view.sources[current])
+
+
         #Remove from actors list
         self.mayavi_view.actors.remove(self.mayavi_view.actors[current])
 
@@ -139,7 +152,7 @@ class ActorsControlPanel(wx.Panel):
             #self.actorsListBox.new_actor("0", 0)
             #Clear Piano
         self.mayavi_view.scene3d.disable_render=False
-
+        #self.mayavi_view.scene3d.mlab.draw(self.mayavi_view.scene3d.mlab.gcf())
 
     def OnBtnDelAllActors(self, evt):
         #self.mayavi_view.scene3d.disable_render=True
@@ -159,6 +172,7 @@ class ActorsControlPanel(wx.Panel):
             self.mayavi_view.actors.remove(self.mayavi_view.actors[index_0])
 
         self.GetTopLevelParent().pianorollpanel.ClearZPlane(self.GetTopLevelParent().pianorollpanel.currentZplane)
+
         for j in self.GetTopLevelParent().menuBar.colors.GetMenuItems():
             self.GetTopLevelParent().menuBar.colors.Delete(j)
         self.GetTopLevelParent().pianorollpanel.pianoroll.ForceRefresh()
@@ -262,8 +276,13 @@ class ActorsControlPanel(wx.Panel):
         for j in range(len(self.mayavi_view.actors), 0, -1):  #Fucking OBOE errors...
             print("J", j)
             if alb.IsSelected(j-1):
+                #if j == self.mayavi_view.cur_ActorIndex:
+                    #self.GetTopLevelParent().pianorollpanel.ClearZPlane(self.mayavi_view.cur_z)
+                #else:
+                    #pass
                 self.OnBtnDelActor(evt=None, cur=j-1)
                 print("Seletion %s Deleted." % (j-1))
+
         self.GetTopLevelParent().pianorollpanel.pianoroll.ForceRefresh()
 
     def OnPopupSeven(self, event):
@@ -325,6 +344,7 @@ class CustomActorsListBox(wx.ListCtrl):
         self.log.info(f"new_actor() {name} {i}")
         self.InsertItem(i, name)                        #TODO Does the order of these matter? -10/8/20
         #TODO Double-triple check all this stuff.
+
         #TODO Account for noncolorscall deletion.
         #TODO Make palette calls consistent.
         if self.mayavi_view.number_of_noncolorscall_actors > 16:
