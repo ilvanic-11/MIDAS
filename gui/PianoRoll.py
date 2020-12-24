@@ -126,17 +126,25 @@ class PianoRollDataTable(wx.grid.GridTableBase):
                 return ""
             self.log.debug(f"ZZZ = {z} type:")
             self.log.debug(type(z))
-            return str(int(self.pianorollpanel.GetTopLevelParent().mayavi_view.CurrentActor()._array3D[col][127-row][z]))
+            return str(int(self.pianorollpanel.GetTopLevelParent().mayavi_view.CurrentActor()._array3D[int(col)][127-row][z]))
 
         else:
             return ""
 
-    def SetValue(self, row, col, value):
+    def  SetValue(self, row, col, value):
         self.log.info(f"PianoRollDataTable.SetValue(): ({col},{row}),val={value}")
+
+        #This throws an error.
+        ##self.SetValue(row, col, value)
 
         if self.pianorollpanel.GetTopLevelParent().mayavi_view.CurrentActor():
             z = self.pianorollpanel.currentZplane
-            self.pianorollpanel.GetTopLevelParent().mayavi_view.CurrentActor()._array3D[col][127-row][z] = int(value)
+
+            #TODO Be minddful of these ints() when debugging.   col/self.pianorollpanel.pianoroll._cells_per_qrtrnote
+
+            self.pianorollpanel.GetTopLevelParent().mayavi_view.CurrentActor()._draw_array3D[int(col)][127-row][z] = int(value)
+            self.pianorollpanel.GetTopLevelParent().mayavi_view.CurrentActor()._array3D[int(col)][127-row][z] = int(value)
+
 
     def AppendCols(self, numCols=1, updateLables=True):
         #print("Super", super())
@@ -220,7 +228,7 @@ class PianoRoll(wx.grid.Grid, glr.GridWithLabelRenderersMixin):
         self.drawing = 1  # Used for click and drag to draw notes
 
         self.draw_cell_size = 1
-        self._cells_per_qrtrnote = 4
+        self._cells_per_qrtrnote = 1
 
         self.SetColMinimalAcceptableWidth(3)
         self.SetRowMinimalAcceptableHeight(3)
@@ -261,7 +269,9 @@ class PianoRoll(wx.grid.Grid, glr.GridWithLabelRenderersMixin):
 
         #EVT Bindings
         #------------------
+        #TODO --THIS hashed out disables the Erase Cell functionality-- 12/22/20 ( I turned it off for a reason....)
         self.Bind(wx.grid.EVT_GRID_CELL_LEFT_CLICK, self.OnGridLClick)
+
         self.Bind(wx.grid.EVT_GRID_SELECT_CELL, self.OnCellSelected)
         #self.Bind(wx.grid.EVT_GRID_CELL_CHANGED, self.OnCellChanged)
         self.Bind(wx.EVT_MOUSEWHEEL, self.OnMouseWheel)
@@ -488,7 +498,12 @@ class PianoRoll(wx.grid.Grid, glr.GridWithLabelRenderersMixin):
             self._table.DeleteCols(0, oldNumCols - newNumCols, True)
             #print("Here5.6.")
 
+        #Reset Grid
         self.DrawColumnLabels()
+        #Reset Mayavi representative values by factoring cpqn.
+        #--> Here.
+
+
         #print("Here6.")
 
         # Draw notes based on the saved stream
@@ -663,21 +678,26 @@ class PianoRoll(wx.grid.Grid, glr.GridWithLabelRenderersMixin):
        # x = evt.GetRow()
         #y = evt.GetCol()
         if self._table.GetValue(row, col) == "1":
-            self.EraseCell(row, col)
+
+            #self.EraseCell(row, col)
+
             #print("ROW", row)
             #print("COL", col)
-            #current_actor._array3D[int(row), int(127-col), int(z)] = 0      #/ cpqn
+            #current_actor._array3D[int(row / cpqn), int(127-col), int(z)] = 0      #/ cpqn
             self.drawing = 0
         elif self._table.GetValue(row, col) == "0":
             #print("ROW", row)
             #print("COL", col)
-            self.DrawCell("1", row, col, 1, int(self.draw_cell_size))
-            #current_actor._array3D[int(row / cpqn), int(127-col), int(z)] = 1
+
+            #self.DrawCell("1", row, col, 1, int(self.draw_cell_size))
+
+            #current_actor._array3D[int(row * cpqn), int(127-col), int(z)] = 1
             self.drawing = 1
 
         evt.Skip()
         #After the drawing event, update the array_3d accordingly.
-        self.m_v.actors[self.m_v.cur_ActorIndex].array3Dchangedflag += 1
+        #TODO FIGURE OUT--- DO I FUCKING NEED THIS LINE OF CODE?
+        #self.m_v.actors[self.m_v.cur_ActorIndex].array3Dchangedflag = not self.m_v.actors[self.m_v.cur_ActorIndex].array3Dchangedflag
 
 
         # on_points = np.argwhere(current_actor._array3D[row, col, z] >= 1.0)
@@ -702,13 +722,18 @@ class PianoRoll(wx.grid.Grid, glr.GridWithLabelRenderersMixin):
 
 
        # self.log.debug(f"  (actual erase) ({row}, {c}): " + self.print_cell_info(row, c))
-        self.SetCellSize(row, c, 1, 1)
         self.SetCellValue(row, c, "0")
 
-        #page = self.GetTopLevelParent().pianorollpanel.pianoroll
-        layer = self.GetTopLevelParent().pianorollpanel.currentZplane
+        self.SetCellSize(row, c, 1, 1)
+        #self._table.SetValue(row, c, "0")
 
-        self.m_v.CurrentActor()._array3D[c, 127 - row, layer] = 0
+        #page = self.GetTopLevelParent().pianorollpanel.pianoroll
+
+
+
+        ###TODO Be mindful of these ints when debugging.
+        #zplane = self.GetTopLevelParent().pianorollpanel.currentZplane
+        #self.m_v.CurrentActor()._array3D[int(c*self._cells_per_qrtrnote), 127 - row, zplane] = 0
 
 
     def DrawCell(self, val, row, col, new_sy, new_sx):
@@ -738,13 +763,32 @@ class PianoRoll(wx.grid.Grid, glr.GridWithLabelRenderersMixin):
             y += 1
 
         print(f"  {row},{col} = {val}")
+        #Grid update
+        #-----------
         self._table.SetValue(row, col, val)
+
         #self.SetCellValue(row, col, val)
+
         #print("X", x)
-        #self.m_v.CurrentActor()._array3D[x * self._cells_per_qrtrnote, 127 - y, val] = 1
+        #zplane = self.GetTopLevelParent().pianorollpanel.currentZplane
+
+        #Mayavi update
+        #------------
+        #self.m_v.CurrentActor()._array3D[int(col / self._cells_per_qrtrnote)][127 - row][zplane] = int(val)
+
+
         #self.m_v.CurrentActor().array3Dchangedflag = not self.m_v.CurrentActor().array3Dchangedflag
         self.SetCellSize(row, col, new_sy, new_sx)
 
+    ######
+
+    #Error received when trying to draw outside the grid, sometimes.------
+    #"""Traceback (most recent call last):
+    #File "C:\Users\Isaac's\Midas\gui\PianoRoll.py", line 129, in GetValue
+    #return str(int(self.pianorollpanel.GetTopLevelParent().mayavi_view.CurrentActor()._array3D[int(col)][127-row][z]))
+    #IndexError: index 128 is out of bounds for axis 0 with size 128"""
+
+    ######
 
     def StreamToGrid(self, in_stream, z=None):
         """
