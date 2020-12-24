@@ -537,11 +537,12 @@ class MainWindow(wx.Frame):
                     self.GetTopLevelParent().mayavi_view.CurrentActor().cur_z = self.zplane_scrolled
                     self.GetTopLevelParent().pianorollpanel.pianoroll.ForceRefresh()
 
-                elif wx.GetMouseState().MiddleIsDown():
-
-                    print("Middle-click zooming...")
-                    self.pianorollpanel.Selection_Send(self.pianorollpanel.selected_notes, self.zplane_scrolled, event=None,
-                                                       carry_to_z=True)
+                #TODO Is this used?
+                 # elif wx.GetMouseState().MiddleIsDown():
+                #
+                #     print("Middle-click zooming...")
+                #     self.pianorollpanel.Selection_Send(self.pianorollpanel.selected_notes, self.zplane_scrolled, event=None,
+                #                                        carry_to_z=True, array=False)
 
         event.Skip()
 
@@ -564,12 +565,13 @@ class MainWindow(wx.Frame):
         if event.GetKeyCode() == wx.WXK_SHIFT and state.MiddleIsDown():
             print("Sending to scrolled Actor-->Shift and Middle down here.")
             pass
-            self.pianorollpanel.Selection_Send(self.pianorollpanel.selected_notes, self.zplane_scrolled, event=None, carry_to_z=True, carry_to_actor=True)
+            self.pianorollpanel.Selection_Send(self.pianorollpanel.selected_notes, self.zplane_scrolled, event=None, carry_to_z=True, carry_to_actor=True, array=False)
 
         #Send selected notes to self.zplane_scrolled.  Works
         elif event.GetKeyCode() == wx.WXK_ALT and state.MiddleIsDown():
             print("Sending to scrolled Zplane-->Alt and Middle down here.")
-            self.pianorollpanel.Selection_Send(self.pianorollpanel.selected_notes, self.zplane_scrolled, event=None, carry_to_z=True)
+            self.pianorollpanel.Selection_Send(self.pianorollpanel.selected_notes, self.zplane_scrolled, event=None, carry_to_z=True, array=False)
+            #TODO Attribute error expection here. Write.
 
         #Send selected notes to the pyshell as an np.array and as a music21.stream.Stream.
         elif event.GetKeyCode() == wx.WXK_CONTROL and state.MiddleIsDown():
@@ -592,43 +594,68 @@ class MainWindow(wx.Frame):
             #Get Transforming value
             cell = self.pianorollpanel.pianoroll.GetCellFromMouseState()
 
-            # assert not not self.pianorollpanel.selected_notes, "You do not have selected_notes yet."
-            #
-            # #Get Selection
-            # #self.pianorollpanel.selected_notes
-            #
-            #
-            # #Transform the grid selection block on top of our self.selected_notes
-            # top_left = self.pianorollpanel.pianoroll.GetSelectionBlockTopLeft()
-            # bottom_right = self.pianorollpanel.pianoroll.GetSelectionBlockBottomRight()
-            #
-            #
-            #
-            #
-            # #Transform here--Since our selection array has had np.flip called on it already from the previous call,
-            # # we must subscript correctly here.
-            # #self.pianorollpanel.selection_array[0] = self.pianorollpanel.selection_array[0] + cell[1]
-            # #self.pianorollpanel.selection_array[1] = self.pianorollpanel.selection_array[1] + cell[0]
-            #
-            #
-            # #Selection To Array
-            # self.pianorollpanel.selection_array = self.pianorollpanel.ArrayFromSelection(self.pianorollpanel.selected_notes, self.mayavi_view.CurrentActor().cur_z, carry=True)
-            #
-            #
-            #
-            # print("TRANSFORMED_SELECTION_ARRAY", self.pianorollpanel.selection_array)
-            #
-            # #Perform send.
-            # self.pianorollpanel.Selection_Send(self.pianorollpanel.selected_notes, self.mayavi_view.CurrentActor().cur_z, event=None,
-            #                                    carry_to_z=True, array=True)
-            # #Midas.GetClientRect()[2] - Midas.pianorollpanel.pianoroll.GetClientRect()[2]
-            # #Midas.GetClientRect()[3] - Midas.pianorollpanel.pianoroll.GetClientRect()[3]
-            # #print("Mouse_y", state.y)
-            # #pass
-            #
-            # #new_top_left = self.pianorollpanel.pianoroll.GetSelectionBlockTopLeft()
-            # self.pianorollpanel.pianoroll.SelectBlock()
-            # self.pianorollpanel.pianoroll.GoToCell(new_top_left)
+            print("SELECTED_NOTES before loss", self.pianorollpanel.selected_notes)
+            assert not not self.pianorollpanel.selected_notes, "You do not have selected_notes yet."
+
+            #Get Selection
+            #selected_notes = self.pianorollpanel.selected_notes
+
+
+            #Transform the grid selection block as well as our self.selected_notes
+            top_left = self.pianorollpanel.pianoroll.GetSelectionBlockTopLeft()
+            bottom_right = self.pianorollpanel.pianoroll.GetSelectionBlockBottomRight()
+
+            #The difference between our selection top_left and our target new location is our 'transform_value'.
+            transform_value = (int(top_left[0][0]) - int(cell[0]), int(top_left[0][1]) - int(cell[1]))  #THIS WAY, we only have to ADD target times -1
+            #without boolean condition gates.
+            #(2, 2) - (4, 4) = (-2, -2) Moving down and right we multiple by negative 1.
+            #(2, 2) - (0, 0) = (2, 2)   Moving up and left, we still multiply by negative 1.
+
+            if not self.pianorollpanel.last_highlight:
+                last_highlight = self.pianorollpanel.previously_selected_cells
+            else:
+                last_highlight = self.pianorollpanel.last_highlight
+
+            #Transform here--
+            notes_being_transformed = list()
+            for i in self.pianorollpanel.selected_notes:
+                new_tuple = (i[0] + (-1 * transform_value[0]), i[1] + (-1 * transform_value[1]))
+                notes_being_transformed.append(new_tuple)
+
+            #Core
+            selected_notes = notes_being_transformed
+            new_top_left = (top_left[0][0] + (-1 * transform_value[0]), top_left[0][1] + (-1 * transform_value[1]))
+            new_bottom_right = (bottom_right[0][0] + (-1 * transform_value[0]), bottom_right[0][1] + (-1 * transform_value[1]))
+
+            #self.pianorollpanel.selection_array[0] = self.pianorollpanel.selection_array[0] + cell[1]
+            #self.pianorollpanel.selection_array[1] = self.pianorollpanel.selection_array[1] + cell[0]
+
+
+            #Selection To Array
+            selection_array = self.pianorollpanel.ArrayFromSelection(selected_notes, self.mayavi_view.CurrentActor().cur_z, carry=True)
+
+
+
+            print("TRANSFORMED_SELECTION_ARRAY", self.pianorollpanel.selection_array)
+
+
+            #Perform send.  Note: MAKE SURE THAT, if array=TRUE, that you are actually using an array as your input.
+            self.pianorollpanel.Selection_Send(selection_array,
+                                        self.mayavi_view.CurrentActor().cur_z, event=None, carry_to_z=True, array=True, transform_xy=True)
+
+            print("Last Highlight", last_highlight)
+
+            self.pianorollpanel.clear_out_highlight(event=None, manual_selection=last_highlight, manual=True)
+            self.pianorollpanel.pianoroll.GoToCell(new_top_left)
+            self.pianorollpanel.pianoroll.SelectBlock(new_top_left, new_bottom_right)
+
+            print("SELECTED_NOTES before loss2", self.pianorollpanel.selected_notes)
+            self.pianorollpanel.last_highlight = self.pianorollpanel.selecting_cells
+            self.pianorollpanel.selected_notes = selected_notes
+
+            #self.pianorollpanel.previously_selected_cells = self.pianorollpanel.selected_cells
+            print("SELECTED_NOTES before loss3", self.pianorollpanel.selected_notes)
+
 
         else:
             event.Skip()
@@ -699,12 +726,14 @@ class MainWindow(wx.Frame):
         self.top_mayaviview_split.SetSashGravity(0.5)
         self.top_pyshell_split.SetSashGravity(0.5)
 
+        # Titles.
+        self.mayavi_view.insert_titles()
+
         # Actor on startup.
         self.pianorollpanel.actorsctrlpanel.actorsListBox.new_actor(0)
         self.mayavi_view.actors[0].change_points(MusicObjects.earth())
 
-        #Titles.
-        self.mayavi_view.insert_titles()
+
 
         #Shows the zplanes on startup.
         self.pianorollpanel.zplanesctrlpanel.OnBtnShowAll(event=None)

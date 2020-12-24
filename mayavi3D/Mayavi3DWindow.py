@@ -7,6 +7,7 @@ ETSConfig.toolkit = 'wx'
 import mayavi
 from numpy import array
 import numpy as np
+import numpy_indexed as npi
 import random
 import music21
 import wx    #TODO how to do simpler imports (i.e. just what we need instead of all of wx)
@@ -46,10 +47,13 @@ class Actor(HasTraits):
     _array3D = Array(dtype=np.int8, shape=(5000, 128, 128))
     _stream = Any()  #TODO For exporting, finish.
 
+    # new_array3d
+    _draw_array3D = Array(dtype=np.int8, shape=(5000, 128, 128))
+
     #For trait flagging.
     array3Dchangedflag = Int()
     pointschangedflag = Int()
-    streamchangedflag = Int()
+    #streamchangedflag = Int()
 
     ##For trait-syncing.
     cur_z = Int(90)  #         #Synced one-way to mayavi_view.cur_z trait.
@@ -84,20 +88,24 @@ class Actor(HasTraits):
         self._points = points
         self.pointschangedflag = not self.pointschangedflag
 
+
     #music21 stream---> Stream for stream purposes.
     def change_stream(self, stream):
         self._stream = stream
         self.streamchangedflag = not self.streamchangedflag
+
 
     def isColorsInstance(self):
         if self.colors_instance == '':
             return False
         else:
             return True
+
     #def change_color(self, color):
 
     ##WORKING INSTANCE
     #TODO Is this fired when an actor is deleted? If so, can we shut that off?
+
     @on_trait_change("array3Dchangedflag")
     def actor_array3D_changed(self):
         print("actor_array3D_changed")
@@ -106,11 +114,39 @@ class Actor(HasTraits):
         cpqn = self.toplevel.pianorollpanel.pianoroll._cells_per_qrtrnote
 
 
+        ##EXPERIMENTAL Stuff...
+        # draw_points = np.argwhere(self._draw_array3D == 1.0)
+        # indexer = np.asarray(draw_points, dtype=np.float32)
+        # draw_points[:, 0] = draw_points[:, 0] / cpqn
+        # print("DRAW POINTS",  draw_points)
+        # print("DRAW_POINTS Type", type(draw_points), draw_points.dtype)
+
+
+        #self._points = np.argwhere(self._array3D == 1.0)
+        #self._points = np.vstack((self._points, draw_points))
+        print("_POINTS Type", type(self._points), self._points.dtype)
+
+
+        #Working stuff*
         self._points = np.argwhere(self._array3D == 1.0)
-        self._points[:, 0] =  self._points[:, 0]  / cpqn #Account for cpqn.  X axis "Slice" rebound here.
+        print("_points", self._points)
+        self._points[:, 0] = self._points[:, 0]  #Account for cpqn.  X axis "Slice" item assignment here.
+
+
+        ##EXPERIMENTAL Stuff...
+        # try:
+        #     draw_indices = npi.indices(self._points, [i for i in indexer], axis=0)
+        #     print("Draw_Indices", draw_indices)
+        #     for i in draw_indices:
+        #         self._points[i][0] = self._points[i][0] / cpqn    #The 'x' of our points gets refactored.
+        # except TypeError as e:
+        #     print("FUCKASS", e)
+        #     pass
+        # print("BITCH, HERE2")
+
 
         try:
-            self.mayavi_view.sources[self.index].mlab_source.trait_set(points=self._points) #Traitset happens on x axis slice rebinding.
+            self.mayavi_view.sources[self.index].mlab_source.trait_set(points=self._points)    #TODO Redundant? Traitset happens on x axis item slice reassignment above.
         except IndexError:
             pass
 
@@ -123,10 +159,19 @@ class Actor(HasTraits):
         cpqn = self.toplevel.pianorollpanel.pianoroll._cells_per_qrtrnote
         print("CPQN", cpqn)
 
+
+
+
         new_array3D = np.zeros(self._array3D.shape, dtype=np.int8)
         for p in self._points:
-            new_array3D[int(p[0] * cpqn) , int(p[1]), int(p[2])] = 1.0   #TODO Account for cpqn.
+            try:
+                new_array3D[int(p[0]), int(p[1]), int(p[2])] = 1.0   #TODO Account for cpqn.  * cpqn
+            except Exception as e:
+                print("EXCEPTION, BITCH", e)
         self.mayavi_view.parent.pianorollpanel.pianoroll.cur_array3d = self._array3D = new_array3D
+
+        #self._points[:, 0] = self._points[:, 0]
+
         self.mayavi_view.sources[self.index].mlab_source.trait_set(points=self._points)
         print("sources trait_set after actor_points_changed")
 
@@ -389,11 +434,11 @@ class Mayavi3idiView(HasTraits):
         # self.sources.append(None)
         self.actors.append(a)
         print('3')
-        self.appending_data = self.insert_array_data(a._array3D, color=color, mode="cube", name=name, scale_factor=1.0)
+        appending_data = self.insert_array_data(a._array3D, color=color, mode="cube", name=name, scale_factor=1.0)
         print('4')
-        self.sources.append(self.appending_data)
+        self.sources.append(appending_data)
         print('5')
-        self.mlab_calls.append(self.appending_data)
+        self.mlab_calls.append(appending_data)
         print('6')
 
 
@@ -1163,6 +1208,7 @@ class Mayavi3idiView(HasTraits):
             self.actors[k].index = k
         print("actor.index attributes reset")
 
+
     @on_trait_change('cpqn_changed_flag')
     def OnCellsPerQuarterNote_Changed(self):
         #self.highlighter_transformation()
@@ -1199,6 +1245,7 @@ class Mayavi3idiView(HasTraits):
             client_rect = mproll.GetClientRect()
             print("CLIENT_RECT", client_rect)
 
+            cpqn = self.parent.pianorollpanel.pianoroll._cells_per_qrtrnote
             #s_r = mproll.GetScroll
 
             #GRID CELL COORDINATES (Y, X)
@@ -1217,7 +1264,7 @@ class Mayavi3idiView(HasTraits):
             if bottomleft[1] == -1 and bottomright[1] == -1:
 
                 topleft = mproll.XYToCell(mproll.CalcUnscrolledPosition(0, 0)) #New Topleft
-                topright = mproll.XYToCell(mproll.CalcUnscrolledPosition(client_size[0], 0)) #New Topright
+                topright = mproll.XYToCell(mproll.CalcUnscrolledPosition(client_size[0]-58, 0)) #New Topright
                 #bottomright = mproll.XYToCell(mproll.CalcUnscrolledPosition(0,0)[0], )
                 #Bottom is ( , 127)
                 bottomleft = (127, topleft[1]) #New Bottomleft
@@ -1237,7 +1284,7 @@ class Mayavi3idiView(HasTraits):
                                  (bottomleft[1], 127-bottomleft[0], 0),
                                  (topleft[1], 127-topleft[0], 0))), dtype=np.float32)
             #In place slice reassignment.
-            reticle[:, 0] = reticle[:, 0] / self.parent.pianorollpanel.pianoroll._cells_per_qrtrnote  #TODO Once cpqn is fixed. CHECK-- Now that cpqn is fixed, create a trait event for it so that this reticle--
+            reticle[:, 0] = reticle[:, 0] / cpqn #TODO Once cpqn is fixed. CHECK-- Now that cpqn is fixed, create a trait event for it so that this reticle--
                                                                                                       #TODO---(among other things) updates automatically when cpqn is changed.
             #Traits notification
             self.grid_reticle.mlab_source.trait_set(points=reticle)
