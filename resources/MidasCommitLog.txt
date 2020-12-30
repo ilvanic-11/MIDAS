@@ -425,18 +425,17 @@ In MIDAS_UnitTests.py
 --> Eliminated redundant imports at the top.
 
 
---IP--Commit, 
+--IP--Commit, December 24th, 2020
 In PianoRollPanel
 --> Renamed(refactored) function self.clear_out() to self.clear_out_highlight
 --> Completed self.Selection_Send() function working within the same zplane. This transform_xy method is the equivalent of a dragndrop on the same grid.
 --> Battled events, fixed some flag bugs.
-In ActorsControlPanel
--->
+
 
 
 
 ##Git adds. Update as needed. (Git can adds a LOT at once, if separated without commas.)
-git add MIDAS_wx.py gui/ActorsControlPanel.py gui/MainButtons.py  gui/MenuButtons.py gui/PianoRoll.py gui/PianoRollPanel.py gui/Preferences.py gui/ZPlanesControlPanel.py mayavi3D/Mayavi3DWindow.py mayavi3D/Mayavi3idiArtAnimation.py midas_scripts/midiart3D.py midas_scripts/music21funcs.py midas_scripts/musicode.py midas_scripts/midiart.py resources/Midas-Mayavi_Pip_Batch_Install.bat resources/MidasCommitLog.txt resources/Midas_Startup_Configs.py, resources/HotkeyAssignments.txt 
+git add MIDAS_wx.py gui/ActorsControlPanel.py gui/MainButtons.py  gui/MenuButtons.py gui/PianoRoll.py gui/PianoRollPanel.py gui/Preferences.py gui/ZPlanesControlPanel.py mayavi3D/Mayavi3DWindow.py mayavi3D/Mayavi3idiArtAnimation.py midas_scripts/midiart3D.py midas_scripts/music21funcs.py midas_scripts/musicode.py midas_scripts/midiart.py resources/Midas-Mayavi_Pip_Batch_Install.bat resources/MidasCommitLog.txt resources/Midas_Startup_Configs.py resources/HotkeyAssignments.txt 
 ##
 
 git add test/MIDAS_UnitTests.py 

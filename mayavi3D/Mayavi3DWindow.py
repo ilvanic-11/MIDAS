@@ -45,10 +45,10 @@ class Actor(HasTraits):
     name = String()
     _points = Array(dtype=np.float32)
     _array3D = Array(dtype=np.int8, shape=(5000, 128, 128))
-    _stream = Any()  #TODO For exporting, finish.
+    _stream = Any()  #TODO For exporting, finish. Not used atm.
 
-    # new_array3d
-    _draw_array3D = Array(dtype=np.int8, shape=(5000, 128, 128))
+    # new_array3d for *Experiment stuff
+    #_draw_array3D = Array(dtype=np.int8, shape=(2500, 128, 128))
 
     #For trait flagging.
     array3Dchangedflag = Int()
@@ -73,6 +73,8 @@ class Actor(HasTraits):
         self.colors_instance = ""  #Denotes to what instance of a loaded color image this actor belongs. (call1, call2, etc.)
         self.part_num = 0  #For stream.Part purposes, used in colors function.
         self.priority = 0
+
+        #_array3D = np.full([2500, 128, 128, 3], np.array([0, 1, 90]))
 
         #CHANGE the float dtype from 64 to 16 manually on init.
         #self._points.dtype = np.float16
