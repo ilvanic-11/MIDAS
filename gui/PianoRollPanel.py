@@ -332,7 +332,7 @@ class PianoRollPanel(wx.Panel):
                     event.Skip()
             print("Push Scrolling HERE3.")
 
-    def Selection_Send(self, selected_notes, scroll_value, event=None, carry_to_z=False, carry_to_actor=False, array=True, transform_xy=False):
+    def Selection_Send(self, selected_notes, scroll_value, event=None, send_to_z=False, send_to_actor=False, array=True, send_current=False):
         """
         This function is intended to take highlighted grid 'selections' of notes and push and/or pull them between our actor/zplanes based on a user-defined value.\
         If both scroll_to_z and scroll_to_actor are False, this function functions incrementally. (+1 or -1 on the current actor). If one or both is true, the 'self.selected_notes' will
@@ -340,16 +340,17 @@ class PianoRollPanel(wx.Panel):
 
         :param scroll_value:    The z_plane scroll pushnpull value.
         :param event:           Passed in event, for more writing options.
-        :param carry_to_z:      Bool determining scroll method; scroll by increment or scroll to z value itself.
-        :param carry_to_actor:  Bool determing scrool method; scroll to self.GTLP.actor_scrolled actor, else remain on current actor.
+        :param send_to_z:       Bool determining scroll method; scroll by increment or scroll to z value itself.
+        :param send_to_actor:   Bool determing scrool method; scroll to self.GTLP.actor_scrolled actor, else remain on current actor.
         :param array:           Set this to true if the array input is already a numpy array of np.array(selected_notes)
+        :param send_current:    If true, selection will be sent to WITHIN the current zplane only.
         :return: None
         """
 
         #If we don't have selected_notes, break here.
         assert not not self.selected_notes, "You do not have selected_notes yet."
 
-        if carry_to_z or carry_to_actor:
+        if send_to_z or send_to_actor:
             try:
                 #The last scroll value.
                 self.last_push = self.last_push
@@ -365,7 +366,7 @@ class PianoRollPanel(wx.Panel):
         #Carry method.
         #(Carry_to_z or carry_to_actor allows carrying for shift GrabNSend to scrolled_actor alt GrabnSend to scrolled_zplane
         # AND carry==False will allow for Scroll_Zplanes_Velocities() and GrabnSend() to pyshell)
-        if carry_to_z is True or carry_to_actor is True:
+        if send_to_z is True or send_to_actor is True:
             carry = True
         else:
             carry = False
@@ -380,7 +381,7 @@ class PianoRollPanel(wx.Panel):
         #CORE-------------------------------------------------------------------------
         #array3D method
         #####Transfrom on current plane method.
-        if transform_xy:
+        if send_current:
             for i in self.selection_array:
                 print("INDEX_FIND", [i[0], i[1], i[2]])
                 self.m_v.CurrentActor()._array3D[
@@ -409,43 +410,52 @@ class PianoRollPanel(wx.Panel):
         else:
             print("SELECTION_ARRAY", self.selection_array)
             for i in self.selection_array:
-                if carry_to_actor is False:
-                    if carry_to_z is True:
-                        print("INDEX_FIND", [i[0], i[1], i[2]])
-                        self.m_v.CurrentActor()._array3D[i[0], i[1], i[2]] = 1.0  # Scrolled-to plane notes become activated.
-                        #TODO HERE>
+                if send_to_actor is False:
+                    if send_to_z is True:
+                        if self.last_push == self.m_v.CurrentActor().cur_z:
+                            print("INDEX_FIND", [i[0], i[1], i[2]])
+                            self.m_v.CurrentActor()._array3D[
+                                i[0], i[1], i[2]] = 1.0  # Scrolled-to plane notes become activated.
+                            # TODO HERE>
 
-                        # This condition block accounts for the first miss.
-                        if i[2] == self.last_push:
-                            self.m_v.CurrentActor()._array3D[i[0], i[1], self.m_v.CurrentActor().cur_z] = 0.
-                        elif i[2] != self.last_push:
-                            self.m_v.CurrentActor()._array3D[i[0], i[1], self.last_push] = 0.
+                            # This condition block accounts for the first miss.
+                            if i[2] == self.last_push:
+                                self.m_v.CurrentActor()._array3D[i[0], i[1], self.m_v.CurrentActor().cur_z] = 0.
+                            elif i[2] != self.last_push:
+                                self.m_v.CurrentActor()._array3D[i[0], i[1], self.last_push] = 0.
+                        else:
+                            print("INDEX_FIND", [i[0], i[1], i[2]])
+                            self.m_v.CurrentActor()._array3D[int(i[0] / self.pianoroll._cells_per_qrtrnote), i[1], i[2]] = 1.0  # Scrolled-to plane notes become activated.
+                            #TODO HERE>
 
-                        #Abandoned plane notes are zero'd.
-                        #
-                        #self.m_v.CurrentActor()._points[]
-                    elif carry_to_z is False:
+                            # This condition block accounts for the first miss.
+                            if i[2] == self.last_push:
+                                self.m_v.CurrentActor()._array3D[int(i[0] / self.pianoroll._cells_per_qrtrnote), i[1], self.m_v.CurrentActor().cur_z] = 0.
+                            elif i[2] != self.last_push:
+                                self.m_v.CurrentActor()._array3D[int(i[0] / self.pianoroll._cells_per_qrtrnote), i[1], self.last_push] = 0.
+
+
+                    elif send_to_z is False:
+                        #Are we really sending anything if both send_to_actor and send_to_z are false?
                         self.m_v.CurrentActor()._array3D[i[0], i[1], i[2]] = 1.0  # Scrolled-to plane notes become activated.
 
                         self.m_v.CurrentActor()._array3D[i[0], i[1], i[2] - scroll_value] = 0.   #Abandoned plane notes are zero'd.
-                        #
-                        #self.m_v.CurrentActor()._points[]
 
 
-                elif carry_to_actor is True: #If carry_to_actor is True....    #Scroll-to_actor method.
 
-                    if carry_to_z is True:
-                        # index = npi.indices(self.m_v.CurrentActor()._points, ),
-                        self.m_v.actors[self.GetTopLevelParent().actor_scrolled]._array3D[i[0], i[1], i[2]] = 1.0  # Scrolled-to plane notes become activated.
+                elif send_to_actor is True: #If carry_to_actor is True....    #Scroll-to_actor method.
 
-                        # This condition block accounts for the first miss.
-                        # if i[2] == self.last_push:
-                        #     self.m_v.actors[self.last_actor]._array3D[i[0], i[1], self.m_v.CurrentActor().cur_z] = 0.
-                        # elif i[2] != self.last_push:
-                        self.m_v.actors[self.last_actor]._array3D[i[0], i[1], self.last_push] = 0.   # Abandoned plane notes are zero'd.
+                    if send_to_z is True:
+                        if self.last_push == self.m_v.CurrentActor().cur_z:
+                            # index = npi.indices(self.m_v.CurrentActor()._points, ),
+                            self.m_v.actors[self.GetTopLevelParent().actor_scrolled]._array3D[i[0], i[1], i[2]] = 1.0  # Scrolled-to plane notes become activated.
+                            self.m_v.actors[self.last_actor]._array3D[i[0], i[1], self.last_push] = 0.   # Abandoned plane notes are zero'd.
+                        else:
+                            self.m_v.actors[self.GetTopLevelParent().actor_scrolled]._array3D[int(i[0] / self.pianoroll._cells_per_qrtrnote), i[1], i[2]] = 1.0  # Scrolled-to plane notes become activated.
+                            self.m_v.actors[self.last_actor]._array3D[int(i[0] / self.pianoroll._cells_per_qrtrnote), i[1], self.last_push] = 0.
 
-                    elif carry_to_z is False:
-                        self.m_v.actors[self.GetTopLevelParent().actor_scrolled]._array3D[i[0], i[1], self.m_v.CurrentActor().cur_z] = 1.0  # Scrolled-to plane notes become activated.
+                    elif send_to_z is False:
+                        self.m_v.actors[self.GetTopLevelParent().actor_scrolled]._array3D[int(i[0] / self.pianoroll._cells_per_qrtrnote), i[1], self.m_v.CurrentActor().cur_z] = 1.0  # Scrolled-to plane notes become activated.
 
 
                         self.m_v.actors[self.last_actor]._array3D[
@@ -453,30 +463,33 @@ class PianoRollPanel(wx.Panel):
                         #
                         # self.m_v.CurrentActor()._points[]
 
+            print("Beginning of flags.")
+                ####Flags and refreshes -----------------------------------------------------------
+                #TODO Clean this up better.   --- 11/25/20
+                #Direct-to-points method.
 
-            ####Flags and refreshes -----------------------------------------------------------
-            #TODO Clean this up better.   --- 11/25/20
-            #Direct-to-points method.
-            if carry_to_z and carry_to_actor: #Send-to-z method or Send-to-actor method.
+            if send_to_actor and send_to_z: #Send-to-z method or Send-to-actor method.
                 # self.m_v.actors[self.m_v.cur_ActorIndex].array3Dchangedflag = not self.m_v.actors[
                 #             self.m_v.cur_ActorIndex].array3Dchangedflag
-
+                #Pushed from
                 self.m_v.actors[self.last_actor].array3Dchangedflag = not self.m_v.actors[
                     self.last_actor].array3Dchangedflag
-
+                #Pushed to
                 self.m_v.actors[self.GetTopLevelParent().actor_scrolled].array3Dchangedflag = not self.m_v.actors[
                     self.GetTopLevelParent().actor_scrolled].array3Dchangedflag
-
+                #Activate actor pushed to.
                 self.actorsctrlpanel.actorsListBox.Activate_Actor(self.GetTopLevelParent().actor_scrolled)  #Then, got to new actor.
+                #Reassign 'lasts'
                 self.last_actor = self.m_v.cur_ActorIndex
-
                 self.last_push = self.GetTopLevelParent().zplane_scrolled
+                #Refresh grid.
                 self.pianoroll.ForceRefresh()
 
 
-            elif not carry_to_actor and carry_to_z:
+            elif not send_to_actor and send_to_z:
                 self.m_v.actors[self.last_actor].array3Dchangedflag = not self.m_v.actors[
                     self.last_actor].array3Dchangedflag
+
 
                 self.m_v.actors[self.GetTopLevelParent().actor_scrolled].array3Dchangedflag = not self.m_v.actors[
                     self.GetTopLevelParent().actor_scrolled].array3Dchangedflag
@@ -488,7 +501,7 @@ class PianoRollPanel(wx.Panel):
 
 
             # Carry-to-z method or Carry-to-actor method.
-            elif carry_to_actor and not carry_to_z:
+            elif send_to_actor and not send_to_z:
                 self.m_v.actors[self.last_actor].array3Dchangedflag = not self.m_v.actors[self.last_actor].array3Dchangedflag
 
                 self.m_v.actors[self.GetTopLevelParent().actor_scrolled].array3Dchangedflag = not self.m_v.actors[
@@ -511,6 +524,7 @@ class PianoRollPanel(wx.Panel):
                 self.m_v.actors[self.m_v.cur_ActorIndex].array3Dchangedflag = not self.m_v.actors[
                             self.m_v.cur_ActorIndex].array3Dchangedflag
                 self.pianoroll.ForceRefresh()
+            print("End of flags.")
 
 
     # def Selection_Transform(self, selection):
@@ -848,6 +862,7 @@ class PianoRollPanel(wx.Panel):
 
             #THIS IS THE UPDATE FLAG FOR DRAWING NOW. It is no longer in the draw function.
             mv.CurrentActor().array3Dchangedflag = not mv.CurrentActor().array3Dchangedflag
+
 
             print("Flag changed now.", mv.CurrentActor().array3Dchangedflag)
 
