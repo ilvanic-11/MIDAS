@@ -65,7 +65,7 @@ class Actor(HasTraits):
     _stream = Any()  #TODO For exporting, finish. Not used atm.
 
     # new_array3d for *Experiment stuff
-    #_draw_array3D = Array(dtype=np.int8, shape=(2500, 128, 128))
+    _draw_array3D = Array(dtype=np.int8, shape=(5000, 128, 128))
 
     #For trait flagging.
     array3Dchangedflag = Int()
@@ -73,7 +73,7 @@ class Actor(HasTraits):
     #streamchangedflag = Int()
 
     ##For trait-syncing.
-    cur_z = Int(90)  #         #Synced one-way to mayavi_view.cur_z trait.
+    cur_z = Int(90)            #Synced one-way to mayavi_view.cur_z trait.
     color = Tuple(1., 0., 0.)  #Synced two_way with the pipeline's current_actor.property.color trait.
     position = Array()         #Synced two-way with the pipeline's current_actor.actor.actor.position trait.
 
@@ -133,7 +133,7 @@ class Actor(HasTraits):
         cpqn = self.toplevel.pianorollpanel.pianoroll._cells_per_qrtrnote
 
 
-        ##EXPERIMENTAL Stuff...
+        # #EXPERIMENTAL Stuff...
         # draw_points = np.argwhere(self._draw_array3D == 1.0)
         # indexer = np.asarray(draw_points, dtype=np.float32)
         # draw_points[:, 0] = draw_points[:, 0] / cpqn
@@ -147,12 +147,25 @@ class Actor(HasTraits):
 
 
         #Working stuff*
-        self._points = np.argwhere(self._array3D == 1.0)
+
+        points = np.argwhere(self._array3D == 1.0)
+        all_points = midiart3D.get_planes_on_axis(points, array=True)
+        cur_plane = all_points[self.cur_z]
+        print("Type_Cur_Plane", type(cur_plane))
+        print(cur_plane)
+        #print("ARRAYCHECK", cur_plane[0])
+        #print("ARRAYTYPECHECK", type(cur_plane[0]))
+        try:
+            cur_plane[:, 0] = cur_plane[:, 0] / cpqn  ##/ cpqn #Account for cpqn.  X axis "Slice" item assignment here.
+            print("HERE, BABY")
+        except Exception as e:
+            print("fuckabitchnuggets", e)
+        all_points[self.cur_z] = cur_plane
+        self._points = midiart3D.restore_coords_array_from_ordered_dict(all_points)
         print("_points", self._points)
-        self._points[:, 0] = self._points[:, 0]  #Account for cpqn.  X axis "Slice" item assignment here.
+        #self._points[:, 0] = self._points[:, 0]
 
-
-        ##EXPERIMENTAL Stuff...
+        # #EXPERIMENTAL Stuff...
         # try:
         #     draw_indices = npi.indices(self._points, [i for i in indexer], axis=0)
         #     print("Draw_Indices", draw_indices)
@@ -163,6 +176,7 @@ class Actor(HasTraits):
         #     pass
         # print("BITCH, HERE2")
 
+        #int(i[0] / self.pianoroll._cells_per_qrtrnote)
 
         try:
             self.mayavi_view.sources[self.index].mlab_source.trait_set(points=self._points)    #TODO Redundant? Traitset happens on x axis item slice reassignment above.

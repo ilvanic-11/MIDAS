@@ -275,7 +275,7 @@ def get_points_from_ply( file_path, height=127):
     if not os.path.exists(file_path):
         raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), file_path)
 
-    ply = open3d.read_point_cloud(file_path)
+    ply = open3d.io.read_point_cloud(file_path)
     Data = numpy.asarray(ply.points)
     Data = Data + (0 - Data.min())
     Data = Data * (height/Data.max())
@@ -367,11 +367,11 @@ def delete_select_points( coords_array, choice_list):
 
 
 #3D-11.
-def get_planes_on_axis( coords_array, axis="z", ordered=False, clean=True):
+def get_planes_on_axis( coords_array, axis="z", ordered=False, clean=True, array=False):
     """
         This function acquires all the "planes" (2d instances of data) along a specified axis and puts them into an
     Ordered Dict. The order of the dict can be set.
-
+    #TODO Write this doc string better.
     :param coords_array:    Operand coords array.
     :param axis:            Axis along which the planes will be derived.
     :param ordered:         If ordered=True, the planes are set in order chronological order, else they remain as found
@@ -402,10 +402,11 @@ def get_planes_on_axis( coords_array, axis="z", ordered=False, clean=True):
         planes_dict = OrderedDict.fromkeys(i for i in axis_list)
 
     for i in planes_dict.keys():
-        planes_list = list()
-        for j in midiart.array_to_lists_of(coords_array, tupl=False):
-            if j[axis] == i:
-                planes_list.append(j)
+        if array is True:
+            planes_list = [j for j in coords_array if j[axis] == i]
+            planes_dict[i] = np.array(planes_list)
+        else:
+            planes_list = [j for j in midiart.array_to_lists_of(coords_array, tupl=False) if j[axis] == i]
             planes_dict[i] = planes_list
 
     #print(planes_dict.keys())
@@ -421,9 +422,7 @@ def restore_coords_array_from_ordered_dict(planes_odict):
     :param planes_odict:    An Ordered Dict of 2d numpy arrays.
     :return:                A coords_array.
     """
-    key_list = list()
-    for i in planes_odict.values():
-        key_list.append(i)
+    key_list = [i for i in planes_odict.values()]
     key_tupl = tuple(key_list)
     new_coords = np.vstack(key_tupl)
     return new_coords

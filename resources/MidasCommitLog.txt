@@ -431,8 +431,16 @@ In PianoRollPanel
 --> Completed self.Selection_Send() function working within the same zplane. This transform_xy method is the equivalent of a dragndrop on the same grid.
 --> Battled events, fixed some flag bugs.
 
+***All branches up to this point have been to Isaac's Mayavi Branch
 
+--IP --Commmit, December 30th, 2020
+In GitHub
+--> Did two test commits and created a new git branch entiteld "Adding Span and Velocity". This branch is intended to explore optimization. The mayavi branch is still for the tracks of thought on which I was already and am still working.
 
+--IP--Commit, January 1rst, 2021--> Branch = Isaac's Mayavi Branch
+In midiart3D
+--> Bug Fix0: changed open3d.read_point_cloud to open3d.io.read_point_cloud.
+--> Fixed an indent causing unnecessary loop calls in function get_planes_on_axis()
 
 ##Git adds. Update as needed. (Git can adds a LOT at once, if separated without commas.)
 git add MIDAS_wx.py gui/ActorsControlPanel.py gui/MainButtons.py  gui/MenuButtons.py gui/PianoRoll.py gui/PianoRollPanel.py gui/Preferences.py gui/ZPlanesControlPanel.py mayavi3D/Mayavi3DWindow.py mayavi3D/Mayavi3idiArtAnimation.py midas_scripts/midiart3D.py midas_scripts/music21funcs.py midas_scripts/musicode.py midas_scripts/midiart.py resources/Midas-Mayavi_Pip_Batch_Install.bat resources/MidasCommitLog.txt resources/Midas_Startup_Configs.py resources/HotkeyAssignments.txt 

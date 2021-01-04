@@ -570,12 +570,12 @@ class MainWindow(wx.Frame):
         if event.GetKeyCode() == wx.WXK_SHIFT and state.MiddleIsDown():
             print("Sending to scrolled Actor-->Shift and Middle down here.")
             pass
-            self.pianorollpanel.Selection_Send(self.pianorollpanel.selected_notes, self.zplane_scrolled, event=None, carry_to_z=True, carry_to_actor=True, array=False)
+            self.pianorollpanel.Selection_Send(self.pianorollpanel.selected_notes, self.zplane_scrolled, event=None, send_to_z=True, send_to_actor=True, array=False)
 
         #Send selected notes to self.zplane_scrolled.  Works
         elif event.GetKeyCode() == wx.WXK_ALT and state.MiddleIsDown():
             print("Sending to scrolled Zplane-->Alt and Middle down here.")
-            self.pianorollpanel.Selection_Send(self.pianorollpanel.selected_notes, self.zplane_scrolled, event=None, carry_to_z=True, array=False)
+            self.pianorollpanel.Selection_Send(self.pianorollpanel.selected_notes, self.zplane_scrolled, event=None, send_to_z=True, array=False)
             #TODO Attribute error expection here. Write.
 
         #Send selected notes to the pyshell as an np.array and as a music21.stream.Stream.
@@ -613,8 +613,8 @@ class MainWindow(wx.Frame):
             #The difference between our selection top_left and our target new location is our 'transform_value'.
             transform_value = (int(top_left[0][0]) - int(cell[0]), int(top_left[0][1]) - int(cell[1]))  #THIS WAY, we only have to ADD target times -1
             #without boolean condition gates.
-            #(2, 2) - (4, 4) = (-2, -2) Moving down and right we multiple by negative 1.
-            #(2, 2) - (0, 0) = (2, 2)   Moving up and left, we still multiply by negative 1.
+            #(2, 2) - (4, 4) = (-2, -2) Moving down and right (to -->(4,4)) we multiple by negative 1.
+            #(2, 2) - (0, 0) = (2, 2)   Moving up and left(to -->(0,0), we still multiply by negative 1.
 
             if not self.pianorollpanel.last_highlight:
                 last_highlight = self.pianorollpanel.previously_selected_cells
@@ -646,7 +646,7 @@ class MainWindow(wx.Frame):
 
             #Perform send.  Note: MAKE SURE THAT, if array=TRUE, that you are actually using an array as your input.
             self.pianorollpanel.Selection_Send(selection_array,
-                                        self.mayavi_view.CurrentActor().cur_z, event=None, carry_to_z=True, array=True, transform_xy=True)
+                                               self.mayavi_view.CurrentActor().cur_z, event=None, send_to_z=True, array=True, send_current=True)
 
             print("Last Highlight", last_highlight)
 
@@ -736,7 +736,8 @@ class MainWindow(wx.Frame):
 
         # Actor on startup.
         self.pianorollpanel.actorsctrlpanel.actorsListBox.new_actor(0)
-        self.mayavi_view.actors[0].change_points(MusicObjects.earth())
+        self.pianorollpanel.actorsctrlpanel.actorsListBox.new_actor(1)
+        #self.mayavi_view.actors[0].change_points(MusicObjects.earth())
 
 
 
