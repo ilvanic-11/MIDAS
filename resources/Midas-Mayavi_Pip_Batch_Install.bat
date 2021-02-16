@@ -6,7 +6,6 @@ python -m pip install --upgrade setuptools --user
 python -m pip install --upgrade numpy --user
 python -m pip install --upgrade numpy_indexed --user	
 python -m pip install --upgrade music21 --user
-python -m pip install --upgrade mlab --user
 python -m pip install --upgrade matlab --user
 python -m pip install --upgrade plotly --user
 python -m pip install --upgrade matplotlib --user
@@ -18,6 +17,7 @@ python -m pip install --upgrade vtk --user
 python -m pip install --upgrade traits --user
 python -m pip install --upgrade traitsui --user
 python -m pip install --upgrade mayavi --user
+python -m pip install --upgrade mlab --user
 ::python -m pip install mayavi=4.7.1 --user
 python -m pip install --upgrade open3d-python --user
 python -m pip install --upgrade pillow --user
@@ -28,6 +28,11 @@ python -m pip install --upgrade sympy --user
 python -m pip install --upgrade inspect --user
 python -m pip install --upgrade mido --user
 python -m pip install --upgrade blender --user
+
+
+::NOTE: if vtk, mayavi, traits doesn't build correctly, uninstall and run this .bat again. (There is a package that creates an whole new python directory for installation, I think it's vtk.)
+::NOTE: Traits builds from vtk, so packages that use traits need to be installed after vtk.
+
 
 ::pip install py3d
 ::pip install ipython

@@ -24,7 +24,7 @@ Midas Key Bindings
 
 "F11" -- Sets the Focus on the mainbuttonspanel.
 
-"F12" -- Currently not in use.
+"F12" -- Currently not in use. (F12 in the pycrust toggles a red cursors that allows one to delete '>>>'s in the shell.)
 
 #--File Menu--#
 ##Session 
@@ -100,9 +100,13 @@ Primary Interface Bindings.
 		MiddleDown() + Shift sends the current selection to the currently scrolled (Midas.actor_scrolled) of the actors list box, and ACTIVATES that actor as well.
 		MiddleDown() + Alt sends the current selection to the currently scrolled (Midas.zplane_scrolled) of the zplanes list box, and DOES NOT activate that zplane. 
 		MiddleDown() + Ctrl sends the selection to the pycrust as data in the from of a numpy np.array coords_array of points and as a music21.stream.Stream()
+		MiddleDown() + 'F' send the selection to the mouse's current position in the grid.
 		
 #Zplane Scrolling
 		After a selection has been made, we can push and pull it by small increments(to be added to preferences.) Press "F7" to set focus on the pianorollpanel.
 		Then, hold down CTRL+SHIFT+ALT and Scroll up to push the selection into the background (effectively making it quieter in terms of velocity) or Scroll down to pull it closer and louder.
 		
+Mayavi2 Key Bindings
+#############################################
+https://docs.enthought.com/mayavi/mayavi/application.html#keyboard-interaction
 
