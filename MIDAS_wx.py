@@ -526,11 +526,27 @@ class MainWindow(wx.Frame):
                 if event.GetWheelRotation() >= 120:
                     alb.Activate_Actor(self.actor_scrolled)
 
+                    #if not self.IsActorScrolling:
+                    # print(f"actor = {self.actor_scrolled}")
+                    # self.mayavi_view.cur_ActorIndex = self.actor_scrolled
+                    # self.mayavi_view.cur_z = self.mayavi_view.actors[self.actor_scrolled].cur_z
+                    # self.mayavi_view.cur_changed_flag = not self.mayavi_view.cur_changed_flag
+                    # self.GetTopLevelParent().pianorollpanel.pianoroll.ForceRefresh()
+
+
                 #zlb = self.pianorollpanel.Zplanesctrlpanel.actorsListBox
                 #While holding, scroll up once to activate new zplane.
                 elif event.GetWheelRotation() <= -120:
                     zlb.Activate_Zplane(self.zplane_scrolled)
-                  
+
+                    #if not self.IsZPlaneScrolling:
+                    # print(f"zplane = {self.zplane_scrolled}")
+                    # self.GetTopLevelParent().pianorollpanel.currentZplane = self.zplane_scrolled
+                    # self.GetTopLevelParent().mayavi_view.cur_z = self.zplane_scrolled
+                    # self.GetTopLevelParent().mayavi_view.CurrentActor().cur_z = self.zplane_scrolled
+                    # self.GetTopLevelParent().pianorollpanel.pianoroll.ForceRefresh()
+
+
                 #TODO Is this used?
                  # elif wx.GetMouseState().MiddleIsDown():
                 #

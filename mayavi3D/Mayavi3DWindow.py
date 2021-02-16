@@ -66,8 +66,9 @@ class Actor(HasTraits):
     _stream = Any()  #TODO For exporting, finish. Not used atm.
 
 
-    # new_array3d for *Experiment stuff
-    _draw_array3D = Array(dtype=np.int8, shape=(5000, 128, 128))
+    #array3d for *Experiment stuff
+    #_draw_array3D = Array(dtype=np.int8, shape=(5000, 128, 128))
+
 
 
     #For trait flagging.
