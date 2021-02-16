@@ -170,6 +170,8 @@ class CustomZPlanesListBox(wx.ListCtrl, CheckListCtrlMixin):
 
 		self.SetBackgroundColour((141, 141, 141))
 
+		self.m_v = self.GetTopLevelParent().mayavi_view
+
 
 		self.InsertColumn(0,"Visible", wx.LIST_FORMAT_CENTER, width=50)
 		self.InsertColumn(1,"ZPlane", wx.LIST_FORMAT_CENTER, width=64)  #1
@@ -184,25 +186,44 @@ class CustomZPlanesListBox(wx.ListCtrl, CheckListCtrlMixin):
 		self.Bind(wx.EVT_LIST_ITEM_ACTIVATED, self.OnListItemActivated)
 		
 	def OnListItemActivated(self, evt):
-		self.log.info("OnListItemActivated():")
-		# Change current zplane
-		
-		print(f"evt.Index = {evt.Index}, zplane = {self.filter[evt.Index]}")
-		self.GetTopLevelParent().pianorollpanel.currentZplane = self.filter[evt.Index]
-		self.GetTopLevelParent().mayavi_view.cur_z = self.filter[evt.Index]
-		self.GetTopLevelParent().mayavi_view.CurrentActor().cur_z = self.filter[evt.Index]
-		self.GetTopLevelParent().pianorollpanel.pianoroll.ForceRefresh()
+		self.Activate_Zplane(evt.index)
 
 
 	def Activate_Zplane(self, index):
+		self.prp = self.GetTopLevelParent().pianorollpanel
+		temp_prev_z = self.m_v.CurrentActor().previous_z
 		self.log.info("OnListItemActivated():")
-		# Change current zplane
 
+		#Account for previous zplane in all zplane changes. Since we're changing zplanes within this function, previous = cur here.
+		self.m_v.CurrentActor().previous_z = self.m_v.CurrentActor().cur_z
+
+
+
+		#CPQN compensatory call.
+		self.prp.pianoroll.AdjustCellsBasedOnCPQN(self.m_v.CurrentActor().previous_z, 1, self.m_v.CurrentActor().cpqn)
+
+		# Change current zplane
 		print(f"Index = {index}, zplane = {self.filter[index]}")
-		self.GetTopLevelParent().pianorollpanel.currentZplane = self.filter[index]
-		self.GetTopLevelParent().mayavi_view.cur_z = self.filter[index]
-		self.GetTopLevelParent().mayavi_view.CurrentActor().cur_z = self.filter[index]
-		self.GetTopLevelParent().pianorollpanel.pianoroll.ForceRefresh()
+		self.prp.currentZplane = self.filter[index]
+		self.m_v.cur_z = self.filter[index]
+		self.m_v.CurrentActor().cur_z = self.filter[index]
+		self.prp.pianoroll.ForceRefresh()
+
+		# Condition check for returning to the immediately previous zplane.
+		print("INDEX", index)
+		print("PREV_Z", self.m_v.CurrentActor().previous_z)
+		print("CPQN", self.m_v.CurrentActor().cpqn)
+
+		#For whatever reason, this check had to be called at the end of this function.
+		#A 'temp_prev_z' (ln 194) is stored as a local reference, since 'previous_z" is 'written to' in this function above (ln 198).
+		if temp_prev_z == index:  # If our new == our previous:
+			print("TRUE, BITCH")
+			# 'index', because we haven't changed cur_z to index yet....
+			# assert self.m_v.CurrentActor().previous_z == index, "Previous does not equal index."
+			self.prp.pianoroll.AdjustCellsBasedOnCPQN(index, self.m_v.CurrentActor().cpqn, 1)
+			print("TRUE, SLUT")
+		else:
+			pass
 
 
 	def OnGetItemText(self, item, column):

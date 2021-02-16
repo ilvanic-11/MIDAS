@@ -14,6 +14,7 @@ import numpy_indexed as npi
 import random
 import music21
 import wx    #TODO how to do simpler imports (i.e. just what we need instead of all of wx)
+from collections import OrderedDict
 
 
 from vtkmodules import vtkRenderingCore
@@ -64,8 +65,8 @@ class Actor(HasTraits):
     _array3D = Array(dtype=np.int8, shape=(5000, 128, 128))
     _stream = Any()  #TODO For exporting, finish. Not used atm.
 
-    # new_array3d for *Experiment stuff
-    _draw_array3D = Array(dtype=np.int8, shape=(5000, 128, 128))
+    #array3d for *Experiment stuff
+    #_draw_array3D = Array(dtype=np.int8, shape=(5000, 128, 128))
 
     #For trait flagging.
     array3Dchangedflag = Int()
@@ -73,7 +74,9 @@ class Actor(HasTraits):
     #streamchangedflag = Int()
 
     ##For trait-syncing.
-    cur_z = Int(90)            #Synced one-way to mayavi_view.cur_z trait.
+    cur_z = Int(90)  #         #Synced one-way to mayavi_view.cur_z trait.
+    previous_z = None
+
     color = Tuple(1., 0., 0.)  #Synced two_way with the pipeline's current_actor.property.color trait.
     position = Array()         #Synced two-way with the pipeline's current_actor.actor.actor.position trait.
 
@@ -90,6 +93,42 @@ class Actor(HasTraits):
         self.colors_instance = ""  #Denotes to what instance of a loaded color image this actor belongs. (call1, call2, etc.)
         self.part_num = 0  #For stream.Part purposes, used in colors function.
         self.priority = 0
+        self.cpqn = self.toplevel.pianorollpanel.pianoroll._cells_per_qrtrnote
+        self.old_cpqn = None
+
+
+        #*
+        #Working Attempt at individual array3Ds for every zplane.
+        #self._array3D_dict = OrderedDict(zip([i for i in range(0, 128, 1)],
+        #                          [self._array3D[:, :, i] for i in range(0, 128, 1)]))
+        #Restore method.   ***Would I need to restore?
+        #np.dstack([self._array3D_dict[i] for i in self._array3D_dict.keys()])
+        #*
+
+
+        ##Copied from traits_update function. I need these class attributes.
+        points = np.argwhere(self._array3D == 1.0)
+        try:
+            self._all_points = midiart3D.get_planes_on_axis(points, array=True)
+        except IndexError:
+            points = np.array(
+                [[0, 0, 0]])  # A temporary origin point that acts as a fill, so that get_planes on axis executes.
+
+            self._all_points = midiart3D.get_planes_on_axis(points, array=True)
+
+        try:
+            self._cur_plane = self._all_points[self.cur_z]  # Key error can happen here.... #TODO FIX
+            print("Type_Cur_Plane", type(self._cur_plane))
+            print(self._cur_plane)
+            self._cur_plane[:, 0] = self._cur_plane[:,
+                                    0] ##/ self.cpqn  # Account for cpqn. All 'x' values.  X axis "Slice" item assignment here.
+
+            print("HERE, BABY")
+            self._all_points[self.cur_z] = self._cur_plane
+        except Exception as e:
+            print(e)
+            print("Exception as e:", e)
+
 
         #_array3D = np.full([2500, 128, 128, 3], np.array([0, 1, 90]))
 
@@ -130,59 +169,53 @@ class Actor(HasTraits):
         print("actor_array3D_changed")
         print("actor_index  ", self.index)
 
-        cpqn = self.toplevel.pianorollpanel.pianoroll._cells_per_qrtrnote
-
-
-        # #EXPERIMENTAL Stuff...
-        # draw_points = np.argwhere(self._draw_array3D == 1.0)
-        # indexer = np.asarray(draw_points, dtype=np.float32)
-        # draw_points[:, 0] = draw_points[:, 0] / cpqn
-        # print("DRAW POINTS",  draw_points)
-        # print("DRAW_POINTS Type", type(draw_points), draw_points.dtype)
-
-
-        #self._points = np.argwhere(self._array3D == 1.0)
-        #self._points = np.vstack((self._points, draw_points))
+        #Reacquire
+        self.cpqn = self.toplevel.pianorollpanel.pianoroll._cells_per_qrtrnote
         print("_POINTS Type", type(self._points), self._points.dtype)
 
 
-        #Working stuff*
+        self.get_ON_points_as_odict()  #Returns an OrderedDict()
+        self._points = midiart3D.restore_coords_array_from_ordered_dict(self._all_points)
 
-        points = np.argwhere(self._array3D == 1.0)
-        all_points = midiart3D.get_planes_on_axis(points, array=True)
-        cur_plane = all_points[self.cur_z]
-        print("Type_Cur_Plane", type(cur_plane))
-        print(cur_plane)
-        #print("ARRAYCHECK", cur_plane[0])
-        #print("ARRAYTYPECHECK", type(cur_plane[0]))
-        try:
-            cur_plane[:, 0] = cur_plane[:, 0] / cpqn  ##/ cpqn #Account for cpqn.  X axis "Slice" item assignment here.
-            print("HERE, BABY")
-        except Exception as e:
-            print("fuckabitchnuggets", e)
-        all_points[self.cur_z] = cur_plane
-        self._points = midiart3D.restore_coords_array_from_ordered_dict(all_points)
+        #self._points = midiart3D.delete_select_points(self._points, [[0, 0, 0]], tupl=False)
+
         print("_points", self._points)
-        #self._points[:, 0] = self._points[:, 0]
-
-        # #EXPERIMENTAL Stuff...
-        # try:
-        #     draw_indices = npi.indices(self._points, [i for i in indexer], axis=0)
-        #     print("Draw_Indices", draw_indices)
-        #     for i in draw_indices:
-        #         self._points[i][0] = self._points[i][0] / cpqn    #The 'x' of our points gets refactored.
-        # except TypeError as e:
-        #     print("FUCKASS", e)
-        #     pass
-        # print("BITCH, HERE2")
-
-        #int(i[0] / self.pianoroll._cells_per_qrtrnote)
 
         try:
-            self.mayavi_view.sources[self.index].mlab_source.trait_set(points=self._points)    #TODO Redundant? Traitset happens on x axis item slice reassignment above.
-        except IndexError:
+            self.mayavi_view.sources[self.index].mlab_source.trait_set(
+                points=self._points)  # TODO Redundant? Traitset happens on x axis item slice reassignment above.
+            #NOTE: Cannot trait_set with an empty array, one without points. Clear instead? Workaround?
+        except Exception as e:
+            print("Error Here", e)
             pass
 
+
+    #Named weird, I don't f*((%king care right now.
+    def get_ON_points_as_odict(self):
+        points = np.argwhere(self._array3D == 1.0)
+        try:
+            self._all_points = midiart3D.get_planes_on_axis(points, array=True)
+        except IndexError:
+            points = np.array(
+                [[0, 0, 0]])  # A temporary origin point that acts as a fill, so that get_planes_on_axis executes.
+            # TODO Write in methods to delete this, so that midi exports don't have a stupid useless note in every file.
+            self._all_points = midiart3D.get_planes_on_axis(points, array=True)
+
+        # print("ARRAYCHECK", cur_plane[0])
+        # print("ARRAYTYPECHECK", type(cur_plane[0]))
+
+        try:
+            self._cur_plane = self._all_points[self.cur_z]  # Key error can happen here.... #TODO FIX
+            print("Type_Cur_Plane", type(self._cur_plane))
+            print(self._cur_plane)
+            self._cur_plane[:, 0] = self._cur_plane[:,    #TODO For selection sending between Actors, bool condition needed here to shut this off for those sends.
+                                    0] / self.cpqn    #CRITICAL: Account for cpqn. All 'x' values.  X axis "Slice" item assignment here.
+            print("HERE, BABY")
+            self._all_points[self.cur_z] = self._cur_plane
+        except Exception as e:
+            print(e)
+            print("Exception as e:", e)
+        #return self._all_points
 
     @on_trait_change("pointschangedflag")
     def actor_points_changed(self):
@@ -200,7 +233,7 @@ class Actor(HasTraits):
             try:
                 new_array3D[int(p[0]), int(p[1]), int(p[2])] = 1.0   #TODO Account for cpqn.  * cpqn
             except Exception as e:
-                print("EXCEPTION, BITCH", e)
+                print("EXCEPTION", e)
         self.mayavi_view.parent.pianorollpanel.pianoroll.cur_array3d = self._array3D = new_array3D
 
         #self._points[:, 0] = self._points[:, 0]
@@ -236,9 +269,11 @@ class Mayavi3idiView(HasTraits):
 
 
     cur_ActorIndex = Int()
+    previous_ActorIndex = None
     cur_z = Int()
 
     cpqn = Int(4)   #Startup cpqn
+    old_cpqn = None
 
     cpqn_changed_flag = Bool()
 
@@ -298,8 +333,11 @@ class Mayavi3idiView(HasTraits):
         self.clr_dict_list.update([("FLStudioColors", midiart.FLStudioColors)])
 
 
-        self.default_color_palette = self.clr_dict_list["FLStudioColors"]
-        self.default_mayavi_palette = midiart.convert_dict_colors(self.default_color_palette, invert=False)
+        self.default_color_palette = self.clr_dict_list["FLStudioColors"]  #Dict of ints
+
+        self.default_mayavi_palette = midiart.convert_dict_colors(self.default_color_palette, invert=False, both=True) #Dict of floats
+        #self.default_mayavi_palette = midiart.invert_dict_colors(self.default_color_palette, inPlace=False)
+
 
 
 
@@ -1264,6 +1302,10 @@ class Mayavi3idiView(HasTraits):
         for k in range(0, len(self.actors)):
             self.actors[k].index = k
         print("actor.index attributes reset")
+
+        if len(self.actors) == 0:
+            self.parent.pianorollpanel.last_actor = 0
+
 
 
     @on_trait_change('cpqn_changed_flag')

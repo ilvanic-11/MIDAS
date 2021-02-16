@@ -285,7 +285,7 @@ class CustomMenuBar(wx.MenuBar):
 
     def OnExport_Colors(self, event):
         print("Exporting Colors....")
-        self.mv = self.GetTopLevelParent().mayavi_view
+        self.mv = self.GetTopLevelParent().m_v
         print("evid", event.GetId())
         self.mv.colors_call = int(self.GetTopLevelParent().menuBar.colors.FindItemById(event.GetId()).GetItemLabelText())  ##.Name in wx(4.0.7)
 
@@ -443,7 +443,7 @@ class CustomMenuBar(wx.MenuBar):
 
         movie_maker = self.m_v.engine.scenes[0].scene.movie_maker
         length = (self.m_v.grid3d_span)
-        bpm_speed = self.GetTopLevelParent().mayavi_view.bpm    ###+ 60
+        bpm_speed = self.GetTopLevelParent().m_v.bpm    ###+ 60
         i_div = self.m_v.i_div
 
         print("# BPM:", bpm_speed)
@@ -879,29 +879,29 @@ class CustomMenuBar(wx.MenuBar):
             if dialog.input_span.GetLineText(0) == None:
                 pass
             else:
-                self.GetTopLevelParent().mayavi_view.grid3d_span = float(dialog.input_span.GetLineText(0))
+                self.GetTopLevelParent().m_v.grid3d_span = float(dialog.input_span.GetLineText(0))
             if dialog.input_bpm.GetLineText(0) == None:
                 pass
             else:
-                self.GetTopLevelParent().mayavi_view.bpm = float(dialog.input_bpm.GetLineText(0))
+                self.GetTopLevelParent().m_v.bpm = float(dialog.input_bpm.GetLineText(0))
             if dialog.input_i_div.GetLineText(0) == None:
                 pass
             else:
-                self.GetTopLevelParent().mayavi_view.i_div = float(dialog.input_i_div.GetLineText(0))
+                self.GetTopLevelParent().m_v.i_div = float(dialog.input_i_div.GetLineText(0))
 
             if dialog.popupCtrl.GetStringValue() == "FLStudioColors":
-                self.GetTopLevelParent().mayavi_view.default_color_palette = midiart.FLStudioColors
-                self.GetTopLevelParent().mayavi_view.default_mayavi_palette = \
-                    midiart.convert_dict_colors(self.GetTopLevelParent().mayavi_view.default_color_palette, invert=False)
-                self.GetTopLevelParent().mayavi_view.current_palette_name = "FLStudioColors"
+                self.GetTopLevelParent().m_v.default_color_palette = midiart.FLStudioColors
+                self.GetTopLevelParent().m_v.default_mayavi_palette = \
+                    midiart.convert_dict_colors(self.GetTopLevelParent().m_v.default_color_palette, invert=False)
+                self.GetTopLevelParent().m_v.current_palette_name = "FLStudioColors"
                 #print("FL Fuck")
             else:
-                self.GetTopLevelParent().mayavi_view.default_color_palette = midiart.get_color_palettes()[dialog.popupCtrl.GetStringValue()]
+                self.GetTopLevelParent().m_v.default_color_palette = midiart.get_color_palettes()[dialog.popupCtrl.GetStringValue()]
 
-                self.GetTopLevelParent().mayavi_view.default_mayavi_palette = \
-                    midiart.convert_dict_colors(self.GetTopLevelParent().mayavi_view.default_color_palette, invert=False)
+                self.GetTopLevelParent().m_v.default_mayavi_palette = \
+                    midiart.convert_dict_colors(self.GetTopLevelParent().m_v.default_color_palette, invert=False)
                     #A tuple R\B switch happens here; tuple is inverted.
-                self.GetTopLevelParent().mayavi_view.current_palette_name = dialog.popupCtrl.GetStringValue()
+                self.GetTopLevelParent().m_v.current_palette_name = dialog.popupCtrl.GetStringValue()
                 # print("Fuck3")
             #Set the focus on the mainbuttonspanel so "F" hotkeys will work immediately.
             self.GetTopLevelParent().mainbuttonspanel.SetFocus()
