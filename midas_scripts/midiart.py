@@ -63,6 +63,26 @@ import os
 ##Color Pallettes
 #------------------------
 ##--------------------------------------------
+# FLStudioColors = {   #Inverted from before..
+#     1:  (165, 209, 158),  # "Green"),
+#     2:  (186, 211, 159),  # "Pale Green"),
+#     3:  (208, 214, 161),  # "Teal"),
+#     4:  (216, 202, 163),  # "Light Blue"),
+#     5:  (219, 184, 165),  # "Blue"),
+#     6:  (222, 167, 168),  # "Violet"),
+#     7:  (222, 167, 188),  # "Purple"),
+#     8:  (222, 167, 209),  # "Fuschia"),
+#     9:  (214, 167, 221),  # "Pink"),
+#     10: (192, 165, 219),  # "Red"),
+#     11: (169, 163, 217),  # "Red-Orange"),
+#     12: (162, 175, 214),  # "Orange"),
+#     13: (160, 193, 212),  # "Orange-Yellow"),
+#     14: (158, 210, 209),  # "Yellow"),
+#     15: (158, 209, 189),  # "Yellow-Green"),
+#     16: (157, 209, 169)  # "Light-Green")
+# }
+
+#SAVE THIS, I'm testing something over the long term... #TODO 1\21\2021
 FLStudioColors = {
     1: (158, 209, 165),  # "Green"),
     2: (159, 211, 186),  # "Pale Green"),
@@ -82,6 +102,25 @@ FLStudioColors = {
     16: (169, 209, 157)  # "Light-Green")
 }
 
+# FLStudioMayaviColors = {
+#     1:  (0.6470588235294118, 0.8196078431372549, 0.6196078431372549 ),
+#     2:  (0.7294117647058823, 0.8274509803921568, 0.6235294117647059 ),
+#     3:  (0.8156862745098039, 0.8392156862745098, 0.6313725490196078 ),
+#     4:  (0.8470588235294118, 0.792156862745098,  0.6392156862745098 ),
+#     5:  (0.8588235294117647, 0.7215686274509804, 0.6470588235294118 ),
+#     6:  (0.8705882352941177, 0.6549019607843137, 0.6588235294117647 ),
+#     7:  (0.8705882352941177, 0.6549019607843137, 0.7372549019607844 ),
+#     8:  (0.8705882352941177, 0.6549019607843137, 0.8196078431372549 ),
+#     9:  (0.8392156862745098, 0.6549019607843137, 0.8666666666666667 ),
+#     10: (0.7529411764705882, 0.6470588235294118, 0.8588235294117647 ),
+#     11: (0.6627450980392157, 0.6392156862745098, 0.8509803921568627 ),
+#     12: (0.6352941176470588, 0.6862745098039216, 0.8392156862745098 ),
+#     13: (0.6274509803921569, 0.7568627450980392, 0.8313725490196079 ),
+#     14: (0.6196078431372549, 0.8235294117647058, 0.8196078431372549 ),
+#     15: (0.6196078431372549, 0.8196078431372549, 0.7411764705882353 ),
+#     16: (0.615686274509804,  0.8196078431372549, 0.6627450980392157 )}
+
+#DITTO
 FLStudioMayaviColors = {
     1: (0.6196078431372549, 0.8196078431372549, 0.6470588235294118),
     2: (0.6235294117647059, 0.8274509803921568, 0.7294117647058823),
@@ -1118,33 +1157,46 @@ def get_color_palettes(mypath=None, ncp=False):
 
 
 #MA-19.
-def convert_dict_colors(colors_dict, invert=False):
+def convert_dict_colors(colors_dict, invert=False, both=False):
     """
         Function to divide dict color tuple values by 255 for use in the mayavi view. Resulting values are floats thus:
         (0.0 <= a floating point number <= 1.0)
     :param colors_dict: Dict of colors, usually of 16 colors.
+    :param invert:      Parameter to switch the "R" value with the "B" value in the tuple, if true.
+    :parama both:       If true, both convert and invert will occur.
     :return: A deep copy of the input Dictionary.
     """
     new_dict = copy.deepcopy(colors_dict)
-    if invert is False:
+    if both is True:
         for i in new_dict.keys():
             #print(colors_92[i])
-            new_color = tuple([new_dict[i][0]/255, new_dict[i][1]/255, new_dict[i][2]/255])  ## Converts the color tuple to mayavi floats.
+            new_color = tuple([new_dict[i][2]/255, new_dict[i][1]/255, new_dict[i][0]/255])  ## Converts the color tuple to mayavi floats.
             new_dict[i] = new_color
-    if invert is True:
-        for i in new_dict.keys():
-            #print(colors_92[i])
-            new_color = tuple([new_dict[i][2], new_dict[i][1], new_dict[i][0]])  ## Converts the color tuple to mayavi floats.
-            new_dict[i] = new_color
+    else:
+        if invert is False:
+            for i in new_dict.keys():
+                #print(colors_92[i])
+                new_color = tuple([new_dict[i][0]/255, new_dict[i][1]/255, new_dict[i][2]/255])  ## Converts the color tuple to mayavi floats.
+                new_dict[i] = new_color
+        if invert is True:
+            for i in new_dict.keys():
+                #print(colors_92[i])
+                new_color = tuple([new_dict[i][2], new_dict[i][1], new_dict[i][0]])
+                new_dict[i] = new_color
 
     return new_dict
 
 
-def invert_dict_colors(colors_dict):
-    new_dict = copy.deepcopy(colors_dict)
+#TODO Make dedicated? Redundant?
+def invert_dict_colors(colors_dict, inPlace=False):
+    if inPlace:
+        new_dict = colors_dict
+    else:
+        new_dict = copy.deepcopy(colors_dict)
+
     for i in new_dict.keys():
         #print(colors_92[i])
-        new_color = tuple([new_dict[i][2], new_dict[i][1], new_dict[i][0]])  ## Converts the color tuple to mayavi floats.
+        new_color = tuple([new_dict[i][2], new_dict[i][1], new_dict[i][0]])  ## Inverts the color tuple.
         new_dict[i] = new_color
 
     return new_dict
@@ -1179,10 +1231,10 @@ def convert_rgb_to_ncp(palettes=None):
 def cv2_tuple_reconversion(image, inPlace=False, conversion ='Edges'):
     """
     Function to take the cv2.Canny transformation function of opencv-python, and return the equivalent 'original' format
-    np.array for the edges. (same for monochrome, or whatever cv transformation you did.)
+    np.array for the 'edges'. (same for monochrome, or whatever cv transformation you did.)
     ---(i.e. Canny, cvtColor(image, cv2.COLOR_BGR2GRAY))
-    The original image is 3D array(2D of color tuples, while a Canny array is a 2D array of single values, the result
-    of the edge detection, which is not the same format as the original.
+    The original image is a 3D array(2D of color tuples, while a Canny array is a 2D array of single values, the result
+    of the edge detection, which is not the same format as the original.)
 
     :param image:       A cv2.imread(r"filepath") image.
     :param inPlace:     Bool determining whether to operate on original image in place and return it, or to return a new one.

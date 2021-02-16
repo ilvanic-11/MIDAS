@@ -425,12 +425,42 @@ In MIDAS_UnitTests.py
 --> Eliminated redundant imports at the top.
 
 
---IP--Commit, December 24th, 2020
+--IP--Commit, December 24th-January 4th, 2020
 In PianoRollPanel
 --> Renamed(refactored) function self.clear_out() to self.clear_out_highlight
 --> Completed self.Selection_Send() function working within the same zplane. This transform_xy method is the equivalent of a dragndrop on the same grid.
 --> Battled events, fixed some flag bugs.
 
+
+--IP--Commit February 15th, 2021-- (Dual Commit, to be merged.)
+Branch: --> Isaacs_Mayavi_Branch
+In PianoRollPanel
+--> Fixed bug for zplane pushing (changed mistake self.last_push to self.zplane_scrolled on line 415)
+--> In addition, completely changed zplane pushing, accounting for all 'send 'to-and-from'' conditions. Works within the "CurrentActor()," not working yet when sending between actors.
+In midiart
+--> Inverted the "FLStudioColors" and "FLStudioMayaviColors" dicts. Since a lot of functions call for the (1-16) keys, most things don't break from this change. Fixed a new_actor() colors bug. (still having problems with inverted colors, eventually will all need overhaul)
+--> Tweaked the kwargs in the function midiart.convert_dict_colors(), fixed a small problem with startup.
+In midiart3D
+--> Tweaked function midiart3D.delete_select_points(). Changed a for loop to a list comprehension. Modified an inside function's kwarg. (ln 351 in midiart3D: from tupl=False --to--> tupl=tupl)
+----->Main fix
+In pianoroll, pianorollpanel, zplanesctrlpanel, Mayavi3DWindow(mainly pianoroll)
+--> In pianoroll, used code within ChangeCellsPerQrtrNote() to create another function called AdjustCellsBasedOnCPQN(). Called at the beginning of zplaneslistbox.Activate_Zplane(), a major cpqn problem\bug has been solved with a workaround. (The zplane\cpqn bug.)
+---------------
+In Mayavi3DWindow
+--> Added traits attribute self.previous_ActorIndex, a sister attribute to cur_ActorIndex index, but referring to the last\'previous' actor activated. 
+In Actor class
+--> Added traits attribute self.previous_z, a sister attribute to cur_z, but referring to the last\'previous' zplane activated. 
+In ZPlanesControlPanel.zplaneslistbox
+--> Modified the Activate_Zplane()\OnZplanesListItemActivated() function to update the self.mayavi_view.CurrentActor().previous_z attribute upon changing\'activating' a new zplane.
+--> Added an if\else check in the Activate_Zplane() function for the scenario of switching back and forth between the same zplanes.
+In ActorsControlPanel.actorListBox
+--> Modified the Activate_Actor()\OnListItemActivated() functions to update the self.mayavi_view.previous_ActorIndex attribute upon changing\'activating' a new actor. (These allow for new event dynamics.)
+
+--ZP--Comit February 15th, 2021-- (Dual Commit, to be merged.)
+In musicode, menuBar, mainbuttons, 
+--> Implemented change where the musicodes are not loaded on startup. They are loaded the first time the 'musicode' main button is clicked.
+In pianorollpanel, pianoroll
+--> Cleaned up hash garbage and redundant calls to speed up drawing. 
 
 
 
@@ -438,7 +468,6 @@ In PianoRollPanel
 git add MIDAS_wx.py gui/ActorsControlPanel.py gui/MainButtons.py  gui/MenuButtons.py gui/PianoRoll.py gui/PianoRollPanel.py gui/Preferences.py gui/ZPlanesControlPanel.py mayavi3D/Mayavi3DWindow.py mayavi3D/Mayavi3idiArtAnimation.py midas_scripts/midiart3D.py midas_scripts/music21funcs.py midas_scripts/musicode.py midas_scripts/midiart.py resources/Midas-Mayavi_Pip_Batch_Install.bat resources/MidasCommitLog.txt resources/Midas_Startup_Configs.py resources/HotkeyAssignments.txt 
 ##
 
-Ballsack!!!!!
 
 git add test/MIDAS_UnitTests.py 
 resources/intermediary_path/Lotus 004.png
