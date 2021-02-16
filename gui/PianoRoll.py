@@ -126,7 +126,7 @@ class PianoRollDataTable(wx.grid.GridTableBase):
                 return ""
             self.log.debug(f"ZZZ = {z} type:")
             self.log.debug(type(z))
-            return str(int(self.pianorollpanel.GetTopLevelParent().mayavi_view.CurrentActor()._array3D[int(col)][127-row][z]))
+            return str(int(self.pianorollpanel.GetTopLevelParent().mayavi_view.CurrentActor()._array3D[int(col)][127 - row][z]))
 
         else:
             return ""
@@ -142,8 +142,8 @@ class PianoRollDataTable(wx.grid.GridTableBase):
 
             #TODO Be minddful of these ints() when debugging.   col/self.pianorollpanel.pianoroll._cells_per_qrtrnote
 
-            self.pianorollpanel.GetTopLevelParent().mayavi_view.CurrentActor()._draw_array3D[int(col)][127-row][z] = int(value)
-            self.pianorollpanel.GetTopLevelParent().mayavi_view.CurrentActor()._array3D[int(col)][127-row][z] = int(value)
+            #self.pianorollpanel.GetTopLevelParent().mayavi_view.CurrentActor()._draw_array3D[int(col)][127-row][z] = int(value)
+            self.pianorollpanel.GetTopLevelParent().mayavi_view.CurrentActor()._array3D[int(col)][127 - row][z] = int(value)
 
 
     def AppendCols(self, numCols=1, updateLables=True):
@@ -347,7 +347,7 @@ class PianoRoll(wx.grid.Grid, glr.GridWithLabelRenderersMixin):
         print("SCROLLRATE:", self.GetScrollPixelsPerUnit())
 
         #Pixels == Scroll-ticks here.
-        self.Scroll((viewstart[0] + self.last_known_pos[0] - 60), self.last_known_scrollY * scrollrate_y)  #...new_s_v-19
+        self.Scroll((viewstart[0] + self.last_known_pos[0] - 60), self.last_known_scrollY * scrollrate_y)  #38 is the label compensation value.    new_s_v-19
         #wx.CallLater(1000, self.SetScrollRate, x=100, y=100)
         wx.CallAfter(self.m_v.new_reticle_box)
 
@@ -475,21 +475,20 @@ class PianoRoll(wx.grid.Grid, glr.GridWithLabelRenderersMixin):
         #print("Here5.")
 
 
-    def ChangeCellsPerQrtrNote(self, newvalue):
-        if newvalue == self._cells_per_qrtrnote:
+    def ChangeCellsPerQrtrNote(self, newcpqnvalue):
+        if newcpqnvalue == self._cells_per_qrtrnote:
             pass
-        else:
-            oldvalue = self._cells_per_qrtrnote
-            self._cells_per_qrtrnote = newvalue
+        self.m_v.CurrentActor().old_cpqn = self._cells_per_qrtrnote
+        self.m_v.CurrentActor().cpqn = newcpqnvalue
+        self._cells_per_qrtrnote = newcpqnvalue
 
         # Clear grid
         self.ClearGrid()
         #print("Here5.1")
-
         #Change number of columns
         oldNumCols = self._table.GetNumberCols()
         #print("Here5.2")
-        newNumCols = int((newvalue / oldvalue) * oldNumCols)
+        newNumCols = int((newcpqnvalue / self.m_v.CurrentActor().old_cpqn * oldNumCols))
         #print("Here5.3")
         if newNumCols > oldNumCols:
             #print("Here5.4, --newNumCols is >")
@@ -500,41 +499,71 @@ class PianoRoll(wx.grid.Grid, glr.GridWithLabelRenderersMixin):
             self._table.DeleteCols(0, oldNumCols - newNumCols, True)
             #print("Here5.6.")
 
-
-        #self.GetTopLevelParent().pianorollpanel.pianoroll.SetCellValue()
-
         #Reset Grid
         self.DrawColumnLabels()
         #Reset Mayavi representative values by factoring cpqn.
         #--> Here.
 
-        #TODO GRID CELLS ADJUSTMENT HERE, MAH BITCH!
-        #Todo Condition check for successive factoring
+        self.AdjustCellsBasedOnCPQN(self.m_v.CurrentActor().cur_z, newcpqnvalue, self.m_v.CurrentActor().old_cpqn)
+        print("Adjusted successfully.")
 
-        cells_change = np.argwhere(self.m_v.CurrentActor()._array3D[:, :, self.m_v.CurrentActor().cur_z] == 1.0)
-        cells_change[:, 1] = cells_change[:, 1] - 127
-        cells_change[:, 1] = cells_change[:, 1] * -1
-        for q in cells_change:
-            self.SetCellValue(q[1], q[0], '0')
-
-        print("Cells_change", cells_change)
-        print("Cells_change_type", type(cells_change))
-        if newvalue > oldvalue:
-            cells_change[:, 0] = cells_change[:, 0] * newvalue
-        elif newvalue < oldvalue:
-            cells_change[:, 0] = cells_change[:, 0] / (oldvalue/newvalue)  #This method won't work if dealing with odd-metered time signatures.
-        elif newvalue == oldvalue:
-            cells_change[:, 0] = cells_change[:, 0]
+        # TODO GRID CELLS ADJUSTMENT HERE, MAH BITCH!
+        # Todo Condition check for successive factoring
 
 
-        for q in cells_change:
-            self.SetCellValue(q[1], q[0], '1')
-        print("Cells_CHANGED", cells_change)
+        # print("Here6.")
+
+        # Draw notes based on the saved stream
+        # self.StreamToGrid(self.stream) #TODO WE don't use a stream here anymore?
+
+        #self.m_v.CurrentActor().array3Dchangedflag = not self.m_v.CurrentActor().array3Dchangedflag
+
         #print("Here6.")
 
         # Draw notes based on the saved stream
         #self.StreamToGrid(self.stream) #TODO WE don't use a stream here anymore?
-        #self.m_v.CurrentActor().array3Dchangedflag = not self.m_v.CurrentActor().array3Dchangedflag
+
+
+    def AdjustCellsBasedOnCPQN(self, zplane, newcpqnvalue, oldcpqnvalue):
+        """
+        This functions operates on the selected zplane and changes all the cells in that selected grid by factoring in
+        newvalue. Newvalue will always be a new cellsperqrtrnote value. (i.e. If cpqn was 1, and we're changing it to 4,
+        all cells in the wx.Grid will be multiplied by a factor of 4)
+        :param zplane:      Operand zplane, established as an Int.
+        :param newcpqnvalue:    New cells per qrtr note value to which we are changing.
+        :return:            N\A
+        """
+
+
+        cells_change = np.argwhere(self.m_v.CurrentActor()._array3D[:, :,
+                                   zplane] == 1.0)  # CRITICAL--> current zplane only.
+        cells_change[:, 1] = cells_change[:, 1] - 127
+        cells_change[:, 1] = cells_change[:, 1] * -1
+        # These two lines of code do the inverse of all that '-127' stuff. It gets the original value before that compensation.
+
+        # Eliminate old.
+        for q in cells_change:
+            # self._table.SetValue(q[1], q[0], '0')
+            self.SetCellValue(q[1], q[0], '0')
+        print("Cells_change", cells_change)
+        print("Cells_change_type", type(cells_change))
+
+        if newcpqnvalue > oldcpqnvalue:
+            cells_change[:, 0] = cells_change[:, 0] * (newcpqnvalue / oldcpqnvalue)
+        elif newcpqnvalue < oldcpqnvalue:
+            cells_change[:, 0] = cells_change[:, 0] * (newcpqnvalue / oldcpqnvalue)
+            # TODO Changing from one cpqn to another is producing an inaccurate display, FIXED.
+                     # NOTE: This method won't work if dealing with odd-metered time signatures.
+        elif newcpqnvalue == oldcpqnvalue:
+            cells_change[:, 0] = cells_change[:, 0]
+
+        # Establish new.
+        for q in cells_change:
+            # self._table.SetValue(q[1], q[0], '1')
+            self.SetCellValue(q[1], q[0], '1')
+        print("Cells_CHANGED", cells_change)
+
+        #TODO Return to this for implementing duration data.
 
 
     def GetCellsPerQrtrNote(self):
@@ -685,7 +714,7 @@ class PianoRoll(wx.grid.Grid, glr.GridWithLabelRenderersMixin):
 
     def OnCellSelected(self, evt):
         self.log.info("onCellSelected():")
-        #self.FSetCellValue(evt.Row, evt.Col, "1")
+        #self.SetCellValue(evt.Row, evt.Col, "1")
         #self.DeselectCell(evt.GetRow(), evt.GetCol())
         evt.Skip()
 
@@ -794,7 +823,7 @@ class PianoRoll(wx.grid.Grid, glr.GridWithLabelRenderersMixin):
         #-----------
         self._table.SetValue(row, col, val)
 
-        #self.SetCellValue(row, col, val)
+        #self.SetCellValue(row, col/self._cells_per_qrtrnote, val)
 
         #print("X", x)
         #zplane = self.GetTopLevelParent().pianorollpanel.currentZplane
@@ -804,6 +833,7 @@ class PianoRoll(wx.grid.Grid, glr.GridWithLabelRenderersMixin):
         #self.m_v.CurrentActor()._array3D[int(col / self._cells_per_qrtrnote)][127 - row][zplane] = int(val)
 
 
+        #self.m_v.CurrentActor().array3Dchangedflag = not self.m_v.CurrentActor().array3Dchangedflag
         self.SetCellSize(row, col, new_sy, new_sx)
 
     ######

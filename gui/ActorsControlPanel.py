@@ -16,7 +16,7 @@ class ActorsControlPanel(wx.Panel):
         self.log = log
 
         self.actorsListBox = CustomActorsListBox(self, log)
-        self.mayavi_view = self.GetTopLevelParent().mayavi_view
+        self.m_v = self.GetTopLevelParent().mayavi_view
         self.toolbar = wx.ToolBar(self, -1, wx.DefaultPosition, wx.DefaultSize, style=wx.TB_HORIZONTAL)
         self.SetupToolBar()
 
@@ -314,26 +314,26 @@ class CustomActorsListBox(wx.ListCtrl):
 
         self.showall = True
 
-        self.mayavi_view = self.GetTopLevelParent().mayavi_view
+        self.m_v = self.GetTopLevelParent().mayavi_view
 
         self.Bind(wx.EVT_LIST_ITEM_ACTIVATED, self.OnActorsListItemActivated)
 
 
     def OnActorsListItemActivated(self, evt):
-        self.log.info("OnListItemActivated():")
-        print(f"evt.Index = {evt.Index}")
-        self.mayavi_view.cur_ActorIndex = evt.Index
-        self.mayavi_view.cur_z = self.mayavi_view.actors[evt.Index].cur_z
-        self.mayavi_view.cur_changed_flag = not self.mayavi_view.cur_changed_flag
-        self.GetTopLevelParent().pianorollpanel.pianoroll.ForceRefresh()
+        self.Activate_Actor(evt.index)
 
 
     def Activate_Actor(self, index):
         self.log.info("OnListItemActivated():")
         print(f"Index = {index}")
-        self.mayavi_view.cur_ActorIndex = index
-        self.mayavi_view.cur_z = self.mayavi_view.actors[index].cur_z
-        self.mayavi_view.cur_changed_flag = not self.mayavi_view.cur_changed_flag
+
+        #Account for previous_ActorIndex in all cur_ActorIndex changes. Since we're changing within this function, previous = cur here.
+        self.m_v.previous_ActorIndex = self.m_v.cur_ActorIndex
+
+
+        self.m_v.cur_ActorIndex = index
+        self.m_v.cur_z = self.m_v.actors[index].cur_z
+        self.m_v.cur_changed_flag = not self.m_v.cur_changed_flag
         self.GetTopLevelParent().pianorollpanel.pianoroll.ForceRefresh()
 
 
@@ -347,27 +347,28 @@ class CustomActorsListBox(wx.ListCtrl):
 
         #TODO Account for noncolorscall deletion.
         #TODO Make palette calls consistent.
-        if self.mayavi_view.number_of_noncolorscall_actors > 16:
-            color = self.mayavi_view.default_color_palette[1]
+        if self.m_v.number_of_noncolorscall_actors > 16:
+            color = self.m_v.default_color_palette[1]
             #SWAP HERE.
             color = tuple([color[2] / 255, color[1] / 255, color[0] / 255])     #TODO THIS explains the colors_dicts inversion bug.... 11/25/2020
-            self.mayavi_view.number_of_noncolorscall_actors = 1  # The count starts over.
+            self.m_v.number_of_noncolorscall_actors = 1  # The count starts over.
         else:
             if i == 16:
-                color = self.mayavi_view.default_mayavi_palette[i]
+                color = self.m_v.default_mayavi_palette[i]
                 # SWAP HERE.
                 color = tuple([color[2], color[1], color[0]])
             elif i > 16:
                 color_index = 0
-                color = self.mayavi_view.default_mayavi_palette[color_index + 1]
+                color = self.m_v.default_mayavi_palette[color_index + 1]
                 # SWAP HERE.
                 color = tuple([color[2], color[1], color[0]])
             else:
-                color = self.mayavi_view.default_mayavi_palette[i + 1]
+                color = self.m_v.default_mayavi_palette[i + 1]
+                print("'i' HERE", i + 1)
                 #SWAP HERE.
                 color = tuple([color[2], color[1], color[0]])
-        self.mayavi_view.append_actor(name, color) #Subsequent actors selected from color_palette..
-        self.mayavi_view.number_of_noncolorscall_actors += 1
+        self.m_v.append_actor(name, color) #Subsequent actors selected from color_palette..
+        self.m_v.number_of_noncolorscall_actors += 1
 
         #TODO Go by .number_of_noncolor_actors instead of i? ( for the colors)
         #TODO Differentiate between colors_calls new actors and 'normal' new actors?
