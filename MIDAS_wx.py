@@ -515,23 +515,15 @@ class MainWindow(wx.Frame):
                 #Correct Highlight all.
                 self.IsActorScrolling = False
                 self.IsZPlaneScrolling = False
-                #alb = self.pianorollpanel.actorsctrlpanel.actorsListBox
+
 
                 #While holding, scroll up once to activate new actor.
                 if event.GetWheelRotation() >= 120:
                     alb.Activate_Actor(self.actor_scrolled)
 
-                #zlb = self.pianorollpanel.Zplanesctrlpanel.actorsListBox
                 #While holding, scroll up once to activate new zplane.
                 elif event.GetWheelRotation() <= -120:
                     zlb.Activate_Zplane(self.zplane_scrolled)
-                  
-                #TODO Is this used?
-                 # elif wx.GetMouseState().MiddleIsDown():
-                #
-                #     print("Middle-click zooming...")
-                #     self.pianorollpanel.Selection_Send(self.pianorollpanel.selected_notes, self.zplane_scrolled, event=None,
-                #                                        carry_to_z=True, array=False)
 
         event.Skip()
 
