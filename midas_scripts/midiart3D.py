@@ -10,7 +10,7 @@
 #               music21 is Copyright © 2006-19 Michael Scott Cuthbert and the music21
 #				Project
 #				mayavi #TODO: Add mayavi copyright info
-#               
+#
 # License:      LGPL or BSD, see license.txt
 #------------------------------------------------------------------------------------
 
@@ -63,7 +63,6 @@ def extract_xyz_coordinates_to_array( in_stream, velocities=90.0):
     """
         This functions extracts the int values of the offsets, pitches, and velocities of a music21 stream's notes and
     puts them into a common 2d numpy coords_array as floats.
-
     :param in_stream:               Music21 input stream. (for 3d purposes the stream must contain stream.Parts)
     :return: note_coordinates:      A numpy array comprised of x=note.offset, y=pitch.midi, and z=volume.velocity.
     """
@@ -114,7 +113,6 @@ def extract_xyz_coordinates_to_stream( coords_array, part=False):
         This function takes a numpy array of coordinates, 3 x, y, z values per coordinates, and turns it into a music21
     stream with those coordinates as .offset, .pitch, and .volume.velocity values for x, y, and z. ---Note for user.
     If note.quarterLength and note.volume.velocity are unassigned, they default to 1.0 and None respectively.
-
     :param coords_array:        A 2D Numpy array of coordinate data.
     :param part:                A bool kwarg of separate_notes_to_parts_by_velocity().
     :return: parts_stream:      A music21 stream.
@@ -156,7 +154,6 @@ def insert_instrument_into_parts( in_stream, midi_num=0):
     is still developing? This function assigns musical instruments to the parts of a music21 stream. It assigns only one
     instrument to all
     of them.
-
     :param in_stream:   Stream to be modified.
     :param midi_num:    music21.instrument.Instrument.midiProgram number assigning which programmed instruments to
                         the iterated parts.
@@ -173,7 +170,6 @@ def partition_instruments_by_random( in_stream):
         This function executes inPlace where an instrument object is inserted into the beginning of every stream.Part
     in the top m21.stream.Stream with a randomly assigned m21.instrument.instrument().midiProgram value. The working
     values are shown in the below list. This list is subject to change upon updates to music21.
-
     :param in_stream:  music21.stream.Stream with Parts.
     :return:           in_stream
     """
@@ -198,7 +194,6 @@ def rotate_point_about_axis( x, y, z, axis, degrees):
     """
         This function is a base function for performing coordinate rotations on points. It takes one point and uses
     trigonometry (sohcahtoa) to rotate that point as if around an axis, changing its value accordingly.
-
     :param x:           The x axis value.
     :param y:           The y axis value.
     :param z:           The z axis value.
@@ -225,7 +220,6 @@ def rotate_point_about_axis( x, y, z, axis, degrees):
 def rotate_array_points_about_axis( points, axis, degrees):
     """
         This function uses rotate_point_about_axis on a large scale of points.
-
     :param points:      Coords_array of points.
     :param axis:        Axis of rotation.
     :param degrees:     Degrees (0-360) of rotation.
@@ -262,7 +256,6 @@ def get_points_from_ply( file_path, height=127):
         Returns a 2D numpy array of coordinates from a .ply file, adjusted into floating point value, and transformed
     based on the users input. Input can be positive or negative. For 3idiArt purpoes, object values should all be
     positive.
-
     :param file_path:   File path.
     :param height:      Value up to 127. (Preferably not lower than 50)
     :return:            2d numpy array.
@@ -292,7 +285,6 @@ def write_ply_from_points( coords_array, file_path):
 
     """
         Function in progress.....TODO FINISH IT!!
-
     :param coords_array:
     :param file_path:
     :return:
@@ -324,7 +316,6 @@ def delete_redundant_points( coords_array, stray=True):
     """
         This function deletes duplicate points, as well as a possible stray value which ends up being the last value in
     the coords_array.
-
     :param coords_array:    A 2D numpy array of coordinates.
     :param stray:           Deletes the last value (a stray) of the coords_array.
     :return:                New coords_array.
@@ -344,24 +335,25 @@ def delete_redundant_points( coords_array, stray=True):
     return array
 
 #3D-10.
-def delete_select_points( coords_array, choice_list):
+def delete_select_points(coords_array, choice_list, tupl=False):
     """
         Deletes user defined list of points, specified as a list of lists.
-
     :param coords_array:    Operand coords_array.
     :param choice_list:     Specified points to be deleted.
     :return:                New coords_array.
     """
-    from midas_scripts import midiart
+    #from midas_scripts import midiart
+
     if coords_array.ndim == 3:
         dim = 3
     else:
         dim = 2
-    set_list = midiart.array_to_lists_of(coords_array, tupl=True)
-    new_list = list()
-    for i in set_list:
-        if i not in choice_list:
-            new_list.append(i)
+    set_list = midiart.array_to_lists_of(coords_array, tupl=tupl)
+    new_list = [i for i in set_list if i not in choice_list]
+    # new_list = list()
+    # for i in set_list:
+    #     if i not in choice_list:
+    #         new_list.append(i)
     new_array = midiart.lists_of_to_array(new_list, dim)
     return new_array
 
@@ -374,12 +366,12 @@ def get_planes_on_axis( coords_array, axis="z", ordered=False, clean=True, array
     #TODO Write this doc string better.
     :param coords_array:    Operand coords array.
     :param axis:            Axis along which the planes will be derived.
-    :param ordered:         If ordered=True, the planes are set in order chronological order, else they remain as found
+    :param ordered:         If ordered=True, the points are set in order numerological order, else they remain as found
                             from original data.. #TODO More testing? Some examples seem not to be ordered correctly....
     :param clean:           If true, redundant\duplicate coords will be deleted.
+    :param array:           If true, dict values will be 2D arrays of coords instead of lists of coords.
     :return:                An Ordered Dictionary.
     """
-
 
     if clean == True:
         coords_array = delete_redundant_points(coords_array, stray=False) #TODO See if stray will still need to be true for scans.
@@ -395,7 +387,7 @@ def get_planes_on_axis( coords_array, axis="z", ordered=False, clean=True, array
     else:
         axis = 0
 
-    axis_list = [z for z in coords_array[:, axis].flatten()]
+    axis_list = [z for z in coords_array[:, axis].flatten()]  #is .flatten() necessary? It ran without it...
     planes_dict = OrderedDict.fromkeys(i for i in coords_array[:, axis].flatten())
     if ordered:
         axis_list.sort()
@@ -418,7 +410,6 @@ def restore_coords_array_from_ordered_dict(planes_odict):
     """
         The sister function to get_planes_on_axis, this function restores those planes from an Ordered Dict back into a
     coords_array.
-
     :param planes_odict:    An Ordered Dict of 2d numpy arrays.
     :return:                A coords_array.
     """
@@ -434,7 +425,6 @@ def transform_points_by_axis(coords_array, offset=0, axis='y', center_axis=False
         This function moves points in a point cloud in a + or - direction on a selected axis. If center_axis is true,
     object is moved to zero on that axis. If positive_octant is true, all axes are centered in the positive octant.
     Operates inPlace.
-
     :param coords_array:    2D numpy array of coordinates.
     :param axis:            Axis of "x", "y", and "z" in the manner of a Euclidian grid.
     :param offset:          Value for points to be moved on an axis.
@@ -498,21 +488,15 @@ def make_vtk_points_mesh( points):
 def BPM_to_FPS(bpm, i_div, timesig = None):
     """
         This function calculates a fps value from a bpm value.
-
         We ask: What is the equation for fps given the bpm and the frames per beat?
     For our purposes:
     bpmm = beats per measure
-
     steps value = 1/i_div
     4 steps == 1 Measure
-
     i_div*bpmm = frames per measure
     fpm/bpmm = frames per beat
-
     **(bpm * ((i_div*bpmm)\bpmm))\60 = fps **
-
     Therefore, fpb == i_div.
-
     (bpm * fpb)\60 = fps
     :param bpm:     Beats per minute
     :param bpmm:    Beats per measure.
@@ -529,4 +513,3 @@ def BPM_to_FPS(bpm, i_div, timesig = None):
     fps = (bpm * i_div)/60
     #modulo = (bpm * fps) % 60
     return fps
-

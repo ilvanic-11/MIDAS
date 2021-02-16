@@ -981,6 +981,7 @@ class PianoRollPanel(wx.Panel):
         # self.selecting_cells_array = np.array([self.selecting_cells])
         # print("SCA", self.selecting_cells_array)
 
+
         self.tuple_edges_list = [tuple(i) for i in self.all_edges]
 
         self.difference = set(self.selecting_cells).difference(set(self.tuple_edges_list))  #Cells that aren't edges.
@@ -1025,6 +1026,7 @@ class PianoRollPanel(wx.Panel):
 
 
         #print("You are selecting and highlighting the following cells: ", self.selecting_cells)
+
 
     def establish_rowscols_variables(self, top_left, bottom_right):
         #For debugging.....
