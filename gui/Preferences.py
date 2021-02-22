@@ -79,7 +79,6 @@ class PreferencesDialog(wx.Dialog):
         sizerMain.Add(self.comboCtrl, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL, 1)
         sizerMain.Add(topsizer, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL, 1)
         sizerMain.Add(btnsizer, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL, 1)
-        print("PENIS")
         self.SetSizerAndFit(sizerMain)
 
 
@@ -309,12 +308,12 @@ def _background_changed(self, value):
         s = value[0] + value[1] + value[2]
         if s <= 1.0:
             p.color = (1,1,1)
-            #BUGm.set_outline_color(1,1,1)
-            m.outline_color = (1,1,1)
+            m.set_outline_color(1,1,1)
+            #m.outline_color = (1,1,1)
         else:
             p.color = (0,0,0)
-            #BUG m.set_outline_color(0,0,0)
-            m.outline_color = (0,0,0)
+            m.set_outline_color(0,0,0)
+            #m.outline_color = (0,0,0)
         self.render()
 
 def restore_window(ui, is_popup=False):

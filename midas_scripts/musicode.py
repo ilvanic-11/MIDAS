@@ -63,9 +63,8 @@ class Musicode():
 							'forwardslash']
 		for l in range(0, len(self.Punct_Symbols)):
 			self.Punct_Workaround[self.Punct_Symbols[l]] = self.Punct_Names[l]
-		#print("Punct_Dict:", self.Punct_Workaround)
 
-		self._setup_midi_dictionaries()
+		#self.SetupDefaultMidiDictionaries()
 		#self.setup_default_musicode_dictionaries()
 
 	set_path = r"musicode_libraries"
@@ -175,18 +174,53 @@ class Musicode():
 		self.dictionaries[musicode][char] = m
 
 
-	def _setup_midi_dictionaries(self):
+	def SetupDefaultMidiDictionaries(self, wx_progress_updater=None):
+		
+		i = 0
 		self._setup_am_dict()
+		wx_progress_updater.Update(i)
+		i += 1
+		
 		self._setup_asciiX_dict()
+		wx_progress_updater.Update(i)
+		i += 1
+		
 		self._setup_asciiY_dict()
+		wx_progress_updater.Update(i)
+		i += 1
+		
 		self._setup_bp_dict()
+		wx_progress_updater.Update(i)
+		i += 1
+		
 		self._setup_mm_dict()
+		wx_progress_updater.Update(i)
+		i += 1
+		
 		self._setup_ptX_dict()
+		wx_progress_updater.Update(i)
+		i += 1
+		
 		self._setup_ptY_dict()
+		wx_progress_updater.Update(i)
+		i += 1
+		
 		self._setup_splyce_dict()
+		wx_progress_updater.Update(i)
+		i += 1
+		
 		self._setup_se_dict()
+		wx_progress_updater.Update(i)
+		i += 1
+		
 		self._setup_boX_dict()
+		wx_progress_updater.Update(i)
+		i += 1
+		
 		self._setup_boY_dict()
+		wx_progress_updater.Update(i)
+		i += 1
+		
 
 	def _setup_letters_and_numbers(self, musicode):
 		sh = self.shorthand.get(musicode)
@@ -223,7 +257,6 @@ class Musicode():
 		self.add_to_dict(";", "Animuse", "".join([punct_dir, "musicode_am_semicolon.mid"]))
 		self.add_to_dict("\'", "Animuse", "".join([punct_dir, "musicode_am_singlequotationmark.mid"]))
 		self.add_to_dict("?", "Animuse", "".join([punct_dir, "musicode_am_questionmark.mid"]))
-
 
 	def _setup_se_dict(self):
 		self._setup_letters_and_numbers( "Script-Ease")
@@ -369,7 +402,6 @@ class Musicode():
 		self.add_to_dict(";", "Splyce", "".join([punct_dir, "musicode_splyce_semicolon.mid"]))
 		self.add_to_dict("\'", "Splyce", "".join([punct_dir, "musicode_splyce_singlequotationmark.mid"]))
 		self.add_to_dict("?", "Splyce", "".join([punct_dir, "musicode_splyce_questionmark.mid"]))
-
 
 	def _setup_boX_dict(self):
 		self._setup_letters_and_numbers("Baud-Onkadonk_X")

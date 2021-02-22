@@ -113,7 +113,7 @@ class Mayavi3DAnimator():
 
     def insert_array_data(self, array_2d, color=(0, 0, 0), mode="cube", scale_factor=.25):
         from mayavi import mlab
-        print(array_2d)
+        #print(array_2d)
         mlab.points3d(array_2d[:, 0], array_2d[:, 1], array_2d[:, 2], color=color, mode=mode, scale_factor = scale_factor)
 
     #TODO
