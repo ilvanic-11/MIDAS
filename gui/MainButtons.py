@@ -266,7 +266,7 @@ class MainButtonsPanel(wx.Panel):
             stream = self.GetTopLevelParent().pianorollpanel.pianoroll.GridToStream(update_actor=False)
             self.musicode.make_musicode(stream, musicode_name, shorthand_name, filepath=None,
                                      selection=str(dialog.inputTxt.GetLineText(0)), write=False, timeSig=None)
-            self.GetTopLevelParent().pianorollpanel.ClearZPlane(self.GetTopLevelParent().mayavi_view.cur_z)
+            self.GetTopLevelParent().pianorollpanel.ClearZPlane(self.GetTopLevelParent().m_v.cur_z)
 
         elif dialog.create_musicode.GetValue() is False and btn == "OK":
             print("DialogCheck:", dialog.create_musicode.GetValue())
@@ -298,7 +298,7 @@ class MainButtonsPanel(wx.Panel):
             print("PIXELS_RESIZED:", pixels, type(pixels))
             print("pixels shape", numpy.shape(pixels))
 
-            mayavi_view = self.GetTopLevelParent().mayavi_view
+            mayavi_view = self.GetTopLevelParent().m_v
             #default_color_palette = mayavi_view.default_color_palette
             mayavi_color_palette = mayavi_view.default_mayavi_palette
 
@@ -408,7 +408,7 @@ class MainButtonsPanel(wx.Panel):
             btn = '<unknown>'
 
         if btn == "OK":
-            mayavi_view = self.GetTopLevelParent().mayavi_view
+            mayavi_view = self.GetTopLevelParent().m_v
             color_palette = mayavi_view.default_color_palette
 
             stream = music21.converter.parse(dialog.midi)
@@ -452,7 +452,7 @@ class MainButtonsPanel(wx.Panel):
                 #     self.GetTopLevelParent().pianorollpanel.DeletePianoRoll(1)
                 # except IndexError:
                 #     pass
-                mayavi_view = self.GetTopLevelParent().mayavi_view
+                mayavi_view = self.GetTopLevelParent().m_v
 
                 #Establish "Midas Actor" name and index.
                 #TODO Acquire from dialog
@@ -852,7 +852,7 @@ class MIDIArtDialog(wx.Dialog):
             preview = cv2.cvtColor(preview, cv2.COLOR_BGR2RGB)
             #preview = cv2.cvtColor(preview, cv2.COLOR_RGB2BGR)
 
-            mayavi_view = super().GetParent().GetTopLevelParent().mayavi_view
+            mayavi_view = super().GetParent().GetTopLevelParent().m_v
 
             #preview = midiart.set_to_nn_colors(preview, mayavi_view.clr_dict_list[mayavi_view.current_palette_name])
 
@@ -941,7 +941,7 @@ class MIDIArtDialog(wx.Dialog):
 
     def OnChangeColor(self, event):
         #This is the greatest thing.
-        mayavi_view = super().GetParent().GetTopLevelParent().mayavi_view
+        mayavi_view = super().GetParent().GetTopLevelParent().m_v
         #FLStudio Colors
         #TODO Test color constistency across all views (preview, mayaviview, exported to FL)
         if self.listCtrl.GetItemText(self.listCtrl.GetFocusedItem()) == "FLStudioColors":
@@ -1056,7 +1056,7 @@ class MIDIArt3DDialog(wx.Dialog):
 
 
     def On3DDisplayRedraw(self, evt):
-        super().GetParent().GetTopLevelParent().mayavi_view.redraw_mayaviview()
+        super().GetParent().GetTopLevelParent().m_v.redraw_mayaviview()
 
 
 

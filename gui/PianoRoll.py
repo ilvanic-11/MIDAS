@@ -96,6 +96,8 @@ class PianoRollDataTable(wx.grid.GridTableBase):
     
     #def SetRefToPianoRollPanel(self, pianorollpanel):
 
+
+
     def GetNumberCols(self):
         if self._cur_actor:
             return self._cur_actor._array3D.shape[0]
@@ -161,6 +163,7 @@ class PianoRollDataTable(wx.grid.GridTableBase):
         return 0
 
 
+    #self.pianorollpanel.pianoroll.GetRowSize()
 
 
 # Main Class for the PianoRoll, based orn wx.Grid
@@ -335,33 +338,18 @@ class PianoRoll(wx.grid.Grid, glr.GridWithLabelRenderersMixin):
 
     def GetCellFromMouseState(self):
         state = wx.GetMouseState()
-        #print("F Pressed Here")
-        #print("MOUSESTATE_POS", state.GetPosition())
-        #print("Mouse_X", state.X)
-        # print("Mouse_x", state.x)
-       # print("Mouse_Y", state.Y)
-        #client_dif_X = self.GetTopLevelParent().GetClientRect()[2] - self.GetClientRect()[2]
-        #client_dif_Y = self.GetTopLevelParent().GetClientRect()[3] - self.GetClientRect()[3]
 
-        #NOW WE HAVE IT, YES!!!
         pos = state.GetPosition()
         new_pos = self.ScreenToClient(pos)
         grid_cell = self.XYToCell(
             self.CalcGridWindowUnscrolledPosition((new_pos[0] - 59,
-                                                                           new_pos[1] - 19),
-                                                                           gridWindow=self), gridWindow=self)
-
-
-        #THIS WORKS!! But I hate the method. It works because the top of the grid's sash position doesn't change. So that's good.
-        #12/08/2020
-        #print("GRIDCELL?", grid_cell)
+  
         return grid_cell
 
 
     def OnScroll(self, event):
         #print("EVT_ID", event.GetId())
 
-        #print("Scrolling, bitch.")
         #TODO Learn Event Stack
 
         s_h = self.GetScrollPos(wx.HORIZONTAL)
@@ -383,15 +371,10 @@ class PianoRoll(wx.grid.Grid, glr.GridWithLabelRenderersMixin):
             state=state
         pos = state.GetPosition()
         new_pos = self.ScreenToClient(pos)
-        #print("POSITION", pos)
-        #print("NEW_POS", new_pos)
         client_dif_X = self.GetTopLevelParent().GetClientRect()[2] - self.GetClientRect()[2]
-        #print("Client_dif_X", client_dif_X)
         client_dif_Y = self.GetTopLevelParent().GetClientRect()[3] - self.GetClientRect()[3]
-        #print("Client_dif_Y", client_dif_Y)
 
         scroll_target = self.CalcUnscrolledPosition(new_pos)
-        #print("SCROLL_TARGET", scroll_target)
         # scroll_target = self.CalcGridWindowUnscrolledPosition((new_pos[0],
         #                                                                    new_pos[1]),
         #                                                                     gridWindow=self)
@@ -451,12 +434,12 @@ class PianoRoll(wx.grid.Grid, glr.GridWithLabelRenderersMixin):
         #print("Here5.")
 
 
-    def ChangeCellsPerQrtrNote(self, newvalue):
-        if newvalue == self._cells_per_qrtrnote:
+    def ChangeCellsPerQrtrNote(self, newcpqnvalue):
+        if newcpqnvalue == self._cells_per_qrtrnote:
             pass
-        else:
-            oldvalue = self._cells_per_qrtrnote
-            self._cells_per_qrtrnote = newvalue
+        self.m_v.CurrentActor().old_cpqn = self._cells_per_qrtrnote
+        self.m_v.CurrentActor().cpqn = newcpqnvalue
+        self._cells_per_qrtrnote = newcpqnvalue
 
         # Clear grid
         self.ClearGrid()
@@ -465,7 +448,7 @@ class PianoRoll(wx.grid.Grid, glr.GridWithLabelRenderersMixin):
         #Change number of columns
         oldNumCols = self._table.GetNumberCols()
         #print("Here5.2")
-        newNumCols = int((newvalue / oldvalue) * oldNumCols)
+        newNumCols = int((newcpqnvalue / self.m_v.CurrentActor().old_cpqn * oldNumCols))
         #print("Here5.3")
         if newNumCols > oldNumCols:
             #print("Here5.4, --newNumCols is >")
@@ -476,41 +459,66 @@ class PianoRoll(wx.grid.Grid, glr.GridWithLabelRenderersMixin):
             self._table.DeleteCols(0, oldNumCols - newNumCols, True)
             #print("Here5.6.")
 
-
-        #self.GetTopLevelParent().pianorollpanel.pianoroll.SetCellValue()
-
         #Reset Grid
         self.DrawColumnLabels()
         #Reset Mayavi representative values by factoring cpqn.
         #--> Here.
 
-        #TODO GRID CELLS ADJUSTMENT HERE, MAH BITCH!
-        #Todo Condition check for successive factoring
+        self.AdjustCellsBasedOnCPQN(self.m_v.CurrentActor().cur_z, newcpqnvalue, self.m_v.CurrentActor().old_cpqn)
+        print("Adjusted successfully.")
 
-        cells_change = np.argwhere(self.m_v.CurrentActor()._array3D[:, :, self.m_v.CurrentActor().cur_z] == 1.0)
+        # TODO GRID CELLS ADJUSTMENT HERE, MAH BITCH!
+        # Todo Condition check for successive factoring
+
+
+        # print("Here6.")
+
+        # Draw notes based on the saved stream
+        # self.StreamToGrid(self.stream) #TODO WE don't use a stream here anymore?
+
+        #self.m_v.CurrentActor().array3Dchangedflag = not self.m_v.CurrentActor().array3Dchangedflag
+
+        #print("Here6.")
+
+        # Draw notes based on the saved stream
+        #self.StreamToGrid(self.stream) #TODO WE don't use a stream here anymore?
+
+
+    def AdjustCellsBasedOnCPQN(self, zplane, newcpqnvalue, oldcpqnvalue):
+        """
+        This functions operates on the selected zplane and changes all the cells in that selected grid by factoring in
+        newvalue. Newvalue will always be a new cellsperqrtrnote value. (i.e. If cpqn was 1, and we're changing it to 4,
+        all cells in the wx.Grid will be multiplied by a factor of 4)
+        :param zplane:      Operand zplane, established as an Int.
+        :param newcpqnvalue:    New cells per qrtr note value to which we are changing.
+        :return:            N\A
+        """
+
+
+        cells_change = np.argwhere(self.m_v.CurrentActor()._array3D[:, :,
+                                   zplane] == 1.0)  # CRITICAL--> current zplane only.
         cells_change[:, 1] = cells_change[:, 1] - 127
         cells_change[:, 1] = cells_change[:, 1] * -1
         for q in cells_change:
             self.SetCellValue(q[1], q[0], '0')
 
-        #print("Cells_change", cells_change)
-        #print("Cells_change_type", type(cells_change))
-        if newvalue > oldvalue:
-            cells_change[:, 0] = cells_change[:, 0] * newvalue
-        elif newvalue < oldvalue:
-            cells_change[:, 0] = cells_change[:, 0] / (oldvalue/newvalue)  #This method won't work if dealing with odd-metered time signatures.
-        elif newvalue == oldvalue:
+        if newcpqnvalue > oldcpqnvalue:
+            cells_change[:, 0] = cells_change[:, 0] * (newcpqnvalue / oldcpqnvalue)
+        elif newcpqnvalue < oldcpqnvalue:
+            cells_change[:, 0] = cells_change[:, 0] * (newcpqnvalue / oldcpqnvalue)
+            # TODO Changing from one cpqn to another is producing an inaccurate display, FIXED.
+                     # NOTE: This method won't work if dealing with odd-metered time signatures.
+        elif newcpqnvalue == oldcpqnvalue:
             cells_change[:, 0] = cells_change[:, 0]
 
-
+        # Establish new.
         for q in cells_change:
+            # self._table.SetValue(q[1], q[0], '1')
             self.SetCellValue(q[1], q[0], '1')
         #print("Cells_CHANGED", cells_change)
-        #print("Here6.")
+        
 
-        # Draw notes based on the saved stream
-        #self.StreamToGrid(self.stream) #TODO WE don't use a stream here anymore?
-        #self.m_v.CurrentActor().array3Dchangedflag = not self.m_v.CurrentActor().array3Dchangedflag
+        #TODO Return to this for implementing duration data.
 
 
     def GetCellsPerQrtrNote(self):
