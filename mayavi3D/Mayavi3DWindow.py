@@ -120,12 +120,12 @@ class Actor(HasTraits):
 
         try:
             self._cur_plane = self._all_points[self.cur_z]  # Key error can happen here.... #TODO FIX
-            print("Type_Cur_Plane", type(self._cur_plane))
+            #print("Type_Cur_Plane", type(self._cur_plane))
             print(self._cur_plane)
             self._cur_plane[:, 0] = self._cur_plane[:,
                                     0] ##/ self.cpqn  # Account for cpqn. All 'x' values.  X axis "Slice" item assignment here.
 
-            print("HERE, BABY")
+            #print("HERE, BABY")
             self._all_points[self.cur_z] = self._cur_plane
         except Exception as e:
             print(e)
@@ -168,13 +168,13 @@ class Actor(HasTraits):
 
     @on_trait_change("array3Dchangedflag")
     def actor_array3D_changed(self):
-        #print("actor_array3D_changed")
+        print("actor_array3D_changed")
         #print("actor_index  ", self.index)
 
 
         #Reacquire
         self.cpqn = self.toplevel.pianorollpanel.pianoroll._cells_per_qrtrnote
-        print("_POINTS Type", type(self._points), self._points.dtype)
+        #print("_POINTS Type", type(self._points), self._points.dtype)
 
 
         self.get_ON_points_as_odict()  #Returns an OrderedDict()
@@ -182,7 +182,7 @@ class Actor(HasTraits):
 
         #self._points = midiart3D.delete_select_points(self._points, [[0, 0, 0]], tupl=False)
 
-        print("_points", self._points)
+        #print("_points", self._points)
 
         try:
             self.mayavi_view.sources[self.index].mlab_source.trait_set(
@@ -231,11 +231,13 @@ class Actor(HasTraits):
 
         try:
             self._cur_plane = self._all_points[self.cur_z]  # Key error can happen here.... #TODO FIX
+
             print("Type_Cur_Plane", type(self._cur_plane))
             print(self._cur_plane)
             self._cur_plane[:, 0] = self._cur_plane[:,    #TODO For selection sending between Actors, bool condition needed here to shut this off for those sends.
                                     0] / self.cpqn    #CRITICAL: Account for cpqn. All 'x' values.  X axis "Slice" item assignment here.
             print("HERE, BABY")
+
             self._all_points[self.cur_z] = self._cur_plane
         except Exception as e:
             print(e)
@@ -260,7 +262,9 @@ class Actor(HasTraits):
         #self._points[:, 0] = self._points[:, 0]
 
         self.mayavi_view.sources[self.index].mlab_source.trait_set(points=self._points)
-       # print("sources trait_set after actor_points_changed")
+
+        #print("sources trait_set after actor_points_changed")
+
 
     @on_trait_change('color')
     def show_color(self):
@@ -290,11 +294,9 @@ class Mayavi3idiView(HasTraits):
 
 
     cur_ActorIndex = Int()
-    previous_ActorIndex = None
     cur_z = Int()
 
     cpqn = Int(4)   #Startup cpqn
-    old_cpqn = None
 
     cpqn_changed_flag = Bool()
 
@@ -354,11 +356,8 @@ class Mayavi3idiView(HasTraits):
         self.clr_dict_list.update([("FLStudioColors", midiart.FLStudioColors)])
 
 
-        self.default_color_palette = self.clr_dict_list["FLStudioColors"]  #Dict of ints
-
-        self.default_mayavi_palette = midiart.convert_dict_colors(self.default_color_palette, invert=False, both=True) #Dict of floats
-        #self.default_mayavi_palette = midiart.invert_dict_colors(self.default_color_palette, inPlace=False)
-
+        self.default_color_palette = self.clr_dict_list["FLStudioColors"]
+        self.default_mayavi_palette = midiart.convert_dict_colors(self.default_color_palette, invert=False)
 
 
 
@@ -534,11 +533,16 @@ class Mayavi3idiView(HasTraits):
         # self.add_trait(actor_name,Actor())
         #self.scene3d.disable_render = False
 
-        print("append_actor")
-        
+
 
         self.cur_ActorIndex = len(self.actors)
         a = Actor(self, self.cur_ActorIndex)
+
+
+        #self.actor = a
+
+        #TODO Can ALL this v-here-v go into the actor's init?
+        # self.sources.append(None)
 
         self.actors.append(a)
         appending_data = self.insert_array_data(a._array3D, color=color, mode="cube", name=name, scale_factor=1.0)
@@ -557,6 +561,7 @@ class Mayavi3idiView(HasTraits):
         self.sources[self.cur_ActorIndex].actor.property.sync_trait('color', a, mutual=True)
         self.sources[self.cur_ActorIndex].actor.actor.sync_trait('position', a, mutual=True)
 
+
         a.name = name
         a.color = color
 
@@ -566,14 +571,32 @@ class Mayavi3idiView(HasTraits):
         #self.scene3d.disable_render = False
 
 
+    @on_trait_change('cur')
+    def current_actor_changed(self):
+        pass
+        #print("current_actor_changed")
+
+
+
+    # TODO Deprecated?
+    # def update_3Dpoints(self, row, col, val):
+    #     try:
+    #         page = self.GetTopLevelParent().pianorollpanel.currentPage
+    #         layer = self.GetTopLevelParent().pianorollpanel.pianorollNB.FindPage(page)
+    #         self._array3D[col, 127 - row, layer] = val
+    #     except Exception as e:
+    #         print(e)
+    #         pass
+
+
     # TODO Decide if still doing this.
     def actor_stream_changed(self):
-        print("actor_stream_changed")
+        #print("actor_stream_changed")
         pass
 
 
     def actor_list_changed(self):
-        print("actor_list_changed")
+        #print("actor_list_changed")
         pass
 
     ###MAYAVI_VIEW INSERT AND MANIPULATION FUNCTIONS
@@ -584,7 +607,7 @@ class Mayavi3idiView(HasTraits):
     def insert_array_data(self, array_2d, color=(0, 0, 0), mode="cube", name='', scale_factor=.25):
         # print(array_2d)
             #color = lambda x: super().actors[super().cur].color
-        print("insert_array_data")
+        #print("insert_array_data")
         mlab_data = mlab.points3d(array_2d[:, 0], array_2d[:, 1], array_2d[:, 2], color=self.actors[self.cur_ActorIndex].color, mode=mode, name=name,
                                   scale_factor=scale_factor)
         return mlab_data
@@ -1158,7 +1181,7 @@ class Mayavi3idiView(HasTraits):
         Xdata = np.column_stack((x4, x5, x6))
         mlab.points3d(Xdata[:, 0], Xdata[:, 1], Xdata[:, 2], color=(1, 0, 0), mode="2dthick_cross", scale_factor=.75)
 
-        # GridText
+        # GridTe
         x_txt = mlab.text3d(int(length), 0, 0, "X_Time-Rhythm-Duration.", color=(0, 1, 0), scale=4)
         y_txt = mlab.text3d(0, 127, 0, "Y_Frequency-Pitch.", color=(0, 1, 0), scale=4)
         z_txt = mlab.text3d(0, 0, 127, "Z_Dynamics-Velocity//Ensemble-Track.", color=(0, 1, 0), scale=4)
@@ -1223,8 +1246,9 @@ class Mayavi3idiView(HasTraits):
         if self.cur_ActorIndex < 0:
             self.parent.pianorollpanel.pianoroll._table._cur_actor = None
             return
-        self.parent.pianorollpanel.pianoroll._table._cur_actor = self.actors[self.cur_ActorIndex]
-        
+
+        #self.parent.pianorollpanel.pianoroll._table._cur_actor = self.actors[self.cur_ActorIndex]
+
         #print("self.cur", self.cur_ActorIndex)
         self.sources[self.cur_ActorIndex].actor.actor.sync_trait('position', self, mutual=False)
         #print("Position trait one-way synced: actor.position ---to---> mayavi_view.position.")
@@ -1299,8 +1323,10 @@ class Mayavi3idiView(HasTraits):
             self.actors[k].index = k
         #print("actor.index attributes reset")
 
-        if len(self.actors) == 0:
-            self.parent.pianorollpanel.last_actor = 0
+
+        # if len(self.actors) == 0:
+        #     self.parent.pianorollpanel.last_actor = 0
+
 
 
 
@@ -1338,7 +1364,9 @@ class Mayavi3idiView(HasTraits):
             client_size = mproll.GetClientSize()
             #print("CLIENT_SIZE", client_size)
             client_rect = mproll.GetClientRect()
-           # print("CLIENT_RECT", client_rect)
+
+            #print("CLIENT_RECT", client_rect)
+
 
             cpqn = self.parent.pianorollpanel.pianoroll._cells_per_qrtrnote
             #s_r = mproll.GetScroll
