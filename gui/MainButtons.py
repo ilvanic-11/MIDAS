@@ -1,5 +1,5 @@
 import wx
-from midas_scripts import midiart, midiart3D   #musicode, music21funcs,
+from midas_scripts import midiart, midiart3D, musicode # music21funcs,
 from gui import Preferences
 import music21
 from mayavi import mlab
@@ -15,7 +15,9 @@ class MainButtonsPanel(wx.Panel):
     def __init__(self, parent, log):
         wx.Panel.__init__(self, parent, -1)
         self.log = log
-
+        self.musicode = None
+        
+        
         sizer = wx.BoxSizer(wx.VERTICAL)
 
         btn_Music21_Converter_Parse = wx.Button(self, -1, "Midi\Score \n Import")
@@ -130,7 +132,7 @@ class MainButtonsPanel(wx.Panel):
 
         :return:
         """
-        print("Focusing on actorsListBox")
+        #print("Focusing on actorsListBox")
 
         self.GetTopLevelParent().pianorollpanel.actorsctrlpanel.actorsListBox.SetFocus()
 
@@ -140,7 +142,7 @@ class MainButtonsPanel(wx.Panel):
 
         :return:
         """
-        print("Focusing on ZPlanesListBox")
+        #print("Focusing on ZPlanesListBox")
 
         self.GetTopLevelParent().pianorollpanel.zplanesctrlpanel.ZPlanesListBox.SetFocus()
 
@@ -150,7 +152,7 @@ class MainButtonsPanel(wx.Panel):
 
         :return:
         """
-        print("Focusing on pianorollpanel")
+        #print("Focusing on pianorollpanel")
 
         self.GetTopLevelParent().pianorollpanel.pianoroll.SetFocus()
 
@@ -160,7 +162,7 @@ class MainButtonsPanel(wx.Panel):
 
         :return:
         """
-        print("Focusing on pyshellpanel")
+        #print("Focusing on pyshellpanel")
 
         self.GetTopLevelParent().pyshellpanel.SetFocus()
 
@@ -170,7 +172,7 @@ class MainButtonsPanel(wx.Panel):
         This function binds to F9 and sets the user focus to the panel containing the mayavi visualization.
         :return:
         """
-        print("Focusing on mayavai_view_control_panel")
+        #print("Focusing on mayavai_view_control_panel")
 
         self.GetTopLevelParent().mayaviviewcontrolpanel.SetFocus()
 
@@ -183,7 +185,7 @@ class MainButtonsPanel(wx.Panel):
         :return:
         """
 
-        print("Focusing home on mainbuttonspanel.")
+        #print("Focusing home on mainbuttonspanel.")
 
         self.SetFocus()
         #self.parent.mainbuttonspanel.SetFocus()
@@ -216,6 +218,7 @@ class MainButtonsPanel(wx.Panel):
     def OnMusicodeDialog(self, evt):
         dlg = MusicodeDialog(self, -1, "Musicode")
         dlg.ShowWindowModal()
+        
     
     def OnMIDIArtDialog(self, evt):
         dlg = MIDIArtDialog(self, -1, "Create MIDIArt")
@@ -227,8 +230,8 @@ class MainButtonsPanel(wx.Panel):
 
     def OnDialogClosed(self, evt):
         dialog = evt.GetDialog()
-        print("Dialog closed")
-        print(type(dialog))
+        #print("Dialog closed")
+        #print(type(dialog))
         if type(dialog) is MusicodeDialog:
             self._OnMusicodeDialogClosed(dialog, evt)
         elif type(dialog) is MIDIArtDialog:
@@ -261,13 +264,13 @@ class MainButtonsPanel(wx.Panel):
         if dialog.create_musicode.GetValue() is True and btn == "OK":
             print("DialogCheck:", dialog.create_musicode.GetValue())
             stream = self.GetTopLevelParent().pianorollpanel.pianoroll.GridToStream(update_actor=False)
-            self.GetTopLevelParent().musicode.make_musicode(stream, musicode_name, shorthand_name, filepath=None,
+            self.musicode.make_musicode(stream, musicode_name, shorthand_name, filepath=None,
                                      selection=str(dialog.inputTxt.GetLineText(0)), write=False, timeSig=None)
             self.GetTopLevelParent().pianorollpanel.ClearZPlane(self.GetTopLevelParent().m_v.cur_z)
 
         elif dialog.create_musicode.GetValue() is False and btn == "OK":
             print("DialogCheck:", dialog.create_musicode.GetValue())
-            stream = self.GetTopLevelParent().musicode.translate(
+            stream = self .musicode.translate(
                 dialog.rdbtnMusicodeChoice.GetString(dialog.rdbtnMusicodeChoice.GetSelection()),
                 dialog.inputTxt.GetLineText(0))
             print("LINETEXT:", dialog.inputTxt.GetLineText(0))
@@ -504,7 +507,7 @@ class Music21ConverterParseDialog(wx.Dialog):
 
         #sizerCtrls = wx.BoxSizer(wx.VERTICAL)
 
-        self.SetSizerAndFit(sizerMain)
+        #self.SetSizerAndFit(sizerMain)
 
 
     def OnLoadMidi(self, evt):
@@ -528,10 +531,15 @@ class Music21ConverterParseDialog(wx.Dialog):
 class MusicodeDialog(wx.Dialog):
     def __init__(self,parent,id,title, size=wx.DefaultSize,
                  pos=wx.DefaultPosition, style=wx.DEFAULT_DIALOG_STYLE, name='Musicode' ):
-
+        
         wx.Dialog.__init__(self)
         self.Create(parent, id, title, pos, size, style, name)
+        self.parent = parent
 
+        
+        
+        
+        
         #MODE
         self.translate_musicode = wx.CheckBox(self, -1, "Translate Musicode")
         self.create_musicode = wx.CheckBox(self, -1, "Create Musicode")
@@ -545,69 +553,84 @@ class MusicodeDialog(wx.Dialog):
         #Shorthand variable name.
         self.sh_static = wx.StaticText(self, -1, "Shorthand", style=wx.ALIGN_LEFT)
         self.input_sh = wx.TextCtrl(self, -1, "", size=(30, -1), style=wx.TE_CENTER)
+        self.inputTxt = wx.TextCtrl(self, -1, "", size=(250, -1), name="Translate\\Create")
 
-        #self.inputTxt2 = wx.TextCtrl(self, -1, "", size=(250,-1))
+        
+        self.musicodesList = list()
 
-        self.user_named = super().GetParent().GetTopLevelParent().musicode.musicode_name  #Thith is the coolest thing I have ever theen.
-        print("User_Named:", self.user_named)
+        dlg = wx.ProgressDialog("Loading", "Loading Musicode Libraries...", maximum=12, parent=self,
+                                style = wx.PD_ELAPSED_TIME
+                                      | wx.PD_REMAINING_TIME
+                                      | wx.PD_AUTO_HIDE
+                                )
 
-        self.musicodesList = sorted(list(super().GetParent().GetTopLevelParent().musicode.shorthand.keys()))
-        self.musicodesList.append(self.user_named)
+
+        if (not self.parent.musicode):
+            self.parent.musicode = musicode.Musicode()
+            self.parent.musicode.SetupDefaultMidiDictionaries(wx_progress_updater=dlg)
+        dlg.Destroy()
 
 
-        self.inputTxt = wx.TextCtrl(self, -1, "", size=(250,-1), name="Translate\\Create")
+        self.musicodesList = sorted(list(self.parent.musicode.shorthand.keys()))
+
         self.rdbtnMusicodeChoice = wx.RadioBox(self, -1, "Musicode Choice",
-                                            wx.DefaultPosition, wx.DefaultSize,
-                                            self.musicodesList,
-                                            2, wx.RA_SPECIFY_COLS)
+                                               wx.DefaultPosition, wx.DefaultSize,
+                                               self.musicodesList,
+                                               2, wx.RA_SPECIFY_COLS)
 
         self.rdbtnMusicodeChoice.Enable(enable=False)
 
+        
         #Bindings.
         self.Bind(wx.EVT_CHECKBOX, self.OnPolarizeCheckboxes)
 
         #Sizers
-        sizer = wx.BoxSizer(wx.VERTICAL)
-        sizer2 = wx.BoxSizer(wx.HORIZONTAL)
-        sizer3 = wx.BoxSizer(wx.HORIZONTAL)
-        sizer4 = wx.BoxSizer(wx.HORIZONTAL)
+        self.sizer = wx.BoxSizer(wx.VERTICAL)
+        self.sizer2 = wx.BoxSizer(wx.HORIZONTAL)
+        self.sizer3 = wx.BoxSizer(wx.HORIZONTAL)
+        self.sizer4 = wx.BoxSizer(wx.HORIZONTAL)
 
         #Sizer adds.
-        sizer2.Add(self.translate_musicode, 0, wx.ALL | wx.ALIGN_TOP, 20)
-        sizer2.Add(self.create_musicode, 0, wx.ALL | wx.ALIGN_TOP, 20)
+    
+        self.sizer2.Add(self.translate_musicode, 0, wx.ALL | wx.ALIGN_TOP, 20)
+        self.sizer2.Add(self.create_musicode, 0, wx.ALL | wx.ALIGN_TOP, 20)
 
-        sizer3.Add(self.name_static, 15, wx.ALL | wx.ALIGN_LEFT, 5)
-        sizer3.Add(self.input_mcname, 10, 10, 10)
+        self.sizer3.Add(self.name_static, 15, wx.ALL | wx.ALIGN_LEFT, 5)
+        self.sizer3.Add(self.input_mcname, 10, 10, 10)
 
-        sizer4.Add(self.sh_static, 15, wx.ALL | wx.ALIGN_LEFT, 5)
-        sizer4.Add(self.input_sh, 10, 50, 10)
+        self.sizer4.Add(self.sh_static, 15, wx.ALL | wx.ALIGN_LEFT, 5)
+        self.sizer4.Add(self.input_sh, 10, 50, 10)
 
-        sizer.Add(sizer2, 0, wx.ALL | wx.ALIGN_TOP, 15)
-        sizer.Add(sizer3, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL, 30)
-        sizer.Add(sizer4, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL, 40)
+        self.sizer.Add(self.sizer2, 0, wx.ALL | wx.ALIGN_TOP, 15)
+        self.sizer.Add(self.sizer3, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL, 30)
+        self.sizer.Add(self.sizer4, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL, 40)
 
-        sizer.Add(self.inputTxt, 0, wx.ALL|wx.ALIGN_CENTER_HORIZONTAL, 20)
-        sizer.Add(self.rdbtnMusicodeChoice, 0, wx.ALL|wx.ALIGN_CENTER_HORIZONTAL, 20)
+        self.sizer.Add(self.inputTxt, 0, wx.ALL|wx.ALIGN_CENTER_HORIZONTAL, 20)
 
 
-        btnsizer = wx.StdDialogButtonSizer()
+        self.sizer.Add(self.rdbtnMusicodeChoice, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL, 20)
+
+        self.btnsizer = wx.StdDialogButtonSizer()
 
         if wx.Platform != "__WXMSW__":
-            btn = wx.ContextHelpButton(self)
-            btnsizer.AddButton(btn)
+            self.btn = wx.ContextHelpButton(self)
+            self.btnsizer.AddButton(self.btn)
 
-        btn = wx.Button(self, wx.ID_OK)
-        btn.SetDefault()
-        btnsizer.AddButton(btn)
+        self.btn = wx.Button(self, wx.ID_OK)
+        self.btn.SetDefault()
+        self.btnsizer.AddButton(self.btn)
 
-        btn = wx.Button(self, wx.ID_CANCEL)
-        btnsizer.AddButton(btn)
-        btnsizer.Realize()
+        self.btn = wx.Button(self, wx.ID_CANCEL)
+        self.btnsizer.AddButton(self.btn)
+        self.btnsizer.Realize()
 
-        sizer.Add(btnsizer, 0, wx.ALIGN_CENTER_HORIZONTAL|wx.ALL, 5)
+        self.sizer.Add(self.btnsizer, 0, wx.ALIGN_CENTER_HORIZONTAL | wx.ALL, 5)
 
-        self.SetSizer(sizer)
-        sizer.Fit(self)
+        
+        self.SetSizerAndFit(self.sizer)
+   
+
+        
 
     #TODO Needs work.
     def OnPolarizeCheckboxes(self, event):

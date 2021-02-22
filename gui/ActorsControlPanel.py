@@ -272,7 +272,7 @@ class ActorsControlPanel(wx.Panel):
     def OnDeleteSelection(self, event):
         #Deletes 'selected' not 'activated' actors.
         alb = self.GetTopLevelParent().pianorollpanel.actorsctrlpanel.actorsListBox
-        print("J_list", [j for j in range(len(self.mayavi_view.actors), -1, -1)])
+        #print("J_list", [j for j in range(len(self.mayavi_view.actors), -1, -1)])
         for j in range(len(self.mayavi_view.actors), 0, -1):  #Fucking OBOE errors...
             print("J", j)
             if alb.IsSelected(j-1):
@@ -364,7 +364,7 @@ class CustomActorsListBox(wx.ListCtrl):
                 color = tuple([color[2], color[1], color[0]])
             else:
                 color = self.m_v.default_mayavi_palette[i + 1]
-                print("'i' HERE", i + 1)
+               #print("'i' HERE", i + 1)
                 #SWAP HERE.
                 color = tuple([color[2], color[1], color[0]])
         self.m_v.append_actor(name, color) #Subsequent actors selected from color_palette..

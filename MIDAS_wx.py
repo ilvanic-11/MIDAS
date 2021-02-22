@@ -142,7 +142,8 @@ class MainWindow(wx.Frame):
         self.mainbuttons_stats_split = wx.SplitterWindow(self.pianoroll_mainbuttons_split, wx.ID_ANY, style=wx.SP_3DSASH | wx.SP_BORDER)
 
 
-        self.musicode = musicode.Musicode()
+        self.musicode = None
+        #self.musicode = musicode.Musicode()
 
 
         self.mayavi_view = Mayavi3DWindow.Mayavi3idiView(self)
@@ -164,9 +165,6 @@ class MainWindow(wx.Frame):
         self.icon.LoadFile(r".\resources\TrebleClefIcon.bmp", type=wx.BITMAP_TYPE_ANY)     #, desiredHeight=10, desiredWidth=10)
         #self.icon.SetHeight(25)
         #self.icon.SetWidth(25)
-
-        print("W", self.icon.GetWidth())
-        print("H", self.icon.GetHeight())
 
         self.SetIcon(self.icon)
 
@@ -434,7 +432,7 @@ class MainWindow(wx.Frame):
                         pass
                     else:
                         self.actor_scrolled -= 1
-                    print("Actor Scrolled -->", self.actor_scrolled)
+                    #print("Actor Scrolled -->", self.actor_scrolled)
                     alb.Select(self.actor_scrolled)
                     alb.Focus(self.actor_scrolled)
                     #1*
@@ -454,7 +452,7 @@ class MainWindow(wx.Frame):
                         pass
                     else:
                         self.actor_scrolled += 1
-                    print("Actor Scrolled -->", self.actor_scrolled)
+                    #print("Actor Scrolled -->", self.actor_scrolled)
                     alb.Select(self.actor_scrolled)
                     alb.Focus(self.actor_scrolled)
                     #1*
@@ -495,7 +493,7 @@ class MainWindow(wx.Frame):
                         pass
                     else:
                         self.zplane_scrolled += 1
-                    print("Zplane Scrolled -->", self.zplane_scrolled)
+                    #print("Zplane Scrolled -->", self.zplane_scrolled)
                     zlb.Select(self.zplane_scrolled)
                     zlb.Focus(self.zplane_scrolled)
                     #1*
@@ -529,8 +527,8 @@ class MainWindow(wx.Frame):
 
 
     def PrintOurCell(self, event):
-        print("Our_X", event.Col)
-        print("Our_Y", event.Row)
+        #print("Our_X", event.Row)
+        #print("Our_Y", event.Col)
         event.Skip()
 
     def OnMiddleClickGrabNSend(self, event):
@@ -544,16 +542,14 @@ class MainWindow(wx.Frame):
 
         #Send selected notes to self.actor_scrolled.  Works
         if event.GetKeyCode() == wx.WXK_SHIFT and state.MiddleIsDown():
-            print("Sending to scrolled Actor-->Shift and Middle down here.")
-            # if self.actor_scrolled == self.mayavi_view.cur_ActorIndex and self.zplane_scrolled == self.mayavi_view.CurrentActor().cur_z and self.pianorollpanel.last_push == self.mayavi_view.CurrentActor().cur_z:
-            self.pianorollpanel.Selection_Send(self.pianorollpanel.selected_notes, self.zplane_scrolled, event=None, carry_to_z=True, carry_to_actor=True, array=False)
-            # else:
-                #self.pianorollpanel.Selection_Send(self.pianorollpanel.selected_notes, self.zplane_scrolled, event=None, carry_to_z=False, carry_to_actor=True, array=False)
-                # print("Here, actor true, z false.")
+            #print("Sending to scrolled Actor-->Shift and Middle down here.")
+            pass
+            self.pianorollpanel.Selection_Send(self.pianorollpanel.selected_notes, self.zplane_scrolled, event=None, send_to_z=True, send_to_actor=True, array=False)
+
         #Send selected notes to self.zplane_scrolled.  Works
         elif event.GetKeyCode() == wx.WXK_ALT and state.MiddleIsDown():
-            print("Sending to scrolled Zplane-->Alt and Middle down here.")
-            self.pianorollpanel.Selection_Send(self.pianorollpanel.selected_notes, self.zplane_scrolled, event=None, carry_to_z=True, array=False)
+            #print("Sending to scrolled Zplane-->Alt and Middle down here.")
+            self.pianorollpanel.Selection_Send(self.pianorollpanel.selected_notes, self.zplane_scrolled, event=None, send_to_z=True, array=False)
             #TODO Attribute error expection here. Write.
 
         #Send selected notes to the pyshell as an np.array and as a music21.stream.Stream.
@@ -571,13 +567,13 @@ class MainWindow(wx.Frame):
 
         #Send selected notes to the selected mouse coordinate on the grid upon pressing 'F'.
         elif event.GetUnicodeKey() == ord("F") and state.MiddleIsDown():
-            print("Sending to Mouse Focus--> 'F' and Middle down here.")
+            #print("Sending to Mouse Focus--> 'F' and Middle down here.")
 
             ####Method
             #Get Transforming value
             cell = self.pianorollpanel.pianoroll.GetCellFromMouseState()
 
-            print("SELECTED_NOTES before loss", self.pianorollpanel.selected_notes)
+            #print("SELECTED_NOTES before loss", self.pianorollpanel.selected_notes)
             assert not not self.pianorollpanel.selected_notes, "You do not have selected_notes yet."
 
             #Get Selection
@@ -619,25 +615,25 @@ class MainWindow(wx.Frame):
 
 
 
-            print("TRANSFORMED_SELECTION_ARRAY", self.pianorollpanel.selection_array)
+            #print("TRANSFORMED_SELECTION_ARRAY", self.pianorollpanel.selection_array)
 
 
             #Perform send.  Note: MAKE SURE THAT, if array=TRUE, that you are actually using an array as your input.
             self.pianorollpanel.Selection_Send(selection_array,
-                                        self.mayavi_view.CurrentActor().cur_z, event=None, carry_to_z=True, array=True, transform_xy=True)
+                                               self.mayavi_view.CurrentActor().cur_z, event=None, send_to_z=True, array=True, send_current=True)
 
-            print("Last Highlight", last_highlight)
+            #print("Last Highlight", last_highlight)
 
             self.pianorollpanel.clear_out_highlight(event=None, manual_selection=last_highlight, manual=True)
             self.pianorollpanel.pianoroll.GoToCell(new_top_left)
             self.pianorollpanel.pianoroll.SelectBlock(new_top_left, new_bottom_right)
 
-            print("SELECTED_NOTES before loss2", self.pianorollpanel.selected_notes)
+            #print("SELECTED_NOTES before loss2", self.pianorollpanel.selected_notes)
             self.pianorollpanel.last_highlight = self.pianorollpanel.selecting_cells
             self.pianorollpanel.selected_notes = selected_notes
 
             #self.pianorollpanel.previously_selected_cells = self.pianorollpanel.selected_cells
-            print("SELECTED_NOTES before loss3", self.pianorollpanel.selected_notes)
+            #print("SELECTED_NOTES before loss3", self.pianorollpanel.selected_notes)
 
 
         else:
