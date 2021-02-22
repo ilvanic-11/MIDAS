@@ -312,8 +312,8 @@ def _background_changed(self, value):
             #m.outline_color = (1,1,1)
         else:
             p.color = (0,0,0)
-            m.set_outline_color(0,0,0)
-            #m.outline_color = (0,0,0)
+            #m.set_outline_color(0,0,0)
+            m.outline_color = (0,0,0)
         self.render()
 
 def restore_window(ui, is_popup=False):

@@ -301,13 +301,13 @@ class PianoRollPanel(wx.Panel):
                                               z] * 0  # TODO Different way to write this? Multiply whole array3d by 0?
             self.pianoroll.ForceRefresh()
 
-            self.m_v.actors[self.m_v.cur_ActorIndex].array3Dchangedflag += 1
+            #self.m_v.actors[self.m_v.cur_ActorIndex].array3Dchangedflag += 1
 
         self.pianoroll.ResetGridCellSizes()
         #self.m_v.actors[self.m_v.cur_ActorIndex].array3Dchangedflag = not self.m_v.actors[self.m_v.cur_ActorIndex].array3Dchangedflag
 
         #Manual override, trait update not working....
-        #self.m_v.actors[self.m_v.cur_ActorIndex].actor_array3D_changed()
+        self.m_v.actors[self.m_v.cur_ActorIndex].actor_array3D_changed()
 
         self.pianoroll.ForceRefresh()
 
@@ -724,7 +724,7 @@ class PianoRollPanel(wx.Panel):
     def OnMotion(self, evt):
         # self.log.debug("OnMotion: Drawing=%d " % self.pianoroll.drawing)
         cpqn = self.pianoroll._cells_per_qrtrnote
-        
+        z = self.currentZplane
         if self.mode == self.draw_mode:  ##If mode is "Draw Mode".....
             if evt.Dragging() and evt.LeftIsDown():
                 x, y = self.pianoroll.CalcUnscrolledPosition(evt.GetPosition())
