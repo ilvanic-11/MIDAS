@@ -186,7 +186,8 @@ class CustomZPlanesListBox(wx.ListCtrl, CheckListCtrlMixin):
 		self.Bind(wx.EVT_LIST_ITEM_ACTIVATED, self.OnListItemActivated)
 		
 	def OnListItemActivated(self, evt):
-		self.Activate_Zplane(evt.index)
+		print("EVENT INDEX", evt.Index)
+		self.Activate_Zplane(evt.Index)
 
 
 	def Activate_Zplane(self, index):

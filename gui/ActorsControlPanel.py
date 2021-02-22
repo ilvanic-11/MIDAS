@@ -320,7 +320,7 @@ class CustomActorsListBox(wx.ListCtrl):
 
 
     def OnActorsListItemActivated(self, evt):
-        self.Activate_Actor(evt.index)
+        self.Activate_Actor(evt.Index)
 
 
     def Activate_Actor(self, index):
