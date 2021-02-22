@@ -86,64 +86,51 @@ class PianoRollDataTable(wx.grid.GridTableBase):
     """ A grid data table that connects to the traited 3D array in the mayavi_view
     """
     
-    log = logging.getLogger("PianoRollDataTable")
+    #log = logging.getLogger("PianoRollDataTable")
     def __init__(self, pianorollpanel):
         wx.grid.GridTableBase.__init__(self)
         self.pianorollpanel = pianorollpanel
+        self._cur_actor = None #store ref to this locally to optimize (maybe?)
+        
     # need to store a reference to the piano roll panel.  GridTableBase does not store gui parents.
     
     #def SetRefToPianoRollPanel(self, pianorollpanel):
 
-
-
     def GetNumberCols(self):
-        #print("GetNumberCols(): {}".format(self.parent.GetTopLevelParent().mayavi_view.CurrentActor()._array3D.shape[0]))
-        if self.pianorollpanel.GetTopLevelParent().mayavi_view.CurrentActor():
-            #print(self.pianorollpanel.GetTopLevelParent().mayavi_view.CurrentActor())
-            #print("Has current_actor.")
-            return self.pianorollpanel.GetTopLevelParent().mayavi_view.CurrentActor()._array3D.shape[0]
+        if self._cur_actor:
+            return self._cur_actor._array3D.shape[0]
         else:
             return 5000
         
     def GetNumberRows(self):
         #print("GetNumberCols(): {}".format(self.parent.GetTopLevelParent().mayavi_view.CurrentActor()._array3D.shape[1]))
-        if self.pianorollpanel.GetTopLevelParent().mayavi_view.CurrentActor():
+        if self._cur_actor:
             #print(self.pianorollpanel.GetTopLevelParent().mayavi_view.CurrentActor())
             #print("Has current_actor.")
-            return self.pianorollpanel.GetTopLevelParent().mayavi_view.CurrentActor()._array3D.shape[1]
+            return self._cur_actor._array3D.shape[1]
         else:
             return 128
         
     def GetValue(self, row, col):
-
-
-        if self.pianorollpanel.GetTopLevelParent().mayavi_view.CurrentActor():
+        if self._cur_actor:
             if (self.pianorollpanel):
                 z = self.pianorollpanel.currentZplane
             else:
                 z = 0
             if z < 0:
                 return ""
-            self.log.debug(f"ZZZ = {z} type:")
-            self.log.debug(type(z))
-            return str(int(self.pianorollpanel.GetTopLevelParent().mayavi_view.CurrentActor()._array3D[int(col)][127-row][z]))
-
+            return str(int(self._cur_actor._array3D[int(col)][127-row][z]))
         else:
             return ""
 
-    def  SetValue(self, row, col, value):
-        self.log.info(f"PianoRollDataTable.SetValue(): ({col},{row}),val={value}")
-
-        #This throws an error.
-        ##self.SetValue(row, col, value)
-
-        if self.pianorollpanel.GetTopLevelParent().mayavi_view.CurrentActor():
+    def SetValue(self, row, col, value):
+        if self._cur_actor:
             z = self.pianorollpanel.currentZplane
 
             #TODO Be minddful of these ints() when debugging.   col/self.pianorollpanel.pianoroll._cells_per_qrtrnote
 
-            self.pianorollpanel.GetTopLevelParent().mayavi_view.CurrentActor()._draw_array3D[int(col)][127-row][z] = int(value)
-            self.pianorollpanel.GetTopLevelParent().mayavi_view.CurrentActor()._array3D[int(col)][127-row][z] = int(value)
+            #self._cur_actor._draw_array3D[int(col)][127-row][z] = int(value)
+            self._cur_actor._array3D[int(col)][127-row][z] = int(value)
 
 
     def AppendCols(self, numCols=1, updateLables=True):
@@ -174,7 +161,6 @@ class PianoRollDataTable(wx.grid.GridTableBase):
         return 0
 
 
-    #self.pianorollpanel.pianoroll.GetRowSize()
 
 
 # Main Class for the PianoRoll, based orn wx.Grid
@@ -203,14 +189,10 @@ class PianoRoll(wx.grid.Grid, glr.GridWithLabelRenderersMixin):
         self.SetTable(self._table, True)
 
         glr.GridWithLabelRenderersMixin.__init__(self)
-        # self.SetDefaultEditor(wx.grid.GridCellBoolEditor())
+
         self.PCR = PianoRollCellRenderer(self)
         self.SetDefaultRenderer(self.PCR)
-        print("BDC", self.PCR.bdc)
-
-        # upd = wx.RegionIterator(self.GetUpdateRegion())
-        # print("UPD", upd)
-        # #wx.RegionIterator
+        
 
         #One measure and one octave at a time.
         self.SetScrollRate(160, 120)  #For precision scrolling, use scrollbar arrows, or scroll-bar right-click-->"Scroll Here" or MIDDLE-CLICK ZOOM SCROLL.
@@ -314,22 +296,17 @@ class PianoRoll(wx.grid.Grid, glr.GridWithLabelRenderersMixin):
 
     def OnMeasureLabelsLeftClick(self, event):
         self.last_known_pos = event.GetPosition()
-        print("Label Event Position:", self.last_known_pos)
         row = event.GetRow()
-        print("Label Event Row:", row)
         col = event.GetCol()
-        print("Label Event Col:", col)
+        
 
         s_h = self.GetScrollPos(wx.HORIZONTAL)  #cur scrollunitsperpixel here is 100
-        print("Scroll_H:", s_h)
         s_v = self.GetScrollPos(wx.VERTICAL)    #cur scrollunitsperpixel here is 100
-        print("Scroll_V:", s_v)
+
         s_linex = self.GetScrollLineX()
-        print("Scroll_LineX:", s_linex)
         s_liney = self.GetScrollLineY()
-        print("Scroll_LineY:", s_liney)
+
         c_s = self.GetClientSize()
-        print("ClientSize:", c_s)
 
         #Acquire scrollunitsperpixel as tuple.
         scrollrate_x, scrollrate_y = self.GetScrollPixelsPerUnit()
@@ -343,9 +320,7 @@ class PianoRoll(wx.grid.Grid, glr.GridWithLabelRenderersMixin):
         self.last_known_scrollY = self.GetScrollPos(wx.VERTICAL)      #cur scrollunitsperpixel here is 1
 
         viewstart = self.GetViewStart()
-        print("ViewStart:", viewstart)
-        print("SCROLLRATE:", self.GetScrollPixelsPerUnit())
-
+       
         #Pixels == Scroll-ticks here.
         self.Scroll((viewstart[0] + self.last_known_pos[0] - 60), self.last_known_scrollY * scrollrate_y)  #...new_s_v-19
         #wx.CallLater(1000, self.SetScrollRate, x=100, y=100)
@@ -360,11 +335,11 @@ class PianoRoll(wx.grid.Grid, glr.GridWithLabelRenderersMixin):
 
     def GetCellFromMouseState(self):
         state = wx.GetMouseState()
-        print("F Pressed Here")
-        print("MOUSESTATE_POS", state.GetPosition())
-        print("Mouse_X", state.X)
+        #print("F Pressed Here")
+        #print("MOUSESTATE_POS", state.GetPosition())
+        #print("Mouse_X", state.X)
         # print("Mouse_x", state.x)
-        print("Mouse_Y", state.Y)
+       # print("Mouse_Y", state.Y)
         #client_dif_X = self.GetTopLevelParent().GetClientRect()[2] - self.GetClientRect()[2]
         #client_dif_Y = self.GetTopLevelParent().GetClientRect()[3] - self.GetClientRect()[3]
 
@@ -379,14 +354,14 @@ class PianoRoll(wx.grid.Grid, glr.GridWithLabelRenderersMixin):
 
         #THIS WORKS!! But I hate the method. It works because the top of the grid's sash position doesn't change. So that's good.
         #12/08/2020
-        print("GRIDCELL?", grid_cell)
+        #print("GRIDCELL?", grid_cell)
         return grid_cell
 
 
     def OnScroll(self, event):
-        print("EVT_ID", event.GetId())
+        #print("EVT_ID", event.GetId())
 
-        print("Scrolling, bitch.")
+        #print("Scrolling, bitch.")
         #TODO Learn Event Stack
 
         s_h = self.GetScrollPos(wx.HORIZONTAL)
@@ -408,15 +383,15 @@ class PianoRoll(wx.grid.Grid, glr.GridWithLabelRenderersMixin):
             state=state
         pos = state.GetPosition()
         new_pos = self.ScreenToClient(pos)
-        print("POSITION", pos)
-        print("NEW_POS", new_pos)
+        #print("POSITION", pos)
+        #print("NEW_POS", new_pos)
         client_dif_X = self.GetTopLevelParent().GetClientRect()[2] - self.GetClientRect()[2]
-        print("Client_dif_X", client_dif_X)
+        #print("Client_dif_X", client_dif_X)
         client_dif_Y = self.GetTopLevelParent().GetClientRect()[3] - self.GetClientRect()[3]
-        print("Client_dif_Y", client_dif_Y)
+        #print("Client_dif_Y", client_dif_Y)
 
         scroll_target = self.CalcUnscrolledPosition(new_pos)
-        print("SCROLL_TARGET", scroll_target)
+        #print("SCROLL_TARGET", scroll_target)
         # scroll_target = self.CalcGridWindowUnscrolledPosition((new_pos[0],
         #                                                                    new_pos[1]),
         #                                                                     gridWindow=self)
@@ -437,11 +412,12 @@ class PianoRoll(wx.grid.Grid, glr.GridWithLabelRenderersMixin):
 
 
     def OnPaint(self, event):
-        print("Painting, bitch.")
-        pdc = wx.PaintDC(self)
-        PRClientSize = self.GetClientSize()
-        self.bitmap = wx.Bitmap(PRClientSize[0], PRClientSize[1])
-        dc = wx.BufferedPaintDC(self, self.bitmap)
+        pass
+        #print("Painting, bitch.")
+        #pdc = wx.PaintDC(self)
+        #PRClientSize = self.GetClientSize()
+        #Qself.bitmap = wx.Bitmap(PRClientSize[0], PRClientSize[1])
+        #dc = wx.BufferedPaintDC(self, self.bitmap)
         #dc = wx.AutoBufferedPaintDC(self)
         #TODO What Dafuq calls Draw() in the CellRenderer?
         #TODO Then
@@ -467,10 +443,10 @@ class PianoRoll(wx.grid.Grid, glr.GridWithLabelRenderersMixin):
 
     def ClearGrid(self):
         #TODO Is this working? ResetGridCellSizes has 'spans' that haven't been touched in a while....
-        print("ClearGrid():")
+        #print("ClearGrid():")
         #TODO Clear using self.cur_array3d
         super().ClearGrid()
-        print("Here.")
+        #print("Here.")
         self.ResetGridCellSizes()  #TODO This breaks ChangeCellsPerQrtrNote?
         #print("Here5.")
 
@@ -517,8 +493,8 @@ class PianoRoll(wx.grid.Grid, glr.GridWithLabelRenderersMixin):
         for q in cells_change:
             self.SetCellValue(q[1], q[0], '0')
 
-        print("Cells_change", cells_change)
-        print("Cells_change_type", type(cells_change))
+        #print("Cells_change", cells_change)
+        #print("Cells_change_type", type(cells_change))
         if newvalue > oldvalue:
             cells_change[:, 0] = cells_change[:, 0] * newvalue
         elif newvalue < oldvalue:
@@ -529,7 +505,7 @@ class PianoRoll(wx.grid.Grid, glr.GridWithLabelRenderersMixin):
 
         for q in cells_change:
             self.SetCellValue(q[1], q[0], '1')
-        print("Cells_CHANGED", cells_change)
+        #print("Cells_CHANGED", cells_change)
         #print("Here6.")
 
         # Draw notes based on the saved stream
@@ -545,7 +521,7 @@ class PianoRoll(wx.grid.Grid, glr.GridWithLabelRenderersMixin):
         noUpdates = wx.grid.GridUpdateLocker(self)
 
         #TODO Haven't touched spans in a while. Return to this when we deal with cellspans\stream durations.
-        print("Here2")
+        
         for y in range(self._table.GetNumberRows()):
             for x in range(self._table.GetNumberCols()):
                 span,r,c = self.GetCellSize(x,y)
@@ -555,11 +531,9 @@ class PianoRoll(wx.grid.Grid, glr.GridWithLabelRenderersMixin):
                     print("({},{})".format(x, y))
                     self.SetCellSize(x,y,1,1)
                    # msg = wx.grid.GridTableMessage(self,wx.grid.GRIDNO
-        print("Here4")
 
 
     def UpdateStream(self):
-        print("Update Stream()")
         # matrix = np.zeros((self.GetNumberCols(), self.GetNumberRows()), dtype=np.int8)
         # # matrix = [ [None] * self.GetNumberRows() for _ in range(self.GetNumberCols())]
         # for x in range(self.GetNumberCols()):
@@ -671,7 +645,7 @@ class PianoRoll(wx.grid.Grid, glr.GridWithLabelRenderersMixin):
             return
 
         if self.GetNumberCols() < matrix.shape[0]:
-            print("Appending additional columns.")
+            #print("Appending additional columns.")
             self.AppendCols(matrix.shape[0] - self.GetNumberCols())
 
         noUpdates = wx.grid.GridUpdateLocker(self)
@@ -684,7 +658,7 @@ class PianoRoll(wx.grid.Grid, glr.GridWithLabelRenderersMixin):
 
 
     def OnCellSelected(self, evt):
-        self.log.info("onCellSelected():")
+        #self.log.info("onCellSelected():")
         #self.FSetCellValue(evt.Row, evt.Col, "1")
         #self.DeselectCell(evt.GetRow(), evt.GetCol())
         evt.Skip()
@@ -698,9 +672,9 @@ class PianoRoll(wx.grid.Grid, glr.GridWithLabelRenderersMixin):
 
         row = evt.GetRow()
         col = evt.GetCol()
-        self.log.info(f"OnGridLClick({col},{row}")
-        self.log.debug("  _table.GetValue(0,0) = {}".format(self._table.GetValue(0, 0)))
-        self.log.debug("  self.GetCellValue(0,0) = {}".format(self.GetCellValue(0,0)))
+        #self.log.info(f"OnGridLClick({col},{row}")
+        #self.log.debug("  _table.GetValue(0,0) = {}".format(self._table.GetValue(0, 0)))
+        #self.log.debug("  self.GetCellValue(0,0) = {}".format(self.GetCellValue(0,0)))
 
        # x = evt.GetRow()
         #y = evt.GetCol()
@@ -764,7 +738,7 @@ class PianoRoll(wx.grid.Grid, glr.GridWithLabelRenderersMixin):
 
 
     def DrawCell(self, val, row, col, new_sy, new_sx):
-        self.log.info(f"DrawCell():")
+        #self.log.info(f"DrawCell():")
         cur_span, cur_sy, cur_sx = self.GetCellSize(row, col)
 
         if cur_span == wx.grid.Grid.CellSpan_Inside:
@@ -789,7 +763,7 @@ class PianoRoll(wx.grid.Grid, glr.GridWithLabelRenderersMixin):
                 return
             y += 1
 
-        print(f"  {row},{col} = {val}")
+        #print(f"  {row},{col} = {val}")
         #Grid update
         #-----------
         self._table.SetValue(row, col, val)
@@ -847,7 +821,7 @@ class PianoRoll(wx.grid.Grid, glr.GridWithLabelRenderersMixin):
                     x = 127 - p.midi
                     size = int(self._cells_per_qrtrnote * n.duration.quarterLength)
                     if size < 1:
-                        print("Note size is too small for current grid CellsPerNote.")
+                        print("Chord: Note size is too small for current grid CellsPerNote(%s)." % self._cells_per_qrtrnote)
                     else:
                         self._table.SetValue(x, y, "1")
                         self.m_v.CurrentActor()._array3D[y, 127 - x, z] = 1
@@ -858,7 +832,7 @@ class PianoRoll(wx.grid.Grid, glr.GridWithLabelRenderersMixin):
                 x = 127 - n.pitch.midi
                 size =  int(self._cells_per_qrtrnote * n.duration.quarterLength)
                 if size < 1:
-                    print("Note size is too small for current grid CellsPerNote.")
+                    print("Note: Note size is too small for current grid CellsPerNote.")
                 else:
                     self._table.SetValue(x, y, "1")
                     self.m_v.CurrentActor()._array3D[y, 127 - x, z] = 1
@@ -1091,52 +1065,15 @@ class PianoRollCellRenderer(wx.grid.GridCellRenderer):
     def __init__(self, parent):
         wx.grid.GridCellRenderer.__init__(self)
         #self.window = wx.Window()
-        #self.new_dc = wx._core.PaintDC(self.window)
         self.parent = parent
 
-        self.pdc = None
-        self.bdc = None
-        self.PRClientSize = self.parent.GetClientSize()
-        #self.bitmap.Create()
-        self.bitmap = wx.Bitmap(self.PRClientSize[0], self.PRClientSize[1])
-
-        # print("BitSize", self.bitmap.GetSize())
-        # self.ndc = None
-        #self.mdc = wx.MemoryDC(self.bitmap)
-        # self.mdc.SetBrush(wx.Brush("BLACK", wx.SOLID))
-        #
-        #     #self.mdc.SetClippingRegion(rect.x, rect.y, rect.width, rect.height)
-        # self.mdc.SetPen(wx.TRANSPARENT_PEN)
-        # self.mdc.SelectObject(self.bitmap)
-        #self.mdc.Blit()
+       
     def Draw(self, grid, attr, dc, rect, row, col, isSelected):
-        # self.bitmap.SetSize(wx.Size(rect.width, rect.height))
-        # print("ori", dc.DeviceOrigin)
-        #print("Grid", grid)
-        #print("RECT", rect)
-        #def Intercept(dc, Draw=self.Draw):
-            #self.bdc = wx.BufferedDC(dc, self.bitmap, style=wx.BUFFER_VIRTUAL_AREA)
-        if self.pdc is None:
-            self.pdc = dc
-
-        if self.bdc is None:
-            self.bdc = wx.BufferedDC(dc, self.bitmap, style=wx.BUFFER_CLIENT_AREA)
-        else:
-            pass
-        #print("DC", type(dc), dc)
-
-        #dc = self.new_dc
-        #if self.ndc is not None:
-        #self.ndc = dc
-        #dc = self.mdc
-        #print("BITMAP Draw?")
-        #dc.CanDrawBitmap()
-        #print(self.GetRefCount())
+        
 
         self.grid_highlight_color = "LIGHT BLUE"
 
         value = grid.GetCellValue(row, col)
-        #values = grid._table.Get
 
         ##NOTE: "value" is a string.
         if value == "1":
@@ -1158,5 +1095,4 @@ class PianoRollCellRenderer(wx.grid.GridCellRenderer):
             dc.SetPen(wx.NullPen)
             dc.SetBrush(wx.NullBrush)
             dc.DestroyClippingRegion()
-        #dc.UnMask()
 

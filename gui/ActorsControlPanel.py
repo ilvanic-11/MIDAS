@@ -272,7 +272,7 @@ class ActorsControlPanel(wx.Panel):
     def OnDeleteSelection(self, event):
         #Deletes 'selected' not 'activated' actors.
         alb = self.GetTopLevelParent().pianorollpanel.actorsctrlpanel.actorsListBox
-        print("J_list", [j for j in range(len(self.mayavi_view.actors), -1, -1)])
+        #print("J_list", [j for j in range(len(self.mayavi_view.actors), -1, -1)])
         for j in range(len(self.mayavi_view.actors), 0, -1):  #Fucking OBOE errors...
             print("J", j)
             if alb.IsSelected(j-1):

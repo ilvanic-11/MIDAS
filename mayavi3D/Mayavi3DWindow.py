@@ -48,7 +48,7 @@ class Actor(HasTraits):
     _stream = Any()  #TODO For exporting, finish. Not used atm.
 
     # new_array3d for *Experiment stuff
-    _draw_array3D = Array(dtype=np.int8, shape=(5000, 128, 128))
+    #_draw_array3D = Array(dtype=np.int8, shape=(5000, 128, 128))
 
     #For trait flagging.
     array3Dchangedflag = Int()
@@ -110,56 +110,28 @@ class Actor(HasTraits):
 
     @on_trait_change("array3Dchangedflag")
     def actor_array3D_changed(self):
-        print("actor_array3D_changed")
-        print("actor_index  ", self.index)
+        #print("actor_array3D_changed")
+        #print("actor_index  ", self.index)
 
         cpqn = self.toplevel.pianorollpanel.pianoroll._cells_per_qrtrnote
 
 
-        # #EXPERIMENTAL Stuff...
-        # draw_points = np.argwhere(self._draw_array3D == 1.0)
-        # indexer = np.asarray(draw_points, dtype=np.float32)
-        # draw_points[:, 0] = draw_points[:, 0] / cpqn
-        # print("DRAW POINTS",  draw_points)
-        # print("DRAW_POINTS Type", type(draw_points), draw_points.dtype)
-
-
-        #self._points = np.argwhere(self._array3D == 1.0)
-        #self._points = np.vstack((self._points, draw_points))
-        print("_POINTS Type", type(self._points), self._points.dtype)
-
-
+     
         #Working stuff*
 
         points = np.argwhere(self._array3D == 1.0)
         all_points = midiart3D.get_planes_on_axis(points, array=True)
         cur_plane = all_points[self.cur_z]
-        print("Type_Cur_Plane", type(cur_plane))
-        print(cur_plane)
-        #print("ARRAYCHECK", cur_plane[0])
-        #print("ARRAYTYPECHECK", type(cur_plane[0]))
+
         try:
             cur_plane[:, 0] = cur_plane[:, 0] / cpqn  ##/ cpqn #Account for cpqn.  X axis "Slice" item assignment here.
-            print("HERE, BABY")
+            #print("HERE, BABY")
         except Exception as e:
-            print("fuckabitchnuggets", e)
+            print("Exception: ", e)
         all_points[self.cur_z] = cur_plane
         self._points = midiart3D.restore_coords_array_from_ordered_dict(all_points)
-        print("_points", self._points)
+        #print("_points", self._points)
         #self._points[:, 0] = self._points[:, 0]
-
-        # #EXPERIMENTAL Stuff...
-        # try:
-        #     draw_indices = npi.indices(self._points, [i for i in indexer], axis=0)
-        #     print("Draw_Indices", draw_indices)
-        #     for i in draw_indices:
-        #         self._points[i][0] = self._points[i][0] / cpqn    #The 'x' of our points gets refactored.
-        # except TypeError as e:
-        #     print("FUCKASS", e)
-        #     pass
-        # print("BITCH, HERE2")
-
-        #int(i[0] / self.pianoroll._cells_per_qrtrnote)
 
         try:
             self.mayavi_view.sources[self.index].mlab_source.trait_set(points=self._points)    #TODO Redundant? Traitset happens on x axis item slice reassignment above.
@@ -169,16 +141,12 @@ class Actor(HasTraits):
 
     @on_trait_change("pointschangedflag")
     def actor_points_changed(self):
-        print("actor_points_changed")
-        print("actor_index ", self.index)
-
+        #print("actor_points_changed")
         cpqn = self.toplevel.pianorollpanel.pianoroll._cells_per_qrtrnote
-        print("CPQN", cpqn)
-
-
-
+        #print("CPQN", cpqn)
 
         new_array3D = np.zeros(self._array3D.shape, dtype=np.int8)
+        
         for p in self._points:
             try:
                 new_array3D[int(p[0]), int(p[1]), int(p[2])] = 1.0   #TODO Account for cpqn.  * cpqn
@@ -189,16 +157,16 @@ class Actor(HasTraits):
         #self._points[:, 0] = self._points[:, 0]
 
         self.mayavi_view.sources[self.index].mlab_source.trait_set(points=self._points)
-        print("sources trait_set after actor_points_changed")
+       # print("sources trait_set after actor_points_changed")
 
     @on_trait_change('color')
     def show_color(self):
-        print("COLOR TRAIT CHANGED:", self.color)
+        #print("COLOR TRAIT CHANGED:", self.color)
         pass
 
     @on_trait_change('position')
     def show_position(self):
-        print("POSITION TRAIT CHANGED:", self.position)
+        #print("POSITION TRAIT CHANGED:", self.position)
         self.mayavi_view.cur_ActorIndex = self.index
 
 
@@ -438,24 +406,15 @@ class Mayavi3idiView(HasTraits):
         #self.scene3d.disable_render = False
 
         print("append_actor")
-        print('1')
+        
 
         self.cur_ActorIndex = len(self.actors)
         a = Actor(self, self.cur_ActorIndex)
 
-        #self.actor = a
-
-        #TODO Can ALL this v-here-v go into the actor's init?
-        print('2')
-        # self.sources.append(None)
         self.actors.append(a)
-        print('3')
         appending_data = self.insert_array_data(a._array3D, color=color, mode="cube", name=name, scale_factor=1.0)
-        print('4')
         self.sources.append(appending_data)
-        print('5')
         self.mlab_calls.append(appending_data)
-        print('6')
 
 
         #TODO Move this to actor class?
@@ -464,14 +423,10 @@ class Mayavi3idiView(HasTraits):
         #self.on_trait_change(self.actor_list_changed, 'actors[]')
 
 
-
         #Traits syncing goes here, if desired. (can't go in actor init, because the actor hasn't been appended to any lists yet...)
         #Simplifies access to the pipeline's properties\traits by configuring our "Actor()" class to have these directly.
         self.sources[self.cur_ActorIndex].actor.property.sync_trait('color', a, mutual=True)
-        print("Colors synced.")
         self.sources[self.cur_ActorIndex].actor.actor.sync_trait('position', a, mutual=True)
-        print("Position synced.")
-
 
         a.name = name
         a.color = color
@@ -481,21 +436,6 @@ class Mayavi3idiView(HasTraits):
 
         #self.scene3d.disable_render = False
 
-    @on_trait_change('cur')
-    def current_actor_changed(self):
-        print("current_actor_changed")
-
-
-
-    # TODO Deprecated?
-    # def update_3Dpoints(self, row, col, val):
-    #     try:
-    #         page = self.GetTopLevelParent().pianorollpanel.currentPage
-    #         layer = self.GetTopLevelParent().pianorollpanel.pianorollNB.FindPage(page)
-    #         self._array3D[col, 127 - row, layer] = val
-    #     except Exception as e:
-    #         print(e)
-    #         pass
 
     # TODO Decide if still doing this.
     def actor_stream_changed(self):
@@ -1143,18 +1083,21 @@ class Mayavi3idiView(HasTraits):
         #On Current Actor activation.
 
         #self.remove_trait('position')
-        print("Cur:", self.cur_ActorIndex)
+        #print("Cur:", self.cur_ActorIndex)
         #print("GlyphSources:", self.sources)
-        print("Sources length:", len(self.sources))
+        #print("Sources length:", len(self.sources))
         #Note: There is the option to remove trait_syncing.
         #NOTE: removing a sync didn't seem to be working.....
         if self.cur_ActorIndex < 0:
+            self.parent.pianorollpanel.pianoroll._table._cur_actor = None
             return
-        print("self.cur", self.cur_ActorIndex)
+        self.parent.pianorollpanel.pianoroll._table._cur_actor = self.actors[self.cur_ActorIndex]
+        
+        #print("self.cur", self.cur_ActorIndex)
         self.sources[self.cur_ActorIndex].actor.actor.sync_trait('position', self, mutual=False)
-        print("Position trait one-way synced: actor.position ---to---> mayavi_view.position.")
+        #print("Position trait one-way synced: actor.position ---to---> mayavi_view.position.")
         self.actors[self.cur_ActorIndex].sync_trait('cur_z', self, mutual=False)
-        print("Cur_z trait one-way synced: actor.cur_z ---to---> mayavi_view.cur_z.")
+        #print("Cur_z trait one-way synced: actor.cur_z ---to---> mayavi_view.cur_z.")
         if len(self.sources) == 1 and self.cur_ActorIndex == 0:
             pass
         else:
@@ -1174,7 +1117,7 @@ class Mayavi3idiView(HasTraits):
     @on_trait_change('position')  #Split for a tested reason.
     def select_moved_actor(self):
         #Select Actor in list box on position change.
-        print("Actors Length:", len(self.actors))
+        #print("Actors Length:", len(self.actors))
         alb = self.parent.pianorollpanel.actorsctrlpanel.actorsListBox
         if len(self.actors) is not 0:
             for i in range(0, len(self.actors)):
@@ -1197,7 +1140,7 @@ class Mayavi3idiView(HasTraits):
         if self.cur_ActorIndex < 0:
             return
         self.highlighter_transformation()
-        print("Highlighter Aligned")
+        #print("Highlighter Aligned")
         self.new_reticle_box()
 
 
@@ -1214,7 +1157,7 @@ class Mayavi3idiView(HasTraits):
             else:
                 item_id = self.parent.menuBar.colors.FindItem(self.deleting_actor[-1])
                 self.parent.menuBar.colors.Delete(item_id)
-            print("Deletion Check...")
+            #print("Deletion Check...")
 
 
     @on_trait_change('actor_deleted_flag')
@@ -1222,14 +1165,14 @@ class Mayavi3idiView(HasTraits):
         #Reset actor.index attributes.
         for k in range(0, len(self.actors)):
             self.actors[k].index = k
-        print("actor.index attributes reset")
+        #print("actor.index attributes reset")
 
 
     @on_trait_change('cpqn_changed_flag')
     def OnCellsPerQuarterNote_Changed(self):
         #self.highlighter_transformation()
         self.new_reticle_box()
-        print("Establishing New Reticle Box...")
+        #print("Establishing New Reticle Box...")
 
         #Reset orange reticle box. CHECK
         #Scale_factor for all actors.
@@ -1257,19 +1200,19 @@ class Mayavi3idiView(HasTraits):
             s_linex = mproll.GetScrollLineX()   #Set to 160 in pianroll (the grid), the equivalent of scrolling a full measure of columns..
             s_liney = mproll.GetScrollLineY()   #Set to 120, the equivalent of scrolling 2 octaves of rows.
             client_size = mproll.GetClientSize()
-            print("CLIENT_SIZE", client_size)
+            #print("CLIENT_SIZE", client_size)
             client_rect = mproll.GetClientRect()
-            print("CLIENT_RECT", client_rect)
+           # print("CLIENT_RECT", client_rect)
 
             cpqn = self.parent.pianorollpanel.pianoroll._cells_per_qrtrnote
             #s_r = mproll.GetScroll
 
             #GRID CELL COORDINATES (Y, X)
             bottomleft = mproll.XYToCell((s_h * s_linex), (s_v * s_liney) + client_size[1] - 18)    #18 (techincally 20) IS THE PIXEL HIGHT IF THE LABEL BAR AT THE TOP.
-            print("RETICLE_BOTTOM_LEFT", bottomleft)
+            #print("RETICLE_BOTTOM_LEFT", bottomleft)
 
             bottomright = mproll.XYToCell((s_h * s_linex) + client_size[0] - 58, (s_v * s_liney) + client_size[1] - 18)    #60 IS THE PIXEL WIDGTH OF THE PIANO
-            print("RETICLE_BOTTOM_RIGHT", bottomright)
+            #print("RETICLE_BOTTOM_RIGHT", bottomright)
 
             topleft = mproll.XYToCell((s_h * s_linex), (s_v * s_liney))  #0 times whatever your scroll rate is equal to zero, so the top left at start is (0, 0)
 
@@ -1286,8 +1229,8 @@ class Mayavi3idiView(HasTraits):
                 bottomleft = (127, topleft[1]) #New Bottomleft
                 bottomright = (127, topright[1]) #New Bottomright
 
-                print("RETICLE_BOTTOM_LEFT2", bottomleft)
-                print("RETICLE_BOTTOM_RIGHT2", bottomright)
+                #print("RETICLE_BOTTOM_LEFT2", bottomleft)
+                #print("RETICLE_BOTTOM_RIGHT2", bottomright)
             else:
                 pass
 
