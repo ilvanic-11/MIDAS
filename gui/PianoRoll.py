@@ -342,7 +342,7 @@ class PianoRoll(wx.grid.Grid, glr.GridWithLabelRenderersMixin):
         pos = state.GetPosition()
         new_pos = self.ScreenToClient(pos)
         grid_cell = self.XYToCell(
-            self.CalcGridWindowUnscrolledPosition((new_pos[0] - 59,
+            self.CalcGridWindowUnscrolledPosition((new_pos[0] - 59,new_pos[1] - 19),gridWindow=self), gridWindow=self)
   
         return grid_cell
 
@@ -1082,9 +1082,12 @@ class PianoRollCellRenderer(wx.grid.GridCellRenderer):
         self.grid_highlight_color = "LIGHT BLUE"
 
         value = grid.GetCellValue(row, col)
+        #values = grid._table.Get
 
         ##NOTE: "value" is a string.
-        if value == "1":
+        if value == "":
+            dc.SetBrush(wx.Brush("WHITE", wx.BRUSHSTYLE_SOLID))
+        elif value == "1":
             dc.SetBrush(wx.Brush("BLACK", wx.BRUSHSTYLE_SOLID))
         elif int(value) == 2:
             #ValueError: invalid literal for int() with base 10: '' THIS is the error acquired when you try do draw without an actor.
@@ -1103,4 +1106,5 @@ class PianoRollCellRenderer(wx.grid.GridCellRenderer):
             dc.SetPen(wx.NullPen)
             dc.SetBrush(wx.NullBrush)
             dc.DestroyClippingRegion()
+        #dc.UnMask()
 

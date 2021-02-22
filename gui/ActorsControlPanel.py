@@ -364,7 +364,7 @@ class CustomActorsListBox(wx.ListCtrl):
                 color = tuple([color[2], color[1], color[0]])
             else:
                 color = self.m_v.default_mayavi_palette[i + 1]
-                print("'i' HERE", i + 1)
+               #print("'i' HERE", i + 1)
                 #SWAP HERE.
                 color = tuple([color[2], color[1], color[0]])
         self.m_v.append_actor(name, color) #Subsequent actors selected from color_palette..
