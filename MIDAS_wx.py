@@ -543,13 +543,13 @@ class MainWindow(wx.Frame):
         #Send selected notes to self.actor_scrolled.  Works
         if event.GetKeyCode() == wx.WXK_SHIFT and state.MiddleIsDown():
             #print("Sending to scrolled Actor-->Shift and Middle down here.")
-            pass
-            self.pianorollpanel.Selection_Send(self.pianorollpanel.selected_notes, self.zplane_scrolled, event=None, send_to_z=True, send_to_actor=True, array=False)
+            #pass
+            self.pianorollpanel.Selection_Send(self.pianorollpanel.selected_notes, self.zplane_scrolled, event=None, carry_to_z=True, carry_to_actor=True, array=False)
 
         #Send selected notes to self.zplane_scrolled.  Works
         elif event.GetKeyCode() == wx.WXK_ALT and state.MiddleIsDown():
             #print("Sending to scrolled Zplane-->Alt and Middle down here.")
-            self.pianorollpanel.Selection_Send(self.pianorollpanel.selected_notes, self.zplane_scrolled, event=None, send_to_z=True, array=False)
+            self.pianorollpanel.Selection_Send(self.pianorollpanel.selected_notes, self.zplane_scrolled, event=None, carry_to_z=True, array=False)
             #TODO Attribute error expection here. Write.
 
         #Send selected notes to the pyshell as an np.array and as a music21.stream.Stream.

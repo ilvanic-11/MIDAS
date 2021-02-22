@@ -85,15 +85,15 @@ class PianoRollColLabelRenderer(glr.GridLabelRenderer):
 class PianoRollDataTable(wx.grid.GridTableBase):
     """ A grid data table that connects to the traited 3D array in the mayavi_view
     """
-    
+
     #log = logging.getLogger("PianoRollDataTable")
     def __init__(self, pianorollpanel):
         wx.grid.GridTableBase.__init__(self)
         self.pianorollpanel = pianorollpanel
         self._cur_actor = None #store ref to this locally to optimize (maybe?)
-        
+
     # need to store a reference to the piano roll panel.  GridTableBase does not store gui parents.
-    
+
     #def SetRefToPianoRollPanel(self, pianorollpanel):
 
 
@@ -103,7 +103,7 @@ class PianoRollDataTable(wx.grid.GridTableBase):
             return self._cur_actor._array3D.shape[0]
         else:
             return 5000
-        
+
     def GetNumberRows(self):
         #print("GetNumberCols(): {}".format(self.parent.GetTopLevelParent().mayavi_view.CurrentActor()._array3D.shape[1]))
         if self._cur_actor:
@@ -112,7 +112,7 @@ class PianoRollDataTable(wx.grid.GridTableBase):
             return self._cur_actor._array3D.shape[1]
         else:
             return 128
-        
+
     def GetValue(self, row, col):
         if self._cur_actor:
             if (self.pianorollpanel):
@@ -299,17 +299,22 @@ class PianoRoll(wx.grid.Grid, glr.GridWithLabelRenderersMixin):
 
     def OnMeasureLabelsLeftClick(self, event):
         self.last_known_pos = event.GetPosition()
+        print("Label Event Position:", self.last_known_pos)
         row = event.GetRow()
+        print("Label Event Row:", row)
         col = event.GetCol()
-        
+        print("Label Event Col:", col)
 
         s_h = self.GetScrollPos(wx.HORIZONTAL)  #cur scrollunitsperpixel here is 100
+        print("Scroll_H:", s_h)
         s_v = self.GetScrollPos(wx.VERTICAL)    #cur scrollunitsperpixel here is 100
-
+        print("Scroll_V:", s_v)
         s_linex = self.GetScrollLineX()
+        print("Scroll_LineX:", s_linex)
         s_liney = self.GetScrollLineY()
-
+        print("Scroll_LineY:", s_liney)
         c_s = self.GetClientSize()
+        print("ClientSize:", c_s)
 
         #Acquire scrollunitsperpixel as tuple.
         scrollrate_x, scrollrate_y = self.GetScrollPixelsPerUnit()
@@ -323,9 +328,11 @@ class PianoRoll(wx.grid.Grid, glr.GridWithLabelRenderersMixin):
         self.last_known_scrollY = self.GetScrollPos(wx.VERTICAL)      #cur scrollunitsperpixel here is 1
 
         viewstart = self.GetViewStart()
-       
+        print("ViewStart:", viewstart)
+        print("SCROLLRATE:", self.GetScrollPixelsPerUnit())
+
         #Pixels == Scroll-ticks here.
-        self.Scroll((viewstart[0] + self.last_known_pos[0] - 60), self.last_known_scrollY * scrollrate_y)  #...new_s_v-19
+        self.Scroll((viewstart[0] + self.last_known_pos[0] - 60), self.last_known_scrollY * scrollrate_y)  #38 is the label compensation value.    new_s_v-19
         #wx.CallLater(1000, self.SetScrollRate, x=100, y=100)
         wx.CallAfter(self.m_v.new_reticle_box)
 
@@ -390,17 +397,17 @@ class PianoRoll(wx.grid.Grid, glr.GridWithLabelRenderersMixin):
 
 
     def SendToHere(self, selected_notes):
-
+        #TODO Is this function somewhere else now?
         pass
 
 
     def OnPaint(self, event):
-        pass
-        #print("Painting, bitch.")
-        #pdc = wx.PaintDC(self)
-        #PRClientSize = self.GetClientSize()
-        #Qself.bitmap = wx.Bitmap(PRClientSize[0], PRClientSize[1])
-        #dc = wx.BufferedPaintDC(self, self.bitmap)
+        #pass
+        print("Painting, bitch.")
+        pdc = wx.PaintDC(self)
+        PRClientSize = self.GetClientSize()
+        self.bitmap = wx.Bitmap(PRClientSize[0], PRClientSize[1])
+        dc = wx.BufferedPaintDC(self, self.bitmap)
         #dc = wx.AutoBufferedPaintDC(self)
         #TODO What Dafuq calls Draw() in the CellRenderer?
         #TODO Then
@@ -1085,9 +1092,9 @@ class PianoRollCellRenderer(wx.grid.GridCellRenderer):
         #values = grid._table.Get
 
         ##NOTE: "value" is a string.
-        if value == "":
-            dc.SetBrush(wx.Brush("WHITE", wx.BRUSHSTYLE_SOLID))
-        elif value == "1":
+        # if value == "":
+        #     dc.SetBrush(wx.Brush("WHITE", wx.BRUSHSTYLE_SOLID))
+        if value == "1":
             dc.SetBrush(wx.Brush("BLACK", wx.BRUSHSTYLE_SOLID))
         elif int(value) == 2:
             #ValueError: invalid literal for int() with base 10: '' THIS is the error acquired when you try do draw without an actor.

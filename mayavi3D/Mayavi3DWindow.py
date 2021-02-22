@@ -47,7 +47,7 @@ class Actor(HasTraits):
     _array3D = Array(dtype=np.int8, shape=(5000, 128, 128))
     _stream = Any()  #TODO For exporting, finish. Not used atm.
 
-    # new_array3d for *Experiment stuff
+    #array3d for *Experiment stuff
     #_draw_array3D = Array(dtype=np.int8, shape=(5000, 128, 128))
 
     #For trait flagging.
@@ -109,7 +109,7 @@ class Actor(HasTraits):
             self._all_points[self.cur_z] = self._cur_plane
         except Exception as e:
             print(e)
-            print("Exception as e:", e)
+            print("Exception as e1:", e)
 
 
         #_array3D = np.full([2500, 128, 128, 3], np.array([0, 1, 90]))
@@ -158,7 +158,6 @@ class Actor(HasTraits):
 
         self.get_ON_points_as_odict()  #Returns an OrderedDict()
         self._points = midiart3D.restore_coords_array_from_ordered_dict(self._all_points)
-
         #self._points = midiart3D.delete_select_points(self._points, [[0, 0, 0]], tupl=False)
 
         #print("_points", self._points)
@@ -189,13 +188,14 @@ class Actor(HasTraits):
         try:
             self._cur_plane = self._all_points[self.cur_z]  # Key error can happen here.... #TODO FIX
             
-            self._cur_plane[:, 0] = self._cur_plane[:, 0]/ self.cpqn   #TODO For selection sending between Actors, bool condition needed here to shut this off for those sends.
+            self._cur_plane[:, 0] = self._cur_plane[:, 0] / self.cpqn   #TODO For selection sending between Actors, bool condition needed here to shut this off for those sends.
             # CRITICAL: Account for cpqn. All 'x' values.  X axis "Slice" item assignment here.
             
             self._all_points[self.cur_z] = self._cur_plane
         except Exception as e:
             print(e)
-            print("Exception as e:", e)
+            print("BITCH")
+            print("Exception as e32:", e)
         #return self._all_points
 
     @on_trait_change("pointschangedflag")
@@ -243,9 +243,11 @@ class Mayavi3idiView(HasTraits):
 
 
     cur_ActorIndex = Int()
+    previous_ActorIndex = None
     cur_z = Int()
 
     cpqn = Int(4)   #Startup cpqn
+    old_cpqn = None
 
     cpqn_changed_flag = Bool()
 
@@ -1167,7 +1169,9 @@ class Mayavi3idiView(HasTraits):
         #Note: There is the option to remove trait_syncing.
         #NOTE: removing a sync didn't seem to be working.....
         if self.cur_ActorIndex < 0:
+            self.parent.pianorollpanel.pianoroll._table._cur_actor = None
             return
+        self.parent.pianorollpanel.pianoroll._table._cur_actor = self.actors[self.cur_ActorIndex]
         #print("self.cur", self.cur_ActorIndex)
         self.sources[self.cur_ActorIndex].actor.actor.sync_trait('position', self, mutual=False)
         #print("Position trait one-way synced: actor.position ---to---> mayavi_view.position.")
@@ -1241,7 +1245,10 @@ class Mayavi3idiView(HasTraits):
         for k in range(0, len(self.actors)):
             self.actors[k].index = k
         #print("actor.index attributes reset")
+        print("actor.index attributes reset")
 
+        if len(self.actors) == 0:
+            self.parent.pianorollpanel.last_actor = 0
 
     @on_trait_change('cpqn_changed_flag')
     def OnCellsPerQuarterNote_Changed(self):
