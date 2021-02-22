@@ -270,7 +270,7 @@ class MainButtonsPanel(wx.Panel):
 
         elif dialog.create_musicode.GetValue() is False and btn == "OK":
             print("DialogCheck:", dialog.create_musicode.GetValue())
-            stream = self .musicode.translate(
+            stream = self.musicode.translate(
                 dialog.rdbtnMusicodeChoice.GetString(dialog.rdbtnMusicodeChoice.GetSelection()),
                 dialog.inputTxt.GetLineText(0))
             print("LINETEXT:", dialog.inputTxt.GetLineText(0))

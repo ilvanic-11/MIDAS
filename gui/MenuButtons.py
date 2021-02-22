@@ -285,7 +285,7 @@ class CustomMenuBar(wx.MenuBar):
 
     def OnExport_Colors(self, event):
         print("Exporting Colors....")
-        self.mv = self.GetTopLevelParent().m_v
+        self.mv = self.GetTopLevelParent().mayavi_view
         print("evid", event.GetId())
         self.mv.colors_call = int(self.GetTopLevelParent().menuBar.colors.FindItemById(event.GetId()).GetItemLabelText())  ##.Name in wx(4.0.7)
 

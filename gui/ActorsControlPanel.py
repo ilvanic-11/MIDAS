@@ -96,54 +96,54 @@ class ActorsControlPanel(wx.Panel):
 
 
     def OnBtnNewActor(self,evt):
-        i = len(self.mayavi_view.actors)
+        i = len(self.m_v.actors)
         self.actorsListBox.new_actor(i)
 
 
     def OnBtnDelActor(self, evt, cur=None):
         #TODO Make dynamic for all cases.
         #Note: These deletions delete by index, not by actor name.
-        self.mayavi_view.scene3d.disable_render=True
+        self.m_v.scene3d.disable_render=True
 
-        current = self.mayavi_view.cur_ActorIndex
+        current = self.m_v.cur_ActorIndex
         if cur is None:
             pass
         else:
             current = cur
 
-        self.mayavi_view.cur_ActorIndex = current - 1
+        self.m_v.cur_ActorIndex = current - 1
 
-        self.mayavi_view.deleting_actor = self.mayavi_view.actors[current].colors_instance
+        self.m_v.deleting_actor = self.m_v.actors[current].colors_instance
 
         #Remove from actorsListBox
         self.actorsListBox.DeleteItem(current)
         #Remove from scene(the mayavi pipeline)
-        self.mayavi_view.sources[current].parent.stop()
-        self.mayavi_view.sources[current].parent.remove()
-        self.mayavi_view.sources[current].parent.update()
-        self.mayavi_view.sources[current].parent.parent.stop()
-        self.mayavi_view.sources[current].parent.parent.remove()
-        self.mayavi_view.sources[current].parent.parent.update()
-        self.mayavi_view.sources[current].stop()
-        self.mayavi_view.sources[current].remove()
-        self.mayavi_view.sources[current].update_data()
-        self.mayavi_view.sources[current].update_pipeline()
+        self.m_v.sources[current].parent.stop()
+        self.m_v.sources[current].parent.remove()
+        self.m_v.sources[current].parent.update()
+        self.m_v.sources[current].parent.parent.stop()
+        self.m_v.sources[current].parent.parent.remove()
+        self.m_v.sources[current].parent.parent.update()
+        self.m_v.sources[current].stop()
+        self.m_v.sources[current].remove()
+        self.m_v.sources[current].update_data()
+        self.m_v.sources[current].update_pipeline()
 
 
         #Remove from mlab_calls list
-        self.mayavi_view.mlab_calls.remove(self.mayavi_view.sources[current])
+        self.m_v.mlab_calls.remove(self.m_v.sources[current])
         #Remove from source list
-        self.mayavi_view.sources.remove(self.mayavi_view.sources[current])
+        self.m_v.sources.remove(self.m_v.sources[current])
 
 
         #Remove from actors list
-        self.mayavi_view.actors.remove(self.mayavi_view.actors[current])
+        self.m_v.actors.remove(self.m_v.actors[current])
 
         self.GetTopLevelParent().pianorollpanel.pianoroll.ForceRefresh()
         #self.GetTopLevelParent().pianorollpanel.ClearZPlane(self.GetTopLevelParent().pianorollpanel.currentZplane)
 
 
-        self.mayavi_view.actor_deleted_flag = not self.mayavi_view.actor_deleted_flag
+        self.m_v.actor_deleted_flag = not self.m_v.actor_deleted_flag
 
         # if len(self.mayavi_view.actors) != 0:
         # 	self.mayavi_view.cur = len(self.mayavi_view.actors) - 1
@@ -151,25 +151,25 @@ class ActorsControlPanel(wx.Panel):
             #self.mayavi_view.cur = -1#Condition for single actor case.
             #self.actorsListBox.new_actor("0", 0)
             #Clear Piano
-        self.mayavi_view.scene3d.disable_render=False
+        self.m_v.scene3d.disable_render=False
         #self.mayavi_view.scene3d.mlab.draw(self.mayavi_view.scene3d.mlab.gcf())
 
     def OnBtnDelAllActors(self, evt):
         #self.mayavi_view.scene3d.disable_render=True
-        for j in range(0, len(self.mayavi_view.actors)):
+        for j in range(0, len(self.m_v.actors)):
             #This function deletes by index 0 the number of times of the loop's range, not by self.mayavi_view.cur.
 
             index_0 = 0
 
             self.actorsListBox.DeleteItem(index_0)
             # Remove from scene(the mayavi pipeline)
-            self.mayavi_view.sources[index_0].remove()
+            self.m_v.sources[index_0].remove()
             # Remove from mlab_calls list
-            self.mayavi_view.mlab_calls.remove(self.mayavi_view.sources[index_0])
+            self.m_v.mlab_calls.remove(self.m_v.sources[index_0])
             # Remove from source list
-            self.mayavi_view.sources.remove(self.mayavi_view.sources[index_0])
+            self.m_v.sources.remove(self.m_v.sources[index_0])
             # Remove from actors list
-            self.mayavi_view.actors.remove(self.mayavi_view.actors[index_0])
+            self.m_v.actors.remove(self.m_v.actors[index_0])
 
         self.GetTopLevelParent().pianorollpanel.ClearZPlane(self.GetTopLevelParent().pianorollpanel.currentZplane)
 
@@ -181,9 +181,9 @@ class ActorsControlPanel(wx.Panel):
 
     def OnBtnDelEmtpyActors(self, evt):
         #TODO Make a button?
-        self.mayavi_view.scene3d.disable_render=True
+        self.m_v.scene3d.disable_render=True
 
-        empty_actors = [i.index for i in self.mayavi_view.actors if i._points.size is 0]
+        empty_actors = [i.index for i in self.m_v.actors if i._points.size is 0]
         alb = self.GetTopLevelParent().pianorollpanel.actorsctrlpanel.actorsListBox
         #for i in self.mayavi_view.actors:
         #print(empty_actors)
@@ -191,7 +191,7 @@ class ActorsControlPanel(wx.Panel):
         for j in empty_actors:
             alb.Select(j)
         self.OnDeleteSelection(event=None)
-        self.mayavi_view.scene3d.disable_render=False
+        self.m_v.scene3d.disable_render=False
 
 
             # if i.index == j:  #Compare check here works around the readjusting of actor indices.
@@ -273,7 +273,7 @@ class ActorsControlPanel(wx.Panel):
         #Deletes 'selected' not 'activated' actors.
         alb = self.GetTopLevelParent().pianorollpanel.actorsctrlpanel.actorsListBox
         #print("J_list", [j for j in range(len(self.mayavi_view.actors), -1, -1)])
-        for j in range(len(self.mayavi_view.actors), 0, -1):  #Fucking OBOE errors...
+        for j in range(len(self.m_v.actors), 0, -1):  #Fucking OBOE errors...
             print("J", j)
             if alb.IsSelected(j-1):
                 #if j == self.mayavi_view.cur_ActorIndex:
