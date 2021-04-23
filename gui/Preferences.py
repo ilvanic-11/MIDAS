@@ -1,24 +1,38 @@
-import wx
-import music21
 import inspect
-#from midas_scripts import midiart, midiart3D, musicode, music21funcs
-from midas_scripts.musicode import *
 from midas_scripts.midiart import *
 from midas_scripts.midiart3D import *
-from midas_scripts.music21funcs import *
 
 ##Patch Imports
 #Wx bug
-
+###---Note---> Most of these patches are GUI-related bugs.
 
 from pyface.util import fix_introspect_bug
-#VTK 9.0.1 and Mayavi 4.7.2 updates
 from tvtk.pyface.ui.wx import decorated_scene
 from traitsui.wx import tree_editor
 from traitsui.wx import helper
 from traitsui.wx import file_editor
 from pyface.ui.wx.action import menu_manager
+import threading
+from traits.api import Any, HasTraits, Button, Instance, Range
+from traitsui.api import View, Group, Item
 
+from pyo.lib._widgets import *
+#from pyo.lib._widgets import createServerGUI
+from pyface.timer.api import Timer
+from mayavi.tools import animator
+from multiprocessing import Process, Event
+
+# import wx
+# import pyo
+# import music21
+#VTK 9.0.1 and Mayavi 4.7.2 updates
+#from midas_scripts import midiart, midiart3D, musicode, music21funcs
+# from midas_scripts.musicode import *
+# from midas_scripts.music21funcs import *
+# from pyo import Server
+# from pyo.lib import _widgets
+#pyo.PYO_USE_WX = False
+#from threading import Timer, Lock, Semaphore
 
 
 class PreferencesDialog(wx.Dialog):
@@ -235,6 +249,7 @@ class ToolsDialog(wx.Dialog):
         self.sizerMain.Add(btnsizer, 0, wx.ALL | wx.ALIGN_CENTER, 20)
         self.SetSizerAndFit(self.sizerMain)
 
+    #TODO OnToolsDialogueClosed():
 
 #####PATCHES
 ###########################################
@@ -298,6 +313,7 @@ def getAllAttributeNames(object):
                     attrdict.update(getAllAttributeNames(base))
     return attrdict
 
+
 def _background_changed(self, value):
     # Depending on the background, this sets the axes text and
     # outline color to something that should be visible.
@@ -315,6 +331,7 @@ def _background_changed(self, value):
             #m.set_outline_color(0,0,0)
             m.outline_color = (0,0,0)
         self.render()
+
 
 def restore_window(ui, is_popup=False):
     """ Restores the user preference items for a specified UI.
@@ -347,6 +364,7 @@ def restore_window(ui, is_popup=False):
             else:
                 ui.control.SetSize(x, y, dx, dy)
 
+
 def add_to_menu(self, parent, menu, controller):
     """ Adds the item to a menu. """
 
@@ -370,10 +388,12 @@ def add_to_menu(self, parent, menu, controller):
 
     menu.Append(id, self.name, sub)
 
+
 def _is_pasteable(self, object):
     from pyface.clipboard import clipboard
 
     return self._menu_node.can_add(object, clipboard.object_type)
+
 
 def init_1(self, parent):
     """ Finishes initializing the editor by creating the underlying toolkit
@@ -420,6 +440,280 @@ def init_1(self, parent):
     self.set_tooltip(control)
 
 
+def createServerGUI(nchnls, start, stop, recstart, recstop, setAmp, started,
+                    locals, shutdown, meter, timer, amp, exit, title, getIsBooted,
+                    getIsStarted):
+    "Creates the server's GUI."
+    global X, Y, MAX_X, NEXT_Y
+    if title is None:
+        title = "Pyo Server"
+    if not PYO_USE_WX:
+        createRootWindow()
+        win = tkCreateToplevelWindow()
+        f = ServerGUI(win, nchnls, start, stop, recstart, recstop, setAmp,
+                      started, locals, shutdown, meter, timer, amp, getIsBooted,
+                      getIsStarted)
+        f.master.title(title)
+        f.focus_set()
+    else:
+        #win = createRootWindow()
+        #if win is None:
+        win = wx.App()
+        f = ServerGUI(None, nchnls, start, stop, recstart, recstop, setAmp,
+                      started, locals, shutdown, meter, timer, amp, exit, getIsBooted,
+                      getIsStarted)
+        f.SetTitle(title)
+        f.SetPosition((30, 30))
+        f.Show()
+        X, Y = (wx.SystemSettings.GetMetric(wx.SYS_SCREEN_X) - 50,
+                wx.SystemSettings.GetMetric(wx.SYS_SCREEN_Y) - 50)
+        if sys.platform.startswith("linux"):
+            MAX_X, NEXT_Y = f.GetSize()[0]+30, f.GetSize()[1]+55
+        else:
+            MAX_X, NEXT_Y = f.GetSize()[0]+30, f.GetSize()[1]+30
+        wx.CallAfter(wxCreateDelayedTableWindows)
+        wx.CallAfter(wxCreateDelayedGraphWindows)
+        wx.CallAfter(wxCreateDelayedDataGraphWindows)
+        wx.CallAfter(wxCreateDelayedSndTableWindows)
+        wx.CallAfter(wxCreateDelayedMatrixWindows)
+        wx.CallAfter(wxCreateDelayedCtrlWindows)
+        wx.CallAfter(wxCreateDelayedSpectrumWindows)
+        wx.CallAfter(wxCreateDelayedScopeWindows)
+        wx.CallAfter(wxCreateDelayedExprEditorWindows)
+        wx.CallAfter(wxCreateDelayedMMLEditorWindows)
+        wx.CallAfter(wxCreateDelayedNoteinKeyboardWindows)
+        wx.CallAfter(f.Raise)
+    return f, win, PYO_USE_WX
+
+
+
+def gui(self, locals=None, meter=True, timer=True, exit=True, title=None):
+    """
+    Show the server's user interface.
+
+    :Args:
+
+        locals: locals namespace {locals(), None}, optional
+            If locals() is given, the interface will show an interpreter extension,
+            giving a way to interact with the running script. Defaults to None.
+        meter: boolean, optinal
+            If True, the interface will show a vumeter of the global output signal.
+            Defaults to True.
+        timer: boolean, optional
+            If True, the interface will show a clock of the current time.
+            Defaults to True.
+        exit: boolean, optional
+            If True, the python interpreter will exit when the 'Quit' button is pressed,
+            Otherwise, the GUI will be closed leaving the interpreter alive.
+            Defaults to True.
+        title: str, optional
+            Alternate title for the server window. If None (default), generic
+            title, "Pyo Server" is used.
+
+    """
+    import wx ### Isaac change
+    self._gui_frame, win, withWX = createServerGUI(self._nchnls, self.start, self.cancel,
+                                                   self.recstart, self.recstop, self.setAmp,
+                                                   self.getIsStarted(), locals, self.shutdown,
+                                                   meter, timer, self._amp, exit, title,
+                                                   self.getIsBooted, self.getIsStarted)
+    #withWX = False
+    if meter:
+        self._server.setAmpCallable(self._gui_frame)
+    if timer:
+        self._server.setTimeCallable(self._gui_frame)
+    if withWX:
+        try:
+            win.MainLoop()
+        except AttributeError:
+            print("Continuing...")
+    else:
+        win.mainLoop()
+
+
+class Animator(HasTraits):
+    """ Convenience class to manage a timer and present a convenient
+        UI.  This is based on the code in `tvtk.tools.visual`.
+        Here is a simple example of using this class::
+
+            >>> from mayavi import mlab
+            >>> def anim():
+            ...     f = mlab.gcf()
+            ...     while 1:
+            ...         f.scene.camera.azimuth(10)
+            ...         f.scene.render()
+            ...         yield
+            ...
+            >>> anim = anim()
+            >>> t = Animator(500, anim.__next__)
+            >>> t.edit_traits()
+
+        This makes it very easy to animate your visualizations and control
+        it from a simple UI.
+
+        **Notes**
+
+        If you want to modify the data plotted by an `mlab` function call,
+        please refer to the section on: :ref:`mlab-animating-data`
+    """
+
+    ########################################
+    # Traits.
+
+    start = Button('Start Animation')
+    stop = Button('Stop Animation')
+    delay = Range(0, 100000, 0,   #Isaac edit
+                  desc='frequency with which timer is called')
+
+    # The internal timer we manage.
+    timer = Any
+
+    ######################################################################
+    # User interface view
+
+    traits_view = View(Group(Item('start'),
+                             Item('stop'),
+                             show_labels=False),
+                       Item('_'),
+                       Item(name='delay'),
+                       title='Animation Controller',
+                       buttons=['OK'])
+
+    ######################################################################
+    # Initialize object
+    def __init__(self, millisec, callable, *args, **kwargs):
+        r"""Constructor.
+
+        **Parameters**
+
+          :millisec: int specifying the delay in milliseconds
+                     between calls to the callable.
+
+          :callable: callable function to call after the specified
+                     delay.
+
+          :\*args: optional arguments to be passed to the callable.
+
+          :\*\*kwargs: optional keyword arguments to be passed to the callable.
+
+        """
+        HasTraits.__init__(self)
+        self.delay = millisec
+        self.ui = None
+        self.timer = Timer(millisec, callable, *args, **kwargs)
+        self._stop_fired()
+    ######################################################################
+    # `Animator` protocol.
+    ######################################################################
+    def show(self):
+        """Show the animator UI.
+        """
+        self.ui = self.edit_traits()
+
+    def close(self):
+        """Close the animator UI.
+        """
+        if self.ui is not None:
+            self.ui.dispose()
+
+    ######################################################################
+    # Non-public methods, Event handlers
+    def _start_fired(self):
+        self.timer.Start(self.delay)
+
+    def _stop_fired(self):
+        self.timer.Stop()
+
+    def _delay_changed(self, value):
+        t = self.timer
+        if t is None:
+            return
+        if t.IsRunning():
+            t.Stop()
+            t.Start(value)
+
+
+class InfiniteTimer:
+    """A Timer class that does not stop, unless you want it to.
+    --Code attributed to Bill Schumacher, stackoverflow
+    https://stackoverflow.com/questions/12435211/python-threading-timer-repeat-function-every-n-seconds
+    https: // stackoverflow.com / users / 7370877 / bill - schumacher"""
+    def __init__(self, seconds, target):
+        self._should_continue = False
+        self.is_running = False
+        self.seconds = seconds
+        self.target = target
+        self.thread = None
+        self.lock = threading.Lock()
+        #self.semaphore = threading.Semaphore()
+
+    def _handle_target(self):
+        self.is_running = True
+
+        self.target()
+        self.is_running = False
+        self._start_timer()
+
+    def _start_timer(self):
+        #self.lock.acquire()
+        # self.semaphore.acquire()
+        if self._should_continue:  # Code could have been running when cancel was called.
+            self.thread = threading.Timer(self.seconds, self._handle_target)   ##_Timer
+            self.thread.start()
+            #self.lock.release()
+            # self.semaphore.release()
+
+    def start(self):
+        #self.lock.acquire()
+        #self.semaphore.acquire()
+        if not self._should_continue and not self.is_running:
+            self._should_continue = True
+            self._start_timer()
+            #self.lock.release()
+            #self.semaphore.release()
+        else:
+            print("Timer already started or running, please wait if you're restarting.")
+
+    def stop(self):
+        #self.lock.acquire()
+        # self.semaphore.acquire()
+        if self.thread is not None:
+            self._should_continue = False  # Just in case thread is running and cancel fails.
+            self.thread.cancel()            #Todo This gives attribute error, wtf? 04/11/2021 It shouldn't.
+            #self.lock.release()
+            # self.semaphore.release()
+        else:
+            print("Timer never started or failed to initialize.")
+
+
+
+
+class _Timer(Process):
+    """ Attritution:
+    Dano -- https://stackoverflow.com/questions/25297627/why-no-timer-class-in-pythons-multiprocessing-module
+    https://stackoverflow.com/users/2073595/dano
+    """
+
+    def __init__(self, interval, function, args=[], kwargs={}):
+        super(_Timer, self).__init__()
+        self.interval = interval
+        self.function = function
+        self.args = args
+        self.kwargs = kwargs
+        self.finished = Event()
+
+    def cancel(self):
+        """Stop the timer if it hasn't finished yet"""
+        self.finished.set()
+
+    def run(self):
+        self.finished.wait(self.interval)
+        if not self.finished.is_set():
+            self.function(*self.args, **self.kwargs)
+        self.finished.set()
+
+
+
 #Method overwrite.
 #Permanent fix to the broken attribute auto-complete bug for our pycrust.
 
@@ -437,3 +731,10 @@ tree_editor.SimpleEditor._is_pasteable = _is_pasteable
 #for wx(4.1.0)
 #wx error over alignment flags that are now irrelevant and throw an error. (i.e. wx.ALL | ALIGN_CENTER_RIGHT)
 file_editor.SimpleEditor.init = init_1
+
+#Mayavi Animator Overwrite (fixes the unwanted 10 mil second delay; makes it 0.)
+mayavi.tools.animator.Animator = Animator
+
+#Pyo Gui bug patch.
+#Server.gui = gui  #-Attempt 1
+#pyo.lib._widgets.createServerGUI = createServerGUI  #Attempt 2, works.

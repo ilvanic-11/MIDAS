@@ -6,9 +6,10 @@
 
 import os
 os.environ['PYGAME_FREETYPE'] = '1'
-import pygame, sys, random
+import pygame, random     ##sys,
 import pygame.freetype
-import time
+os.environ['SDL_VIDEO_CENTERED'] = '1'
+#import time
 
 
 import unicodedata
@@ -78,7 +79,8 @@ BLACK = (0,0,0)
 X = 1920
 Y = 1080
 symbols = list('♫ ♪ ♩ ♬ ♩ ♫ ♬ ♭ ♮ ♯ ♪')    #'𝆺𝅥'A # Bb C > 𝆺𝅥
-symbolz = list(" ♫ Mu s i c o d e ♫ || ♪ M i d i A r t ♪ || ♬ 3 i d i A r t ♬ ")
+symbolz = list(" ♫ M u s i c o d e ♫ || ♪ M i d i A r t ♪ || ♬ 3 i d i A r t ♬ ")
+symboltz = list("♫ ♪ ♩ ♬ V i s u a l || M u s i c ♬ ♩ ♪ ♫")
 SIZE = 18
 row_height = SIZE * 0.6
 row_width = SIZE
@@ -92,16 +94,20 @@ class Column():
         self.random = random.random()
         self.clear_and_restart(1000)
         self.a = 0
+        self.b = 0
         self.add_new_symbol()
 
         #self.rantom
 
     def add_new_symbol(self):
         if 0 < self.y < Y:
-            self.list.append(Symbol(self, self.a, self.screen, self.font))
+            self.list.append(Symbol(self, self.a, self.b, self.screen, self.font))
         self.a += 1
+        self.b += 1
         if self.a >= len(symbolz):
             self.a = 0
+        if self.b >= len(symboltz):
+            self.b = 0
         self.y += row_height
 
     def clear_and_restart(self, start_pos=250):
@@ -111,10 +117,12 @@ class Column():
         self.fade_age = random.randint(20, 40)
         self.fade_speed = random.randint(2, 5)
 
-        if self.random < 0.97:  # new in this version
+        if self.random < 0.96:  # new in this version
             self.color = "blue"
-        else:
+        elif 0.96 < self.random <= 0.99:
             self.color = "green"
+        else:
+            self.color = 'yellow'
             #Symbol.symbol = symbolz
 
     def move(self):
@@ -128,7 +136,7 @@ class Column():
 
 
 class Symbol():
-    def __init__(self, column, a, screen, font):
+    def __init__(self, column, a, b, screen, font):
         self.x = column.x
         self.y = column.y
         self.screen = screen
@@ -151,8 +159,11 @@ class Symbol():
         #self.color_function = self.green  # new in this version
         self.color_function = self.blue #My chiggy wiggy blue.
         if column.color == "green": #default: orange
-            self.color_function = self.green  #default: orange
+            self.color_function = self.green  #default: green
             self.symbol = (symbolz[a])
+        elif column.color == "yellow":
+            self.color_function = self.yellow  # default: orange
+            self.symbol = (symboltz[b])
 
 
     def update(self):
@@ -166,11 +177,13 @@ class Symbol():
         self.rect = self.surf.get_rect(center=(self.x, self.y))
         self.screen.blit(self.surf, self.rect)
 
+
     def green(self):  # new name in this version
         if self.age < 11:
             self.color = (225 - self.age * 22, 225 - 7 * self.age, 225 - self.age * 22)
         elif self.age > self.fade_age:
             self.color = (0, max(0, 155 - (self.age - self.fade_age) * self.fade_speed), 0)
+
 
     def orange(self):  # alternative color
         if self.age < 11:
@@ -179,20 +192,36 @@ class Symbol():
         elif self.age > self.fade_age:
             self.color = (max(0, 155 - (self.age - self.fade_age) * self.fade_speed),
                           max(0, 75 - (self.age - self.fade_age) * self.fade_speed // 2), 0)
+
+
+    def yellow(self):
+        if self.age < 11:
+            self.color = (225 - 3.7 * self.age, 225 - 3.7 * self.age, 225 - self.age * 22)
             #print(self.color)
+        elif self.age > self.fade_age:
+            self.color = (max(0, 185 - (self.age - self.fade_age) * self.fade_speed),
+                          max(0, 185 - (self.age - self.fade_age) * self.fade_speed), 0)
+            #print(self.color)
+
 
     def blue(self):
         if self.age < 11:
-            self.color = (225 - self.age * 22, 225 - self.age * 22, 225 - 7 * self.age)
+            self.color = (225 - self.age * 22, 225 - self.age * 22, 225 - self.age * 7)
         elif self.age > self.fade_age:
             self.color = (0, 0, max(0, 155 - (self.age - self.fade_age) * self.fade_speed))
 
 
 def rain_execute():
+
     pygame.init()
     pygame.display.set_caption("Musical Matrix Rain")
     pygame.freetype.init()
-    screen = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
+    info = pygame.display.Info()  # You have to call this before pygame.display.set_mode()
+    screen_width, screen_height = info.current_w, info.current_h
+    window_width, window_height = screen_width, screen_height + 40   #This was necessary --
+    screen = pygame.display.set_mode((window_width, window_height))
+    pygame.display.update()
+    #screen = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)   #--as Pygame's FULLSCREEN execution isn't consistent.
     font = pygame.font.Font(r"resources\Code2003Miao.ttf", SIZE)
 
     col = []
@@ -200,11 +229,11 @@ def rain_execute():
         col.append(Column(i * row_width, screen, font))
 
     screen.fill(BLACK)
-    pygame.time.set_timer(pygame.QUIT, 5000)
+    pygame.time.set_timer(pygame.QUIT, 19500)
 
     while True:
         for event in pygame.event.get():
-            print(event.type)
+            #print(event.type)
             if event.type == pygame.QUIT:
                 pygame.quit()
                 #sys.exit()
@@ -221,3 +250,4 @@ def rain_execute():
 
 if __name__ == '__main__':
     rain_execute()
+    pygame.display.toggle_fullscreen()

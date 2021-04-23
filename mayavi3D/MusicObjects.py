@@ -51,6 +51,23 @@ def line_square(length, z_axis):
                          (0, 0, z_axis)))  # *Points repeated for a visual compensation, i.e overlap.
     return linesquare
 
+def line_square2():
+    x1, y1, z1 = (0, 0, 0)  # | => pt1
+    x2, y2, z2 = (0, 127, 0)  # | => pt2
+    x3, y3, z3 = (0, 0, 127)  # | => pt3
+    x4, y4, z4 = (0, 127, 127)  # | => pt4
+
+    linesquare = np.vstack(((0, 0, 0),
+                         (0, 127, 0),
+                         (0, 127, 127),
+                         (0, 0, 127),
+                         (0, 0, 0),  # *
+                         (0, 127, 0),
+                         (0, 127, 127),
+                         (0, 0, 127),
+                         (0, 0, 0)))  # *Points repeated for a visual compensation, i.e overlap.
+    return linesquare
+
 
 def create_glyph(image_array, x_stretch=1, y_shift=0, z_value=127, downscale=21.12):
     if type(image_array) != np.ndarray: # Can use directory of image file.
