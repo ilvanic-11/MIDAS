@@ -27,8 +27,12 @@ python -m pip install --upgrade scipy --user
 python -m pip install --upgrade sympy --user
 python -m pip install --upgrade inspect --user
 python -m pip install --upgrade mido --user
+python -m pip install --upgrade pyo --user
 python -m pip install --upgrade blender --user
-
+pip install --upgrade pyinstaller
+::python -m pip install tensorflow==1.15 #This requires a downgrade to python 3.6.8.
+::python -m pip install --upgrade wrapt --user
+::python -m pip install --upgrade magenta -- user   ##Requires tensorflow which, above v1.15,requires AVX hardware support.
 
 ::NOTE: if vtk, mayavi, traits doesn't build correctly, uninstall and run this .bat again. (There is a package that creates an whole new python directory for installation, I think it's vtk.)
 ::NOTE: Traits builds from vtk, so packages that use traits need to be installed after vtk.
@@ -69,4 +73,3 @@ python -m pip install --upgrade blender --user
 ::python -m pip install kivy.deps.angle
 ::python -m pip install kivy
 ::python -m pip install kivy_examples
-

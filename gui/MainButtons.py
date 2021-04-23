@@ -1,40 +1,51 @@
 import wx
 from midas_scripts import midiart, midiart3D, musicode # music21funcs,
-from gui import Preferences
 import music21
-from mayavi import mlab
 import cv2, numpy
-import numpy as np
 import os
-import subprocess
-import random
 from collections import OrderedDict
-from gui.Preferences import ListCtrlComboPopup
+from mayavi3D.Mayavi3DWindow import Mayavi3idiView, MayaviMiniView
+# from gui import Preferences
+# from mayavi import mlab
+# import numpy as np
+# import subprocess
+# import random
+# from gui.Preferences import ListCtrlComboPopup
 
 class MainButtonsPanel(wx.Panel):
     def __init__(self, parent, log):
         wx.Panel.__init__(self, parent, -1)
         self.log = log
-        self.musicode = None
-        
-        
-        sizer = wx.BoxSizer(wx.VERTICAL)
 
-        btn_Music21_Converter_Parse = wx.Button(self, -1, "Midi\Score \n Import")
-        sizer.Add(btn_Music21_Converter_Parse, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL, 10)
-        self.Bind(wx.EVT_BUTTON, self.OnMusic21ConverterParseDialog, btn_Music21_Converter_Parse)
+        self.musicode = None  #Not necessary, but I'll leave for now. 04/18/2021
 
-        btn_musicode = wx.Button(self, -1, "Musicode" )
-        sizer.Add(btn_musicode, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL, 10)
-        self.Bind(wx.EVT_BUTTON, self.OnMusicodeDialog, btn_musicode)
+        self.toplevel = parent.GetTopLevelParent()
+        self.mv = self.toplevel.mayavi_view
 
-        btn_MIDIart = wx.Button(self, -1, "MIDI Art")
-        sizer.Add(btn_MIDIart, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL, 10)
-        self.Bind(wx.EVT_BUTTON, self.OnMIDIArtDialog, btn_MIDIart)
+        self.main_buttons_sizer = wx.BoxSizer(wx.VERTICAL)
 
-        btn_MIDIart3D = wx.Button(self, -1, "3IDI Art")
-        sizer.Add(btn_MIDIart3D, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL, 10)
-        self.Bind(wx.EVT_BUTTON, self.OnMIDIArt3DDialog, btn_MIDIart3D)
+        self.btn_Music21_Converter_Parse = wx.Button(self, -1, "Midi\Score \n Import", size=(75, 36))
+        self.btn_Music21_Converter_Parse.SetBackgroundColour((200, 150, 200, 255))
+        #btn_Music21_Converter_Parse.SetForegroundColour((255, 255, 255, 255))
+        self.main_buttons_sizer.Add(self.btn_Music21_Converter_Parse, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL, 9)
+        self.Bind(wx.EVT_BUTTON, self.OnMusic21ConverterParseDialog, self.btn_Music21_Converter_Parse)
+
+        self.btn_musicode = wx.Button(self, -1, "Musicode")
+        self.btn_musicode.SetBackgroundColour((0, 150, 255, 255))
+
+        #btn_musicode.
+        self.main_buttons_sizer.Add(self.btn_musicode, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL, 9)
+        self.Bind(wx.EVT_BUTTON, self.OnMusicodeDialog, self.btn_musicode)
+
+        self.btn_MIDIart = wx.Button(self, -1, "MIDI Art")
+        self.btn_MIDIart.SetBackgroundColour((0, 222, 70, 255))
+        self.main_buttons_sizer.Add(self.btn_MIDIart, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL, 9)
+        self.Bind(wx.EVT_BUTTON, self.OnMIDIArtDialog, self.btn_MIDIart)
+
+        self.btn_MIDIart3D = wx.Button(self, -1, "3IDI Art")
+        self.btn_MIDIart3D.SetBackgroundColour((222, 222, 0, 255))
+        self.main_buttons_sizer.Add(self.btn_MIDIart3D, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL, 9)
+        self.Bind(wx.EVT_BUTTON, self.OnMIDIArt3DDialog, self.btn_MIDIart3D)
 
         # btn_show_in_FLStudio = wx.Button(self, -1, "Show in FLStudio")
         # sizer.Add(btn_show_in_FLStudio, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL, 10)
@@ -48,13 +59,18 @@ class MainButtonsPanel(wx.Panel):
         # sizer.Add(btn_show_stream_txt, 0, wx.ALL|wx.ALIGN_CENTER_HORIZONTAL, 10)
         # self.Bind(wx.EVT_BUTTON, self.OnShowStreamTxt, btn_show_stream_txt)
 
-        btn_update_stream = wx.Button(self, -1, "Update Stream")
-        sizer.Add(btn_update_stream, 0, wx.ALL|wx.ALIGN_CENTER_HORIZONTAL, 10)
-        self.Bind(wx.EVT_BUTTON, self.OnUpdateStream, btn_update_stream)
+        self.btn_update_stream = wx.Button(self, -1, "Update Stream")
+        self.main_buttons_sizer.Add(self.btn_update_stream, 0, wx.ALL|wx.ALIGN_CENTER_HORIZONTAL, 8)
+        self.Bind(wx.EVT_BUTTON, self.OnUpdateStream, self.btn_update_stream)
 
-        btn_clear_pianoroll = wx.Button(self, -1, "Clear Piano Roll")
-        sizer.Add(btn_clear_pianoroll, 0, wx.ALL|wx.ALIGN_CENTER_HORIZONTAL, 10)
-        self.Bind(wx.EVT_BUTTON, self.OnClearPianoRoll, btn_clear_pianoroll)
+        self.btn_clear_pianoroll = wx.Button(self, -1, "Clear Piano Roll")
+        #btn_clear_pianoroll.SetBackgroundColour((255, 230, 200, 255))
+        self.main_buttons_sizer.Add(self.btn_clear_pianoroll, 0, wx.ALL|wx.ALIGN_CENTER_HORIZONTAL, 8)
+        self.Bind(wx.EVT_BUTTON, self.OnClearPianoRoll, self.btn_clear_pianoroll)
+
+        self.btn_redraw_mayaviview = wx.Button(self, -1, "Redraw Mayavi \n View")
+        self.main_buttons_sizer.Add(self.btn_redraw_mayaviview, 0, wx.ALL|wx.ALIGN_CENTER_HORIZONTAL, 8)
+        self.Bind(wx.EVT_BUTTON, self.toplevel.mayavi_view.redraw_mayaviview, self.btn_redraw_mayaviview)
 
         # btn_print_cell_sizes = wx.Button(self, -1, "Print Cell Sizes")
         # sizer.Add(btn_print_cell_sizes, 0, wx.ALL|wx.ALIGN_CENTER_HORIZONTAL, 10)
@@ -65,17 +81,40 @@ class MainButtonsPanel(wx.Panel):
         # self.Bind(wx.EVT_BUTTON, self.OnGridToStream , btn_grid_to_stream)
 
 
-        self.SetSizer(sizer)
-        sizer.Fit(self)
+        self.SetSizer(self.main_buttons_sizer)
+        self.main_buttons_sizer.Fit(self)
 
         self.Bind(wx.EVT_WINDOW_MODAL_DIALOG_CLOSED, self.OnDialogClosed)
 
         #self.AccelerateHotkeys()
-        self.SetFocus() #THIS HERE IS ACTUALLY THE STARTUP FOCS.
+        self.SetFocus() #THIS HERE IS ACTUALLY THE STARTUP FOCUS.
 
         #Update user-generated name.
         # self.mc_dialog = MusicodeDialog()
         # self.mc_dialog.user_named = self.GetTopLevelParent().musicode.musicode_name
+
+
+    # For a bug fix---------------
+        #id = 7182389573431346  , id=id
+        self.musicode_btn_colour = self.btn_musicode.GetBackgroundColour()
+        self.btn_musicode.Bind(wx.EVT_ENTER_WINDOW, self.onMouseOver)
+        self.btn_musicode.Bind(wx.EVT_LEAVE_WINDOW, self.onMouseLeave)
+
+
+    # For a bug fix, had to be hardcoded *
+    def onMouseOver(self, event):
+        # mouseover changes colour of button
+        self.btn_musicode.SetBackgroundColour((229, 241, 251, 255))
+        event.Skip()
+
+
+    def onMouseLeave(self, event=None):
+        # mouse not over button, back to original colour
+        self.btn_musicode.SetBackgroundColour(self.musicode_btn_colour)
+        if event is not None:
+            event.Skip()
+    # #----------------------------
+
 
     def AccelerateHotkeys(self):
 
@@ -97,20 +136,19 @@ class MainButtonsPanel(wx.Panel):
         self.Bind(wx.EVT_MENU, self.OnMusicodeDialog, id=new_id2)
         self.Bind(wx.EVT_MENU, self.OnMIDIArtDialog, id=new_id3)
         self.Bind(wx.EVT_MENU, self.OnMIDIArt3DDialog, id=new_id4)
-        #TODO These aren't working as desired.....
         self.Bind(wx.EVT_MENU, self.focus_on_actors_listbox, id=new_id5)
         self.Bind(wx.EVT_MENU, self.focus_on_zplanes, id=new_id6)
         self.Bind(wx.EVT_MENU, self.focus_on_pianorollpanel, id=new_id7)
         self.Bind(wx.EVT_MENU, self.focus_on_pycrust, id=new_id8)
         self.Bind(wx.EVT_MENU, self.focus_on_mayavi_view, id=new_id9)
-        self.GetTopLevelParent().mayaviviewcontrolpanel.Bind(wx.EVT_MENU, self.GetTopLevelParent().mainbuttonspanel.focus_on_mainbuttonspanel, id=new_id10)
+        self.GetTopLevelParent().mayaviviewcontrolpanel.Bind(wx.EVT_MENU,
+                                    self.GetTopLevelParent().mainbuttonspanel.focus_on_mainbuttonspanel, id=new_id10)
 
         #Shift into which gear.
         entries[0].Set(wx.ACCEL_NORMAL, wx.WXK_F1, new_id1)
         entries[1].Set(wx.ACCEL_NORMAL, wx.WXK_F2, new_id2)
         entries[2].Set(wx.ACCEL_NORMAL, wx.WXK_F3, new_id3)
         entries[3].Set(wx.ACCEL_NORMAL, wx.WXK_F4, new_id4)
-        #TODO THESE aren't working as desired...
         entries[4].Set(wx.ACCEL_NORMAL, wx.WXK_F5, new_id5)
         entries[5].Set(wx.ACCEL_NORMAL, wx.WXK_F6, new_id6)
         entries[6].Set(wx.ACCEL_NORMAL, wx.WXK_F7, new_id7)
@@ -126,6 +164,7 @@ class MainButtonsPanel(wx.Panel):
     ##Focus Functions
     ###-----------------------
 
+
     def focus_on_actors_listbox(self, event):
         """
         This function binds to F5 and sets the user focus to the panel containing the pycrust python console.
@@ -135,6 +174,7 @@ class MainButtonsPanel(wx.Panel):
         #print("Focusing on actorsListBox")
 
         self.GetTopLevelParent().pianorollpanel.actorsctrlpanel.actorsListBox.SetFocus()
+
 
     def focus_on_zplanes(self, event):
         """
@@ -146,6 +186,7 @@ class MainButtonsPanel(wx.Panel):
 
         self.GetTopLevelParent().pianorollpanel.zplanesctrlpanel.ZPlanesListBox.SetFocus()
 
+
     def focus_on_pianorollpanel(self, event):
         """
         This function binds to F7 and sets the user focus to the panel containing the pianoroll grid class.
@@ -155,6 +196,7 @@ class MainButtonsPanel(wx.Panel):
         #print("Focusing on pianorollpanel")
 
         self.GetTopLevelParent().pianorollpanel.pianoroll.SetFocus()
+
 
     def focus_on_pycrust(self, event):
         """
@@ -196,8 +238,10 @@ class MainButtonsPanel(wx.Panel):
     def OnGridToStream(self, evt):
         self.GetTopLevelParent().pianorollpanel.pianoroll.GridToStream()
 
+
     def OnPrintCellSizes(self, evt):
         self.GetTopLevelParent().pianorollpanel.print_cell_sizes()
+
 
     def OnClearPianoRoll(self,evt):
         self.GetTopLevelParent().pianorollpanel.ClearZPlane(self.GetTopLevelParent().pianorollpanel.currentZplane)
@@ -205,28 +249,34 @@ class MainButtonsPanel(wx.Panel):
     # def OnDeleteAllPianoRolls(self, evt):
     #     self.GetTopLevelParent().
 
+
     def OnUpdateStream(self,evt):
         self.GetTopLevelParent().pianorollpanel.pianoroll.UpdateStream()
 
+
     def OnShowStreamTxt(self, evt):
         self.GetTopLevelParent().pianorollpanel.pianoroll.stream.show('txt')
+
 
     def OnMusic21ConverterParseDialog(self, evt):
         dlg = Music21ConverterParseDialog(self, -1, "         music21.converter.parse") #9 Spaces deliberate here.
         dlg.ShowWindowModal()
 
+
     def OnMusicodeDialog(self, evt):
         dlg = MusicodeDialog(self, -1, "Musicode")
         dlg.ShowWindowModal()
-        
-    
+
+
     def OnMIDIArtDialog(self, evt):
         dlg = MIDIArtDialog(self, -1, "Create MIDIArt")
         dlg.ShowWindowModal()
 
+
     def OnMIDIArt3DDialog(self, evt):
         dlg = MIDIArt3DDialog(self, -1, "Create 3D MIDIArt")
         dlg.ShowWindowModal()
+
 
     def OnDialogClosed(self, evt):
         dialog = evt.GetDialog()
@@ -241,6 +291,7 @@ class MainButtonsPanel(wx.Panel):
         elif type(dialog) is MIDIArt3DDialog:
             self._OnMIDIArt3DDialogClosed(dialog, evt)
         dialog.Destroy()
+
 
     def _OnMusicodeDialogClosed(self, dialog, evt):
         val = evt.GetReturnCode()
@@ -266,7 +317,8 @@ class MainButtonsPanel(wx.Panel):
             stream = self.GetTopLevelParent().pianorollpanel.pianoroll.GridToStream(update_actor=False)
             self.musicode.make_musicode(stream, musicode_name, shorthand_name, filepath=None,
                                      selection=str(dialog.inputTxt.GetLineText(0)), write=False, timeSig=None)
-            self.GetTopLevelParent().pianorollpanel.ClearZPlane(self.GetTopLevelParent().m_v.cur_z)
+            self.GetTopLevelParent().pianorollpanel.ClearZPlane(self.GetTopLevelParent().mayavi_view.cur_z)
+
 
         elif dialog.create_musicode.GetValue() is False and btn == "OK":
             print("DialogCheck:", dialog.create_musicode.GetValue())
@@ -275,6 +327,8 @@ class MainButtonsPanel(wx.Panel):
                 dialog.inputTxt.GetLineText(0))
             print("LINETEXT:", dialog.inputTxt.GetLineText(0))
             self.GetTopLevelParent().pianorollpanel.pianoroll.StreamToGrid(stream)
+        else:
+            pass
 
 
     def _OnMIDIArtDialogClosed(self, dialog, evt):
@@ -287,7 +341,7 @@ class MainButtonsPanel(wx.Panel):
             btn = '<unknown>'
 
         if btn == "OK":
-            pathname = dialog.pathname
+            #pathname = dialog.pathname
 
             pixels = dialog.resizedImg     #2D array (2D of only on\off values.)
             pixels2 = dialog.resizedImg2   #3D array (2D of color tuples)
@@ -298,7 +352,7 @@ class MainButtonsPanel(wx.Panel):
             print("PIXELS_RESIZED:", pixels, type(pixels))
             print("pixels shape", numpy.shape(pixels))
 
-            mayavi_view = self.GetTopLevelParent().m_v
+            mayavi_view = self.GetTopLevelParent().mayavi_view
             #default_color_palette = mayavi_view.default_color_palette
             mayavi_color_palette = mayavi_view.default_mayavi_palette
 
@@ -408,11 +462,12 @@ class MainButtonsPanel(wx.Panel):
             btn = '<unknown>'
 
         if btn == "OK":
-            mayavi_view = self.GetTopLevelParent().m_v
+            mayavi_view = self.GetTopLevelParent().mayavi_view
             color_palette = mayavi_view.default_color_palette
 
             stream = music21.converter.parse(dialog.midi)
             stream.show('txt')
+            #TODO CORE DATA UPDATE Here
             points = midiart3D.extract_xyz_coordinates_to_array(stream)
             index = len(mayavi_view.actors)
             name = str(len(mayavi_view.actors)) + "_" + "Midi" + "_" + dialog.midi_name
@@ -426,10 +481,11 @@ class MainButtonsPanel(wx.Panel):
                     j.change_points(points)
             mayavi_view.disable_render = False
             #self.GetTopLevelParent().pianorollpanel.pianoroll.StreamToGrid(stream)
-
-
+            mayavi_view.new_reticle_box()
 
     def _OnMIDIArt3DDialogClosed(self, dialog, evt):
+        mayavi_view = self.GetTopLevelParent().mayavi_view
+
         val = evt.GetReturnCode()
         print("Val %d: " % val)
         try:
@@ -440,35 +496,50 @@ class MainButtonsPanel(wx.Panel):
         #self.GetTopLevelParent().mayavi_view
         if btn == "OK":
             try:
-                ply = dialog.ply
+                ##ply = dialog.ply
+                points = dialog.points
+
             except AttributeError:
-                ply = None
-            if ply is not None:
-                points = midiart3D.get_points_from_ply(dialog.ply)
-                print(points)
+                ##ply = None
+                points = None
+                return
+
+            if points is not None:
+                #TODO CORE DATA UPDATE Here
+                ##points = midiart3D.get_points_from_ply(dialog.ply)
+
+                print("DIALOGUE.points", points)
                 #planes_dict = midiart3D.get_planes_on_axis(points, 'z', ordered=True, clean=True)
                 #TODO Delete the startup piano roll/actor when loading ply. ---Still do this?
                 # try:
                 #     self.GetTopLevelParent().pianorollpanel.DeletePianoRoll(1)
                 # except IndexError:
                 #     pass
-                mayavi_view = self.GetTopLevelParent().m_v
 
                 #Establish "Midas Actor" name and index.
                 #TODO Acquire from dialog
                 i = len(mayavi_view.actors)
-                name = str(len(mayavi_view.actors)) + "_" + "PointCloud" + "_" + dialog.ply_name
-                mayavi_view.disable_render = True
+                name = str(i) + "_" + "PointCloud" + "_" + dialog.ply_name
+                mayavi_view.scene3d.disable_render = True
                 actor = self.GetTopLevelParent().pianorollpanel.actorsctrlpanel.actorsListBox.new_actor(i, name)
 
                 for j in mayavi_view.actors:
                     if j.name == name:
                         print("Points here?")
-                        j.change_points(points)
-                mayavi_view.disable_render = False
+                        #j.change_points(points)
+                        j._points = points
+                        #self.pointschangedflag = not self.pointschangedflag
+                        j.actor_points_changed()
+                        print("And here?")
+                mayavi_view.scene3d.disable_render = False
             else:
+                mayavi_view.scene3d.disable_render = False
+
                 pass
-                #index_list = [k for k in planes_dict.keys()]
+        mayavi_view.scene3d.disable_render = False
+
+
+        #index_list = [k for k in planes_dict.keys()]
                 # for k in index_list:
                 #     self.GetTopLevelParent().pianorollpanel.InsertNewPianoRoll(int(index_list.index(k)))
                 #     self.GetTopLevelParent().pianorollpanel.pianoroll.StreamToGrid(midiart3D.extract_xyz_coordinates_to_stream((np.array(planes_dict[k]))))
@@ -505,9 +576,9 @@ class Music21ConverterParseDialog(wx.Dialog):
         sizerMain.Add(self.btnLoadMidi, 0, wx.ALL | wx.ALIGN_CENTER, 10)
         sizerMain.Add(btnsizer, 0, wx.ALIGN_CENTER | wx.ALL, 10)
 
-        #sizerCtrls = wx.BoxSizer(wx.VERTICAL)
+        sizerCtrls = wx.BoxSizer(wx.VERTICAL)
 
-        #self.SetSizerAndFit(sizerMain)
+        self.SetSizerAndFit(sizerMain)
 
 
     def OnLoadMidi(self, evt):
@@ -527,7 +598,6 @@ class Music21ConverterParseDialog(wx.Dialog):
                 wx.LogError("Cannot open file '%s'." % pathname)
 
 
-
 class MusicodeDialog(wx.Dialog):
     def __init__(self,parent,id,title, size=wx.DefaultSize,
                  pos=wx.DefaultPosition, style=wx.DEFAULT_DIALOG_STYLE, name='Musicode' ):
@@ -535,10 +605,6 @@ class MusicodeDialog(wx.Dialog):
         wx.Dialog.__init__(self)
         self.Create(parent, id, title, pos, size, style, name)
         self.parent = parent
-
-        
-        
-        
         
         #MODE
         self.translate_musicode = wx.CheckBox(self, -1, "Translate Musicode")
@@ -555,20 +621,26 @@ class MusicodeDialog(wx.Dialog):
         self.input_sh = wx.TextCtrl(self, -1, "", size=(30, -1), style=wx.TE_CENTER)
         self.inputTxt = wx.TextCtrl(self, -1, "", size=(250, -1), name="Translate\\Create")
 
-        
-        self.musicodesList = list()
-
+        #####
+        #Todo Use as possible example question for Robin Dunn when asking about wx Events
+        super().GetParent().btn_musicode.Disable()  #These disable\enables calls fix a button highlight bug.
         dlg = wx.ProgressDialog("Loading", "Loading Musicode Libraries...", maximum=12, parent=self,
                                 style = wx.PD_ELAPSED_TIME
                                       | wx.PD_REMAINING_TIME
                                       | wx.PD_AUTO_HIDE
                                 )
-
-
-        if (not self.parent.musicode):
-            self.parent.musicode = musicode.Musicode()
+        #super().GetParent().btn_musicode.SetFocusfromKbd()
+        if self.parent.musicode == None:
+            self.parent.GetTopLevelParent().musicode = self.parent.musicode = musicode.Musicode()
             self.parent.musicode.SetupDefaultMidiDictionaries(wx_progress_updater=dlg)
+        else:
+            pass
         dlg.Destroy()
+        super().GetParent().btn_musicode.Enable()
+        #####
+
+        #super().GetParent().btn_musicode.SetFocus()
+        #super().GetParent().HighlightSizerItem(super().GetParent().btn_musicode, super().GetParent().main_buttons_sizer, penWidth=2)
 
 
         self.musicodesList = sorted(list(self.parent.musicode.shorthand.keys()))
@@ -591,7 +663,6 @@ class MusicodeDialog(wx.Dialog):
         self.sizer4 = wx.BoxSizer(wx.HORIZONTAL)
 
         #Sizer adds.
-    
         self.sizer2.Add(self.translate_musicode, 0, wx.ALL | wx.ALIGN_TOP, 20)
         self.sizer2.Add(self.create_musicode, 0, wx.ALL | wx.ALIGN_TOP, 20)
 
@@ -601,36 +672,26 @@ class MusicodeDialog(wx.Dialog):
         self.sizer4.Add(self.sh_static, 15, wx.ALL | wx.ALIGN_LEFT, 5)
         self.sizer4.Add(self.input_sh, 10, 50, 10)
 
-        self.sizer.Add(self.sizer2, 0, wx.ALL | wx.ALIGN_TOP, 15)
-        self.sizer.Add(self.sizer3, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL, 30)
-        self.sizer.Add(self.sizer4, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL, 40)
-
-        self.sizer.Add(self.inputTxt, 0, wx.ALL|wx.ALIGN_CENTER_HORIZONTAL, 20)
-
-
-        self.sizer.Add(self.rdbtnMusicodeChoice, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL, 20)
-
         self.btnsizer = wx.StdDialogButtonSizer()
-
         if wx.Platform != "__WXMSW__":
             self.btn = wx.ContextHelpButton(self)
             self.btnsizer.AddButton(self.btn)
-
         self.btn = wx.Button(self, wx.ID_OK)
         self.btn.SetDefault()
         self.btnsizer.AddButton(self.btn)
-
         self.btn = wx.Button(self, wx.ID_CANCEL)
         self.btnsizer.AddButton(self.btn)
         self.btnsizer.Realize()
 
+        self.sizer.Add(self.sizer2, 0, wx.ALL | wx.ALIGN_TOP, 15)
+        self.sizer.Add(self.sizer3, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL, 30)
+        self.sizer.Add(self.sizer4, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL, 40)
+        self.sizer.Add(self.inputTxt, 0, wx.ALL|wx.ALIGN_CENTER_HORIZONTAL, 20)
+        self.sizer.Add(self.rdbtnMusicodeChoice, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL, 20)
         self.sizer.Add(self.btnsizer, 0, wx.ALIGN_CENTER_HORIZONTAL | wx.ALL, 5)
 
-        
         self.SetSizerAndFit(self.sizer)
    
-
-        
 
     #TODO Needs work.
     def OnPolarizeCheckboxes(self, event):
@@ -674,7 +735,6 @@ class CustomColorsListBox(wx.ListCtrl):
         self.InsertColumn(0, "Color", wx.LIST_FORMAT_CENTER, width=150)
 
 
-
 class MIDIArtDialog(wx.Dialog):
     def __init__(self,parent,id,title, size=wx.DefaultSize,
                  pos=wx.DefaultPosition, style=wx.DEFAULT_DIALOG_STYLE, name='MidiArt' ):
@@ -684,7 +744,6 @@ class MIDIArtDialog(wx.Dialog):
 
         #self.comboCtrl = wx.ComboCtrl(self, wx.ID_ANY, "", (20, 20))
         #self.popupCtrl = ListCtrlComboPopup()
-
 
         #self.comboCtrl.UseAltPopupWindow(enable=True)
 
@@ -779,9 +838,10 @@ class MIDIArtDialog(wx.Dialog):
         btnsizer.Realize()
 
         self.ctrlsPanel.SetSizer(sizerCtrls)
+
         sizerHor = wx.BoxSizer(wx.HORIZONTAL)
-        sizerHor.Add(self.ctrlsPanel)
-        sizerHor.Add(self.imgPreviewPanel, 0, wx.ALL, 20)
+        sizerHor.Add(self.ctrlsPanel, 0, wx.ALIGN_CENTER | wx.ALL, 20)
+        sizerHor.Add(self.imgPreviewPanel, 0, wx.ALIGN_CENTER | wx.ALL, 20)
 
         sizerMain = wx.BoxSizer(wx.VERTICAL)
         sizerMain.Add(sizerHor, 30)
@@ -820,10 +880,12 @@ class MIDIArtDialog(wx.Dialog):
         if self.img is not None:
             self.UpdatePreview()
 
+
     def OnRadioBoxChanged(self,event):
         if self.img is not None:
             print("No image selected. Select an image first. :)")
             self.UpdatePreview()
+
 
     def UpdatePreview(self):
         #TODO Fix the slider resize for all img instances.
@@ -852,7 +914,7 @@ class MIDIArtDialog(wx.Dialog):
             preview = cv2.cvtColor(preview, cv2.COLOR_BGR2RGB)
             #preview = cv2.cvtColor(preview, cv2.COLOR_RGB2BGR)
 
-            mayavi_view = super().GetParent().GetTopLevelParent().m_v
+            mayavi_view = super().GetParent().mv
 
             #preview = midiart.set_to_nn_colors(preview, mayavi_view.clr_dict_list[mayavi_view.current_palette_name])
 
@@ -909,6 +971,7 @@ class MIDIArtDialog(wx.Dialog):
              # (This is preview stuff, so, even though things happen twice, it's neater to have the 'preview'
             # and transformation stuff separate.
 
+
     def OnCheckBoxSelection(self, event):
         # import inspect
         # for i in inspect.getmembers(event):
@@ -939,9 +1002,10 @@ class MIDIArtDialog(wx.Dialog):
 
         #self.im = wx.ImageFromBuffer(w, h, rgb)
 
+
     def OnChangeColor(self, event):
         #This is the greatest thing.
-        mayavi_view = super().GetParent().GetTopLevelParent().m_v
+        mayavi_view = super().GetParent().mv
         #FLStudio Colors
         #TODO Test color constistency across all views (preview, mayaviview, exported to FL)
         if self.listCtrl.GetItemText(self.listCtrl.GetFocusedItem()) == "FLStudioColors":
@@ -978,10 +1042,11 @@ class MIDIArtDialog(wx.Dialog):
             #A tuple R\B switch happens here; tuple is inverted.
 
             mayavi_view.current_palette_name = self.listCtrl.GetItemText(self.listCtrl.GetFocusedItem())
-            print("Fuck3")
+            print("3")
 
         print("Current Palette Name Changed", mayavi_view.current_palette_name)
         self.UpdatePreview()
+
 
 class MIDIArt3DDialog(wx.Dialog):
     def __init__(self, parent, id, title, size=wx.DefaultSize,
@@ -989,34 +1054,88 @@ class MIDIArt3DDialog(wx.Dialog):
         wx.Dialog.__init__(self)
         self.Create(parent, id, title, pos, size, style, name)
 
+        #Points
+        self.points = None
+
+        #Panels
+        self.ctrlsPanel = wx.Panel(self, -1, wx.DefaultPosition, size=(485,485), style=wx.BORDER_RAISED)
+        #self.imgPreviewPanel = wx.Panel(self, -1, wx.DefaultPosition, (500, 500), style=wx.BORDER_RAISED)
+        self.imgPreviewPanel = wx.Panel(self, -1, wx.DefaultPosition, (450, 450), style=wx.BORDER_RAISED)
+
+        #Disable main mv window before proceeding
+
+        # super().GetParent().GetTopLevelParent().mayaviviewcontrolpanel.Disable()
+        # super().GetParent().GetTopLevelParent().pianorollpanel.pianoroll.Disable()
+
+
+        self.mv = super().GetParent().GetTopLevelParent().mayavi_view
+        self.mv.scene3d.disable_render = True
+
+        self.mini_mv = MayaviMiniView(parent=self)
+        self.mini = self.mini_mv.edit_traits(parent=self.imgPreviewPanel, kind='subpanel').control
+
+        #toplevel = super().GetParent().GetTopLevelParent()
+
+
         #Help Text
-        self.help_static = wx.StaticText(self, -1, "Load a point cloud and manipulate its 3-dimensional aspects as music.")
+        self.helpStatic = wx.StaticText(self.ctrlsPanel, -1, "Load a point cloud and manipulate its 3-dimensional "
+                                                              "aspects as music \n                      with a "
+                                                             "specially designed processing "
+                                                              "chain.")
+
+        # self.actorStatic = wx.StaticText(self.ctrlsPanel, -1, "Actor Index")
+        # choices = [str(i) for i in range(0, len(super().GetParent().mv.actors))]
+        # #cur_ActorIndex Combo Box dropdown.
+        # self.cbActorIndices = wx.ComboBox(self.ctrlsPanel, -1, "1", wx.DefaultPosition, wx.DefaultSize,
+        #                                   choices=choices,
+        #                                   style=wx.CB_DROPDOWN | wx.CB_READONLY)
+        # self.Bind(wx.EVT_COMBOBOX, self.OnComboBoxSelection)
 
         #LoadPly
-        self.btnLoadPly = wx.Button(self, -1, "Load Point Cloud")
+        self.btnLoadPly = wx.Button(self.ctrlsPanel, -1, "Load Point Cloud")
+        self.btnLoadPly.SetToolTip(tipString="Load Ply will only be enabled if an actor is empty.")
         self.Bind(wx.EVT_BUTTON, self.OnLoadPly, self.btnLoadPly)
-        #Redraw MayaviView
-        self.btnRedrawMayaviView = wx.Button(self, -1, "Redraw Mayavi Figure")
-        self.Bind(wx.EVT_BUTTON, self.On3DDisplayRedraw, self.btnRedrawMayaviView)
+
+        # self.OnComboBoxSelection(evt=None)   #self.points is written in this function.
+
 
         #Standard Reorientation
-        self.btnStandardReo = wx.Button(self, -1, "Standard Reorientation")
-        # self.Bind(wx.EVT_BUTTON, self.
+        self.btnStandardReo = wx.Button(self.ctrlsPanel, -1, "Standard Reorientation")
+        self.Bind(wx.EVT_BUTTON, self.OnStandardReorientation, self.btnStandardReo)
+        # pointsVar_Reo = wx.TextCtrl(self.ctrlsPanel, -1, "", size=(60, -1), style=wx.TE_CENTER)
+        self.scaleVar_Reo = wx.TextCtrl(self.ctrlsPanel, -1, "1", size=(70, -1), style=wx.TE_CENTER)
 
         #Trim
-        self.btnTrim = wx.Button(self, -1, "Trim Points")
-        #self.Bind(wx.EVT_BUTTON, self.
+        self.btnTrim = wx.Button(self.ctrlsPanel, -1, "Trim Points")
+        self.Bind(wx.EVT_BUTTON, self.OnTrim, self.btnTrim)
+        # pointsVar_Trim = wx.TextCtrl(self.ctrlsPanel, -1, "", size=(60, -1), style=wx.TE_CENTER)
+        self.axisVar_Trim = wx.TextCtrl(self.ctrlsPanel, -1, "y", size=(70, -1), style=wx.TE_CENTER)
+        self.trimVar_Trim = wx.TextCtrl(self.ctrlsPanel, -1, "1", size=(70, -1), style=wx.TE_CENTER)
+
+        # Scale
+        self.btnScale = wx.Button(self.ctrlsPanel, -1, "Scale Points")
+        self.Bind(wx.EVT_BUTTON, self.OnScale, self.btnScale)
+        self.scaleVar_Scale = wx.TextCtrl(self.ctrlsPanel, -1, "2", size=(70, -1), style=wx.TE_CENTER)
+
         #Rotate
-        self.btnRotate = wx.Button(self, -1, "Rotate Points")
-        #self.Bind(wx.EVT_BUTTON, self.
+        self.btnRotate = wx.Button(self.ctrlsPanel, -1, "Rotate Points")
+        self.Bind(wx.EVT_BUTTON, self.OnRotate, self.btnRotate)
+        # pointsVar_Rot = wx.TextCtrl(self.ctrlsPanel, -1, "", size=(60, -1), style=wx.TE_CENTER)
+        self.axisVar_Rot = wx.TextCtrl(self.ctrlsPanel, -1, "y", size=(70, -1), style=wx.TE_CENTER)
+        self.degreesVar_Rot = wx.TextCtrl(self.ctrlsPanel, -1, "90", size=(70, -1), style=wx.TE_CENTER)
 
-        #Scale
-        self.btnScale = wx.Button(self, -1, "Scale Points")
-        #self.Bind(wx.EVT_BUTTON, self.
+        #Transform
+        self.btnTransform = wx.Button(self.ctrlsPanel, -1, "Transform Points")
+        self.Bind(wx.EVT_BUTTON, self.OnTransform, self.btnTransform)
+        self.axisVar_Trans = wx.TextCtrl(self.ctrlsPanel, -1, "z", size=(70, -1), style=wx.TE_CENTER)
+        self.offsetVar_Trans = wx.TextCtrl(self.ctrlsPanel, -1, "5", size=(70, -1), style=wx.TE_CENTER)
 
-        #new_points = Standard_Reorientation
 
 
+        #self.Bind(wx.EVT_CHECKBOX, self.OnPolarizeCheckboxes)
+
+
+        #Sizers
         btnsizer = wx.StdDialogButtonSizer()
         btn = wx.Button(self, wx.ID_OK)
         btn.SetDefault()
@@ -1025,18 +1144,102 @@ class MIDIArt3DDialog(wx.Dialog):
         btnsizer.AddButton(btn)
         btnsizer.Realize()
 
-        sizerMain = wx.BoxSizer(wx.VERTICAL)
-        # sizerMain.Add(sizerHor, 30)
-        sizerMain.Add(self.help_static, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL, 20)
-        sizerMain.Add(self.btnLoadPly, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL, 20)
-        sizerMain.Add(self.btnStandardReo, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL, 20)
-        sizerMain.Add(self.btnTrim, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL, 20)
-        sizerMain.Add(self.btnScale, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL, 20)
-        sizerMain.Add(self.btnRotate, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL, 20)
-        sizerMain.Add(self.btnRedrawMayaviView, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL, 20)
-        sizerMain.Add(btnsizer, 0, wx.ALIGN_CENTER_HORIZONTAL | wx.ALL, 1)
+        # indexSizer = wx.BoxSizer(wx.VERTICAL)
+        # indexSizer.Add(self.actorStatic, 0, wx.ALL | wx.ALIGN_CENTER, 0)
+        # indexSizer.Add(self.cbActorIndices, 0, wx.ALL | wx.ALIGN_CENTER, 0)
 
+        sizerStandardReo = wx.BoxSizer(wx.HORIZONTAL)
+        horSizer1 = wx.BoxSizer(wx.HORIZONTAL)
+        horSizer1.AddSpacer(129)
+        sizerStandardReo.Add(self.btnStandardReo, 0, wx.ALIGN_CENTER, 30)
+        # sizerStandardReo.Add(pointsVar_Reo, 0, 50, 20)
+        # sizerStandardReo.Add(scaleVar_Reo, 0, 50, 20)
+        # horSizer1.Add(pointsVar_Reo, 0, 50, 20)
+        horSizer1.Add(self.scaleVar_Reo, 0, 50, 20)
+        sizerStandardReo.Add(horSizer1, 0, wx.ALIGN_CENTER, 10)
+
+        sizerScale = wx.BoxSizer(wx.HORIZONTAL)
+        horSizer3 = wx.BoxSizer(wx.HORIZONTAL)
+        horSizer3.AddSpacer(187)
+        sizerScale.Add(self.btnScale, 0, wx.ALIGN_CENTER, 30)
+        # sizerScale.Add(scaleVar_Scale, 0, 50, 20)
+        horSizer3.Add(self.scaleVar_Scale, 0, 50, 20)
+        sizerScale.Add(horSizer3, 0, wx.ALIGN_CENTER, 10)
+
+
+        sizerTrim = wx.BoxSizer(wx.HORIZONTAL)
+        horSizer2 = wx.BoxSizer(wx.HORIZONTAL)
+        horSizer2.AddSpacer(135)
+        sizerTrim.Add(self.btnTrim, 0, wx.ALIGN_CENTER, 30)
+        # sizerTrim.Add(pointsVar_Trim, 0, 50, 20)
+        # sizerTrim.Add(axisVar_Trim, 0, 50, 20)
+        # sizerTrim.Add(trimVar_Trim, 0, 50, 20)
+        # horSizer2.Add(pointsVar_Trim, 0, 50, 20)
+        horSizer2.Add(self.axisVar_Trim, 0, 50, 20)
+        horSizer2.Add(self.trimVar_Trim, 0, 50, 20)
+        sizerTrim.Add(horSizer2, 0, wx.ALIGN_CENTER, 10)
+
+
+        sizerRotate = wx.BoxSizer(wx.HORIZONTAL)
+        horSizer4 = wx.BoxSizer(wx.HORIZONTAL)
+        horSizer4.AddSpacer(125)
+        sizerRotate.Add(self.btnRotate, 0, wx.ALIGN_CENTER, 30)
+        # sizerRotate.Add(pointsVar_Rot, 0, 50, 20)
+        # sizerRotate.Add(axisVar_Rot, 0, 50, 20)
+        # sizerRotate.Add(degreesVar_Rot, 0, 50, 20)
+        # horSizer4.Add(pointsVar_Rot, 0, 50, 20)
+        horSizer4.Add(self.axisVar_Rot, 0, 50, 20)
+        horSizer4.Add(self.degreesVar_Rot, 0, 50, 20)
+        sizerRotate.Add(horSizer4, 0, wx.ALIGN_CENTER, 10)
+
+        sizerTransform = wx.BoxSizer(wx.HORIZONTAL)
+        horSizer5 = wx.BoxSizer(wx.HORIZONTAL)
+        horSizer5.AddSpacer(104)
+        sizerTransform.Add(self.btnTransform, 0, wx.ALIGN_CENTER, 30)
+        horSizer5.Add(self.axisVar_Trans, 0, 50, 20)
+        horSizer5.Add(self.offsetVar_Trans, 0, 50, 20)
+        sizerTransform.Add(horSizer5, 0, wx.ALIGN_CENTER, 10)
+
+        sizerCtrls = wx.BoxSizer(wx.VERTICAL)
+        sizerCtrls.Add(self.helpStatic, 0, wx.ALL | wx.ALIGN_CENTER,16)
+        #sizerCtrls.Add(indexSizer, 0, wx.ALL | wx.ALIGN_CENTER, 18)
+
+
+        sizerCtrls.Add(self.btnLoadPly, 0, wx.ALL | wx.ALIGN_CENTER, 20)
+        sizerCtrls.Add(sizerStandardReo, 0, wx.ALL | wx.ALIGN_LEFT, 20)
+        sizerCtrls.Add(sizerScale, 0, wx.ALL | wx.ALIGN_LEFT, 20)
+        sizerCtrls.Add(sizerTrim, 0, wx.ALL | wx.ALIGN_LEFT, 20)
+        sizerCtrls.Add(sizerRotate, 0, wx.ALL | wx.ALIGN_LEFT, 20)
+        sizerCtrls.Add(sizerTransform, 0, wx.ALL | wx.ALIGN_LEFT, 20)
+
+        # self.ctrlsPanel.SetSizer(indexSizer)
+        # self.ctrlsPanel.SetSizer(sizerStandardReo)
+        # self.ctrlsPanel.SetSizer(sizerTrim)
+        # self.ctrlsPanel.SetSizer(sizerScale)
+        # self.ctrlsPanel.SetSizer(sizerRotate)
+        #sizeCtrlsn.Add(self.btnRedrawMayaviView, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL, 20)
+        #sizerMain.Add(btnsizer, 0, wx.ALIGN_CENTER_HORIZONTAL | wx.ALL, 1)
+
+        sizerHor = wx.BoxSizer(wx.HORIZONTAL)
+        sizerHor.Add(self.ctrlsPanel, 0, wx.ALIGN_CENTER | wx.ALL, 10)
+        sizerHor.Add(self.imgPreviewPanel, 0, wx.ALIGN_CENTER | wx.ALL, 10)
+
+        #self.mini.FitInside()
+        #print("SIZE", self.mini.Size)
+        #self.mini_mv.remove_highlighter_plane()
+        #self.mini_mv.remove_grid_reticle()
+        self.mv.insert_piano_grid_text_timeplane(length=self.mv.grid3d_span, volume_slice=None, figure=self.mini_mv.scene_mini.mayavi_scene)
+        self.mv.insert_note_text(text="♫Point Cloud Processing♫", color=(1, 1, 0), figure=self.mini_mv.scene_mini.mayavi_scene, scale=11)
+        self.mini_mv.scene_mini.background = (0/255, 0/255, 0/255)  #(222/255, 222/255, 0/255)
+        self.mini.SetSize((446, 446))
+
+        sizerMain = wx.BoxSizer(wx.VERTICAL)
+        sizerMain.Add(sizerHor, 30)
+        sizerMain.Add(btnsizer, 0, wx.ALIGN_CENTER_HORIZONTAL | wx.ALL, 20)
+
+        self.ctrlsPanel.SetSizer(sizerCtrls)
         self.SetSizerAndFit(sizerMain)
+
 
     def OnLoadPly(self, evt):
         with wx.FileDialog(self, "Open Ply file", wildcard="Ply files (*.ply)|*.ply",
@@ -1051,12 +1254,84 @@ class MIDIArt3DDialog(wx.Dialog):
             try:
                 self.ply = pathname
                 self.ply_name = os.path.basename(pathname)
+                self.points = midiart3D.get_points_from_ply(self.ply)
+                self.mlab_call = self.mv.insert_array_data(self.points, color=(1, 1, 0),
+                                                                figure=self.mini_mv.scene_mini.mayavi_scene,
+                                                                scale_factor=1)
             except IOError:
                 wx.LogError("Cannot open file '%s'." % pathname)
 
 
-    def On3DDisplayRedraw(self, evt):
-        super().GetParent().GetTopLevelParent().m_v.redraw_mayaviview()
+    # def OnComboBoxSelection(self, evt):
+    #     points = super().GetParent().mv.actors[int(self.cbActorIndices.GetSelection())]._points
+    #     if points.size is 0:
+    #         self.btnLoadPly.Enable()  #If no points, allow for the loading of a .ply.
+    #     else:
+    #         self.btnLoadPly.Disable() #If there are points, select a different actor to avoid overlapping notes.
+    #     self.points = points
+
+
+    #Points processing functions
+    def OnStandardReorientation(self, evt, points=None, scale=1.):
+        print("Standard Reorientation of points...")
+
+        self.marker = 0
+        #Cleans strays on first call only.
+        if self.marker < 1:
+            self.points = midiart3D.standard_reorientation(points=self.points,
+                                                           scale=int(self.scaleVar_Reo.GetValue()), clean=True)
+            self.marker = 1
+        else:
+            self.points = midiart3D.standard_reorientation(points=self.points,
+                                                           scale=int(self.scaleVar_Reo.GetValue()), clean=False)
+        self.mlab_call.mlab_source.trait_set(points=self.points)
+        return self.points
+
+
+    def OnTrim(self, evt, points=None, axis = 'y', trim = 0):
+        print("Trimming points...")
+
+        self.points = midiart3D.trim(points=self.points,
+                                     axis=str(self.axisVar_Trim.GetValue()),
+                                     trim=int(self.trimVar_Trim.GetValue()))
+        self.mlab_call.mlab_source.trait_set(points=self.points)
+        print("Trimmed points.")
+        return self.points
+
+
+    def OnScale(self, evt, points=None, scale_factor=2):
+        #Todo Write
+        print("Scaling points...")
+
+        midiart3D.scale_points(self.points, scale=float(self.scaleVar_Scale.GetValue()))
+        self.mlab_call.mlab_source.trait_set(points=self.points)
+        return self.points
+
+
+    def OnRotate(self, evt, points=None, axis = 'y', degrees=90):
+        print("Rotating points...")
+
+        self.points = midiart3D.rotate_array_points_about_axis(points=self.points,
+                                                               axis=str(self.axisVar_Rot.GetValue()),
+                                                               degrees=int(self.degreesVar_Rot.GetValue()))
+        self.mlab_call.mlab_source.trait_set(points=self.points)
+        return self.points
+
+
+    def OnTransform(self, coords_array=None, offset=0, axis='y', center_axis=False, positive_octant=False):
+        print("Transforming points...")
+
+        self.points = midiart3D.transform_points_by_axis(coords_array=self.points,
+                                                         offset=int(self.offsetVar_Trans.GetValue()),
+                                                         axis=str(self.axisVar_Trans.GetValue()))
+        self.mlab_call.mlab_source.trait_set(points=self.points)
+        return self.points
+
+
+
+
+    # def On3DDisplayRedraw(self, evt):
+    #     super().GetParent().mv.redraw_mayaviview()
 
 
 

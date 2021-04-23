@@ -17,6 +17,10 @@ print("Imported (and as 'npi'", npi)
 print("Imported", sympy)
 import music21
 print("Imported", music21)
+import pyo
+print("Imported", pyo)
+import mido
+print("Imported", mido)
 import locale
 locale.setlocale(locale.LC_ALL, 'en_US')
 import open3d

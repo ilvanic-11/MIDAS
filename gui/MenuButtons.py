@@ -31,7 +31,7 @@ class CustomMenuBar(wx.MenuBar):
         super().__init__(style=0)
         self.parent = parent
 
-        #A help dialog instance #TODO What the fuck was I thinking?
+        #A help dialog instance #TODO What the f**k was I thinking?
         #self.helper = HelpDialog(self, -1, "Help Window")
 
         #mayavi_view reference
@@ -54,6 +54,7 @@ class CustomMenuBar(wx.MenuBar):
         self.export.Append(1500, "&Current Actor\tCtrl+1")  #TODO BUG!!!!! Mixes up with the other accelerator table. Fix?
         self.export.Append(1501, "&All Actors\tCtrl+2")
         self.export.Append(1502, "&Current Actor's Current Zplane\tCtrl+3")
+        #TODO self..export.Append(1502, "&Current Actor's Current Zplane IN TRACK MODE\tCtrl+3")  #TODO If there is a switch for track mode, set this to export accordingly from there.
         self.export.Append(1503, "&All Actors' Zplanes\tCtrl+4")
         self.export.Append(1504, "&Selection\tCtrl+5")
         self.colors = wx.Menu()
@@ -167,7 +168,7 @@ class CustomMenuBar(wx.MenuBar):
         self.docsubmenu.Append(601, "Music21")
         self.docsubmenu.Append(602, "Mayavi")
         self.docsubmenu.Append(603, "Numpy")
-        self.docsubmenu.Append(604, "Sympy")
+        #self.docsubmenu.Append(604, "Sympy")
         self.docsubmenu.Append(605, "Open3D")
         self.docsubmenu.Append(606, "Open-CVPython")
         self.docsubmenu.Append(607, "VTK")
@@ -229,6 +230,7 @@ class CustomMenuBar(wx.MenuBar):
                     selected_stream.write('mid', output)
         pass
 
+
     def OnExport_AllActors(self, event):
         print("Exporting All Actors....")
         if len(self.m_v.actors) is not 0:
@@ -243,8 +245,13 @@ class CustomMenuBar(wx.MenuBar):
                 self.m_v.actors[i]._stream.write('mid', output)
         pass
 
+
     #TODO *Be mindful of 'track mode' vs 'velocity mode' for later; when we have those modes for each zplane.
     def OnExport_CurrentActorsCurrentZplane(self, event):
+        tempo = music21.tempo.MetronomeMark(number=self.m_v.bpm)
+        tempo.priority = -2
+        timesig = music21.meter.TimeSignature("4/4")
+        timesig.priority = -1
         print("Exporting Current Actor's Current Zplane....")
         intermediary_path = os.getcwd() + os.sep + "resources" + os.sep + "intermediary_path" + os.sep
         filename = self.m_v.CurrentActor().name + "_" +"Z-" + str(self.m_v.CurrentActor().cur_z)
@@ -252,6 +259,8 @@ class CustomMenuBar(wx.MenuBar):
         zplane = midiart3D.get_planes_on_axis(self.m_v.CurrentActor()._points)[  #Todo use GridToStream()
             eval('self.m_v.cur_z')] #TODO Watch for debug errors here.
         self.m_v.CurrentActor()._stream = midiart3D.extract_xyz_coordinates_to_stream(zplane)
+        self.m_v.CurrentActor()._stream.insert(0, tempo)
+        self.m_v.CurrentActor()._stream.insert(0, timesig)
         self.m_v.CurrentActor()._stream.write('mid', output)
 
 
@@ -443,16 +452,16 @@ class CustomMenuBar(wx.MenuBar):
 
         movie_maker = self.m_v.engine.scenes[0].scene.movie_maker
         length = (self.m_v.grid3d_span)
-        bpm_speed = self.GetTopLevelParent().m_v.bpm    ###+ 60
-        i_div = self.m_v.i_div
+        bpm = self.m_v.bpm    ###+ 60
+        frames_per_beat = self.m_v.frames_per_beat
 
-        print("# BPM:", bpm_speed)
+        print("# BPM:", bpm)
         print("# Grid Length:", self.m_v.grid3d_span)
-        print("# Animation Step Value:", 1/i_div)
-        print("# of Measures:", length/4)   #Measures assumed to be in '4/4' time. #TODO Fix by syncing with a time signature object.
-        print("# of Frames:", (length * i_div))
-        print("# of Frames per Measure:", i_div*4)
-        print("# of Frames per Beat:", i_div)
+        print("# Animation Step Value:", 1/frames_per_beat)
+        print("# of Measures:", length/4)   #**Measures assumed to be in '4/4' time. #TODO Fix by syncing with a time signature object.
+        print("# of Frames:", (length * frames_per_beat))
+        print("# of Frames per Measure:", frames_per_beat*4)  #**
+        print("# of Frames per Beat:", frames_per_beat)
 
         #mayavi_view.volume_slice.remove()
         #mayavi_view.insert_volume_slice(length)
@@ -462,12 +471,14 @@ class CustomMenuBar(wx.MenuBar):
         if movie_maker.record is False:
             movie_maker.record = True
 
-        self.m_v.animate(length, bpm_speed, i_div, sleep = 0)
+        self.m_v.animate(length, bpm, frames_per_beat)
         animator_instance = self.m_v.animate1
+
+        #TODO Overwrite timer here.
         animator_instance._start_fired()
         time.sleep(1)
         #TODO set movie_maker back to False in animate function after loop completes. CHECK--after loop completes, mayaviview is redrawn, setting it back to false.
-        print("In Blender, set FPS to:", midiart3D.BPM_to_FPS(bpm_speed, i_div)) ##((bpm_speed * (i_div/4) /60)))
+        print("In Blender, set FPS to:", midiart3D.BPM_to_FPS(bpm, frames_per_beat)) ##((bpm_speed * (i_div/4) /60)))
         pass
 
 
@@ -678,8 +689,8 @@ class CustomMenuBar(wx.MenuBar):
 
     # Test #TODO Figure out what to do to finish these midas_scripts quick tools.
     def OnToolSelection(self, event):
+        print("On Tool Selection..")
         print(event.Id)
-        print("ass ass ass ass")
         #Layout direction error here too. Fix with 'mainbuttonspanel' as parent.
         dlg = Preferences.ToolsDialog(self.GetTopLevelParent().mainbuttonspanel, -1, "Midas Dynamic Tool")
         dlg.func_id = event.Id
@@ -694,7 +705,26 @@ class CustomMenuBar(wx.MenuBar):
     # #Menu Comprehensive Append Functions --In MIDAS_wx.py, see #Menu Comprehensive Bind Functions
     def _append_musicode_tools(self):
         mcode_ids = 1000
-        self.musicode_list = [o for o in inspect.getmembers(musicode.Musicode) if inspect.isfunction(o[1])]
+        cancel_strings = ["SetupDefaultMidiDictionaries",
+                          "__init__",
+                           "_setup_am_dict",
+                           "_setup_asciiX_dict",
+                           "_setup_asciiY_dict",
+                           "_setup_boX_dict",
+                           "_setup_boY_dict",
+                           "_setup_bp_dict",
+                           "_setup_letters_and_numbers",
+                           "_setup_mm_dict",
+                           "_setup_ptX_dict",
+                           "_setup_ptY_dict",
+                           "_setup_se_dict",
+                           "_setup_splyce_dict",
+                           "_translate_letter",
+                           "add_to_dict",
+                           "create_directories"
+                           ""]
+
+        self.musicode_list = [o for o in inspect.getmembers(musicode.Musicode) if inspect.isfunction(o[1]) and o[0] not in cancel_strings]
         for func in self.musicode_list:
             self.musicodetools.Append(mcode_ids, func[0])
             mcode_ids += 1
@@ -879,29 +909,29 @@ class CustomMenuBar(wx.MenuBar):
             if dialog.input_span.GetLineText(0) == None:
                 pass
             else:
-                self.GetTopLevelParent().m_v.grid3d_span = float(dialog.input_span.GetLineText(0))
+                self.m_v.grid3d_span = float(dialog.input_span.GetLineText(0))
             if dialog.input_bpm.GetLineText(0) == None:
                 pass
             else:
-                self.GetTopLevelParent().m_v.bpm = float(dialog.input_bpm.GetLineText(0))
+                self.m_v.bpm = float(dialog.input_bpm.GetLineText(0))
             if dialog.input_i_div.GetLineText(0) == None:
                 pass
             else:
-                self.GetTopLevelParent().m_v.i_div = float(dialog.input_i_div.GetLineText(0))
+                self.m_v.frames_per_beat = float(dialog.input_i_div.GetLineText(0))
 
             if dialog.popupCtrl.GetStringValue() == "FLStudioColors":
-                self.GetTopLevelParent().m_v.default_color_palette = midiart.FLStudioColors
-                self.GetTopLevelParent().m_v.default_mayavi_palette = \
-                    midiart.convert_dict_colors(self.GetTopLevelParent().m_v.default_color_palette, invert=False)
-                self.GetTopLevelParent().m_v.current_palette_name = "FLStudioColors"
+                self.m_v.default_color_palette = midiart.FLStudioColors
+                self.m_v.default_mayavi_palette = \
+                    midiart.convert_dict_colors(self.m_v.default_color_palette, invert=False)
+                self.m_v.current_palette_name = "FLStudioColors"
                 #print("FL Fuck")
             else:
-                self.GetTopLevelParent().m_v.default_color_palette = midiart.get_color_palettes()[dialog.popupCtrl.GetStringValue()]
+                self.m_v.default_color_palette = midiart.get_color_palettes()[dialog.popupCtrl.GetStringValue()]
 
-                self.GetTopLevelParent().m_v.default_mayavi_palette = \
-                    midiart.convert_dict_colors(self.GetTopLevelParent().m_v.default_color_palette, invert=False)
+                self.m_v.default_mayavi_palette = \
+                    midiart.convert_dict_colors(self.m_v.default_color_palette, invert=False)
                     #A tuple R\B switch happens here; tuple is inverted.
-                self.GetTopLevelParent().m_v.current_palette_name = dialog.popupCtrl.GetStringValue()
+                self.current_palette_name = dialog.popupCtrl.GetStringValue()
                 # print("Fuck3")
             #Set the focus on the mainbuttonspanel so "F" hotkeys will work immediately.
             self.GetTopLevelParent().mainbuttonspanel.SetFocus()

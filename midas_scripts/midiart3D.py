@@ -33,17 +33,19 @@
 #3D-11. def GET_PLANES_ON_AXIS( coords_array, axis="z")
 #3D-12. def RESTORE_COORDS_ARRAY_FROM_ORDERED_DICT(planes_odict)
 #3D-13. def TRANSFORM_POINTS_BY_AXIS(coords_array, offset=0, axis='y', center_axis=False, positive_octant=False)
+#3D-. def SET_Z_TO_SINGLE_VALUE(
 
-#3D-. def ARRAY_TO_LISTS_OF( coords_array, tupl=True)
-#3D-. def LISTS_OF_TO_ARRAY( list)
 
 ###############################################################################
 
 import music21
 from music21 import *
-from midas_scripts import music21funcs
+from midas_scripts import music21funcs, midiart
 #from midas_scripts import midiart
+import numpy
 import numpy as np
+import os
+import errno
 import copy
 import math
 import open3d
@@ -51,7 +53,7 @@ from collections import OrderedDict
 import vtk
 from vtkmodules.util.numpy_support import numpy_to_vtk, vtk_to_numpy, numpy_to_vtkIdTypeArray
 import statistics
-from midas_scripts import midiart
+
 
 #3IDIART_FUNCTIONS
 # --------------------------------------
@@ -60,8 +62,9 @@ from midas_scripts import midiart
 
 #3D-1.
 def extract_xyz_coordinates_to_array( in_stream, velocities=90.0):
+    #TODO rename this function?
     """
-        This functions extracts the int values of the offsets, pitches, and velocities of a music21 stream's notes and
+         This functions extracts the int values of the offsets, pitches, and velocities of a music21 stream's notes and
     puts them into a common 2d numpy coords_array as floats.
     :param in_stream:               Music21 input stream. (for 3d purposes the stream must contain stream.Parts)
     :return: note_coordinates:      A numpy array comprised of x=note.offset, y=pitch.midi, and z=volume.velocity.
@@ -72,10 +75,11 @@ def extract_xyz_coordinates_to_array( in_stream, velocities=90.0):
     temp_stream = music21funcs.notafy(in_stream)
     substitute_volumes = list((np.full((1, len(in_stream.flat.notes)), velocities, dtype=np.float16))[0])
     #print("Substitute Velocities", substitute_volumes)
-    volume_list = list()
-    pitch_list = list()
-    offset_list = list()
+    volume_list = []
+    pitch_list = []
+    offset_list = []
     #TODO Duration list?
+    duration_list = []
     #Gather data all at once, turn them into floats, and put them into lists.-- (.offets are floats by default)
     for XYZ in temp_stream.flat.notes:
         #if XYZ.volume.velocity is None:
@@ -86,6 +90,8 @@ def extract_xyz_coordinates_to_array( in_stream, velocities=90.0):
             #return None
         offset_list.append(float(XYZ.offset))
         pitch_list.append(float(XYZ.pitch.midi))
+        #TODO Condition check here?
+        duration_list.append(float(XYZ.duration.quarterLength))
         if XYZ.volume.velocity is not None:
             volume_list.append(float(XYZ.volume.velocity))
         else:
@@ -94,7 +100,7 @@ def extract_xyz_coordinates_to_array( in_stream, velocities=90.0):
         print("There were no velocity values for these notes. Velocities set to volume.realized * 127.")
         volume_list = substitute_volumes
     #Create a numpy array with the the concatenated x,y,z data as its elements.
-    note_coordinates = np.r_['1, 2, 0', offset_list, pitch_list, volume_list]
+    note_coordinates = np.r_['1, 2, 0', offset_list, pitch_list, volume_list, duration_list]
     new_coordinates = np.array(note_coordinates, dtype=np.float16)
     del(note_coordinates)
     print("New coords", new_coordinates)
@@ -108,19 +114,23 @@ def extract_xyz_coordinates_to_array( in_stream, velocities=90.0):
     return new_coordinates
 
 #3D-2.
-def extract_xyz_coordinates_to_stream( coords_array, part=False):
+def extract_xyz_coordinates_to_stream( coords_array, part=False, durations=False):
     """
         This function takes a numpy array of coordinates, 3 x, y, z values per coordinates, and turns it into a music21
     stream with those coordinates as .offset, .pitch, and .volume.velocity values for x, y, and z. ---Note for user.
     If note.quarterLength and note.volume.velocity are unassigned, they default to 1.0 and None respectively.
+    In addition, extra values may be extracted from the coords_array in the form of duration, smallestallowednote, and
+
     :param coords_array:        A 2D Numpy array of coordinate data.
     :param part:                A bool kwarg of separate_notes_to_parts_by_velocity().
+    :param durations:           Bool determing whether to extract durations from the coords_array. Off by default
+                                as point clouds\pictures do not inherently position duration values.
     :return: parts_stream:      A music21 stream.
     """
 
     #Assign lists, variables, etc.
     out_stream = music21.stream.Stream()
-    note_list = list()
+    #note_list = list()
     #Get offset, pitch and velocity values x,y, and z.
     # offset_list = list()
     # pitch_list = list()
@@ -129,11 +139,20 @@ def extract_xyz_coordinates_to_stream( coords_array, part=False):
     #quarterLength_list = list()
     #Extract coordinate data from numpy array.
     for i in range(0, (len(coords_array))):
-        newpitch = music21.pitch.Pitch()
+        newpitch = music21.pitch.Pitch()                #Pitch
         newpitch.ps = (float(coords_array[i][1]))
-        newnote = music21.note.Note(newpitch)
-        newnote.offset = (float(coords_array[i][0]))
-        newnote.volume.velocity = (float(coords_array[i][2]))
+        newdur = music21.duration.Duration()            #Duration
+        if durations:
+            newdur.quarterLength = (float(coords_array[i][3]))
+        else:
+            pass
+        newnote = music21.note.Note(newpitch)           #Note
+        newnote.offset = (float(coords_array[i][0]))    #Time as offset
+        if durations:
+            newnote.duration = newdur
+        else:
+            pass
+        newnote.volume.velocity = (float(coords_array[i][2]))       #Velocity
         #note_list.append(copy.deepcopy(newnote))
         # TODO n.duration = make_contiguous_notes() # from an array
         #n.quarterLength =
@@ -214,6 +233,9 @@ def rotate_point_about_axis( x, y, z, axis, degrees):
         new_x = x * round(math.cos(math.radians(degrees))) - y * round(math.sin(math.radians(degrees)))
         new_y = x * round(math.sin(math.radians(degrees))) + y * round(math.cos(math.radians(degrees)))
         new_z = z
+    else:
+        print("Your axis is incorrect. Please specify either 'x', 'y', or 'z'.")
+        return
     return (new_x, new_y, new_z)
 
 #3D-6.
@@ -227,26 +249,31 @@ def rotate_array_points_about_axis( points, axis, degrees):
     """
     # new_points = np.array(points)
     # Centers all points around origin before rotating.
+    print("Here1")
     t_x = (max(points[:, 0]) + min(points[:, 0])) / 2
     t_y = (max(points[:, 1]) + min(points[:, 1])) / 2
     t_z = (max(points[:, 2]) + min(points[:, 2])) / 2
+    print("Here2")
     points[:, 0] -= t_x
     points[:, 1] -= t_y
     points[:, 2] -= t_z
     axl = list()
     ayl = list()
     azl = list()
+    print("Here3")
     for i in range(len(points)):
         ax, ay, az = rotate_point_about_axis(points[i][0], points[i][1], points[i][2], axis, degrees)
         axl.append(ax)
         ayl.append(ay)
         azl.append(az)
+    print("Here4")
     print(azl)
     r_points = np.r_['1, 2, 0', axl, ayl, azl]
     # Transforms points back to original position.
     r_points[:, 0] += t_x
     r_points[:, 1] += t_y
     r_points[:, 2] += t_z
+    print("Here5")
     return r_points
 
 
@@ -254,17 +281,13 @@ def rotate_array_points_about_axis( points, axis, degrees):
 def get_points_from_ply( file_path, height=127):
     """
         Returns a 2D numpy array of coordinates from a .ply file, adjusted into floating point value, and transformed
-    based on the users input. Input can be positive or negative. For 3idiArt purpoes, object values should all be
+    based on the users input. Input can be positive or negative. For 3idiArt purposes, object values should all be
     positive.
     :param file_path:   File path.
     :param height:      Value up to 127. (Preferably not lower than 50)
     :return:            2d numpy array.
     """
-    import open3d
-    import numpy
-    import numpy as np
-    import os
-    import errno
+
     if not os.path.exists(file_path):
         raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), file_path)
 
@@ -322,7 +345,9 @@ def delete_redundant_points( coords_array, stray=True):
     """
 
     set_list = midiart.array_to_lists_of(coords_array, tupl=True)
+    assert set_list is not None, print("Your zplane does not have any notes yet.")
     #big_set = set(set_list)
+    #print("Set_List", set_list)
     big_dict = OrderedDict.fromkeys(set_list)
     little_set = list(big_dict)
     #little_set = list(big_set)
@@ -405,6 +430,7 @@ def get_planes_on_axis( coords_array, axis="z", ordered=False, clean=True, array
     #print("Then use np.array on the value to reassert as numpy coordinate data.")
     return planes_dict
 
+
 #3D-12.
 def restore_coords_array_from_ordered_dict(planes_odict):
     """
@@ -417,6 +443,46 @@ def restore_coords_array_from_ordered_dict(planes_odict):
     key_tupl = tuple(key_list)
     new_coords = np.vstack(key_tupl)
     return new_coords
+
+
+#Basic Point Cloud transformation functions.
+def standard_reorientation(points, scale=1., clean=False):
+    # TODO Maximum rescaling check.
+    # TODO scale_function?  Need check to avoid float values.
+    # TODO Scaling needs to be done with respect to musical, i.e. a musical key, and within the grid's available space.
+
+    #TODO MAJOR: There is a 'scale' trait within an mlab actor. Use this for scaling? (it scales the size of points up as well..)
+
+
+    points = transform_points_by_axis(points, positive_octant=True)
+    if clean:
+        points = delete_redundant_points(points, stray=True)
+    else:
+        points = delete_redundant_points(points, stray=False)
+
+    points = scale_points(points=points, scale=scale)
+    return points
+
+
+def scale_points(points, scale=2.):
+    coords = np.r_['1, 2, 0', points[:, 0], points[:, 1], points[:, 2]]
+    coords = coords * scale
+    coords = np.asarray(coords, int)
+    for i in range(0, 3, 1):
+        points[:, i] = coords[:, i]
+    return points
+
+
+def trim(points, axis='y', trim=0):
+
+    Points_Odict = get_planes_on_axis(points, axis, ordered=True)
+
+    # Trim (Trim by index in the list. An in-place operation.)
+    [Points_Odict.pop(i) for i in list(Points_Odict.keys())[:trim]]
+
+    # Restore to a coords_array.
+    Restored_Points = restore_coords_array_from_ordered_dict(Points_Odict)
+    return Restored_Points
 
 
 #3D-13.
@@ -457,6 +523,46 @@ def transform_points_by_axis(coords_array, offset=0, axis='y', center_axis=False
         axis_array = coords_array[:, ax]
         coords_array[:, ax] = axis_array + offset  # Numpy math is conducted in place.
     return coords_array
+
+
+#Position, orientation, and #TODO origin functions.
+#TODO This is a numpy function. Allocate accordingly?
+
+def set_z_to_single_value(value, self=None, coords=None,  actor=None):
+    """
+        This function takes in a coords_array and changes all the (*, *, z, *, *, *) z values to the designated 'value'
+    argument.
+
+    Note: The music21funcs module has functionally identical methods called set_stream_velocities() and , only it operates
+    on a music21 stream.
+    Note: This previously was a class function, but was moved here because of it being inherently numpy.
+          self=Midas.mayavi_view can be passed within the Midas application's pycrust for ease of use.
+    :param coords:      Operand coords_array.
+    :param value:       Value to which to change all z values.
+    :param actor:       In the Midas application, this is the desired actor on which to operate.
+    :return:            A modified coords_array.
+    """
+    if actor is None:
+        coords_array = coords
+        coords_array_z = coords[:, 2]
+        coords[:, 2] = np.full((len(coords_array_z), 1), value)[:, 0]
+        return coords_array
+    else:   #For use within the Midas application when running.
+        try:
+            Midas = self
+        except Exception as e:
+            print(e)
+            return
+        coords_array = Midas.mlab_calls[actor].mlab_source.points
+        coords_array_z = coords_array[:, 2]
+        coords_array[:, 2] = np.full((len(coords_array_z), 1), value)[:, 0]
+        Midas.mlab_calls[actor].mlab_source.points = coords_array
+    return coords_array
+
+
+#Todo
+def separate_coords_to_plane():
+    pass
 
 
 #TODO Learn more vtk.

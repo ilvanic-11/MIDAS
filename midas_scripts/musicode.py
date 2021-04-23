@@ -173,7 +173,7 @@ class Musicode():
 			m.append(rest)
 		self.dictionaries[musicode][char] = m
 
-
+	#TODO Rename this?
 	def SetupDefaultMidiDictionaries(self, wx_progress_updater=None):
 		
 		i = 0
@@ -668,20 +668,27 @@ class Musicode():
 	# M21-7.
 	def make_musicode(self, in_stream, musicode_name="User_Generated", shorthand="sh", filepath=None, selection=None, write=True, timeSig='4/4'):
 		"""
-		This function take a string and an input stream with equal lengths (number of measures equals number of string characters)
-		 and conjoins them to create a user-generated assignment of musicodes to be called by said string character.
-		 Choice included to write to file and to provide a selection. Selection should ideally match input stream, although
-		 creativity is highly encouraged!
+			This function take a string and an input stream with equal lengths (# of measures equals # of string characters)
+		and conjoins them to create a user-generated assignment of musicodes to be called by said string character.
+		Choice included to write to file and to provide a selection. Selection should ideally match input stream,
+		although creativity is highly encouraged!
 
-		:param in_stream: Operand music21.stream.Stream() object with musicode data IN MEASURES to be written to file.
-		:param musicode_name: The name of your user-created and designed 'musicode' to be generated from said stream of measures.
-		:param shorthand: The abbreviation for your musicode. (i.e, The builtin musicode "Animuse" uses the shorthand 'am'.)
-		:param filepath: If this is none, the musicode will be saved in the ...\\Midas\resources\musicode_libraries folder.
-		:param selection: If none, select is automatically the Latin_Script established as--
-		 #Latin_Script = '''AaBbCcDdEeFfGgHhIiJjKkLlMmNnOoPpQqRrSsTtUuVvWwXxYyZz  ?,;\':-.!\"()[]/  0123456789'''
-		:param write: If true, directories are established appropriately and function writes to them accordingly.
-		:param timeSig: Determines the time signature for the measures of your new musicode. Primarily affects measure length.
-		:return: Returns a stream containing your musicode with its assigned element wrappers for quick acces.
+		:param in_stream: 		Operand music21.stream.Stream() object with musicode data IN MEASURES to be written to
+								file.
+		:param musicode_name: 	The name of your user-created and designed 'musicode' to be generated from said stream
+								of measures.
+		:param shorthand: 		The abbreviation for your musicode. (i.e, The builtin musicode "Animuse" uses the
+								shorthand 'am'.)
+		:param filepath: 		If this is none, the musicode will be saved in the ...
+								\\Midas\\resources\\musicode_libraries folder.
+		:param selection: 		If none, select is automatically the Latin_Script established as--
+		#--Latin_Script = '''AaBbCcDdEeFfGgHhIiJjKkLlMmNnOoPpQqRrSsTtUuVvWwXxYyZz  ?,;\':-.!\"()[]/  0123456789'''
+		:param write: 			If true, directories are established appropriately and function writes to them
+								accordingly.
+		:param timeSig: 		Determines the time signature for the measures of your new musicode. Primarily affects
+								measure length.
+		:return: 				Returns a stream containing your musicode with its assigned element wrappers for quick
+								access.
 		"""
 
 		#The name of the created musicode.

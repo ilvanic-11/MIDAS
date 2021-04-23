@@ -41,9 +41,12 @@
 # MA-18. def GET_COLOR_PALETTES(mypath=None, ncp=False)
 # MA-19. def CONVERT_DICT_COLORS(colors_dict)
 # MA-20. def CONVERT_RGB_TO_NCP(palettes=None)
+# MA-21. def CV2_TUPLE_RECONVERSION(image, inPlace=False, conversion ='Edges')
+# MA-22. def CREATE_MIDI_HEADER(midifile)
 ###############################################################################
 
 import music21
+import mido
 import random
 import open3d
 import numpy as np
@@ -965,7 +968,7 @@ def lists_of_to_array(lizt, dim=2):
         # uncomment the following line to take input from the user
         # num = int(input("Enter a number: "))
         # print_factors(num)
-        new_array = array.reshape(statistics.median_low(f_list), statistics.median_high(f_list), 3)
+        new_array = array.reshape((statistics.median_low(f_list), statistics.median_high(f_list), 3))
         return new_array
     else:
         return array
@@ -1011,11 +1014,11 @@ def array_to_lists_of(coords_array, tupl=True):
                     p_list.append(pnts)
         return p_list
     else:
-        print("Suggested ndim should be 2 or three.")
+        print("Suggested ndim should be 2 or 3.")
         return None
 
 
-#MA-17.
+# MA-17.
 def separate_pixels_to_coords_by_color(image, z_value, nn=False, dimensionalize=None, display=False, clrs=None, num_dict=False): ###, stream=False):
     """
         Created for testing purposes, this function takes an input image and returns an Ordered Dictionary of coordinate
@@ -1121,7 +1124,8 @@ def separate_pixels_to_coords_by_color(image, z_value, nn=False, dimensionalize=
         return odict1
 
 
-#MA-18
+
+# MA-18
 def get_color_palettes(mypath=None, ncp=False):
     """
         This function creates a dictionary of dictionaries of colors derived from Midas's color_palettes folder. One can
@@ -1147,7 +1151,7 @@ def get_color_palettes(mypath=None, ncp=False):
         dict = {}
         k = cv2.imread(j)
         for i, x in enumerate(k[0]):
-            dict[i+1] = tuple(x)   #COULD IT BE HERE?!?!?! WHERE IT ALL GETS FIIIIXED!?!?!?!?!  #SWAP HERE?
+            dict[i+1] = tuple(x)   #COULD IT BE HERE?!?!?! WHERE IT ALL GETS FIIIIXED!?!?!?!?!  #SWAP HERE?  #TODO This was the color inversion bug that was hard to fix.
         dict_list[name] = dict
     if ncp is True:
         convert_rgb_to_ncp(dict_list)
@@ -1156,15 +1160,15 @@ def get_color_palettes(mypath=None, ncp=False):
     return dict_list
 
 
-#MA-19.
+# MA-19.
 def convert_dict_colors(colors_dict, invert=False, both=False):
     """
         Function to divide dict color tuple values by 255 for use in the mayavi view. Resulting values are floats thus:
         (0.0 <= a floating point number <= 1.0)
-    :param colors_dict: Dict of colors, usually of 16 colors.
-    :param invert:      Parameter to switch the "R" value with the "B" value in the tuple, if true.
-    :parama both:       If true, both convert and invert will occur.
-    :return: A deep copy of the input Dictionary.
+    :param colors_dict:     Dict of colors, usually of 16 colors.
+    :param invert:          Parameter to switch the "R" value with the "B" value in the tuple, if true.
+    :parama both:           If true, both convert and invert will occur.
+    :return:                A deep copy of the input Dictionary.
     """
     new_dict = copy.deepcopy(colors_dict)
     if both is True:
@@ -1201,8 +1205,15 @@ def invert_dict_colors(colors_dict, inPlace=False):
 
     return new_dict
 
-#MA-20.
+
+# MA-20.
 def convert_rgb_to_ncp(palettes=None):
+    """
+        This function takes dictionaries of rgb color tuples and converts them to the ncp 'color0 = hexadecimal' format
+    used for colors inside of FL Studio. It then writes that ncp to file in a designated Midas folder.
+    :param palettes:        A dictionary of 16 color tuples with keys 1-16 for each value.
+    :return:
+    """
     #TODO Doc string.
     if palettes is None:
         palettes = get_color_palettes()
@@ -1215,7 +1226,7 @@ def convert_rgb_to_ncp(palettes=None):
         num = 0
         for j in palettes[i]:
             color_num = 'Color%s' % num
-            string = '=FF%02x%02x%02x' % (palettes[i][j])
+            string = '=FF%02x%02x%02x' % (palettes[i][j])  #Except that this works.
             upper_string = string.upper()
             final_string = color_num + upper_string + '\n'
             text_list.append(final_string)
@@ -1227,17 +1238,19 @@ def convert_rgb_to_ncp(palettes=None):
         #print(i)
 
 
-#MA-20.
+# MA-21.
 def cv2_tuple_reconversion(image, inPlace=False, conversion ='Edges'):
     """
-    Function to take the cv2.Canny transformation function of opencv-python, and return the equivalent 'original' format
-    np.array for the 'edges'. (same for monochrome, or whatever cv transformation you did.)
+        Function to take the cv2.Canny transformation function of opencv-python, and return the equivalent 'original'
+    format np.array for the 'edges'. (same for monochrome, or whatever prior cv transformation the user performed.)
     ---(i.e. Canny, cvtColor(image, cv2.COLOR_BGR2GRAY))
-    The original image is a 3D array(2D of color tuples, while a Canny array is a 2D array of single values, the result
-    of the edge detection, which is not the same format as the original.)
+    The 'original' "image" is a 3D array(technically a 2D of 3-value color tuples), while a Canny array is a 2D array of
+    single values, the result of the edge detection, which is not the same format as the 'original'.
 
     :param image:       A cv2.imread(r"filepath") image.
-    :param inPlace:     Bool determining whether to operate on original image in place and return it, or to return a new one.
+    :param inPlace:     Bool determining whether to operate on original image in place and return it, or to return a
+                        new one.
+    :param conversion   Kwarg in
     :return:            A 3D np.array (2D of color tuples, most likely will be black and white.
     """
     print("IMAGE_CHECK", image[-1, -1])
@@ -1272,3 +1285,49 @@ def cv2_tuple_reconversion(image, inPlace=False, conversion ='Edges'):
                     return_image[row, col] = np.asarray([0, 0, 0], dtype=np.uint8)
         return (new_image, return_image)
 
+
+#########################
+#Direct MIDI functions #TODO EXPAND AND REORGANIZE THIS--include music21.midi.Midifile() functions AND mido.MidiFile() functions. (April 3rd, 2021)
+#########################
+
+# MA-22.
+def create_midi_header(midifile=None, bpm=None, timesig=None, keysig=False, as_track=False):
+    """
+        This function creates the first track of common midifiles, establishing necessary information for the midi file
+    such as tempo, time signature and key signature. It has the added option of allowing the user to manipulate said
+    parameters of tempo, time signature and key signature.
+    :param midifile:     If not None, path to a midifile as str  r"midifile".
+    :param bpm:          If not None, desired tempo in beats per minute to set within the midifile.
+    :param timesig:      If not None, desired time siganture as tuple (numerator, denominator). (ie. (4, 4) as default)
+    :param keysig:       Key signature specified by the following valid values as strings:
+                         A A#m Ab Abm Am B Bb Bbm Bm C C# C#m Cb Cm D D#m Db Dm E Eb Ebm Em F F# F#m Fm G G#m Gb Gm
+    :param as_track:     If true, return a mido.MidiTrack() instead of a midifile.
+    :return:             mido.MidiFile() or mido.MidiTrack()
+    """
+    mm_timesig = mido.MetaMessage(type='time_signature', numerator=4, denominator=4)  #TODO They said their default was fixed. It isn't. --> https://mido.readthedocs.io/en/latest/meta_message_types.html#time-signature-0x58
+    if timesig is not None:
+       assert type(timesig) is tuple, print('Time signature must provided in the form of tuple(numerator, denominator).')
+    mm_timesig.numerator = timesig[0] if timesig is not None else mm_timesig.numerator
+    mm_timesig.denominator = timesig[1] if timesig is not None else mm_timesig.denominator
+    #Todo Look into 'smpte_offset' type in place of mm_timesig?
+    mm_tempo = mido.MetaMessage(type='set_tempo')
+    mm_tempo.tempo = mido.bpm2tempo(bpm) if bpm is not None else mm_tempo.tempo
+    mm_eot = mido.MetaMessage(type='end_of_track')
+    mm_list = [mm_tempo, mm_timesig, mm_eot]
+    if keysig:
+        mm_keysig = mido.MetaMessage(type='key_signature', key=keysig)
+        mm_list.insert(0, mm_keysig)
+
+    m_track = mido.MidiTrack(mm_list)
+
+    if midifile is None:
+        midifile = mido.MidiFile()
+        midifile.tracks.insert(0, m_track)
+    else:
+        #Todo STUDY the headers of midifiles that are to go through midas and re-evaluate methods here accordingly.
+        midifile = mido.MidiFile(midifile)
+        midifile.tracks[0] = m_track
+    if as_track:
+        return m_track
+    else:
+        return midifile
