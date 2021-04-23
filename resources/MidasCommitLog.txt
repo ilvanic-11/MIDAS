@@ -480,22 +480,89 @@ In pianorollpanel, pianoroll
 --> Cleaned up hash garbage and redundant calls to speed up drawing. 
 
 
+NOTE: This is a broken\unworking commit.
 --IP--Commit--February 15th, 2021--
 In Git
 Merged "Adding-Span-and-Velocity" branch into "Isaacs_Mayavi_Branch"
-#TODO Merge "Zachs-Branch" into " Isaacs_Mayavi_Branch" AND "Adding-Span-and-Velocity"
 
 
-
-
---IP--Commit--February <?>, 2021--
+NOTE: Broken commit fixed here.
+--IP--Commit--February 22, 2021--
 In ActorsControlPanel, ZPlanesControlPanel
 --Bug fix: Capitilized index to Index in the Activate_Zplane\Actor() functions. 
+In All
+--Merged "Zachs-Branch" into " Isaacs_Mayavi_Branch" AND "Adding-Span-and-Velocity"
+--MERGE BUGS FIXED
 
+
+--IP--Commit April 23, 2021--
+In ALL
+--> More miscellaneous merge bugs fixed. (like the kwargs in the Selection_Send() function)
+--> Created new module Playback.py and new class Playback(). 
+--> Added pyo to the Midas-Mayavi_Pip_Batch_Install.bat file.
+--> Added pyinstaller to the Midas-Mayavi_Pip_Batch_Install.bat file.
+In music21funcs
+--> Cleaned up hash in function separate_notes_to_parts_by_velocity()
+--> New function: merge_notes_to_one_part() 
+In midiart
+--> Caught Bug: fixed missing parentheses in .reshape method used inside funtion midiart.lists_of_to_array()
+--> Added import mido to list of imports within module
+--> New function: create_midi_header()
+In music21funcs
+--> New function add__timesig_and_metronome()
+In Gdrive
+--> Updated Our MCV data model visual aid. https://docs.google.com/presentation/d/1MLFkx_NM9iuqqOkiotOjKu_NlJvfuvHfmvdkFjdLK6g/edit#slide=id.g812d8adfec_0_7
+In color_palettes
+--> Added 60 NEW color palettes from Lospec.com
+In Mayavi3DView
+--> Implemented  mlab.mesh() "Surface" version of the self.volume_slice. It is moderately faster to animate.
+--> Implemented method to have OPTION to user either mlab.volume_slice() or mlab.mesh() versions of the plane scroller.
+--> Changed class variable self.volume_slice to self.slice and self.slice edges. Self.volume_slice is now a Boolean determing which OPTION to use. (True will be Volume Slice, False will be Surface\Mesh)
+In Actor
+--> Implemented actor_points_changed() fix for new Core Data Update(see Trello card.) (array4d and points data additions)
+--> part of CORE DATA UPDATE --> Changed self._array3D to self._array4D. Changed the 'shape' of self.array4D from (5000, 128, 128) TO (5000, 128, 128, 5). This allows for (On\off, Velocity, Duration, Span, SAN)
+In MenuButtons
+--> Fixed more "m_v" errors from previous "mayavi_view" variable refactoring.
+--> Removed "Sympy" from the Help Menu bar, Sympy is not used (yet).
+--> Cleaned up some prints
+In MainButtons, MainButtonsPanel
+--> Fixed "m_v" errors from previous "mayavi_view" variable refactoring.
+--> Moved redraw_mayaviview() BUTTON out of On3idiArtDialogue() and into the bottom of the green Main Buttons panel.
+--> Gave color values to the 4 Main Buttons. (Light Purple-->Import Score\Midi, Medium Blue-->Musicode, Light Green-->MidiArt, Light Yellow-->3idiArt)
+--> Got rid of the neon green background color of the mainbuttons 'panel.'
+--> Hard coded the size=(75, 36) attribute of the self.btn__Music21_Converter_Parse wx.Button. Makes the contained text more readable.
+--> In function _append_musicode_tools(), added variable list "cancel_strings" to eliminate unwanted menu buttons adds in our dynamic tools menu for 'musicode'.
+--> In function MusicodeDialogue(), fixed a bug where the Main Button "Musicode" was failing to continue to highlight upon mouse hover after being activated once. 
+In mainbuttonspanel.3idiArtDialogue()
+--> Completely revamped the dialogue layout. Now finished, for the most part. Changed some string text descriptions. Implemented use of a mini Mayavi3idiView().
+--> Cleaned up imports at top of file.
+In musicode
+--> Cleaned up doc string in function make_musicode()
+--> Fixed a bug where top level variable Midas.musicode wasn't getting written to in the MusicodeDialogue() function.
+In ZPlanesControlPanel
+--> Cleaned up unused imports.
+In MIDAS_wx.py
+--> Hashed out unused imports, placed all used at top.
+--> Completely redesigned and upgraded the Spash screen image logo of Midas. (MIDAS_splash.png)
+--> Added multiprocessing to the list of importss
+--> Used multiprocessing to allow the program to load WHILE the Musical_Matrix_Rain.py is running.
+In Musical_Matrix_Rain
+--> Changed delay value at end from 5000 to 19500
+--> Reinstantiated in MIDAS_wx.py. (Turn off for testing.)
+--> Added "♫VISUAL || MUSIC♫" to the possible strings that are rained.
+--> Eliminated the FULLSCREEN and replaced with Sreen mode sized a number of pixels above screen-max so as to create the "maximized" fullscreen look whilst ensuring that it runs everytime.
+--> Added "Yellow" to the possible colors of the rain.
+In Preferences
+--> Cleaned up imports at top of module.
+--> Added a now multiprocessing based _Timer() class for use in the InfiniteTimer() class. Didn't work as expected.
+
+
+++++++++++++
+#############################################
 ##Git adds. Update as needed. (Git can adds a LOT at once, if separated without commas.)
-git add MIDAS_wx.py gui/ActorsControlPanel.py gui/MainButtons.py  gui/MenuButtons.py gui/PianoRoll.py gui/PianoRollPanel.py gui/Preferences.py gui/ZPlanesControlPanel.py mayavi3D/Mayavi3DWindow.py mayavi3D/Mayavi3idiArtAnimation.py midas_scripts/midiart3D.py midas_scripts/music21funcs.py midas_scripts/musicode.py midas_scripts/midiart.py resources/Midas-Mayavi_Pip_Batch_Install.bat resources/MidasCommitLog.txt resources/Midas_Startup_Configs.py resources/HotkeyAssignments.txt 
+git add MIDAS_wx.py gui/ActorsControlPanel.py gui/MainButtons.py  gui/MenuButtons.py gui/PianoRoll.py gui/PianoRollPanel.py gui/Preferences.py gui/ZPlanesControlPanel.py mayavi3D/Mayavi3DWindow.py mayavi3D/Mayavi3idiArtAnimation.py midas_scripts/midiart3D.py midas_scripts/music21funcs.py midas_scripts/musicode.py midas_scripts/midiart.py resources/Midas-Mayavi_Pip_Batch_Install.bat resources/MidasCommitLog.txt resources/Midas_Startup_Configs.py resources/HotkeyAssignments.txt gui/Playback.py gui/Musical_Matrix_Rain.py mayavi3D/MusicObjects.py resources/MIDAS_splash.png resources/color_palettes/
 ##
-
+#############################################
 git add test/MIDAS_UnitTests.py 
 resources/intermediary_path/Lotus 004.png
 resources/intermediary_path/Midas_Test1.mid

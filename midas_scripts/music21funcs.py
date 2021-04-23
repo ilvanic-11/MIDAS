@@ -132,6 +132,7 @@ def transpose_all_measures_by_random( in_stream):
                 n.pitch.transpose(i, inPlace=True)
     return s
 
+
 #Tr-3.
 def transpose_measures_by_letters( in_stream, letters, degree):
     """
@@ -210,6 +211,7 @@ def transpose_chord_in_key(in_chord, int_num, key):
 # -----------------------------------------------------------------------
 # ----------------------------------------------------------------------------------------------------------------------
 
+
 #M-1.
 def alter_measure_offset( in_stream, range_l, range_h, offset_number):
     """
@@ -228,6 +230,7 @@ def alter_measure_offset( in_stream, range_l, range_h, offset_number):
                 m.setElementOffset(n, n.offset + offset_number)
     in_stream.makeMeasures()
     return in_stream
+
 
 #M-2.
 def alter_measure_duration( in_stream, range_l, range_h, duration_len):
@@ -248,6 +251,7 @@ def alter_measure_duration( in_stream, range_l, range_h, duration_len):
                 n.duration = d
     in_stream.makeMeasures()
     return in_stream
+
 
 #M-3. TODO NEEDS FIXING!!
 def stretch_by_measure( in_stream, range_l, range_h, ratio, stretchDurations=True):
@@ -305,7 +309,6 @@ def stretch_by_measure( in_stream, range_l, range_h, ratio, stretchDurations=Tru
     return in_stream
 
 
-
 #M-4.
 def arpeggiate_chords_in_stream( in_stream, stepsize=1, ascending=True):
     """
@@ -345,6 +348,7 @@ def arpeggiate_chords_in_stream( in_stream, stepsize=1, ascending=True):
 #     :return:
 #     """
 
+
 #M-6.
 def chop_up_notes(in_stream, offset_interval):
     """
@@ -375,6 +379,7 @@ def chop_up_notes(in_stream, offset_interval):
 
             new_stream.insert(n.offset, n)
     return new_stream
+
 
 # M-7.
 def merge_contiguous_notes(in_stream ):
@@ -417,7 +422,7 @@ def set_chord_octave(in_chord, octave):
     return in_chord
 
 
-#Syn-2.
+#Syn-2. #Todo Review these.
 def make_chords_from_notes(in_stream, in_chord, inv):
     """
         For singular notes in a music21 stream, this function takes those notes and turns them into chords with that
@@ -446,6 +451,7 @@ def make_chords_from_notes(in_stream, in_chord, inv):
         if type(c) is music21.chord.Chord:
             c.removeRedundantPitches()
     return in_stream
+
 
 #Syn-3.
 def make_chords_from_notes_2(in_stream, in_chord, inv):
@@ -522,6 +528,7 @@ def make_notes_from_string_of_numbers(in_string, keychoice=None, note_length = 1
             out_stream.append(r)
     return out_stream
 
+
 #Syn-5.
 def fibonacci_to_music(range_l, range_h, scale_mode, base, note_length = 1, spaces=False):   ### ###chords=True
     """
@@ -551,8 +558,9 @@ def fibonacci_to_music(range_l, range_h, scale_mode, base, note_length = 1, spac
     fibonacci_stream = make_notes_from_string_of_numbers(new_fibonacci, keychoice=scale_mode, note_length=note_length)
     return fibonacci_stream
 
+
 #Syn-6.
-def array_to_music(list_array, scale_mode, base, note_length = 1, spaces=False):    ###chords=True
+def array_selection_to_music(list_array, scale_mode, base, note_length = 1, spaces=False):    ###chords=True
     """
         This function performs similiar to fibonacci_to_array, only this function allows a user-specified or random
     input of numbers instead of just the fibonacci range. The base is still able to be changed.
@@ -608,6 +616,7 @@ def base10toN(num, base):
         converted_string = chr(48 + mod + 7 * (mod >= 10)) + converted_string
     return converted_string
 
+
 #Syn-
 def fibonacci_range_mm(l, h):
     """
@@ -656,7 +665,7 @@ def delete_redundant_notes( in_stream, greatest_dur=False):
     # A stream with just note objects, no chord objects.
     notafied_stream = notafy(in_stream.flat.notes) ##TODO Do I need flat.notes here?
 
-    # dicts_list is a list of Ordered Dictionaries (from collections import Ordered Dict) of pitches(keys) and notes(values)
+    # dicts_list is a list of Ordered Dictionaries of pitches(keys) and notes(values)
     # created for every offsets found in our iteration.
     dict_list = list()
 
@@ -724,12 +733,14 @@ def notafy( in_stream):
     # new_stream.show('txt')
     return new_stream
 
+
 #M21-3.
-def separate_notes_to_parts_by_velocity( in_stream, part=False):
+def separate_notes_to_parts_by_velocity(in_stream, part=False):
     """
         This function is required for extract_XYZ_coordinates_to_stream. It separates all the notes of a stream into
-    parts with "part.partsName"s set equal to all the possible velocities of in_stream. This allows for the separation
-    of those notes with those particular velocities into the same-named specified parts within the stream.
+    parts with their respective "part.partsName" properties set equal to all the possible velocities of in_stream.
+    This allows for the separation of those notes with those particular velocities into the same-named specified parts
+    within the stream.
 
     :param in_stream:   Stream to be modified.
     :param part:        Bool determining if 'end_stream' will be a music21.stream.Part().
@@ -741,37 +752,76 @@ def separate_notes_to_parts_by_velocity( in_stream, part=False):
         end_stream = music21.stream.Part()
     else:
         end_stream = music21.stream.Stream()
+
     #Create a set of non-duplicate velocities.
     for h in in_stream.flat.notes:
         velocity_list.append(h.volume.velocity)
-    velocity_set = sorted(set(velocity_list))
-    #print("vel_set", velocity_set)
-    #print("At this point?")
+    velocity_set = sorted(set(velocity_list))  #Todo An OrderedDict could be used here....
+
     #Create a stream with parts equal to the number of non duplicate velocities.
     #Assign the names of those Parts as equal to the values of the set velocities; they are ints.
-    # for x1 in range(0, len(velocity_set)):
     for k in velocity_set:
         parts1 = music21.stream.Part()
         parts1.partsName = k
         part_stream.insert(0.0, copy.deepcopy(parts1))
-    #print("Parts_Stream", part_stream)
-    #part_stream.show('txt')
+
     #Insert notes of same velocity value into stream.Part of the same value name.
     for s in part_stream.getElementsByClass(music21.stream.Part):
         for q in in_stream.flat.notes:
             if q.volume.velocity == s.partsName:
-                #print("ShowParts", s)
                 s.insert(q.offset, copy.deepcopy(q))
-                #print("PartswithNotes", s)
             else:
-                #print("And this one?")
                 pass
-        #print("Did we reach this?")
         end_stream.insert(s.offset, copy.deepcopy(s))
     return end_stream
 
+
+def merge_notes_to_one_part(in_stream, part=False, by_velocity=None, append_header=False):
+    """
+        This function takes an in_stream and allocates all notes into one part within the stream. It has the added
+    option of changing all the velocity values of the notes to one value as well. This
+    music21.stream.Part() can either be returned alone if part==True or it can be returned appended inside
+    a music21.stream.Stream() parent. If by_velocity is not None, it
+
+    :param in_stream:       Operand music21.stream .Stream() or .Part().
+    :param part:            If True, return a .Part() else return a .Stream().
+    :param by_velocity:     If not None, this int will become the part.partName property of the returned part. It will
+                            also determine the velocity to which to change the notes.
+    :param append_header:   If true, adds music21.meter.TimeSignature() and music21.tempo.MetronomeMark() objects to the
+                            head of the returned stream. (Useful for creating editable midi files.)
+    :return:                A music21.stream .Stream() or .Part()
+    """
+    #Establish part
+    part_stream = music21.stream.Part()
+    #Name it.
+    if by_velocity:
+        part_stream.partName = by_velocity
+    else:
+        pass
+    #Extract notes and possibly change velocity values
+    for i in in_stream.flat.getElementsByClass(["Chord", "Note"]):
+        if by_velocity is not None:
+            i.volume.velocity = by_velocity
+        else:
+            pass
+        part_stream.insert(i.offset, copy.deepcopy(i))
+
+    if part is True:
+        end_stream = part_stream
+        if append_header:
+            add_timesig_and_metronome(end_stream)
+    else:
+        end_stream = music21.stream.Stream()
+        end_stream.append(part_stream)
+        if append_header:
+            add_timesig_and_metronome(end_stream)
+    pass
+    return end_stream
+
+
+
 #M21-4.
-def set_stream_velocities( in_stream, vel):
+def set_note_velocities(in_stream, vel):
     """
         Simple call for setting the all the velocites in a stream to a single value.
 
@@ -782,6 +832,7 @@ def set_stream_velocities( in_stream, vel):
     for i in in_stream.flat.notes:
         i.volume.velocity = vel
     return in_stream
+
 
 #M21-5. #TODO Needs revision. What purpose does this serve? Must len(volume_list) be == len([o for o in in_stream.flat.notes])?
 def change_velocities_by_rangelist(in_stream, volume_list):
@@ -803,6 +854,7 @@ def change_velocities_by_rangelist(in_stream, volume_list):
         if len(in_stream.flat.notes) > len(volume_list):
             v = 0
     return in_stream
+
 
 #M21-6.
 def change_velocities_by_duration(in_stream, dur_choice=None, vel_choice=None):
@@ -975,6 +1027,7 @@ def print_show_streamtxt(in_stream):
     in_stream.show('txt')
     return ret_str
 
+
 # M21-11.
 def print_midi_data(in_stream):
     """
@@ -996,7 +1049,6 @@ def print_midi_data(in_stream):
     midistring = str(midiFile)
     midiFile.close()
     return midistring
-
 
 
 #M21-
@@ -1066,6 +1118,7 @@ def fill_measure_end_gaps(measure, timeSig=None, inPlace=True):
                 pass
             return new_measure
 
+
 def empty_measure(timeSig):
     """
         This simple call creates an empty measure whose entire duration is filled with a rest object and which possesses
@@ -1085,8 +1138,15 @@ def empty_measure(timeSig):
     space_measure.append(space_wrapper)
     return space_measure
 
-
-
+#TODO Add keysignature.
+def add_timesig_and_metronome(in_stream, bpm=120, timesig="4/4"):
+    tempo = music21.tempo.MetronomeMark(number=bpm)
+    tempo.priority = -2
+    in_stream.insert(0, tempo)
+    time_sig = music21.meter.TimeSignature(value=timesig)
+    time_sig.priority = -1
+    in_stream.insert(0, time_sig)
+    return in_stream
 
 
 #M21-. TODO
@@ -1097,6 +1157,7 @@ def empty_measure(timeSig):
 # --------------------------------------
 # -----------------------------------------------------------------------
 # ----------------------------------------------------------------------------------------------------------------------
+
 
 #GUI-1.
 def stream_to_matrix(in_stream, cells_per_qrtrnote=4):
@@ -1109,7 +1170,7 @@ def stream_to_matrix(in_stream, cells_per_qrtrnote=4):
     | (0,2) (1,2) (2,2) (3,2) ... |
     | (0,3) (1,3) (2,3) (3,3) ... |
     but midi pitches begin at 0 for the low C0 note and go up the piano roll.
-    So the y index of the matrix will be subtracted from 128.
+    So the y index of the matrix will be subtracted from 128. (127?)
 
     :param in_stream: 			music21.Stream object
     :param cell_note_size:      note duration that each cell/pixel represents
@@ -1137,6 +1198,7 @@ def stream_to_matrix(in_stream, cells_per_qrtrnote=4):
             _matrix_set_notes(matrix, n.pitch.midi, x_start, x_end)
     #print(matrix)
     return matrix
+
 
 #GUI-2.
 def matrix_to_stream(matrix, connect=True, cells_per_qrtrnote=4):

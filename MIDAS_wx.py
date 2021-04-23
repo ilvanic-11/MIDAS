@@ -6,25 +6,32 @@ from wx.adv import SplashScreen as SplashScreen
 #from mayavi3D import Mayavi3idiArtAnimation
 from mayavi3D import Mayavi3DWindow, MusicObjects
 from gui import StatusBar
-#from logging import log
-import mayavi
-from mayavi import mlab
-from mayavi import plugins
-from mayavi.plugins import envisage_engine
-from mayavi.api import Engine
-from traits.trait_types import Function
-from traits.trait_types import Method
-import copy
-#from demo import images
+import pyo
 import os
-# explicitly importing these so pyInstaller works
 import wx._adv, wx._html, wx._xml, wx.py, time
-
-from traits.api import HasTraits
-from midas_scripts import musicode   ###, midiart3D
-
-
+import threading
+import multiprocessing
 import logging
+
+#from logging import log
+# import mayavi
+# from mayavi import mlab
+# from mayavi import plugins
+# from mayavi.plugins import envisage_engine
+# from mayavi.api import Engine
+# from traits.trait_types import Function
+# from traits.trait_types import Method
+# import copy
+#pyo.PYO_USE_WX = False
+# from gui.Playback import Player
+#from demo import images
+# explicitly importing these so pyInstaller works
+
+# from traits.api import HasTraits
+# from midas_scripts import musicode   ###, midiart3D
+
+
+
 logFormatter = '%(asctime)s - %(levelname)s - %(name)s - %(message)s'
 logging.basicConfig(format=logFormatter, level=logging.DEBUG, filename=r"./log.txt")
 
@@ -147,6 +154,10 @@ class MainWindow(wx.Frame):
 
 
         self.mayavi_view = Mayavi3DWindow.Mayavi3idiView(self)
+
+        self.server = pyo.Server()
+        self.planescroll_animator = None
+        self.player = None
 
         self.mayaviviewcontrolpanel = self.mayavi_view.edit_traits(parent=self.top_mayaviview_split, kind='subpanel').control
         self.pyshellpanel = MyCrust(self.top_pyshell_split, startupScript=str(os.getcwd() + "\\\\resources\\\\" + "Midas_Startup_Configs.py"))
@@ -309,7 +320,8 @@ class MainWindow(wx.Frame):
         self.SetMenuBar(self.menuBar)
 
         # Maxes top_pyshell_split window.
-        #self.Maximize(True)
+        self.Maximize(True)
+
         self.SetSize(1920, 1080)
         
         # self.CreateStatusBar()
@@ -325,7 +337,9 @@ class MainWindow(wx.Frame):
         self.pyshellpanel.SplitVertically(self.pyshellpanel.Window1, self.pyshellpanel.notebook)
         self.pyshellpanel.SetSashPosition(800)
         self.pyshellpanel.SetMinimumPaneSize(400)
-        
+
+        # self.pyshellpanel.shell.SetScrollPos(wx.VERTICAL, 29)
+        # self.pyshellpanel.shell.SetEdgeColour("green")
 
         self.mainpanel.Bind(wx.EVT_CHAR_HOOK, self.OnSashKeyDown)
         #self.mainpanel.Bind(wx.EVT_MOUSEWHEEL, self.OnScrollZplanes)
@@ -620,7 +634,7 @@ class MainWindow(wx.Frame):
 
             #Perform send.  Note: MAKE SURE THAT, if array=TRUE, that you are actually using an array as your input.
             self.pianorollpanel.Selection_Send(selection_array,
-                                               self.mayavi_view.CurrentActor().cur_z, event=None, send_to_z=True, array=True, send_current=True)
+                                               self.mayavi_view.CurrentActor().cur_z, event=None, carry_to_z=True, array=True, carry_to_current=True)
 
             #print("Last Highlight", last_highlight)
 
@@ -678,10 +692,17 @@ class MainWindow(wx.Frame):
 
     def _set_properties(self):
         self.SetTitle("MIDAS")
+
+        #COLORS
+        self.SetBackgroundColour("green")
+        self.SetForegroundColour("green")
         self.pianorollpanel.SetBackgroundColour("white")
         #self.statsdisplaypanel.SetBackgroundColour("silver")
-        self.mainbuttonspanel.SetBackgroundColour("green")
+        self.mainbuttonspanel.SetBackgroundColour("white")
         self.top_pyshell_split.SetBackgroundColour("black")
+
+        #TODO Put button color setting here?
+
         self.top_pyshell_split.SetMinimumPaneSize(50)
         self.pianoroll_mainbuttons_split.SetMinimumPaneSize(120)
         #self.mainbuttons_stats_split.SetMinimumPaneSize(200)
@@ -690,7 +711,8 @@ class MainWindow(wx.Frame):
         #TODO Put somewhere else?
         #Necessary Startup stuff.
         self.mayavi_view.cur_z = 90
-        self.mayavi_view.grid_reticle.mlab_source.points = self.mayavi_view.initial_reticle
+        #This call "catches up" the updating of reticle points (it's complicated, a stupid bug).
+        #self.mayavi_view.grid_reticle.mlab_source.points = self.mayavi_view.initial_reticle
 
         #Actor and Zplane scrolling attributes.
         self.zplane_scrolled = 90
@@ -716,6 +738,8 @@ class MainWindow(wx.Frame):
         
         self.top_mayaviview_split.SetSashGravity(0.5)
         self.top_pyshell_split.SetSashGravity(0.5)
+
+        #self.pyshellpanel.shell.SetBackgroundColour("green")
 
         # Titles.
         self.mayavi_view.insert_titles()
@@ -749,21 +773,35 @@ class MainWindow(wx.Frame):
 
 
 if __name__ == '__main__':
+    #from resources.Midas_Startup_Configs import Startup
+
     # When this module is run (not imported) then create the app, the
     # frame, show it, and start the event loop.
-    #Musical_Matrix_Rain.rain_execute()
-    ## time.sleep(5)
-    # splash = MySplashScreen()
-    # splash.Show()
+
     app = wx.App()
-    print(type(app))
+
+    splash = MySplashScreen()
+    splash.Show()
+    time.sleep(5)
+    splash.Destroy()
+    #time.sleep(.2)
+
+    #threading.Thread(target=Musical_Matrix_Rain.rain_execute).start()
+    #Musical_Matrix_Rain.rain_execute()
+    rain = multiprocessing.Process(target=Musical_Matrix_Rain.rain_execute)
+    #time.sleep(.3)
+    rain.start()
+
     Midas = MainWindow(None, -1, "MIDAS")
-    Midas.mainbuttonspanel.SetFocus()
+    #Midas.mainbuttonspanel.SetFocus()
+
+    #Startup = Startup()
+    #Midas.pyshellpanel.shell.GotoPos(29)
+
     #frm.Show()
-    # time.sleep(1.2)
+    time.sleep(1.75)
+
+    #threading.Thread(target=app.MainLoop).start()
+    #multiprocessing.Process(target=app.MainLoop).start()
+
     app.MainLoop()
-
-
-
-    #frm.mayavi_view.configure_traits()
-   # mlab.show()

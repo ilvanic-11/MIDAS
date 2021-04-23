@@ -1,16 +1,20 @@
 import wx
 import wx.lib.plot
-import music21
 import numpy as np
-import math
 from midas_scripts import midiart3D
 from wx.lib.mixins.listctrl import CheckListCtrlMixin
-#from midas_scripts import musicode, music21funcs
-from gui import PianoRoll
-from traits.api import HasTraits, on_trait_change
-from traits.trait_numeric import AbstractArray
+from midas_scripts import music21funcs    #musicode,
+from gui.Playback import Player, Animator
+import multiprocessing
+import os
 
-
+# import math
+# import music21
+# from gui import PianoRoll
+# from traits.api import HasTraits, on_trait_change
+# from traits.trait_numeric import AbstractArray
+# from mayavi.tools import animator
+# from gui.Preferences import InfiniteTimer   ###, Animator
 
 class ZPlanesControlPanel(wx.Panel):
 	def __init__(self, parent, log):
@@ -20,8 +24,9 @@ class ZPlanesControlPanel(wx.Panel):
 		self.ZPlanesListBox = CustomZPlanesListBox(self,log)
 		self.toolbar = wx.ToolBar(self, -1, wx.DefaultPosition, wx.DefaultSize, style=wx.TB_HORIZONTAL)
 		self.SetupToolBar()
-		
-		
+
+		self.m_v = self.GetTopLevelParent().mayavi_view
+
 		sizer = wx.BoxSizer(wx.VERTICAL)
 		sizer.Add(self.toolbar)
 		sizer.Add(self.ZPlanesListBox, 1, wx.EXPAND)
@@ -88,7 +93,7 @@ class ZPlanesControlPanel(wx.Panel):
 			self.popupID9 = wx.NewIdRef()
 
 			self.Bind(wx.EVT_MENU, self.OnPopup_Properties, id=self.popupID1)
-			self.Bind(wx.EVT_MENU, self.OnPopupTwo, id=self.popupID2)
+			self.Bind(wx.EVT_MENU, self.OnPlayback_Zplane, id=self.popupID2)
 			self.Bind(wx.EVT_MENU, self.OnPopupThree, id=self.popupID3)
 			self.Bind(wx.EVT_MENU, self.OnPopupFour, id=self.popupID4)
 			self.Bind(wx.EVT_MENU, self.OnPopupFive, id=self.popupID5)
@@ -105,7 +110,7 @@ class ZPlanesControlPanel(wx.Panel):
 		# item.SetBitmap(bmp)
 		menu.Append(item)
 		# add some other items
-		menu.Append(self.popupID2, "Two")
+		menu.Append(self.popupID2, "Playback Zplane")
 		menu.Append(self.popupID3, "Three")
 		menu.Append(self.popupID4, "Four")
 		menu.Append(self.popupID5, "Five")
@@ -124,8 +129,72 @@ class ZPlanesControlPanel(wx.Panel):
 	def OnPopup_Properties(self, event):
 		pass
 
-	def OnPopupTwo(self, event):
-		pass
+
+
+	def OnPlayback_Zplane(self, event):
+		intermediary_path = os.getcwd() + os.sep + "resources" + os.sep + "intermediary_path" + os.sep
+		filename = "Temp_Midi" + "_" + "Z-" + str(self.m_v.CurrentActor().cur_z)
+		output = intermediary_path + filename + ".mid"
+		zplane = midiart3D.get_planes_on_axis(self.m_v.CurrentActor()._points)[  # Todo use GridToStream()
+			eval('self.m_v.cur_z')]  # TODO Watch for debug errors here.
+		self.m_v.CurrentActor()._stream = midiart3D.extract_xyz_coordinates_to_stream(zplane)
+		music21funcs.add_timesig_and_metronome(self.m_v.CurrentActor()._stream, bpm=self.m_v.bpm, timesig="4/4")
+		self.m_v.CurrentActor()._stream.write('mid', output)
+		def execute_animator():
+			self.GetTopLevelParent().planescroll_animator = \
+				Animator(0, self.m_v.generate_plane_scroll(x_length=self.m_v.grid3d_span,  # animator.
+														   bpm=self.m_v.bpm,
+														   frames_per_beat=self.m_v.frames_per_beat  ##/2
+														   # delay=10,
+														   ).__next__)
+		def execute_player():
+			self.GetTopLevelParent().player = Player(midifile=output, parent=self.GetTopLevelParent(), play_now=True, from_gui=True)
+
+		try:
+			#TODO This is multiprocessing, threading, parallelism stuff...help.
+			##multiprocessing.Process(target=execute_animator).start()
+			self.GetTopLevelParent().planescroll_animator = \
+				Animator(0, self.m_v.generate_plane_scroll(x_length=self.m_v.grid3d_span,  # animator.
+															bpm=self.m_v.bpm,
+															frames_per_beat=self.m_v.frames_per_beat  ##/2
+															# delay=10,
+															).__next__)
+
+			self.GetTopLevelParent().planescroll_animator._stop_fired()
+
+			#self.GetTopLevelParent().planescroll_animator.timer._start_timer()
+			#self.m_v.scene3d.render_window.make_current()
+
+			# Midas.mayavi_view.generate_plane_scroll(x_length=(Midas.mayavi_view.grid3d_span-94)/4,
+			# 														   bpm=Midas.mayavi_view.bpm,
+			# 			 												frames_per_beat=Midas.mayavi_view.frames_per_beat)
+
+			##multiprocessing.Process(target=execute_player).start()
+			self.GetTopLevelParent().player = Player(midifile=output, parent=self.GetTopLevelParent(), play_now=True,
+														from_gui=True)
+
+
+			# for i in np.arange(0, 50, 1):
+			#      Midas.mayavi_view.volume_slice.actor.actor.position = np.array([i, 0, 0])
+
+			#self.GetTopLevelParent().planescroll_animator = self.m_v.animate(self.m_v.grid3d_span, self.m_v.bpm, self.m_v.frames_per_beat)
+		except StopIteration:
+			del(self.GetTopLevelParent().player)
+		finally:   #Todo Process this, read the docs and Zach's book.
+
+		#player.load_midifile(midifile=output, bpm=160)
+		#player.open_gui()
+		#player.load_midifile_and_open_gui()
+
+			print("Gui created, midifile loaded...") #TODO Figure why I can never get here......
+			#NOTE: The deleting of the midifile makes things mess up: it is also responsible for the (0xC0000409) error
+			# try:
+			# 	if os.path.isfile(output):
+			# 		os.remove(output)
+			# except:
+			# 	pass
+
+			pass
 
 	def OnPopupThree(self, event):
 		pass
@@ -137,6 +206,7 @@ class ZPlanesControlPanel(wx.Panel):
 		pass
 
 	def OnClearSelection(self, event):
+
 		pass
 		# Deletes 'selected' not 'activated' actors.
 		# alb = self.GetTopLevelParent().pianorollpanel.actorsctrlpanel.actorsListBox
@@ -169,6 +239,7 @@ class CustomZPlanesListBox(wx.ListCtrl, CheckListCtrlMixin):
 		self.log = log
 
 		self.SetBackgroundColour((141, 141, 141))
+
 
 		self.m_v = self.GetTopLevelParent().mayavi_view
 
@@ -218,11 +289,11 @@ class CustomZPlanesListBox(wx.ListCtrl, CheckListCtrlMixin):
 		#For whatever reason, this check had to be called at the end of this function.
 		#A 'temp_prev_z' (ln 194) is stored as a local reference, since 'previous_z" is 'written to' in this function above (ln 198).
 		if temp_prev_z == index:  # If our new == our previous:
-			print("TRUE, BITCH")
+			print("TRUE1")
 			# 'index', because we haven't changed cur_z to index yet....
 			# assert self.m_v.CurrentActor().previous_z == index, "Previous does not equal index."
 			self.prp.pianoroll.AdjustCellsBasedOnCPQN(index, self.m_v.CurrentActor().cpqn, 1)
-			print("TRUE, SLUT")
+			print("TRUE2")
 		else:
 			pass
 
@@ -243,15 +314,15 @@ class CustomZPlanesListBox(wx.ListCtrl, CheckListCtrlMixin):
 		
 	def UpdateFilter(self):
 		self.log.info("UpdateFilter():")
-		a3D = self.GetTopLevelParent().mayavi_view.CurrentActor()._array3D
+		a4D = self.GetTopLevelParent().mayavi_view.CurrentActor()._array4D
 		#print(np.shape(a3D))
 		
 		self.filter = list()
 		if self.showall:
 			self.filter = [ _ for _ in range(128) ]
 		else:
-			for i in range(np.shape(a3D)[2]):
-				if np.count_nonzero(a3D[:,:,i]) > 0:
+			for i in range(np.shape(a4D)[2]):
+				if np.count_nonzero(a4D[:,:,i]) > 0:
 					self.filter.append(i)
 		
 		#print(f"filter = {self.filter}")

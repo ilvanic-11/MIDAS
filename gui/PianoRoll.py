@@ -100,16 +100,17 @@ class PianoRollDataTable(wx.grid.GridTableBase):
 
     def GetNumberCols(self):
         if self._cur_actor:
-            return self._cur_actor._array3D.shape[0]
+            return self._cur_actor._array4D.shape[0]   #Todo Will this mess up on CORE UPDATE? 04/13/2021
         else:
-            return 5000
+            #return self._cur_actor.grid_length
+            return self.pianorollpanel.GetTopLevelParent().mayavi_view.grid_cells_length
 
     def GetNumberRows(self):
         #print("GetNumberCols(): {}".format(self.parent.GetTopLevelParent().mayavi_view.CurrentActor()._array3D.shape[1]))
         if self._cur_actor:
             #print(self.pianorollpanel.GetTopLevelParent().mayavi_view.CurrentActor())
             #print("Has current_actor.")
-            return self._cur_actor._array3D.shape[1]
+            return self._cur_actor._array4D.shape[1]  #Todo Will this mess up on CORE UPDATE? 04/13/2021
         else:
             return 128
 
@@ -121,7 +122,7 @@ class PianoRollDataTable(wx.grid.GridTableBase):
                 z = 0
             if z < 0:
                 return ""
-            return str(int(self._cur_actor._array3D[int(col)][127-row][z]))
+            return str(int(self._cur_actor._array4D[int(col)][127 - row][z][0]))
         else:
             return ""
 
@@ -132,7 +133,7 @@ class PianoRollDataTable(wx.grid.GridTableBase):
             #TODO Be minddful of these ints() when debugging.   col/self.pianorollpanel.pianoroll._cells_per_qrtrnote
 
             #self._cur_actor._draw_array3D[int(col)][127-row][z] = int(value)
-            self._cur_actor._array3D[int(col)][127-row][z] = int(value)
+            self._cur_actor._array4D[int(col)][127 - row][z][0] = int(value)
 
 
     def AppendCols(self, numCols=1, updateLables=True):
@@ -282,8 +283,6 @@ class PianoRoll(wx.grid.Grid, glr.GridWithLabelRenderersMixin):
         self.Bind(wx.EVT_PAINT, self.OnPaint)
 
 
-
-
     #Functions--------------------
     def OnThumbDragging(self, event):
         print("Dragging")
@@ -297,6 +296,7 @@ class PianoRoll(wx.grid.Grid, glr.GridWithLabelRenderersMixin):
         event.Skip()
 
 
+    #Tod Fix\Revisit this.
     def OnMeasureLabelsLeftClick(self, event):
         self.last_known_pos = event.GetPosition()
         print("Label Event Position:", self.last_known_pos)
@@ -365,6 +365,7 @@ class PianoRoll(wx.grid.Grid, glr.GridWithLabelRenderersMixin):
         if len(self.m_v.highlighter_calls) == 0:
             pass
         else:
+            #self.m_v.new_reticle_box()
             wx.CallAfter(self.m_v.new_reticle_box)
             event.Skip()
 
@@ -403,7 +404,7 @@ class PianoRoll(wx.grid.Grid, glr.GridWithLabelRenderersMixin):
 
     def OnPaint(self, event):
         #pass
-        print("Painting, bitch.")
+        print("Painting......")
         pdc = wx.PaintDC(self)
         PRClientSize = self.GetClientSize()
         self.bitmap = wx.Bitmap(PRClientSize[0], PRClientSize[1])
@@ -493,17 +494,17 @@ class PianoRoll(wx.grid.Grid, glr.GridWithLabelRenderersMixin):
 
     def AdjustCellsBasedOnCPQN(self, zplane, newcpqnvalue, oldcpqnvalue):
         """
-        This functions operates on the selected zplane and changes all the cells in that selected grid by factoring in
-        newvalue. Newvalue will always be a new cellsperqrtrnote value. (i.e. If cpqn was 1, and we're changing it to 4,
+        This function operates on the selected zplane and changes all the cells in that selected grid by factoring in
+        newvcpqnalue. Newcpqnvalue will always be a new cellsperqrtrnote value. (i.e. If cpqn was 1, and we're changing it to 4,
         all cells in the wx.Grid will be multiplied by a factor of 4)
-        :param zplane:      Operand zplane, established as an Int.
+        :param zplane:          Operand zplane, established as an Int.
         :param newcpqnvalue:    New cells per qrtr note value to which we are changing.
-        :return:            N\A
+        :return:                N\A
         """
 
 
-        cells_change = np.argwhere(self.m_v.CurrentActor()._array3D[:, :,
-                                   zplane] == 1.0)  # CRITICAL--> current zplane only.
+        cells_change = np.argwhere(self.m_v.CurrentActor()._array4D[:, :,
+                                   zplane, 0] == 1.0)  # CRITICAL--> current zplane only.
         cells_change[:, 1] = cells_change[:, 1] - 127
         cells_change[:, 1] = cells_change[:, 1] * -1
         for q in cells_change:
@@ -832,26 +833,28 @@ class PianoRoll(wx.grid.Grid, glr.GridWithLabelRenderersMixin):
         for n in in_stream.flat.getElementsByClass(["Chord", "Note"]):
             if type(n) is music21.chord.Chord:
                 for p in n.pitches:
-                    y = int(self._cells_per_qrtrnote * n.offset)
-                    x = 127 - p.midi
+                    x = int(self._cells_per_qrtrnote * n.offset)
+                    y = 127 - p.midi
                     size = int(self._cells_per_qrtrnote * n.duration.quarterLength)
                     if size < 1:
                         print("Chord: Note size is too small for current grid CellsPerNote(%s)." % self._cells_per_qrtrnote)
                     else:
-                        self._table.SetValue(x, y, "1")
-                        self.m_v.CurrentActor()._array3D[y, 127 - x, z] = 1
-                        self.SetCellSize(x, y, 1, size)
+                        self._table.SetValue(y, x, "1")
+                        self.m_v.CurrentActor()._array4D[x, 127 - y, z][0] = 1
+                        self.SetCellSize(y, x, 1, size)
                 # print(matrix)
             elif type(n) is music21.note.Note:
-                y = int(self._cells_per_qrtrnote * n.offset)
-                x = 127 - n.pitch.midi
+                x = int(self._cells_per_qrtrnote * n.offset)
+                y = 127 - n.pitch.midi
                 size =  int(self._cells_per_qrtrnote * n.duration.quarterLength)
+
                 if size < 1:
                     print("Note: Note size is too small for current grid CellsPerNote.")
+
                 else:
-                    self._table.SetValue(x, y, "1")
-                    self.m_v.CurrentActor()._array3D[y, 127 - x, z] = 1
-                    self.SetCellSize(x, y, 1, size)
+                    self._table.SetValue(y, x, "1")
+                    self.m_v.CurrentActor()._array4D[x, 127 - y, z][0] = 1
+                    self.SetCellSize(y, x, 1, size)
 
         # print(matrix)
 
@@ -890,7 +893,7 @@ class PianoRoll(wx.grid.Grid, glr.GridWithLabelRenderersMixin):
         #         #print(self.GetCellValue(x,y))
         #         #time.sleep(1)
         #         if (self._table.GetValue(x, y) == "1"):
-        on_points = np.argwhere(self.m_v.CurrentActor()._array3D[:, :, self.m_v.cur_z] >= 1.0)
+        on_points = np.argwhere(self.m_v.CurrentActor()._array4D[:, :, self.m_v.cur_z][0] >= 1.0)
         print("On_Points", on_points)
         for i in on_points:
             (span, sx, sy) = self.GetCellSize(i[1], i[0])
