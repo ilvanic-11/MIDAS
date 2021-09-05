@@ -41,8 +41,9 @@ class ZPlanesControlPanel(wx.Panel):
 		bmp_showall = wx.ArtProvider.GetBitmap(wx.ART_LIST_VIEW, wx.ART_TOOLBAR, btn_size)
 		
 		id_showall = 10
-		self.toolbar.AddCheckTool(id_showall, "ShowAll", bmp_showall, wx.NullBitmap, "Show All?",
-		                          "Toggle between showing ", None)
+		self.toolbar.AddCheckTool(id_showall, "ShowAll", bmp_showall, wx.NullBitmap,
+								  '''Toggle between \"All\" and \"Notes-Only\" Zplanes''',
+		                          "???", None)  #???What's supposed to be here?
 		self.Bind(wx.EVT_TOOL, self.OnToolBarClick, id=id_showall)
 		
 		self.toolbar.Realize()
@@ -322,7 +323,7 @@ class CustomZPlanesListBox(wx.ListCtrl, CheckListCtrlMixin):
 			self.filter = [ _ for _ in range(128) ]
 		else:
 			for i in range(np.shape(a4D)[2]):
-				if np.count_nonzero(a4D[:,:,i]) > 0:
+				if np.count_nonzero(a4D[:, :, i]) > 0:
 					self.filter.append(i)
 		
 		#print(f"filter = {self.filter}")

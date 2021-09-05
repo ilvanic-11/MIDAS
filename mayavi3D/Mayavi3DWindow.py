@@ -1,9 +1,9 @@
-import numpy as np
-# import numpy_indexed as npi
 import random
 import music21
 import wx    # TODO how to do simpler imports (i.e. just what we need instead of all of wx)
 import time
+import numpy as np
+# import numpy_indexed as npi
 
 from traits.etsconfig.api import ETSConfig
 ETSConfig.toolkit = 'wx'
@@ -26,10 +26,10 @@ from mayavi.core.ui.mayavi_scene import MayaviScene
 from mayavi3D import MusicObjects
 
 from traits.api import on_trait_change, String, Any, HasTraits, Instance, Bool
-# , Float, Int, HasTraits, Range, Instance, Button
-from traitsui.api import View, Item   # , Group
+#, Float, Int, HasTraits, Range, Instance, Button
+from traitsui.api import View, Item   #, Group
 from traits.trait_numeric import Array
-from traits.trait_types import List, Tuple, Int   # , Any
+from traits.trait_types import List, Tuple, Int   #, Any
 from tvtk.pyface.scene_editor import SceneEditor
 
 # from traitsui.api import View, Item, HGroup
@@ -70,7 +70,6 @@ class Actor(HasTraits):
 
     color = Tuple(1., 0., 0.)  # Synced two_way with the pipeline's current_actor.property.color trait.
     position = Array()         # Synced two-way with the pipeline's current_actor.actor.actor.position trait.
-
 
     # cur = Int()
 
@@ -133,6 +132,7 @@ class Actor(HasTraits):
         self._array4D = array4D
         self.array3Dchangedflag = not self.array3Dchangedflag
 
+
     #2d numpy array---> List of actual coordinates
     def change_points(self, points):
         self._points = points
@@ -155,6 +155,7 @@ class Actor(HasTraits):
 
     ##WORKING INSTANCE
     #TODO Is this fired when an actor is deleted? If so, can we shut that off?
+
 
     @on_trait_change("array3Dchangedflag")
     def actor_array3D_changed(self):
@@ -207,6 +208,7 @@ class Actor(HasTraits):
             print("Exception as e32:", e)
         #return self._all_points
 
+
     @on_trait_change("pointschangedflag")
     def actor_points_changed(self):
         #print("actor_points_changed")
@@ -227,16 +229,18 @@ class Actor(HasTraits):
         #TODO MAJOR NOTE: trait_set only takes standard coords_arrays. SOOO, with our new core data update, we have
         # handle every individual case with this new line:
         update_points = np.r_['1,2,0', self._points[:, 0], self._points[:, 1], self._points[:, 2]]
-        print("UPDATE_POINTS", update_points)
+        #print("UPDATE_POINTS", update_points)
 
         self.mayavi_view.sources[self.index].mlab_source.trait_set(points=update_points)
 
         #print("sources trait_set after actor_points_changed")
 
+
     @on_trait_change('color')
     def show_color(self):
         #print("COLOR TRAIT CHANGED:", self.color)
         pass
+
 
     @on_trait_change('position')
     def show_position(self):
@@ -1104,10 +1108,12 @@ class Mayavi3idiView(HasTraits):
             else:
                 time.sleep(sleep)
                 if volume_slice:
-                    ipw.slice_position = i  ###/i_div
+                    ipw.trait_set(slice_position = i)  ##ipw.position = i  #/i_div
                 else:
                     pos = np.array([i, 0, 0])
-                    ipw2.position = ipw.position = pos
+                    ipw.trait_set(position = pos)
+                    ipw2.trait_set(position = pos)
+                    #ipw2.position = ipw.position = pos
                 yield  ###print(i)
 
 
@@ -1429,7 +1435,7 @@ class Mayavi3idiView(HasTraits):
             bottomright = mproll.XYToCell((s_h * s_linex) + client_size[0] - 58, (s_v * s_liney) + client_size[1] - 18)    #60 IS THE PIXEL WIDGTH OF THE PIANO
             # print("RETICLE_BOTTOM_RIGHT", bottomright)
 
-            topleft = mproll.XYToCell((s_h * s_linex), (s_v * s_liney))  #0 times whatever your scroll rate is equal to zero, so the top left at start is (0, 0)
+            topleft = mproll.XYToCell((s_h * s_linex), (s_v * s_liney))  #0 times whatever your scroll rate equals zero, so the top left at start is (0, 0)
             # print("RETICLE_TOP_LEFT", topleft)
 
             topright = mproll.XYToCell((s_h * s_linex) + client_size[0] - 58, (s_v * s_liney))
@@ -1439,7 +1445,7 @@ class Mayavi3idiView(HasTraits):
             #If bottom would go below 0, (to -1, as it has been), then force it be zero and adjust top_left and top_right based on client_size from there.
             if bottomleft[0] == -1 and bottomleft[1] == -1 and topright[0] == -1 and topright[1] == -1 and \
                     bottomright[0] == -1 and bottomright[1] == -1:      #Both bottom and right side.
-                print("FIXED POINT, BITCH")
+                print("FIXED POINT")
                 topleft = mproll.XYToCell(mproll.CalcUnscrolledPosition(0, 0))  # New Topleft
                 bottomleft = (127, topleft[1]) #New Bottomleft
                 topright = (topleft[0], 2499)
@@ -1460,7 +1466,7 @@ class Mayavi3idiView(HasTraits):
                 # print("RETICLE_BOTTOM_RIGHT  1", bottomright)
 
             elif bottomright[0] == -1 and topright[0] == -1:    #Right side glitch.
-                print("OVER THE HEDGE, BITCH")
+                print("OVER THE HEDGE")
                 topleft = mproll.XYToCell(mproll.CalcUnscrolledPosition(0, 0))  # New Topleft
                 bottomleft = mproll.XYToCell(mproll.CalcUnscrolledPosition(0, client_size[1] - 18))
                     #(127, topleft[1])  # New Bottomleft

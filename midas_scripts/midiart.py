@@ -6,8 +6,8 @@
 # Authors:      Zachary Plovanic - Lead Programmer
 #               Isaac Plovanic - Creator, Director, Programmer
 #
-# Copyright:    MIDAS is Copyright © 2017-2020 Isaac Plovanic and Zachary Plovanic
-#               music21 is Copyright © 2006-2020 Michael Scott Cuthbert and the music21
+# Copyright:    MIDAS is Copyright © 2017-2021 Isaac Plovanic and Zachary Plovanic
+#               music21 is Copyright © 2006-2021 Michael Scott Cuthbert and the music21
 #               Project
 # License:      LGPL or BSD, see license.txt
 # ------------------------------------------------------------------------------------
@@ -53,11 +53,11 @@ import numpy as np
 import cv2
 import math
 import statistics
-import fractions
+#import fractions
 import copy
 from midas_scripts import music21funcs
 import numpy
-import mayavi
+import mayavi     #TODO Why hashing this out break Midas? Then, also, why is this import here?
 from mayavi import mlab
 from collections import OrderedDict
 import os
