@@ -10,12 +10,15 @@ python -m pip install --upgrade matlab --user
 python -m pip install --upgrade plotly --user
 python -m pip install --upgrade matplotlib --user
 python -m pip install --upgrade pyqt5 --user
-python -m pip install --upgrade pyface --user
+python -m pip install install pyface==7.0.1
+::python -m pip install --upgrade pyface --user
 python -m pip install --upgrade wxpython --user
-::python -m pip install vtk==8.1.2 --user
-python -m pip install --upgrade vtk --user
+::python -m pip install vtk==8.1.2 --user (LATEST Version is actuall 9.0.3, but it's not tested\patched yet)
+python -m pip install vtk==9.0.1 --user  
+::python -m pip install --upgrade vtk --user
 python -m pip install --upgrade traits --user
-python -m pip install --upgrade traitsui --user
+python -m pip install --upgrade traitsui==7.0.1 --user
+::python -m pip install --upgrade traitsui --user
 python -m pip install --upgrade mayavi --user
 python -m pip install --upgrade mlab --user
 ::python -m pip install mayavi=4.7.1 --user
@@ -29,7 +32,7 @@ python -m pip install --upgrade inspect --user
 python -m pip install --upgrade mido --user
 python -m pip install --upgrade pyo --user
 python -m pip install --upgrade blender --user
-pip install --upgrade pyinstaller
+python -m pip install --upgrade pyinstaller
 ::python -m pip install tensorflow==1.15 #This requires a downgrade to python 3.6.8.
 ::python -m pip install --upgrade wrapt --user
 ::python -m pip install --upgrade magenta -- user   ##Requires tensorflow which, above v1.15,requires AVX hardware support.

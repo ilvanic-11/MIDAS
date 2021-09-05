@@ -451,7 +451,7 @@ class MainWindow(wx.Frame):
                         pass
                     else:
                         self.actor_scrolled -= 1
-                    #print("Actor Scrolled -->", self.actor_scrolled)
+                    print("Actor Scrolled -->", self.actor_scrolled)
                     alb.Select(self.actor_scrolled)
                     alb.Focus(self.actor_scrolled)
                     #1*
