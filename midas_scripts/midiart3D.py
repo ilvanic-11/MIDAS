@@ -222,16 +222,16 @@ def rotate_point_about_axis( x, y, z, axis, degrees):
     """
 
     if axis == "x":
-        new_y = y * round(math.cos(math.radians(degrees))) - z * round(math.sin(math.radians(degrees)))
-        new_z = y * round(math.sin(math.radians(degrees))) + z * round(math.cos(math.radians(degrees)))
+        new_y = (y * (math.cos(math.radians(degrees)))) - (z * (math.sin(math.radians(degrees))))
+        new_z = (y * (math.sin(math.radians(degrees)))) + (z * (math.cos(math.radians(degrees))))
         new_x = x
     elif axis == "y":
-        new_z = z * round(math.cos(math.radians(degrees))) - x * round(math.sin(math.radians(degrees)))
-        new_x = z * round(math.sin(math.radians(degrees))) + x * round(math.cos(math.radians(degrees)))
+        new_z = (z * (math.cos(math.radians(degrees)))) - (x * (math.sin(math.radians(degrees))))
+        new_x = (z * (math.sin(math.radians(degrees)))) + (x * (math.cos(math.radians(degrees))))
         new_y = y
     elif axis == "z":
-        new_x = x * round(math.cos(math.radians(degrees))) - y * round(math.sin(math.radians(degrees)))
-        new_y = x * round(math.sin(math.radians(degrees))) + y * round(math.cos(math.radians(degrees)))
+        new_x = (x * (math.cos(math.radians(degrees)))) - (y * (math.sin(math.radians(degrees))))
+        new_y = (x * (math.sin(math.radians(degrees)))) + (y * (math.cos(math.radians(degrees))))
         new_z = z
     else:
         print("Your axis is incorrect. Please specify either 'x', 'y', or 'z'.")
@@ -257,9 +257,9 @@ def rotate_array_points_about_axis( points, axis, degrees):
     points[:, 0] -= t_x
     points[:, 1] -= t_y
     points[:, 2] -= t_z
-    axl = list()
-    ayl = list()
-    azl = list()
+    axl = []
+    ayl = []
+    azl = []
     print("Here3")
     for i in range(len(points)):
         ax, ay, az = rotate_point_about_axis(points[i][0], points[i][1], points[i][2], axis, degrees)

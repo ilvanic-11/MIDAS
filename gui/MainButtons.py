@@ -757,7 +757,7 @@ class MIDIArtDialog(wx.Dialog):
         #self.popupCtrl.AddItem("FLStudioColors")
 
         self.ctrlsPanel = wx.Panel(self, -1, wx.DefaultPosition, style=wx.BORDER_RAISED)
-        self.imgPreviewPanel = wx.Panel(self, -1, wx.DefaultPosition, (400, 400), style=wx.BORDER_RAISED)
+        self.imgPreviewPanel = wx.Panel(self, -1, wx.DefaultPosition, (515, 515 ), style=wx.BORDER_RAISED)
         self.displayImage = None
 
         self.listCtrl = CustomColorsListBox(self.ctrlsPanel, log=None)
@@ -922,7 +922,7 @@ class MIDIArtDialog(wx.Dialog):
             swaprnb = midiart.convert_dict_colors(mayavi_view.default_color_palette, invert=True)
             preview = midiart.set_to_nn_colors(preview, swaprnb)
 
-            self.previewImg = cv2.resize(preview, (self.pixScaler * width * 3, height * 3),
+            self.previewImg = cv2.resize(preview, (self.pixScaler * width * 4, height * 4),
                                          cv2.INTER_AREA)  # * 3 increases the size of the preview.
 
             h, w = self.previewImg.shape[:2]
@@ -931,13 +931,17 @@ class MIDIArtDialog(wx.Dialog):
 
             self.displayImage = wx.StaticBitmap(self.imgPreviewPanel, -1, wx.Bitmap(self.preview), wx.DefaultPosition,
                                                 (w, h), wx.ALIGN_CENTER_HORIZONTAL)
+
+            #Changes the raised-panel size to fit the exact dimensions of the self.previewImg
+            #self.imgPreviewPanel.SetSize(self.pixScaler * width * 4, height * 4)
+
 
 
         elif self.EdgesCheck:
             #preview = cv2.Canny(preview, 100, 200)
             #self.im2 = preview
             preview = midiart.cv2_tuple_reconversion(preview, inPlace=False, conversion="Edges")
-            self.previewImg = cv2.resize(preview[1], (self.pixScaler * width * 3, height * 3),
+            self.previewImg = cv2.resize(preview[1], (self.pixScaler * width * 4, height * 4),
                                          cv2.INTER_AREA)  # * 3 increases the size of the preview.
 
             h, w = self.previewImg.shape[:2]
@@ -947,13 +951,17 @@ class MIDIArtDialog(wx.Dialog):
             self.displayImage = wx.StaticBitmap(self.imgPreviewPanel, -1, wx.Bitmap(self.preview), wx.DefaultPosition,
                                                 (w, h), wx.ALIGN_CENTER_HORIZONTAL)
 
+            #Changes the raised-panel size to fit the exact dimensions of the self.previewImg
+            #self.imgPreviewPanel.SetSize(self.pixScaler * width * 4, height * 4)
+
         
         elif self.MonochromeCheck:
             preview = midiart.cv2_tuple_reconversion(preview, inPlace=False, conversion="Monochrome")
 
-            print("PREVIEW MC", preview[1])
+            #print("PREVIEW MC", preview[1])
             #print("PREVIEW MC THRESH", thresh)
-            self.previewImg = cv2.resize(preview[1], (self.pixScaler * width * 3, height * 3),
+
+            self.previewImg = cv2.resize(preview[1], (self.pixScaler * width * 4, height * 4),
                                          cv2.INTER_AREA)  # * 3 increases the size of the preview.
             
             h, w = self.previewImg.shape[:2]
@@ -970,6 +978,9 @@ class MIDIArtDialog(wx.Dialog):
             #TODO Place this process of transformation in the OnMidiartDialogClosed(). 12/01/20
              # (This is preview stuff, so, even though things happen twice, it's neater to have the 'preview'
             # and transformation stuff separate.
+
+            #Changes the raised-panel size to fit the exact dimensions of the self.previewImg
+            #self.imgPreviewPanel.SetSize(self.pixScaler * width * 4, height * 4)
 
 
     def OnCheckBoxSelection(self, event):

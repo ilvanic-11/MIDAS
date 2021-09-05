@@ -3,8 +3,8 @@
 ###NOTE: IMPORTANT STUFF
 #quarterLengthDivisor---DETERMINES QUANTIZATION and THUS the PRESERVATION OF NOTES THAT ARE PARSED FROM A MIDI FILE.
 import music21
-sparklead1 = r"resources\OneSpark.mid"
-spark21 = music21.converter.parse(sparklead1, quantizePost=True, quarterLengthDivisors=(8,6), makeNotation=True)
+##sparklead1 = r"resources\OneSpark.mid"
+##spark21 = music21.converter.parse(sparklead1, quantizePost=True, quarterLengthDivisors=(8,6), makeNotation=True)
 
 #import pygame
 #import mido
@@ -23,8 +23,8 @@ from gui.Preferences import InfiniteTimer
 #####################################################
 ####METHOD 1----Complete Working Method.
 ######################################################
-sparklead3 = r"resources\Spark6Lead.mid"
-wishyouwerehere = r"C:\Users\Isaac's\Desktop\Neo Mp3s-Wavs-and-Midi\Game Midi Downloads\Pink_Floyd_-_Wish_You_Were_Here.mid"
+#sparklead3 = r"resources\Spark6Lead.mid"
+#wishyouwerehere = r"C:\Users\Isaac's\Desktop\Neo Mp3s-Wavs-and-Midi\Game Midi Downloads\Pink_Floyd_-_Wish_You_Were_Here.mid"
 #pyo.pa_list_devices()
 
 

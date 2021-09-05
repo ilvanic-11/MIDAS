@@ -564,7 +564,7 @@ class PianoRoll(wx.grid.Grid, glr.GridWithLabelRenderersMixin):
 
 
     def ResetGridCellSizes(self):
-        noUpdates = wx.grid.GridUpdateLocker(self)
+        #noUpdates = wx.grid.GridUpdateLocker(self)
 
         #TODO Haven't touched spans in a while. Return to this when we deal with cellspans\stream durations.
         
@@ -875,7 +875,7 @@ class PianoRoll(wx.grid.Grid, glr.GridWithLabelRenderersMixin):
                     else:
                         self._table.SetValue(y, x, "1")
                         self.m_v.CurrentActor()._array4D[x, 127 - y, z][0] = 1
-                        self.SetCellSize(y, x, 1, size)
+                        #self.SetCellSize(y, x, 1, size)     #TODO Code in workaround for cells already part of another cell.
                 # print(matrix)
             elif type(n) is music21.note.Note:
                 x = int(self._cells_per_qrtrnote * n.offset)
@@ -927,7 +927,11 @@ class PianoRoll(wx.grid.Grid, glr.GridWithLabelRenderersMixin):
         #         #print(self.GetCellValue(x,y))
         #         #time.sleep(1)
         #         if (self._table.GetValue(x, y) == "1"):
-        on_points = np.argwhere(self.m_v.CurrentActor()._array4D[:, :, self.m_v.cur_z][0] >= 1.0)
+        #TODO Keep an eye on this here line and lines like it. Has to do with correct data access for our new array4D.
+        #TODO 08/18/2021
+        #This works -- > ...array4D[:, :, self.m_v.cur_z, 0]
+        #But this doesn't --> ...array4D[:, :, self.m_v.cur_z][0] Why? 08/18/2021
+        on_points = np.argwhere(self.m_v.CurrentActor()._array4D[:, :, self.m_v.cur_z, 0] >= 1.0)
         print("On_Points", on_points)
         for i in on_points:
             (span, sx, sy) = self.GetCellSize(i[1], i[0])

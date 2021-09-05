@@ -548,7 +548,7 @@ In ZPlanesControlPanel
 In MIDAS_wx.py
 --> Hashed out unused imports, placed all used at top.
 --> Completely redesigned and upgraded the Spash screen image logo of Midas. (MIDAS_splash.png)
---> Added multiprocessing to the list of importss
+--> Added multiprocessing to the list of imports
 --> Used multiprocessing to allow the program to load WHILE the Musical_Matrix_Rain.py is running.
 In Musical_Matrix_Rain
 --> Changed delay value at end from 5000 to 19500
@@ -559,6 +559,17 @@ In Musical_Matrix_Rain
 In Preferences
 --> Cleaned up imports at top of module.
 --> Added a now multiprocessing based _Timer() class for use in the InfiniteTimer() class. Didn't work as expected.
+
+--IP--Commit  May ???, 2021--
+In Mayavi3DView, Mayavi3DWindow
+--> In generate_plane_scroll() function, changed .position = i to .trait_set(position = i)
+In midiart3D
+--> Eliminated the round() calls from the rotate_point_about_axis() function.
+In PianoRoll
+-->Changed  ...array4D[:, :, self.m_v.cur_z][0]  TO-->  ..array4D[:, :, self.m_v.cur_z, 0] in function GridToStream(). This fixed a bug with the Main Button, "Update Stream."
+In ZplanesListBox
+-->
+
 
 
 
