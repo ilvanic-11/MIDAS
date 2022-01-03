@@ -5,6 +5,7 @@ import cv2, numpy
 import os
 from collections import OrderedDict
 from mayavi3D.Mayavi3DWindow import Mayavi3idiView, MayaviMiniView
+import gc
 # from gui import Preferences
 # from mayavi import mlab
 # import numpy as np
@@ -20,7 +21,9 @@ class MainButtonsPanel(wx.Panel):
         self.musicode = None  #Not necessary, but I'll leave for now. 04/18/2021
 
         self.toplevel = parent.GetTopLevelParent()
-        self.mv = self.toplevel.mayavi_view
+
+        # mayavi_view reference
+        self.m_v = self.toplevel.mayavi_view
 
         self.main_buttons_sizer = wx.BoxSizer(wx.VERTICAL)
 
@@ -70,7 +73,7 @@ class MainButtonsPanel(wx.Panel):
 
         self.btn_redraw_mayaviview = wx.Button(self, -1, "Redraw Mayavi \n View")
         self.main_buttons_sizer.Add(self.btn_redraw_mayaviview, 0, wx.ALL|wx.ALIGN_CENTER_HORIZONTAL, 8)
-        self.Bind(wx.EVT_BUTTON, self.toplevel.mayavi_view.redraw_mayaviview, self.btn_redraw_mayaviview)
+        self.Bind(wx.EVT_BUTTON, self.GetTopLevelParent().redraw_mayaviview, self.btn_redraw_mayaviview)
 
         # btn_print_cell_sizes = wx.Button(self, -1, "Print Cell Sizes")
         # sizer.Add(btn_print_cell_sizes, 0, wx.ALL|wx.ALIGN_CENTER_HORIZONTAL, 10)
@@ -317,7 +320,7 @@ class MainButtonsPanel(wx.Panel):
             stream = self.GetTopLevelParent().pianorollpanel.pianoroll.GridToStream(update_actor=False)
             self.musicode.make_musicode(stream, musicode_name, shorthand_name, filepath=None,
                                      selection=str(dialog.inputTxt.GetLineText(0)), write=False, timeSig=None)
-            self.GetTopLevelParent().pianorollpanel.ClearZPlane(self.GetTopLevelParent().mayavi_view.cur_z)
+            self.GetTopLevelParent().pianorollpanel.ClearZPlane(self.m_v.cur_z)
 
 
         elif dialog.create_musicode.GetValue() is False and btn == "OK":
@@ -345,6 +348,10 @@ class MainButtonsPanel(wx.Panel):
 
             pixels = dialog.resizedImg     #2D array (2D of only on\off values.)
             pixels2 = dialog.resizedImg2   #3D array (2D of color tuples)
+
+            #Test -This was the magical one that found our bug. 11/30/2021
+            #pixels2 = cv2.cvtColor(pixels2, cv2.COLOR_BGR2RGB)
+
             #pixels_resized = dialog.resizedImg
             gran = dialog.pixScaler
             print("PIXELS", pixels)
@@ -352,9 +359,9 @@ class MainButtonsPanel(wx.Panel):
             print("PIXELS_RESIZED:", pixels, type(pixels))
             print("pixels shape", numpy.shape(pixels))
 
-            mayavi_view = self.GetTopLevelParent().mayavi_view
-            #default_color_palette = mayavi_view.default_color_palette
-            mayavi_color_palette = mayavi_view.default_mayavi_palette
+            m_v = self.GetTopLevelParent().mayavi_view
+            default_color_palette = m_v.default_color_palette
+            mayavi_color_palette = m_v.default_mayavi_palette
 
             if dialog.EdgesCheck:
                 edges = cv2.Canny(pixels, 100, 200)
@@ -363,18 +370,18 @@ class MainButtonsPanel(wx.Panel):
 
                 print("EdgeStream:", stream)
                 stream.show('txt')
-                points = midiart3D.extract_xyz_coordinates_to_array(stream, velocities=mayavi_view.cur_z)
-                index = len(mayavi_view.actors)
-                name = str(len(mayavi_view.actors)) + "_" + "Edges" + "_" + dialog.img_name
+                points = midiart3D.extract_xyz_coordinates_to_array(stream, velocities=m_v.cur_z)
+                index = len(m_v.actors)
+                name = str(len(m_v.actors)) + "_" + "Edges" + "_" + dialog.img_name
                 #clr = color_palette[random.randint(1, 16)]  #TODO Random color of 16 possible for now?
-                mayavi_view.disable_render = True
+                m_v.disable_render = True
                 actor = self.GetTopLevelParent().pianorollpanel.actorsctrlpanel.actorsListBox.new_actor(index, name)
                 #self.GetTopLevelParent().pianorollpanel.pianoroll.StreamToGrid(stream)
-                for j in mayavi_view.actors:
+                for j in m_v.actors:
                     if j.name == name:
                         print("Points here?")
                         j.change_points(points)
-                mayavi_view.disable_render = False
+                m_v.disable_render = False
 
 
             elif dialog.ColorsCheck:
@@ -383,16 +390,18 @@ class MainButtonsPanel(wx.Panel):
                 print("Gran", gran)
                 print("Here.")
 
+                print("DEFAULT_COLOR_PALETTE_2, import.", default_color_palette)
                 #The default_color_palette is the dictionary of colors by which our coords must be sorted.
-                self.num_dict = midiart.separate_pixels_to_coords_by_color(pixels2, mayavi_view.cur_z, nn=True, clrs=mayavi_view.default_color_palette, num_dict=True) #TODO use default_color_palette
+                self.num_dict = midiart.separate_pixels_to_coords_by_color(pixels2, m_v.cur_z, nn=True, clrs=default_color_palette, num_dict=True)
+                #TODO DOUBLE CHECK THIS #TODO use default_color_palette---Yes, the sorting MUST be based on the INT colors.
                 print('Num_dict:', self.num_dict)
-                mayavi_view.colors_call += 1
+                m_v.colors_call += 1
                 #TODO Add colors menu append here.
-                mayavi_view.colors_name = dialog.img_name + "_" + "Clrs"
+                m_v.colors_name = dialog.img_name + "_" + "Clrs"
 
                 #Menu Appends for new menu export method.
                 new_id = wx.NewIdRef()
-                self.GetTopLevelParent().menuBar.colors.Append(new_id, str(mayavi_view.colors_call) + "\tCtrl+Shift+%s" % mayavi_view.colors_call)
+                self.GetTopLevelParent().menuBar.colors.Append(new_id, str(m_v.colors_call) + "\tCtrl+Shift+%s" % m_v.colors_call)
                 self.GetTopLevelParent().Bind(wx.EVT_MENU, self.GetTopLevelParent().menuBar.OnExport_Colors, id=new_id)
 
 
@@ -400,54 +409,69 @@ class MainButtonsPanel(wx.Panel):
                 print("Palette", mayavi_color_palette)
 
                 #Main call.
-                num = 1
+                m_v.colors_increment = 1
                 priority_num = -16
-                mayavi_view.scene3d.disable_render = True
+                m_v.scene3d.disable_render = True
+                m_v.colors_calling = True
+                #m_v.scene3d.off_screen_rendering = True
                 for h in self.num_dict.keys():
-
-                    index = len(mayavi_view.actors)
+                    # m_v.scene3d.off_screen_render = True
+                    index = len(m_v.actors)
                     # for i in mayavi_color_palette.keys():
                     #     if mayavi_color_palette[i] == h:
                     #Get the color we are on.
 
                     #R and B color values are swapped. This is fixed here, for now.
                     #TODO Fix inverted color tuples in color dicts? (this is still relevant. It's complicated -- 11/25/20)
-                    clr = tuple([mayavi_color_palette[h][2], mayavi_color_palette[h][1], mayavi_color_palette[h][0]])
+                    #SWAP HERE ------- See trello card: --> https://trello.com/c/O67MrqpT --- we know this is part of it because our R and B values are force-swapped here.
+                    clr = tuple([mayavi_color_palette[h][0], mayavi_color_palette[h][1], mayavi_color_palette[h][2]])
 
-                    name = "Clrs" + str(mayavi_view.colors_call) + "_" + str(h) + "_" + dialog.img_name
+                    name = "Clrs" + str(m_v.colors_call) + "_" + str(h) + "_" + dialog.img_name
                     actor = self.GetTopLevelParent().pianorollpanel.actorsctrlpanel.actorsListBox.new_actor(index, name)
-                    mayavi_view.number_of_noncolorscall_actors -= 1 #Cancels += within new_actor() #TODO Make this a kwarg. 11/25/2020
-                    colors_instance = "Clrs" + str(mayavi_view.colors_call)
-                    mayavi_view.actors[index].colors_instance = colors_instance
+                    m_v.number_of_noncolorscall_actors -= 1 #Cancels += within new_actor() #TODO Make this a kwarg. 11/25/2020
+                    #Colors_call and colors_instance are functionally the same thing, just one in m_v, other in Actor().
+                    #TODO Rename? 12/02/2021
+                    colors_instance = "Clrs" + str(m_v.colors_call)
+                    m_v.actors[index].colors_instance = colors_instance
 
-                    for j in mayavi_view.actors:
+                    for j in m_v.actors:
                         if j.name == name:
-                            print("Points here?")
+                            #print("Points here?")
                             if self.num_dict[h] is not None:
                                 j.change_points(self.num_dict[h])
-                            print("Color Change:", clr)
+                            #print("Color Change:", clr)
                             j.color = clr
-                            j.part_num = num
+                            j.part_num = m_v.colors_increment
                             j.priority = priority_num
-                            num += 1
+                            m_v.colors_increment += 1
                             priority_num += 1
-                mayavi_view.scene3d.disable_render = False
+                    if m_v.colors_increment >= 16:
+                        m_v.scene3d.disable_render = False
+                        print(m_v.colors_calling)
+                        m_v.colors_calling = False
+                        print(m_v.colors_calling)
+
+
+                #m_v.scene3d.off_screen_rendering = False
+                print("Colors load completed.")
 
             elif dialog.MonochromeCheck:
                 stream = midiart.make_midi_from_grayscale_pixels(pixels, gran, False, note_pxl_value=0)
                 stream.show('txt')
-                points = midiart3D.extract_xyz_coordinates_to_array(stream, velocities=mayavi_view.cur_z)
-                index = len(mayavi_view.actors)
-                name = str(len(mayavi_view.actors)) + "_" + "QR-BW" + "_" + dialog.img_name
+                points = midiart3D.extract_xyz_coordinates_to_array(stream, velocities=m_v.cur_z)
+                index = len(m_v.actors)
+                name = str(len(m_v.actors)) + "_" + "QR-BW" + "_" + dialog.img_name
                 # clr = color_palette[random.randint(1, 16)]  #TODO Random color of 16 possible for now.
-                mayavi_view.disable_render = True
+                m_v.disable_render = True
+
                 actor = self.GetTopLevelParent().pianorollpanel.actorsctrlpanel.actorsListBox.new_actor(index, name)
                 # self.GetTopLevelParent().pianorollpanel.pianoroll.StreamToGrid(stream)
-                for j in mayavi_view.actors:
+                for j in m_v.actors:
                     if j.name == name:
                         print("Points here?")
                         j.change_points(points)
-                mayavi_view.disable_render = False
+                m_v.disable_render = False
+
                 #self.GetTopLevelParent().pianorollpanel.pianoroll.StreamToGrid(stream)
 
 
@@ -462,29 +486,30 @@ class MainButtonsPanel(wx.Panel):
             btn = '<unknown>'
 
         if btn == "OK":
-            mayavi_view = self.GetTopLevelParent().mayavi_view
-            color_palette = mayavi_view.default_color_palette
+            m_v = self.GetTopLevelParent().mayavi_view
+            color_palette = m_v.default_color_palette
 
             stream = music21.converter.parse(dialog.midi)
             stream.show('txt')
             #TODO CORE DATA UPDATE Here
             points = midiart3D.extract_xyz_coordinates_to_array(stream)
-            index = len(mayavi_view.actors)
-            name = str(len(mayavi_view.actors)) + "_" + "Midi" + "_" + dialog.midi_name
+            index = len(m_v.actors)
+            name = str(len(m_v.actors)) + "_" + "Midi" + "_" + dialog.midi_name
             # clr = color_palette[random.randint(1, 16)]  #TODO Random color of 16 possible for now.
-            mayavi_view.disable_render = True
+            m_v.disable_render = True
             actor = self.GetTopLevelParent().pianorollpanel.actorsctrlpanel.actorsListBox.new_actor(index, name)
             # self.GetTopLevelParent().pianorollpanel.pianoroll.StreamToGrid(stream)
-            for j in mayavi_view.actors:
+            for j in m_v.actors:
                 if j.name == name:
                     print("Points here?")
                     j.change_points(points)
-            mayavi_view.disable_render = False
+            m_v.disable_render = False
             #self.GetTopLevelParent().pianorollpanel.pianoroll.StreamToGrid(stream)
-            mayavi_view.new_reticle_box()
+            m_v.new_reticle_box()
 
     def _OnMIDIArt3DDialogClosed(self, dialog, evt):
-        mayavi_view = self.GetTopLevelParent().mayavi_view
+        m_v = self.GetTopLevelParent().mayavi_view
+        mini_view = dialog.mini_mv
 
         val = evt.GetReturnCode()
         print("Val %d: " % val)
@@ -493,7 +518,7 @@ class MainButtonsPanel(wx.Panel):
                    wx.ID_CANCEL: "Cancel"}[val]
         except KeyError:
             btn = '<unknown>'
-        #self.GetTopLevelParent().mayavi_view
+        #self.GetTopLevelParent().m_v
         if btn == "OK":
             try:
                 ##ply = dialog.ply
@@ -518,12 +543,12 @@ class MainButtonsPanel(wx.Panel):
 
                 #Establish "Midas Actor" name and index.
                 #TODO Acquire from dialog
-                i = len(mayavi_view.actors)
+                i = len(m_v.actors)
                 name = str(i) + "_" + "PointCloud" + "_" + dialog.ply_name
-                mayavi_view.scene3d.disable_render = True
+                m_v.scene3d.disable_render = True
                 actor = self.GetTopLevelParent().pianorollpanel.actorsctrlpanel.actorsListBox.new_actor(i, name)
 
-                for j in mayavi_view.actors:
+                for j in m_v.actors:
                     if j.name == name:
                         print("Points here?")
                         #j.change_points(points)
@@ -531,13 +556,17 @@ class MainButtonsPanel(wx.Panel):
                         #self.pointschangedflag = not self.pointschangedflag
                         j.actor_points_changed()
                         print("And here?")
-                mayavi_view.scene3d.disable_render = False
+                m_v.scene3d.disable_render = False
             else:
-                mayavi_view.scene3d.disable_render = False
+                m_v.scene3d.disable_render = False
 
                 pass
-        mayavi_view.scene3d.disable_render = False
+        m_v.scene3d.disable_render = False
 
+        #mini_view.scene.close()
+        self.__delattr__('mini_view')
+        dialog.__delattr__("dialog.mini_mv")
+        gc.collect()
 
         #index_list = [k for k in planes_dict.keys()]
                 # for k in index_list:
@@ -599,8 +628,8 @@ class Music21ConverterParseDialog(wx.Dialog):
 
 
 class MusicodeDialog(wx.Dialog):
-    def __init__(self,parent,id,title, size=wx.DefaultSize,
-                 pos=wx.DefaultPosition, style=wx.DEFAULT_DIALOG_STYLE, name='Musicode' ):
+    def __init__(self, parent, id, title, size=wx.DefaultSize,
+                 pos=wx.DefaultPosition, style=wx.DEFAULT_DIALOG_STYLE, name='Musicode'):
         
         wx.Dialog.__init__(self)
         self.Create(parent, id, title, pos, size, style, name)
@@ -610,7 +639,7 @@ class MusicodeDialog(wx.Dialog):
         self.translate_musicode = wx.CheckBox(self, -1, "Translate Musicode")
         self.create_musicode = wx.CheckBox(self, -1, "Create Musicode")
 
-        self.create_musicode.SetValue(True)  ##Set to translate at the ready by default.
+        self.create_musicode.SetValue(True)  ##Set to 'create' a musicode at the ready by default.
 
         #Musicode name.
         self.name_static = wx.StaticText(self, -1, "Musicode Name",     style=wx.ALIGN_LEFT)
@@ -621,9 +650,10 @@ class MusicodeDialog(wx.Dialog):
         self.input_sh = wx.TextCtrl(self, -1, "", size=(30, -1), style=wx.TE_CENTER)
         self.inputTxt = wx.TextCtrl(self, -1, "", size=(250, -1), name="Translate\\Create")
 
+
         #####
         #Todo Use as possible example question for Robin Dunn when asking about wx Events
-        super().GetParent().btn_musicode.Disable()  #These disable\enables calls fix a button highlight bug.
+        super().GetParent().btn_musicode.Disable()  #These disable\enable calls fix a button highlight bug.
         dlg = wx.ProgressDialog("Loading", "Loading Musicode Libraries...", maximum=12, parent=self,
                                 style = wx.PD_ELAPSED_TIME
                                       | wx.PD_REMAINING_TIME
@@ -633,6 +663,7 @@ class MusicodeDialog(wx.Dialog):
         if self.parent.musicode == None:
             self.parent.GetTopLevelParent().musicode = self.parent.musicode = musicode.Musicode()
             self.parent.musicode.SetupDefaultMidiDictionaries(wx_progress_updater=dlg)
+
         else:
             pass
         dlg.Destroy()
@@ -643,7 +674,15 @@ class MusicodeDialog(wx.Dialog):
         #super().GetParent().HighlightSizerItem(super().GetParent().btn_musicode, super().GetParent().main_buttons_sizer, penWidth=2)
 
 
+        # The string name of the user's making referring to the name of their musicode.
+        # self.user_named = super().GetParent().GetTopLevelParent().musicode.musicode_name  #Thith is the coolest thing I have ever theen.
+        self.user_named = self.parent.musicode.musicode_name  # Thith is the coolest thing I have ever theen.
+        print("user_named", self.user_named)
+
+        #Necessary calls to update self.rdbtnMusicodeChoice
         self.musicodesList = sorted(list(self.parent.musicode.shorthand.keys()))
+        self.musicodesList.append(self.user_named)
+
 
         self.rdbtnMusicodeChoice = wx.RadioBox(self, -1, "Musicode Choice",
                                                wx.DefaultPosition, wx.DefaultSize,
@@ -756,8 +795,8 @@ class MIDIArtDialog(wx.Dialog):
         # One more call for FL Colors:
         #self.popupCtrl.AddItem("FLStudioColors")
 
-        self.ctrlsPanel = wx.Panel(self, -1, wx.DefaultPosition, style=wx.BORDER_RAISED)
-        self.imgPreviewPanel = wx.Panel(self, -1, wx.DefaultPosition, (515, 515 ), style=wx.BORDER_RAISED)
+        self.ctrlsPanel = wx.Panel(self, -1, wx.DefaultPosition, (236, 690), style=wx.BORDER_RAISED)
+        self.imgPreviewPanel = wx.Panel(self, -1, wx.DefaultPosition, (515, 515), style=wx.BORDER_RAISED)
         self.displayImage = None
 
         self.listCtrl = CustomColorsListBox(self.ctrlsPanel, log=None)
@@ -766,7 +805,7 @@ class MIDIArtDialog(wx.Dialog):
         for clrs in midiart.get_color_palettes():
             self.listCtrl.InsertItem(self.index, clrs)
             self.index += 1
-        self.static_color = self.name_static = wx.StaticText(self, -1, "Select Color Palette")
+        self.static_color = self.name_static = wx.StaticText(self, -1, "              Select Color Palette")
 
 
         self.btnLoadImage = wx.Button(self.ctrlsPanel, -1, "Load Image")
@@ -809,12 +848,16 @@ class MIDIArtDialog(wx.Dialog):
 
         #Sizers
         sizerCtrls = wx.BoxSizer(wx.VERTICAL)
-        sizerCtrls.Add(self.static_color, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL, 10)
+        topSizer = wx.BoxSizer(wx.VERTICAL)
+        topSizer.Add(self.static_color, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL, 25)
+        #sizerCtrls.Add(self.static_color, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL, 10)
         #sizerCtrls.Add(self.comboCtrl, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL, 1)
-        sizerCtrls.Add(self.listCtrl, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL, 1)
-        sizerCtrls.Add(self.chbxEdges, 0, wx.ALL  | wx.ALIGN_LEFT, 15)
-        sizerCtrls.Add(self.chbxColorImage, 0, wx.ALL  | wx.ALIGN_CENTER_HORIZONTAL, 10)
-        sizerCtrls.Add(self.chbxMonochorome, 0, wx.ALL | wx.ALIGN_RIGHT, 10)
+        topSizer.Add(self.listCtrl, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL, -35)
+        topSizer.AddSpacer(45)
+        sizerCtrls.Add(topSizer, 0, wx.ALIGN_CENTER_HORIZONTAL, 35)
+        sizerCtrls.Add(self.chbxEdges, 0, wx.ALL  | wx.ALIGN_LEFT, 11)
+        sizerCtrls.Add(self.chbxColorImage, 0, wx.ALL  | wx.ALIGN_CENTER_HORIZONTAL, 11)
+        sizerCtrls.Add(self.chbxMonochorome, 0, wx.ALL | wx.ALIGN_RIGHT, 11)
         sizerCtrls.Add(self.btnLoadImage, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL, 20)
         sizerCtrls.Add(self.sldrHeight, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL, 20)
 
@@ -911,16 +954,25 @@ class MIDIArtDialog(wx.Dialog):
 
 
         if self.ColorsCheck:
+            #TODO Swap both above---configuration must be the same for colors import as this.
             preview = cv2.cvtColor(preview, cv2.COLOR_BGR2RGB)
-            #preview = cv2.cvtColor(preview, cv2.COLOR_RGB2BGR)
+            ##preview = cv2.cvtColor(preview, cv2.COLOR_RGB2BGR)
 
-            mayavi_view = super().GetParent().mv
+            m_v = super().GetParent().m_v
 
-            #preview = midiart.set_to_nn_colors(preview, mayavi_view.clr_dict_list[mayavi_view.current_palette_name])
+            #preview = midiart.set_to_nn_colors(preview, m_v.clr_dict_list[m_v.current_palette_name])
 
-            #SWAP HERE
-            swaprnb = midiart.convert_dict_colors(mayavi_view.default_color_palette, invert=True)
-            preview = midiart.set_to_nn_colors(preview, swaprnb)
+            #SWAP HERE ------- See trello card: --> https://trello.com/c/O67MrqpT
+            #NOTE: Since this is the preview, this is the same "force-swap" as above in OnMidiartDialogCLosed() function.
+            #This lends evidence to the logic that our problem  may NOT be in mainbuttons.py.
+            #Original
+            ##print("Default_Color_Palette", m_v.default_color_palette)
+            #NOTE: This uses default_color_palette, which DOES NOT have floats for color values. Mayavi float colors
+            #do not work for this preview.
+            swaprnb = midiart.convert_dict_colors(m_v.default_color_palette, invert=True) #invert=True)
+            ##print("Default_Color_Palette_SWAPPED", swaprnb)
+            print("DEFAULT_COLOR_PALETTE_1--preview.", m_v.default_color_palette)
+            preview = midiart.set_to_nn_colors(preview, swaprnb)  #m_v.default_color_palette) #
 
             self.previewImg = cv2.resize(preview, (self.pixScaler * width * 4, height * 4),
                                          cv2.INTER_AREA)  # * 3 increases the size of the preview.
@@ -1016,46 +1068,50 @@ class MIDIArtDialog(wx.Dialog):
 
     def OnChangeColor(self, event):
         #This is the greatest thing.
-        mayavi_view = super().GetParent().mv
+        m_v = super().GetParent().m_v
         #FLStudio Colors
         #TODO Test color constistency across all views (preview, mayaviview, exported to FL)
         if self.listCtrl.GetItemText(self.listCtrl.GetFocusedItem()) == "FLStudioColors":
 
-            mayavi_view.default_color_palette = midiart.FLStudioColors
+            m_v.default_color_palette = midiart.FLStudioColors
 
             #Convert
-            mayavi_view.default_mayavi_palette = \
-            midiart.convert_dict_colors(mayavi_view.default_color_palette, invert=False)
+            m_v.default_mayavi_palette = \
+            midiart.convert_dict_colors(m_v.default_color_palette, invert=False)
 
-            mayavi_view.current_palette_name = "FLStudioColors"
-            print("FL Fuck")
+            m_v.current_palette_name = "FLStudioColors"
+            print("FL Colors Here.")
 
         #Colors Dicts
         else:
             #Assign Dict.
-            mayavi_view.default_color_palette= mayavi_view.clr_dict_list[self.listCtrl.GetItemText(self.listCtrl.GetFocusedItem())]
+            m_v.default_color_palette = m_v.clr_dict_list[self.listCtrl.GetItemText(self.listCtrl.GetFocusedItem())]
+
             #Invert tuples.
-            #mayavi_view.default_color_palette = midiart.convert_dict_colors(mayavi_view.default_color_palette, invert=True)
+            #m_v.default_color_palette = midiart.convert_dict_colors(m_v.default_color_palette, invert=True)
 
-            #Convert to mayavi floats.
-            mayavi_view.default_mayavi_palette = midiart.convert_dict_colors(mayavi_view.default_color_palette, invert=False)
 
-            #print("MAYAVI PALETTE", mayavi_view.default_mayavi_palette)
-            #mayavi_view.default_mayavi_palette = midiart.convert_dict_colors(mayavi_view.default_mayavi_palette, invert=True)
-            print("MAYAVI PALETTE", mayavi_view.default_mayavi_palette)
+            #SWAP HERE ------- See trello card: --> https://trello.com/c/O67MrqpT
+            #Convert to mayavi floats and necessary compensatory SWAP because of cvt BGR inversion and to make all rest code cleaner.
+
+            m_v.default_mayavi_palette = midiart.convert_dict_colors(m_v.default_color_palette, both=True) #invert=True)
+
+            #print("MAYAVI PALETTE", m_v.default_mayavi_palette)
+            #m_v.default_mayavi_palette = midiart.convert_dict_colors(m_v.default_mayavi_palette, invert=True)
+            print("MAYAVI PALETTE", m_v.default_mayavi_palette)
             #palette = \
-            #midiart.convert_dict_colors(mayavi_view.default_color_palette, invert=False)
+            #midiart.convert_dict_colors(m_v.default_color_palette, invert=False)
             #Invert tuples.
 
             #Invert Color Tuples (swap R with B)
-            #mayavi_view.default_mayavi_palette = \
-            #midiart.convert_dict_colors(mayavi_view.default_color_palette, invert=True)
+            #m_v.default_mayavi_palette = \
+            #midiart.convert_dict_colors(m_v.default_color_palette, invert=True)
             #A tuple R\B switch happens here; tuple is inverted.
 
-            mayavi_view.current_palette_name = self.listCtrl.GetItemText(self.listCtrl.GetFocusedItem())
+            m_v.current_palette_name = self.listCtrl.GetItemText(self.listCtrl.GetFocusedItem())
             print("3")
 
-        print("Current Palette Name Changed", mayavi_view.current_palette_name)
+        print("Current Palette Name Changed", m_v.current_palette_name)
         self.UpdatePreview()
 
 
@@ -1078,9 +1134,9 @@ class MIDIArt3DDialog(wx.Dialog):
         # super().GetParent().GetTopLevelParent().mayaviviewcontrolpanel.Disable()
         # super().GetParent().GetTopLevelParent().pianorollpanel.pianoroll.Disable()
 
-
-        self.mv = super().GetParent().GetTopLevelParent().mayavi_view
-        self.mv.scene3d.disable_render = True
+        # mayavi_view reference override
+        self.m_v = super().GetParent().GetTopLevelParent().mayavi_view
+        self.m_v.scene3d.disable_render = True
 
         self.mini_mv = MayaviMiniView(parent=self)
         self.mini = self.mini_mv.edit_traits(parent=self.imgPreviewPanel, kind='subpanel').control
@@ -1239,8 +1295,8 @@ class MIDIArt3DDialog(wx.Dialog):
         #print("SIZE", self.mini.Size)
         #self.mini_mv.remove_highlighter_plane()
         #self.mini_mv.remove_grid_reticle()
-        self.mv.insert_piano_grid_text_timeplane(length=self.mv.grid3d_span, volume_slice=None, figure=self.mini_mv.scene_mini.mayavi_scene)
-        self.mv.insert_note_text(text="♫Point Cloud Processing♫", color=(1, 1, 0), figure=self.mini_mv.scene_mini.mayavi_scene, scale=11)
+        self.m_v.insert_piano_grid_text_timeplane(length=self.m_v.grid3d_span, volume_slice=None, figure=self.mini_mv.scene_mini.mayavi_scene)
+        self.m_v.insert_note_text(text="♫Point Cloud Processing♫", color=(1, 1, 0), figure=self.mini_mv.scene_mini.mayavi_scene, scale=11)
         self.mini_mv.scene_mini.background = (0/255, 0/255, 0/255)  #(222/255, 222/255, 0/255)
         self.mini.SetSize((446, 446))
 
@@ -1266,7 +1322,7 @@ class MIDIArt3DDialog(wx.Dialog):
                 self.ply = pathname
                 self.ply_name = os.path.basename(pathname)
                 self.points = midiart3D.get_points_from_ply(self.ply)
-                self.mlab_call = self.mv.insert_array_data(self.points, color=(1, 1, 0),
+                self.mlab_call = self.m_v.insert_array_data(self.points, color=(1, 1, 0),
                                                                 figure=self.mini_mv.scene_mini.mayavi_scene,
                                                                 scale_factor=1)
             except IOError:

@@ -25,6 +25,7 @@ class ZPlanesControlPanel(wx.Panel):
 		self.toolbar = wx.ToolBar(self, -1, wx.DefaultPosition, wx.DefaultSize, style=wx.TB_HORIZONTAL)
 		self.SetupToolBar()
 
+		# mayavi_view reference
 		self.m_v = self.GetTopLevelParent().mayavi_view
 
 		sizer = wx.BoxSizer(wx.VERTICAL)
@@ -181,7 +182,7 @@ class ZPlanesControlPanel(wx.Panel):
 			#self.GetTopLevelParent().planescroll_animator = self.m_v.animate(self.m_v.grid3d_span, self.m_v.bpm, self.m_v.frames_per_beat)
 		except StopIteration:
 			del(self.GetTopLevelParent().player)
-		finally:   #Todo Process this, read the docs and Zach's book.
+		finally:   #Todo Process this, read the docs and Dan Bader's book.
 
 		#player.load_midifile(midifile=output, bpm=160)
 		#player.open_gui()
@@ -212,7 +213,7 @@ class ZPlanesControlPanel(wx.Panel):
 		# Deletes 'selected' not 'activated' actors.
 		# alb = self.GetTopLevelParent().pianorollpanel.actorsctrlpanel.actorsListBox
 		# print("J_list", [j for j in range(len(self.mayavi_view.actors), -1, -1)])
-		# for j in range(len(self.mayavi_view.actors), 0, -1):  # Fucking OBOE errors...
+		# for j in range(len(self.mayavi_view.actors), 0, -1):  # Stupid OBOE errors...
 		# 	print("J", j)
 		# 	if alb.IsSelected(j - 1):
 		# 		self.OnBtnDelActor(evt=None, cur=j - 1)
@@ -236,12 +237,15 @@ class CustomZPlanesListBox(wx.ListCtrl, CheckListCtrlMixin):
 		                            #wx.LC_NO_HEADER |
 		                            #wx.LC_SINGLE_SEL  #TODO Turned this off to allow for interesting multi-select functions for zplanes.
 		                     )
-		CheckListCtrlMixin.__init__(self)
+
+		#TODO I turned this off as well; it gets rid of those weird unused check boxes in the list box. So far,
+		# I haven't run into errors from disabling it. 11/29/2021
+		#CheckListCtrlMixin.__init__(self)
 		self.log = log
 
 		self.SetBackgroundColour((141, 141, 141))
 
-
+		# mayavi_view reference
 		self.m_v = self.GetTopLevelParent().mayavi_view
 
 
@@ -288,7 +292,7 @@ class CustomZPlanesListBox(wx.ListCtrl, CheckListCtrlMixin):
 		print("CPQN", self.m_v.CurrentActor().cpqn)
 
 		#For whatever reason, this check had to be called at the end of this function.
-		#A 'temp_prev_z' (ln 194) is stored as a local reference, since 'previous_z" is 'written to' in this function above (ln 198).
+		#A 'temp_prev_z'--temporary previous z-- (ln 194) is stored as a local reference, since 'previous_z" is 'written to' in this function above (ln 271).
 		if temp_prev_z == index:  # If our new == our previous:
 			print("TRUE1")
 			# 'index', because we haven't changed cur_z to index yet....
@@ -315,12 +319,16 @@ class CustomZPlanesListBox(wx.ListCtrl, CheckListCtrlMixin):
 		
 	def UpdateFilter(self):
 		self.log.info("UpdateFilter():")
-		a4D = self.GetTopLevelParent().mayavi_view.CurrentActor()._array4D
+		try:
+			a4D = self.m_v.CurrentActor()._array4D
+		except AttributeError:
+			print("There are no actors yet.")
+			pass
 		#print(np.shape(a3D))
 		
 		self.filter = list()
 		if self.showall:
-			self.filter = [ _ for _ in range(128) ]
+			self.filter = [_ for _ in range(128)]
 		else:
 			for i in range(np.shape(a4D)[2]):
 				if np.count_nonzero(a4D[:, :, i]) > 0:
@@ -329,6 +337,8 @@ class CustomZPlanesListBox(wx.ListCtrl, CheckListCtrlMixin):
 		#print(f"filter = {self.filter}")
 		
 		self.SetItemCount(len(self.filter))
+		if self.GetTopLevelParent().zplane_scrolled > self.filter[-1]:
+			self.GetTopLevelParent().zplane_scrolled = self.filter[-1]
 		self.Refresh()
 		return len(self.filter)
 		

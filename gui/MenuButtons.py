@@ -228,7 +228,9 @@ class CustomMenuBar(wx.MenuBar):
                     output = intermediary_path + filename + ".mid"
                     selected_stream = midiart3D.extract_xyz_coordinates_to_stream(self.m_v.actors[i]._points)
                     selected_stream.write('mid', output)
-        pass
+        else:
+            pass
+        print("Current Actor Exported Successfully!")
 
 
     def OnExport_AllActors(self, event):
@@ -244,7 +246,7 @@ class CustomMenuBar(wx.MenuBar):
                 self.m_v.actors[i]._stream = midiart3D.extract_xyz_coordinates_to_stream(self.m_v.actors[i]._points)
                 self.m_v.actors[i]._stream.write('mid', output)
         pass
-
+        print("All Actors Exported Successfully!")
 
     #TODO *Be mindful of 'track mode' vs 'velocity mode' for later; when we have those modes for each zplane.
     def OnExport_CurrentActorsCurrentZplane(self, event):
@@ -262,6 +264,8 @@ class CustomMenuBar(wx.MenuBar):
         self.m_v.CurrentActor()._stream.insert(0, tempo)
         self.m_v.CurrentActor()._stream.insert(0, timesig)
         self.m_v.CurrentActor()._stream.write('mid', output)
+        print("Current Actor's Current Zplane Exported Successfully!")
+
 
 
     #TODO *Same.
@@ -274,6 +278,7 @@ class CustomMenuBar(wx.MenuBar):
             output = intermediary_path + filename + ".mid"
             stream = midiart3D.extract_xyz_coordinates_to_stream(planes_dict[zplane])
             stream.write('mid', output)
+        print("All Current Actor's Zplanes Exported Successfully!")
 
 
     def OnExport_Selection(self, event):
@@ -290,32 +295,32 @@ class CustomMenuBar(wx.MenuBar):
                     self.m_v.actors[i]._stream = midiart3D.extract_xyz_coordinates_to_stream(self.m_v.actors[i]._points)
                     self.m_v.actors[i]._stream.write('mid', output)
         pass
-
+        print("Selection Exported Successfully!")
 
     def OnExport_Colors(self, event):
         print("Exporting Colors....")
-        self.mv = self.GetTopLevelParent().mayavi_view
+        self.m_v = self.GetTopLevelParent().mayavi_view
         print("evid", event.GetId())
-        self.mv.colors_call = int(self.GetTopLevelParent().menuBar.colors.FindItemById(event.GetId()).GetItemLabelText())  ##.Name in wx(4.0.7)
+        self.m_v.colors_call = int(self.GetTopLevelParent().menuBar.colors.FindItemById(event.GetId()).GetItemLabelText())  ##.Name in wx(4.0.7)
 
         #In the mv.actors list, get all actor that are part of a colors import instance.
-        for i in range(0, len(self.mv.actors)):
-            if "Clrs%s" % str(self.mv.colors_call) == self.mv.actors[i].colors_instance:   #  (if is colors_instance  is "Clrs1"...)
+        for i in range(0, len(self.m_v.actors)):
+            if "Clrs%s" % str(self.m_v.colors_call) == self.m_v.actors[i].colors_instance:   #  (if is colors_instance  is "Clrs1"...)
                 #Make _stream from _points, name it's part correctly, set it's music21 sort priority, then append it to the main export mv.stream.
-                self.mv.actors[i]._stream = midiart3D.extract_xyz_coordinates_to_stream(self.mv.actors[i]._points, part=True)
-                self.mv.actors[i]._stream.partsName = self.mv.actors[i].part_num
-                self.mv.actors[i]._stream.priority = self.mv.actors[i].priority
-                self.mv.stream.insert(0.0, self.mv.actors[i]._stream)
+                self.m_v.actors[i]._stream = midiart3D.extract_xyz_coordinates_to_stream(self.m_v.actors[i]._points, part=True)
+                self.m_v.actors[i]._stream.partsName = self.m_v.actors[i].part_num
+                self.m_v.actors[i]._stream.priority = self.m_v.actors[i].priority
+                self.m_v.stream.insert(0.0, self.m_v.actors[i]._stream)
 
             else:
                 pass
-        print("MainStream Length:", len(self.mv.stream))
+        print("MainStream Length:", len(self.m_v.stream))
         #This block of code executes if we deleted an actor.
-        if len(self.mv.stream) != 16:       #If no 16 actors...
-            for i in range(0, 16 - len(self.mv.stream)):     #Then in the range of missing parts....
+        if len(self.m_v.stream) != 16:       #If no 16 actors...
+            for i in range(0, 16 - len(self.m_v.stream)):     #Then in the range of missing parts....
                 #Get the 'priority' int value for our deleted part(s) using a list(set.difference) method, then
                 #sorting the result, and lastly calling pop() on the result, which returns our missing "priority."
-                new_list = list(set([i for i in range(-1, -17, -1)]).difference(set([i.priority for i in self.mv.stream]))) #TODO Is pop() reliable here? (Console testing said yes, but internet said meh...)
+                new_list = list(set([i for i in range(-1, -17, -1)]).difference(set([i.priority for i in self.m_v.stream]))) #TODO Is pop() reliable here? (Console testing said yes, but internet said meh...)
                 new_list.sort()
                 print("New_priority_list", new_list)
                 append_priority = new_list.pop()
@@ -324,21 +329,22 @@ class CustomMenuBar(wx.MenuBar):
                 append_part = music21.stream.Part()
                 append_part.priority = append_priority   #Set the empty parts priority to that value so it sorts to the deleted spot in the stream.
                 append_part.partsName = append_priority + 17   #Set the partsName based on that priority value. Will always be consistent.
-                #append_part.partsName = (16-(16-len(self.mv.stream))) + 1
-                self.mv.stream.insert(0.0, append_part)  #Copy deepcopy, for multiple new parts, handling multiple deletions.
+                #append_part.partsName = (16-(16-len(self.m_v.stream))) + 1
+                self.m_v.stream.insert(0.0, append_part)  #Copy deepcopy, for multiple new parts, handling multiple deletions.
         else:
             pass
-        #self.mv.stream.sort()
+        #self.m_v.stream.sort()
         intermediary_path = os.getcwd() + os.sep + "resources" + os.sep + "intermediary_path" + os.sep
-        filename = self.mv.colors_name + str(self.mv.colors_call)
-        output = intermediary_path + filename + "---" + self.mv.current_palette_name + ".mid"
-        midiart.set_parts_to_midi_channels(self.mv.stream, output)
+        filename = self.m_v.colors_name + str(self.m_v.colors_call)
+        output = intermediary_path + filename + "---" + self.m_v.current_palette_name + ".mid"
+        midiart.set_parts_to_midi_channels(self.m_v.stream, output)
         ##Clear mainstream if it has already been used.
-        if self.mv.stream.hasPartLikeStreams():
-            for i in self.mv.stream:
-                self.mv.stream.remove(i)
+        if self.m_v.stream.hasPartLikeStreams():
+            for i in self.m_v.stream:
+                self.m_v.stream.remove(i)
         else:
             pass
+        print("Colors Exported Successfully!")
 
 
     def OnExport_Text(self, event):
@@ -399,6 +405,7 @@ class CustomMenuBar(wx.MenuBar):
         self.GetTopLevelParent().musicode.create_directories()
         
         for j in range(0, len(user_Created)):
+            #TODO Use GetElementByClass method here. 12/30/2021
             # user_generated_musicode[j].append(wrapper_list[j])
             element_wrapper = user_Created[j][-1]  # The last element in each measure.
             if type(element_wrapper) == music21.note.Rest:
@@ -492,11 +499,11 @@ class CustomMenuBar(wx.MenuBar):
 
 
     def OnIntermediaryPath(self, event):
-        wildcard = "Text files (*.txt)|*.txt|" \
-                   "JPG files (*.jpg)|*.jpg|" \
+        wildcard = "Midi files (*.mid)|*.mid|" \
+                   "Text files (*.txt)|*.txt|"\
                    "PNG files (*.png)|*.png|" \
+                   "JPG files (*.jpg)|*.jpg|" \
                    "PLY files (*.ply)|*.ply|" \
-                   "Midi files (*.mid)|*.mid|" \
                    "All files (*.*)|*.*"
 
         #self.log.WriteText("CWD: %s\n" % os.getcwd())
@@ -572,7 +579,9 @@ class CustomMenuBar(wx.MenuBar):
 
     def OnShowInDAW(self, event):
             # s = music21funcs.matrix_to_stream(matrix, True, self.GetTopLevelParent().pianorollpanel.currentPage.pix_note_size)
-        s = self.GetTopLevelParent().pianorollpanel.currentPage.stream #TODO Change upon implementing Actors and Zplanes.
+            #"&ShowInDAW\tAlt+F+1"
+        s = midiart3D.extract_xyz_coordinates_to_stream(self.m_v.CurrentActor()._points)
+        #s = self.GetTopLevelParent().pianorollpanel.currentPage.stream #TODO Change upon implementing Actors and Zplanes.
         s.show('txt')
 
         intermediary_path = os.sep + "resources" + os.sep + "intermediary_path" + os.sep
@@ -588,7 +597,9 @@ class CustomMenuBar(wx.MenuBar):
 
     def OnShowInMuseScore(self, event):
         # TODO Change upon implementing Actors and Zplanes.
-        s = self.GetTopLevelParent().pianorollpanel.currentPage.stream
+        #s = self.GetTopLevelParent().pianorollpanel.currentPage.stream
+        s = midiart3D.extract_xyz_coordinates_to_stream(self.m_v.CurrentActor()._points)
+
         s.show('txt')
 
         intermediary_path = os.sep + "resources" + os.sep + "intermediary_path" + os.sep
@@ -603,19 +614,23 @@ class CustomMenuBar(wx.MenuBar):
 
 
     def OnShowInWordProcessor(self, event):
+        #s = midiart3D.extract_xyz_coordinates_to_stream(self.m_v.CurrentActor()._points)
         pass
 
 
     def OnShowInPaint(self, event):
         # PicPick by default, to be included in distribution.
+        #s = midiart3D.extract_xyz_coordinates_to_stream(self.m_v.CurrentActor()._points)
         pass
 
 
     def OnShowInMeshlab(self, event):
+        #s = midiart3D.extract_xyz_coordinates_to_stream(self.m_v.CurrentActor()._points)
         pass
 
 
     def OnShowInBlender(self, event):
+        #s = midiart3D.extract_xyz_coordinates_to_stream(self.m_v.CurrentActor()._points)
         pass
 
 
@@ -895,7 +910,7 @@ class CustomMenuBar(wx.MenuBar):
 
 
     def _OnPreferencesDialogClosed(self, dialog, evt):
-        print("Fuck")
+        print("Here1")
         val = evt.GetReturnCode()
         print("Val %d: " % val)
         try:
@@ -903,7 +918,7 @@ class CustomMenuBar(wx.MenuBar):
                    wx.ID_CANCEL: "Cancel"}[val]
         except KeyError:
             btn = '<unknown>'
-        print("Fuck2")
+        print("Here2")
         #self.GetTopLevelParent().mayavi_view
         if btn == "OK":
             if dialog.input_span.GetLineText(0) == None:
@@ -924,7 +939,7 @@ class CustomMenuBar(wx.MenuBar):
                 self.m_v.default_mayavi_palette = \
                     midiart.convert_dict_colors(self.m_v.default_color_palette, invert=False)
                 self.m_v.current_palette_name = "FLStudioColors"
-                #print("FL Fuck")
+                #print("FL Fthwack")
             else:
                 self.m_v.default_color_palette = midiart.get_color_palettes()[dialog.popupCtrl.GetStringValue()]
 
@@ -932,7 +947,7 @@ class CustomMenuBar(wx.MenuBar):
                     midiart.convert_dict_colors(self.m_v.default_color_palette, invert=False)
                     #A tuple R\B switch happens here; tuple is inverted.
                 self.current_palette_name = dialog.popupCtrl.GetStringValue()
-                # print("Fuck3")
+                # print("Here3")
             #Set the focus on the mainbuttonspanel so "F" hotkeys will work immediately.
             self.GetTopLevelParent().mainbuttonspanel.SetFocus()
 
@@ -951,9 +966,9 @@ class CustomMenuBar(wx.MenuBar):
     def _OnPrefDialogCloser(self, evt):
         # One for Preferences, bound in MainWindow.
         dialog = evt.GetDialog()
-        print("FUCKADONKEY")
+        print("SLAPADONKEY")
         if type(dialog) is Preferences.PreferencesDialog:
-            print("FUCK_1")
+            print("HERE_1")
             self._OnPreferencesDialogClosed(dialog, evt)
 
     def _OnHelpDialogCloser(self, evt):

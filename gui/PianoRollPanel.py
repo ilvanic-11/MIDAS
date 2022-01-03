@@ -1,6 +1,7 @@
 import wx
 import wx.lib.plot
 import wx.grid
+import wx.lib.agw.balloontip as BT
 import wx.lib.mixins.gridlabelrenderer as glr
 import music21
 import numpy as np
@@ -40,11 +41,10 @@ class PianoRollPanel(wx.Panel):
         self.log.info("PianoRollPanel.__init__()")
         self.tb = self.SetupToolbar()
 
-        #mayavi_view reference
+        # mayavi_view reference
         self.m_v = self.GetTopLevelParent().mayavi_view
 
         self.currentZplane = 90  # #Todo Rewrite this, I don't like separate stored variables if we can avoid it.
-
 
 
         self.draw_mode = 1
@@ -55,8 +55,6 @@ class PianoRollPanel(wx.Panel):
         self.last_highlight = []
 
         self.mode = self.draw_mode  ### "1" for Draw, 0 for Select
-
-        #self.mayavi_view = self.GetTopLevelParent().mayavi_view
 
         self.pianorollSplit = wx.SplitterWindow(self, wx.ID_ANY, style=wx.SP_3DSASH | wx.SP_BORDER)
         self.ctrlpanelSplit = wx.SplitterWindow(self.pianorollSplit, wx.ID_ANY, style=wx.SP_3DSASH | wx.SP_BORDER)
@@ -111,6 +109,8 @@ class PianoRollPanel(wx.Panel):
         #self.AccelerateHomeHotkey()
         self.SetSizerAndFit(mainSizer)
 
+
+
     #TODO Deprecated?
     def DeletePianoRoll(self, index):
         self.log.info("DeletePianoRoll")
@@ -147,30 +147,34 @@ class PianoRollPanel(wx.Panel):
         self.toolbar.AddSeparator()
         self.toolbar.AddSeparator()
 
-        cbID = 101
-        lblID = 1011
-        lbl = wx.StaticText(self.toolbar, lblID, label="Cell Draw Size: ")
+        cbID1 = 101
+        lblID1 = 1011
+        lbl1 = wx.StaticText(self.toolbar, lblID1, label="Drawing Duration" )
 
-        self.toolbar.AddControl(lbl, "")
-        self.cbDrawCellSize = wx.ComboBox(self.toolbar, cbID, "1", wx.DefaultPosition, wx.DefaultSize,
-                                          choices=["1", "2", "4", "8"],
-                                          style=wx.CB_DROPDOWN | wx.CB_READONLY)
-        self.toolbar.AddControl(self.cbDrawCellSize)
-        self.Bind(wx.EVT_COMBOBOX, self.OnDrawCellSizeChanged, id=cbID)
+        self.toolbar.AddControl(lbl1)
+        self.cbDrawingDurationValue = wx.ComboBox(self.toolbar, cbID1, "1.", wx.DefaultPosition, wx.DefaultSize,
+                                                  choices=["8.", "4.", "2.", "1.", ".5", ".25", ".125", ".0625", ".03125"],
+                                                  style=wx.CB_DROPDOWN | wx.CB_READONLY)
+        ###TOOLTIPS###
+        self.tt1 = wx.ToolTip("In music21's duration.quarterLength units.")
+        self.cbDrawingDurationValue.SetToolTip(self.tt1)
+
+        self.toolbar.AddControl(self.cbDrawingDurationValue)
+        self.Bind(wx.EVT_COMBOBOX, self.OnDrawingDurationValueChanged, id=cbID1)
 
         self.toolbar.AddSeparator()
         self.toolbar.AddSeparator()
 
-        cbID1 = 102
-        lblID1 = 1021
-        lbl1 = wx.StaticText(self.toolbar, lblID1, label="Cells Per Qrtr Note: ")
+        cbID2 = 102
+        lblID2 = 1021
+        lbl2 = wx.StaticText(self.toolbar, lblID2, label="Cells Per Qrtr Note: ")
 
-        self.toolbar.AddControl(lbl1, "")
-        self.cbCellsPerQrtrNote = wx.ComboBox(self.toolbar, cbID1, "(1, 'Qrtr', 1)", wx.DefaultPosition, wx.DefaultSize,
+        self.toolbar.AddControl(lbl2, "")
+        self.cbCellsPerQrtrNote = wx.ComboBox(self.toolbar, cbID2, "(1, 'Qrtr', 1)", wx.DefaultPosition, wx.DefaultSize,
                                               choices=["(1, 'Qrtr', 1)", "(2, '8th', .5)", "(4, '16th', .25)", "(8, '32nd', .125)", "(16, '64th', .0625)", "(32, '128th', .03125)"],
                                               style=wx.CB_DROPDOWN | wx.CB_READONLY)
         self.toolbar.AddControl(self.cbCellsPerQrtrNote)
-        self.Bind(wx.EVT_COMBOBOX, self.OnCellsPerQrtrNoteChanged, id=cbID1)
+        self.Bind(wx.EVT_COMBOBOX, self.OnCellsPerQrtrNoteChanged, id=cbID2)
 
         self.toolbar.AddSeparator()
         self.toolbar.AddSeparator()
@@ -199,6 +203,33 @@ class PianoRollPanel(wx.Panel):
         #                      kind=wx.ITEM_NORMAL)
         # self.Bind(wx.EVT_TOOL, self.OnToolBarClick, id=id_DeleteAllLayers)
 
+
+        #TODO USE BALLOONS FOR THE MAIN BUTTONS?
+        ###BALLOONS###
+        # # You can define your BalloonTip as follows:
+        # tipballoon = BT.BalloonTip(topicon=None, toptitle="",
+        #                            message="In music21's duration.quarterLength units.",
+        #                            shape=BT.BT_RECTANGLE,
+        #                            tipstyle=BT.BT_LEAVE)
+        # # Set the BalloonTip target
+        # tipballoon.SetTarget(self.cbDrawingDurationValue)
+        # # Set the BalloonTip background colour
+        # tipballoon.SetBalloonColour(wx.WHITE)
+        # # Set the font for the balloon title
+        # tipballoon.SetTitleFont(wx.Font(2, wx.FONTFAMILY_SWISS, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_BOLD, False))
+        # # Set the colour for the balloon title
+        # tipballoon.SetTitleColour(wx.BLACK)
+        # # Leave the message font as default
+        # tipballoon.SetMessageFont()
+        # # Set the message (tip) foreground colour
+        # tipballoon.SetMessageColour(wx.Colour("FOREST GREEN"))
+        # # Set the start delay for the BalloonTip
+        # tipballoon.SetStartDelay(500)
+        # # Set the time after which the BalloonTip is destroyed
+        # tipballoon.SetEndDelay(43200e4) #12 hours, haha.
+        # # tipballoon.mousepos = wx.GetMousePosition()
+        # # print("balloon_mouse_pos", tipballoon.mousepos)
+
         self.toolbar.Realize()
         return self.toolbar
 
@@ -212,12 +243,13 @@ class PianoRollPanel(wx.Panel):
         self.m_v.cpqn = newvalue
         print("Changing CPQN, updating grid reticle.")
 
-        #self.mayavi_view.cpqn = newvalue
-        #print("Changing CPQN, updating grid reticle.")
+
+        self.pianoroll.SetCellDrawingSizeValue()
 
 
         # need to redraw current piano roll and update stream
         self.pianoroll.ChangeCellsPerQrtrNote(newvalue)
+
 
         # self.pianoroll.ForceRefresh()
 
@@ -225,9 +257,10 @@ class PianoRollPanel(wx.Panel):
         self.m_v.cpqn_changed_flag = not self.m_v.cpqn_changed_flag
 
 
-    def OnDrawCellSizeChanged(self, event):
-        print("OnDrawCellSizeChanged(): new size = %s" % self.cbDrawCellSize.GetValue())
-        self.pianoroll.draw_cell_size = int(self.cbDrawCellSize.GetValue())
+    def OnDrawingDurationValueChanged(self, event):
+        print("OnDrawCellSizeChanged(): new size = %s" % self.cbDrawingDurationValue.GetValue())
+        self.pianoroll.drawing_duration_value = int(eval(self.cbDrawingDurationValue.GetValue()))
+        self.pianoroll.SetCellDrawingSizeValue()
 
 
     def OnToolBarClick(self, event):
@@ -255,7 +288,7 @@ class PianoRollPanel(wx.Panel):
     def OnDrawMode(self, event):
         self.log.info("OnSelectMode():")
         self.mode = self.draw_mode
-        self.m_v.CurrentActor().array3Dchangedflag = self.m_v.CurrentActor().array3Dchangedflag
+        self.m_v.CurrentActor().array4Dchangedflag = self.m_v.CurrentActor().array4Dchangedflag
 
 
     def OnSelectMode(self, event):
@@ -291,27 +324,38 @@ class PianoRollPanel(wx.Panel):
         else:
             current_actor = self.m_v.CurrentActor()
 
-            on_points = np.argwhere(current_actor._array4D[:, :, z, 0] >= 1.0)
+
+            on_points = current_actor.get_points_with_all_data(z=z)
+            #on_points = np.argwhere(current_actor._array4D[:, :, z, 0] >= 1.0)
             print("On_Points", on_points)
 
+            #Grid set.
             for i in on_points:
-                #Grid set.
-                self.pianoroll._table.SetValue(127 - i[1], i[0],
-                                               "0")  # TODO Track mode stuff! What can the 'value' parameter be?
-            #array3D set.
-            current_actor._array4D[:, :, z, 0] = current_actor._array4D[:, :,
-                                              z, 0] * 0  # TODO Different way to write this? Multiply whole array3d by 0?
-            self.pianoroll.ForceRefresh()
+                self.pianoroll._table.SetValue(127 - i[1], i[0], "0")
+                # TODO Track mode stuff! What can the 'value' parameter be?
 
-            #self.m_v.actors[self.m_v.cur_ActorIndex].array3Dchangedflag += 1
-
-        self.pianoroll.ResetGridCellSizes()
-        #self.m_v.actors[self.m_v.cur_ActorIndex].array3Dchangedflag = not self.m_v.actors[self.m_v.cur_ActorIndex].array3Dchangedflag
-
-        #Manual override, trait update not working....
-        self.m_v.actors[self.m_v.cur_ActorIndex].actor_array3D_changed()
+            #_array4D set.
+            for i in range(0, current_actor._array4D.shape[3]):
+                current_actor._array4D[:, :, z, 0] = current_actor._array4D[:, :, z, i] * 0
+            # TODO Different way to write this? Multiply whole array3d by 0?
 
         self.pianoroll.ForceRefresh()
+            #self.m_v.actors[self.m_v.cur_ActorIndex].array4Dchangedflag += 1
+
+        self.pianoroll.ResetGridCellSizes()
+        #self.m_v.actors[self.m_v.cur_ActorIndex].array4Dchangedflag = not self.m_v.actors[self.m_v.cur_ActorIndex].array4Dchangedflag
+
+        #Manual override, trait update method not working....
+        try:
+            self.m_v.actors[self.m_v.cur_ActorIndex].actor_array4D_changed()
+        except Exception as e:
+            print("Clear Zplane Error:", e)
+
+        self.pianoroll.ForceRefresh()
+
+        #Clear leftover grid notes upon all actors deletions.
+        if len(self.m_v.actors) == 0:
+            self.pianoroll._table.ClearCells()
 
 
     def Scroll_ZPlanesVelocities(self, event):
@@ -420,14 +464,14 @@ class PianoRollPanel(wx.Panel):
             for j in self.ArrayFromSelection(self.selected_notes, self.m_v.CurrentActor().cur_z):
                 self.m_v.CurrentActor()._array4D[j[0], j[1], self.m_v.CurrentActor().cur_z][0] = 0.
 
-            self.m_v.CurrentActor().array3Dchangedflag = not self.m_v.CurrentActor().array3Dchangedflag
-            #self.m_v.CurrentActor().array3Dchangedflag = not self.m_v.CurrentActor().array3Dchangedflag
+            self.m_v.CurrentActor().array4Dchangedflag = not self.m_v.CurrentActor().array4Dchangedflag
+            #self.m_v.CurrentActor().array4Dchangedflag = not self.m_v.CurrentActor().array4Dchangedflag
 
-            # self.m_v.actors[self.last_actor].array3Dchangedflag = not self.m_v.actors[
-            #     self.last_actor].array3Dchangedflag
+            # self.m_v.actors[self.last_actor].array4Dchangedflag = not self.m_v.actors[
+            #     self.last_actor].array4Dchangedflag
             #
-            # self.m_v.actors[self.GetTopLevelParent().actor_scrolled].array3Dchangedflag = not self.m_v.actors[
-            #     self.GetTopLevelParent().actor_scrolled].array3Dchangedflag
+            # self.m_v.actors[self.GetTopLevelParent().actor_scrolled].array4Dchangedflag = not self.m_v.actors[
+            #     self.GetTopLevelParent().actor_scrolled].array4Dchangedflag
 
             #3self.last_actor = self.m_v.cur_ActorIndex
 
@@ -595,18 +639,18 @@ class PianoRollPanel(wx.Panel):
             #TODO Clean this up better.   --- 11/25/20
             #Direct-to-points method.
             if carry_to_actor and carry_to_z: #Send-to-z method or Send-to-actor method.
-                # self.m_v.actors[self.m_v.cur_ActorIndex].array3Dchangedflag = not self.m_v.actors[
-                #             self.m_v.cur_ActorIndex].array3Dchangedflag
+                # self.m_v.actors[self.m_v.cur_ActorIndex].array4Dchangedflag = not self.m_v.actors[
+                #             self.m_v.cur_ActorIndex].array4Dchangedflag
 
-                #self.m_v.CurrentActor().array3Dchangedflag = not self.m_v.CurrentActor().array3Dchangedflag
-                #self.m_v.CurrentActor().actor_array3D_changed()
-                self.m_v.actors[self.last_actor].array3Dchangedflag = not self.m_v.actors[
-                    self.last_actor].array3Dchangedflag
 
-                print("Right here.")
+                #self.m_v.CurrentActor().array4Dchangedflag = not self.m_v.CurrentActor().array4Dchangedflag
+                #self.m_v.CurrentActor().actor_array4D_changed()
+                self.m_v.actors[self.last_actor].array4Dchangedflag = not self.m_v.actors[
+                    self.last_actor].array4Dchangedflag
+                #Pushed to
+                self.m_v.actors[self.GetTopLevelParent().actor_scrolled].array4Dchangedflag = not self.m_v.actors[
+                     self.GetTopLevelParent().actor_scrolled].array4Dchangedflag
 
-                self.m_v.actors[self.GetTopLevelParent().actor_scrolled].array3Dchangedflag = not self.m_v.actors[
-                     self.GetTopLevelParent().actor_scrolled].array3Dchangedflag
 
                 #Method here to get ON points as odict
                 self.m_v.actors[self.GetTopLevelParent().actor_scrolled].get_ON_points_as_odict()
@@ -627,15 +671,15 @@ class PianoRollPanel(wx.Panel):
 
 
             elif not carry_to_actor and carry_to_z:
-                # self.m_v.actors[self.last_actor].array3Dchangedflag = not self.m_v.actors[
-                #     self.last_actor].array3Dchangedflag
+                # self.m_v.actors[self.last_actor].array4Dchangedflag = not self.m_v.actors[
+                #     self.last_actor].array4Dchangedflag
 
-                # self.m_v.actors[self.GetTopLevelParent().actor_scrolled].array3Dchangedflag = not self.m_v.actors[
-                #     self.GetTopLevelParent().actor_scrolled].array3Dchangedflag
+                # self.m_v.actors[self.GetTopLevelParent().actor_scrolled].array4Dchangedflag = not self.m_v.actors[
+                #     self.GetTopLevelParent().actor_scrolled].array4Dchangedflag
 
                 #TODO MAKE SURE ALL CARRY METHODS ARE CONSISTENT WITH THEIR RESPECTIVE array3D updating!!
 
-                self.m_v.CurrentActor().array3Dchangedflag = not self.m_v.CurrentActor().array3Dchangedflag
+                self.m_v.CurrentActor().array4Dchangedflag = not self.m_v.CurrentActor().array4Dchangedflag
 
                 self.last_actor = self.m_v.cur_ActorIndex
 
@@ -645,10 +689,10 @@ class PianoRollPanel(wx.Panel):
 
             # Carry-to-z method or Carry-to-actor method.
             elif carry_to_actor and not carry_to_z:
-                self.m_v.actors[self.last_actor].array3Dchangedflag = not self.m_v.actors[self.last_actor].array3Dchangedflag
+                self.m_v.actors[self.last_actor].array4Dchangedflag = not self.m_v.actors[self.last_actor].array4Dchangedflag
 
-                self.m_v.actors[self.GetTopLevelParent().actor_scrolled].array3Dchangedflag = not self.m_v.actors[
-                            self.GetTopLevelParent().actor_scrolled].array3Dchangedflag
+                self.m_v.actors[self.GetTopLevelParent().actor_scrolled].array4Dchangedflag = not self.m_v.actors[
+                            self.GetTopLevelParent().actor_scrolled].array4Dchangedflag
 
                 #TODO Double check order here?
                 self.last_actor = self.m_v.cur_ActorIndex  # Establish as self.last_actor.
@@ -666,8 +710,8 @@ class PianoRollPanel(wx.Panel):
                     self.last_push -= 1
                 elif event.GetWheelRotation() <= -120:
                     self.last_push += 1
-                self.m_v.actors[self.m_v.cur_ActorIndex].array3Dchangedflag = not self.m_v.actors[
-                            self.m_v.cur_ActorIndex].array3Dchangedflag
+                self.m_v.actors[self.m_v.cur_ActorIndex].array4Dchangedflag = not self.m_v.actors[
+                            self.m_v.cur_ActorIndex].array4Dchangedflag
                 self.pianoroll.ForceRefresh()
 
 
@@ -678,11 +722,11 @@ class PianoRollPanel(wx.Panel):
         # Establish selected_notes as a numpy array.
         selected_array = np.array(selection)
 
-        # Because our selected_notes are (Y, X), we flip them with numpy.flip(sn, axis=1)
+        # Because our selected_notes are (Y, X) wx.grid style, we flip them with numpy.flip(sn, axis=1)
         selected_array = np.flip(selection,
                                  1)  # TODO Got an error with this line. Reproduce?   #numpy.AxisError: axis 1 is out of bounds for array of dimension 1 (Because we didn't have a selection?)
 
-        # 127-y compensation, for iteration reasons.
+        # 127-y compensation, for pianoroll---iteration reasons.
         selected_array[:, 1] = 127 - selected_array[:, 1]
 
         # Next, we create an array full of our cur_z value, and transform that by our pushnpull value or transform
@@ -705,7 +749,7 @@ class PianoRollPanel(wx.Panel):
         #print("NEW_PUSH_ARRAY", self.selection_array)
 
 
-        #TODO Figure out why this doesnt work with our points. 11/24/20
+        #TODO Figure out why this npi.indices stuff doesnt work with our points. 11/24/20, 12/08/21
          # For the direct_to_points method, we acquire our indices for our points based on their value using npi.
         # new_array2 = np.hstack((selected_array, push_pull))
         # new_array2 = np.asarray(new_array2, dtype=np.float32)
@@ -850,7 +894,7 @@ class PianoRollPanel(wx.Panel):
     #     elif self.mode == self.draw_mode:
     #         pass
     #         #print("Drawmode HERE.")
-    #         #self.m_v.CurrentActor().array3Dchangedflag = not self.m_v.CurrentActor().array3Dchangedflag
+    #         #self.m_v.CurrentActor().array4Dchangedflag = not self.m_v.CurrentActor().array4Dchangedflag
     #     #time.sleep(20)
 
 
@@ -905,10 +949,10 @@ class PianoRollPanel(wx.Panel):
             if self.pianoroll.XYToCell(event.GetPosition()) != self.currentlySelectedCell:
                 if not event.ShiftDown():
                     wx.CallAfter(self.clear_out_highlight, event)
-                    #wx.CallAfter(self.m_v.CurrentActor().actor_array3D_changed, event)
-                    #self.m_v.CurrentActor().actor_array3D_changed()
+                    #wx.CallAfter(self.m_v.CurrentActor().actor_array4D_changed, event)
+                    #self.m_v.CurrentActor().actor_array4D_changed()
         elif self.mode == self.draw_mode:
-            #self.m_v.CurrentActor().array3Dchangedflag = not self.m_v.CurrentActor().array3Dchangedflag
+            #self.m_v.CurrentActor().array4Dchangedflag = not self.m_v.CurrentActor().array4Dchangedflag
             #print("Drawing 2 HERE")
             if self.pianoroll.drawing == 0:
                 #self.pianoroll.GoToCell(row, col)
@@ -1117,13 +1161,18 @@ class PianoRollPanel(wx.Panel):
             #self.log.info("OnMouseLeftUp():")
          
             # self.currentpianoroll.UpdateStream()
-            mv = self.GetTopLevelParent().mayavi_view
+            m_v = self.m_v
 
             #THIS IS THE UPDATE FLAG FOR DRAWING NOW. It is no longer in the draw function.
-            mv.CurrentActor().array3Dchangedflag = not mv.CurrentActor().array3Dchangedflag
+            try:
+                m_v.CurrentActor().array4Dchangedflag = not m_v.CurrentActor().array4Dchangedflag
+            except AttributeError:
+                pass
+                #MAKE SCRATCH ACTOR?
 
 
-            print("Flag changed now.", mv.CurrentActor().array3Dchangedflag)
+            print("Flag changed now.", m_v.CurrentActor().array4Dchangedflag)
+
 
 
         elif self.mode == self.select_mode:
