@@ -1,7 +1,7 @@
 import wx
 from traits.etsconfig.api import ETSConfig
 ETSConfig.toolkit = 'wx'
-from gui import MenuButtons, MainButtons, PianoRollPanel, Musical_Matrix_Rain, Preferences
+from gui import MenuButtons, MainButtons, PianoRollPanel, Musical_Matrix_Rain #Preferences
 from wx.adv import SplashScreen as SplashScreen
 #from mayavi3D import Mayavi3idiArtAnimation
 from mayavi3D import Mayavi3DWindow, MusicObjects
@@ -152,7 +152,7 @@ class MainWindow(wx.Frame):
         self.musicode = None
         #self.musicode = musicode.Musicode()
 
-
+        #Named with an underscore because it's not actually a "panel" as below; it is a class called often from pycrust.
         self.mayavi_view = Mayavi3DWindow.Mayavi3idiView(self)
 
         self.server = pyo.Server()
@@ -183,7 +183,7 @@ class MainWindow(wx.Frame):
         self.statusbar = StatusBar.CustomStatusBar(self)
         self.SetStatusBar(self.statusbar)
 
-        #This was fucking up size shit.
+        #This was messing up size stuff.
         #tc = wx.TextCtrl(self, -1, "", style=wx.TE_READONLY | wx.TE_MULTILINE)
 
         self.SetSize((640, 480))
@@ -441,17 +441,22 @@ class MainWindow(wx.Frame):
             if mousestate.ShiftDown():  #HOLD SHIFT AND SCROLL TO DESIRED ACTOR LIST ITEM
                 #self.IsActorScrolling = True
                 alb.SetFocus()
+                #Scrolling up, decreasing in value.
                 if event.GetWheelRotation() >= 120:
-                    if self.actor_scrolled == 0:
+                    #if self.actor_scrolled == 0:
+                    if self.actor_scrolled == alb.filter[0]:
                         pass
                     else:
-                        self.actor_scrolled -= 1
+                        self.actor_scrolled = alb.filter[alb.filter.index(self.actor_scrolled) - 1]
+                        #self.actor_scrolled -= 1
                     print("Actor Scrolled -->", self.actor_scrolled)
                     alb.Select(self.actor_scrolled)
                     alb.Focus(self.actor_scrolled)
                     #1*
-                    for i in range(0, len(self.mayavi_view.actors)):
-                        # If it's selected, unselect it.
+                    #HERE
+
+                    for i in alb.filter:
+                        # If it's already selected, unselect it.
                         if alb.IsSelected(i) and i != self.actor_scrolled:
                             alb.Select(i, on=0)
                         # If not, pass.
@@ -461,17 +466,22 @@ class MainWindow(wx.Frame):
                         else:
                             alb.Select(self.actor_scrolled, on=1)
                     # self.pianorollpanel.actorsctrlpanel.actorsListBox.Select
+                #Scrolling down, increasing in value
                 elif event.GetWheelRotation() <= -120:
-                    if self.actor_scrolled == alb.GetItemCount() - 1:
+                    #if self.actor_scrolled == alb.GetItemCount() - 1:
+                    if self.actor_scrolled == alb.filter[-1]:
                         pass
                     else:
-                        self.actor_scrolled += 1
-                    #print("Actor Scrolled -->", self.actor_scrolled)
+                        self.actor_scrolled = alb.filter[alb.filter.index(self.actor_scrolled) + 1]
+                        #self.actor_scrolled += 1
+                    print("Actor Scrolled -->", self.actor_scrolled)
                     alb.Select(self.actor_scrolled)
                     alb.Focus(self.actor_scrolled)
                     #1*
-                    for i in range(0, len(self.mayavi_view.actors)):
-                        # If it's selected, unselect it.
+                    #HERE
+
+                    for i in alb.filter:
+                        # If it's already selected, unselect it.
                         if alb.IsSelected(i) and i != self.actor_scrolled:
                             alb.Select(i, on=0)
                         # If not, pass.
@@ -482,17 +492,23 @@ class MainWindow(wx.Frame):
                             alb.Select(self.actor_scrolled, on=1)
             elif mousestate.AltDown():  # HOLD ALT AND SCROLL TO DESIRED Z-PLANE LIST ITEM   # and event.ShiftDown():
                 #self.IsZPlaneScrolling = True
+                #Scrolling up, decreasing in value.
                 if event.GetWheelRotation() >= 120:
-                    if self.zplane_scrolled == 0:
+                    #if self.zplane_scrolled == 0:
+                    if self.zplane_scrolled == zlb.filter[0]:
                         pass
                     else:
-                        self.zplane_scrolled -= 1
+                        #say, from 90 to 95
+                        self.zplane_scrolled = zlb.filter[zlb.filter.index(self.zplane_scrolled) - 1]
+                        #self.zplane_scrolled -= 1
                     print("Zplane Scrolled -->", self.zplane_scrolled)
                     zlb.Select(self.zplane_scrolled)
                     zlb.Focus(self.zplane_scrolled)
                     #1*
-                    for i in range(0, 128):
-                        # If it's selected, unselect it.
+                    #HERE
+
+                    for i in zlb.filter:
+                        # If it's already selected, unselect it.
                         if zlb.IsSelected(i) and i != self.zplane_scrolled:
                             zlb.Select(i, on=0)
                         # If not, pass.
@@ -502,17 +518,23 @@ class MainWindow(wx.Frame):
                         else:
                             zlb.Select(self.zplane_scrolled, on=1)
                     # self.pianorollpanel.actorsctrlpanel.actorsListBox.Select
+                #Scrolling down, increasing in value.
                 elif event.GetWheelRotation() <= -120:
-                    if self.zplane_scrolled == 127:
+                    #if self.zplane_scrolled == 127:
+                    if self.zplane_scrolled == zlb.filter[-1]:
                         pass
                     else:
-                        self.zplane_scrolled += 1
+                    #From, say, 90 to 95
+                        self.zplane_scrolled = zlb.filter[zlb.filter.index(self.zplane_scrolled) + 1]
+                        #self.zplane_scrolled += 1
                     #print("Zplane Scrolled -->", self.zplane_scrolled)
                     zlb.Select(self.zplane_scrolled)
                     zlb.Focus(self.zplane_scrolled)
                     #1*
-                    for i in range(0, 128):
-                        # If it's selected, unselect it.
+                    #HERE
+
+                    for i in zlb.filter:
+                        # If it's already selected, unselect it.
                         if zlb.IsSelected(i) and i != self.zplane_scrolled:
                             zlb.Select(i, on=0)
                         # If not, pass.
@@ -585,7 +607,7 @@ class MainWindow(wx.Frame):
 
             ####Method
             #Get Transforming value
-            cell = self.pianorollpanel.pianoroll.GetCellFromMouseState()
+            target_cell = self.pianorollpanel.pianoroll.GetCellFromMouseState()
 
             #print("SELECTED_NOTES before loss", self.pianorollpanel.selected_notes)
             assert not not self.pianorollpanel.selected_notes, "You do not have selected_notes yet."
@@ -599,10 +621,8 @@ class MainWindow(wx.Frame):
             bottom_right = self.pianorollpanel.pianoroll.GetSelectionBlockBottomRight()
 
             #The difference between our selection top_left and our target new location is our 'transform_value'.
-            transform_value = (int(top_left[0][0]) - int(cell[0]), int(top_left[0][1]) - int(cell[1]))  #THIS WAY, we only have to ADD target times -1
-            #without boolean condition gates.
-            #(2, 2) - (4, 4) = (-2, -2) Moving down and right we multiple by negative 1.
-            #(2, 2) - (0, 0) = (2, 2)   Moving up and left, we still multiply by negative 1.
+            transform_value = (int(top_left[0][0]) - int(target_cell[0]), int(top_left[0][1]) - int(target_cell[1]))  #THIS WAY, we only have to ADD target times -1
+                                                                                                        #without boolean condition gates.
 
             if not self.pianorollpanel.last_highlight:
                 last_highlight = self.pianorollpanel.previously_selected_cells
@@ -616,6 +636,15 @@ class MainWindow(wx.Frame):
                 notes_being_transformed.append(new_tuple)
 
             #Core
+            # Note: in the context of this example, (0,0) is topleft origin. (wx.grid stuff)
+            ###
+            # (2, 2) - (4, 4) = (-2, -2,) --> transformation difference.  Moving down and right we multiple target by negative 1.
+            # (-2, -2) * -1 = (2, 2) --> transformation difference multiplied by negative 1.
+            # (2, 2) + (2, 2) = (4,4) --> Result
+            ###
+            # (2, 2) - (0, 0) = (2, 2) --> transformation difference.  Moving up and left, we still multiply target by negative 1.
+            # (2, 2) * -1 = (-2, -2,)
+            # (2, 2) + (-2,-2) = (0,0)
             selected_notes = notes_being_transformed
             new_top_left = (top_left[0][0] + (-1 * transform_value[0]), top_left[0][1] + (-1 * transform_value[1]))
             new_bottom_right = (bottom_right[0][0] + (-1 * transform_value[0]), bottom_right[0][1] + (-1 * transform_value[1]))
@@ -660,34 +689,127 @@ class MainWindow(wx.Frame):
             print("Currently Selected Notes -->", self.pianorollpanel.selected_notes)
         except AttributeError as i:
             #print(i)
-            print("Currently Selected Notes -->", "   ___no selected notes___")
+            print("Currently Selected Notes    -->", "   ___no selected notes___")
         try:
             print("Last push -->", self.pianorollpanel.last_push)
         except AttributeError as i:
-            print("Last push -->", "   ---no last push yet---")
+            print("Last push                   -->", "   ---no last push yet---")
         try:
             print("Last actor -->", self.pianorollpanel.last_actor)
         except AttributeError as i:
-            print("Last actor -->", "   ---no last actor yet---")
+            print("Last actor                  -->", "   ---no last actor yet---")
         print("\n")
         print("###For all else:")
         if self.mayavi_view.previous_ActorIndex == None:
-            print("Previous_ActorIndex -->", "   ---no previous actor_index yet---")
+            print("Previous_ActorIndex         -->", "   ---no previous actor_index yet---")
         else:
             print("Previous_ActorIndex -->", self.mayavi_view.previous_ActorIndex)
 
         if self.mayavi_view.CurrentActor().previous_z == None:
-            print("Previous_ZPlane -->", "   ---no previous_z yet")
+            print("Previous_ZPlane             -->", "   ---no previous_z yet")
         else:
             print("Previous_ZPlane -->", self.mayavi_view.CurrentActor().previous_z)
         print("\n")
         print("Current M_V Actor           -->", self.mayavi_view.cur_ActorIndex)
-        print("Current M_V zplane      -->", self.mayavi_view.cur_z)
-        print("Current Actors zplane    -->", self.mayavi_view.CurrentActor().cur_z, "Note: Synced one way to ---> M_V zplane")
+        print("Current M_V zplane          -->", self.mayavi_view.cur_z)
+        print("Current Actors zplane       -->", self.mayavi_view.CurrentActor().cur_z, "Note: Synced one way to ---> M_V zplane")
         print("\n")
-        print("Current actor_scrolled  -->", self.actor_scrolled)  #TODO Should self.actor_scrolled anad zplane_scrolled go inside the actor class?
-        print("Current zplane_scrolled -->", self.zplane_scrolled)
+        print("Current actor_scrolled      -->", self.actor_scrolled)  #TODO Should self.actor_scrolled anad zplane_scrolled go inside the actor class?
+        print("Current zplane_scrolled     -->", self.zplane_scrolled)
+        print("\n")
+        print("Current palette name        -->", self.mayavi_view.current_palette_name)
+        print("Current color palette       -->")
+        print(self.mayavi_view.default_color_palette)
+        print("Current mayavi palette      -->  #Note: R and B will appear swapped here, but this is handled in the workflows.") #12/03/2021
+        print(self.mayavi_view.default_mayavi_palette)
+        #TODO Change default to "current" with these last two names. 12/03/2021
 
+
+
+    def clear_all_and_redraw(self):
+        # TODO CLEAR ALL ACTOR"S AND ZPLANES AS WELL ---> 04/17/2021
+        self.mayavi_view.scene3d.disable_render = True
+        self.mayavi_view.scene3d.close()
+        # mlab.clf()
+        self.mayavi_view.mlab_calls.clear()
+        self.mayavi_view.mlab_calls = []
+        self.mayavi_view.sources.clear()            #Shut
+        self.mayavi_view.sources.clear = []
+        self.mayavi_view.highlighter_calls.clear()  #dahfuq
+        self.mayavi_view.highlighter_calls.clear = []
+        self.mayavi_view.text3d_calls.clear()       #up.
+        self.mayavi_view.text3d_calls.clear = []
+        self.mayavi_view.text3d_default_positions.clear()
+        self.mayavi_view.text3d_default_positions = []
+        self.mayavi_view.create_3dmidiart_display()
+        self.mayavi_view.scene3d.disable_render = False
+        # TODO Add delete_actors stuff here too. New Session function?! :)
+
+    # TODO Redundant now?
+    def redraw_mayaviview(self, event):
+        self.mayavi_view.scene3d.disable_render = True
+        self.mayavi_view.scene3d.mlab.clf()
+        # self.scene3d.close()  #Be Careful with mlab.clf() 04/17/2021
+        # self.scene3d = Instance(MlabSceneModel, ())
+        # self.reset_traits(traits=["scene3d"])
+        # self.engine.start()  # TODO What does this do?
+        # self.scene = self.engine.scenes[0]
+        # self.figure = self.scene3d.mayavi_scene
+        self.mayavi_view.create_3dmidiart_display()
+        self.mayavi_view.scene3d.disable_render = False
+        # Set focus on mbp for fast use of "F" hotkeys.
+        self.mainbuttonspanel.SetFocus()
+        self.pianorollpanel.actorsctrlpanel.actorsListBox.Activate_Actor(
+            self.cur_ActorIndex)  # TODO Watch for cpqn bugs here. 04/17/2021
+
+
+    def zoom_to_coordinates(self, picker):
+        print("PICKER", picker)
+        print("PICKER_TYPE", type(picker))
+        print("Point", picker.point_id)
+        picker.tolerance = 0.01
+        picked = picker.actors
+        print("Picked", picked)
+        #print(picker.trait_names())
+        print("Selection Point:", picker.pick_position)
+
+        mproll = self.pianorollpanel.pianoroll
+
+        self.ret_x = picker.pick_position[0] * self.mayavi_view.cpqn  ######Account for cpqn here.
+        self.ret_y = picker.pick_position[1]
+        self.ret_z = picker.pick_position[2]
+
+        #In scrollunits, which should == to pixels.
+
+        #TODO..Conversions for cells, coords, and scrollunits?
+        #10 pixels per cell
+        #ScrollRate = Pixels/Scrollunit
+
+        #Pixels to Cell --- User Grid.XYToCell()
+        #Cell to Pixels -- Cell Row\Col * 10
+
+        #Cell to ScrollUnits -- Cell * 10 / ScrollRate
+        #Measure to ScrollUnits -- Measure * (Cell * PixelsperCell-->10 * CellsperMeasure-->(timesig_numerator*cellsperqrtrnote))
+
+        #Cell to Mayavi_Coords --  Synced as ints.
+        #MayaviCoords to Cell -- Synced as ints.
+
+        #( 160 * 10) / (160 / 4 * (4 * 10)
+        self.cur_scroll_x = (int(self.ret_x) *10) / mproll.GetScrollPixelsPerUnit()[0]  #Scrollrate / cells per measure #TODO CPQN FACTORED IN HERE -- Acounted for above.
+        self.cur_scroll_y = ((127-int(self.ret_y)) * 10) / mproll.GetScrollPixelsPerUnit()[1]   #Scrollrate Y / cells per two octaves == 24
+
+        #TODO Fix this limit cap.
+        if self.cur_scroll_y > 1040:   #Caps off scrolling at the bottom, so the rectangle doesn't go funky.
+            self.cur_scroll_y = 1040    #Sash position affects this because num of pixels in client view relates to ViewStart().
+
+        print("Coord", self.ret_x, self.ret_y, self.ret_z)
+        if mproll is not None:
+
+            #Zooms on middle click.  #TODO Math is not exact yet...
+            mproll.Scroll(self.cur_scroll_x, self.cur_scroll_y)
+            self.mayavi_view.new_reticle_box()
+        else:
+            pass
 
 
     def _set_properties(self):
@@ -711,10 +833,14 @@ class MainWindow(wx.Frame):
         #TODO Put somewhere else?
         #Necessary Startup stuff.
         self.mayavi_view.cur_z = 90
+
         #This call "catches up" the updating of reticle points (it's complicated, a stupid bug).
         #self.mayavi_view.grid_reticle.mlab_source.points = self.mayavi_view.initial_reticle
 
-        #Actor and Zplane scrolling attributes.
+        #Startup position for red reticle.
+        self.mayavi_view.set_grid_reticle_position(z=[0., 0., 90.])
+
+        # Actor and Zplane scrolling attributes.
         self.zplane_scrolled = 90
         self.actor_scrolled = 0
         # self.IsActorScrolling = False
@@ -744,20 +870,25 @@ class MainWindow(wx.Frame):
         # Titles.
         self.mayavi_view.insert_titles()
 
-        # Actor on startup.
+        self.pianorollpanel.actorsctrlpanel.actorsListBox.filter = [0]
+
+        # Actors on startup.
         self.pianorollpanel.actorsctrlpanel.actorsListBox.new_actor(0)
-        self.pianorollpanel.actorsctrlpanel.actorsListBox.new_actor(1)
+        #self.pianorollpanel.actorsctrlpanel.actorsListBox.new_actor(1)
         self.mayavi_view.actors[0].change_points(MusicObjects.earth())
-        self.mayavi_view.actors[0].color = (1, 0, 0)        #For easy testing.
+        #self.mayavi_view.actors[0].color = (1, 0, 0)        #For easy testing.
+        self.mayavi_view.sources[0].actor.property.color = (0, 1., .75)
 
-        #self.mayavi_view.sources[0].actor.property.color = (0, 1., .75)
 
-
-        #Shows the zplanes on startup.
+        #Unless written differently, this call needs to happen after we have actors instantiated; would other wise be
+        #in _set_properties.
+        #Show the actors on startup, and update actorsListBox.filter.
+        self.pianorollpanel.actorsctrlpanel.OnBtnToggleAll(event=None)
+        #Shows the zplanes on startup and update ZPlanesListBox.filter
         self.pianorollpanel.zplanesctrlpanel.OnBtnShowAll(event=None)
 
 
-        #These give the user 'F" hotkey control from any panel.
+        #These give the user 'F" hotkey control from any 'panel'.
         #self.menuBar.AccelerateHotkeys()
         self.mainbuttonspanel.AccelerateHotkeys()
         self.pianorollpanel.actorsctrlpanel.actorsListBox.AccelerateHotkeys()
@@ -782,15 +913,15 @@ if __name__ == '__main__':
 
     splash = MySplashScreen()
     splash.Show()
-    time.sleep(5)
-    splash.Destroy()
-    #time.sleep(.2)
+    time.sleep(4) #3, #5
+    splash.DestroyLater()
+    time.sleep(.2)
 
     #threading.Thread(target=Musical_Matrix_Rain.rain_execute).start()
     #Musical_Matrix_Rain.rain_execute()
     rain = multiprocessing.Process(target=Musical_Matrix_Rain.rain_execute)
-    #time.sleep(.3)
     rain.start()
+    time.sleep(4) #.3
 
     Midas = MainWindow(None, -1, "MIDAS")
     #Midas.mainbuttonspanel.SetFocus()

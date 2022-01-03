@@ -33,7 +33,9 @@
 #3D-11. def GET_PLANES_ON_AXIS( coords_array, axis="z")
 #3D-12. def RESTORE_COORDS_ARRAY_FROM_ORDERED_DICT(planes_odict)
 #3D-13. def TRANSFORM_POINTS_BY_AXIS(coords_array, offset=0, axis='y', center_axis=False, positive_octant=False)
-#3D-. def SET_Z_TO_SINGLE_VALUE(
+#3D-14. def SET_Z_TO_SINGLE_VALUE(  #In Mayavi3DWindow now?
+#3D-15. def GET_POINT_INDEX(coords_array, point_selection)
+
 
 
 ###############################################################################
@@ -44,6 +46,7 @@ from midas_scripts import music21funcs, midiart
 #from midas_scripts import midiart
 import numpy
 import numpy as np
+import numpy_indexed as npi
 import os
 import errno
 import copy
@@ -67,19 +70,21 @@ def extract_xyz_coordinates_to_array( in_stream, velocities=90.0):
          This functions extracts the int values of the offsets, pitches, and velocities of a music21 stream's notes and
     puts them into a common 2d numpy coords_array as floats.
     :param in_stream:               Music21 input stream. (for 3d purposes the stream must contain stream.Parts)
-    :return: note_coordinates:      A numpy array comprised of x=note.offset, y=pitch.midi, and z=volume.velocity.
+    :return: note_coordinates:      A numpy array comprising x=note.offset, y=note.pitch.ps, and z=note.volume.velocity
+                                    data, as well as a=note.duration data.
     """
 
     # import vtk
     # Create lists and arrays for coordinate integer values.
     temp_stream = music21funcs.notafy(in_stream)
-    substitute_volumes = list((np.full((1, len(in_stream.flat.notes)), velocities, dtype=np.float16))[0])
+    substitute_volumes = list((np.full((1, len(in_stream.flat.notes)), velocities, dtype=np.float32))[0])
     #print("Substitute Velocities", substitute_volumes)
     volume_list = []
     pitch_list = []
     offset_list = []
     #TODO Duration list?
-    duration_list = []
+    duration_list_1 = []
+    duration_list_2 = []
     #Gather data all at once, turn them into floats, and put them into lists.-- (.offets are floats by default)
     for XYZ in temp_stream.flat.notes:
         #if XYZ.volume.velocity is None:
@@ -91,7 +96,8 @@ def extract_xyz_coordinates_to_array( in_stream, velocities=90.0):
         offset_list.append(float(XYZ.offset))
         pitch_list.append(float(XYZ.pitch.midi))
         #TODO Condition check here?
-        duration_list.append(float(XYZ.duration.quarterLength))
+        duration_list_1.append(XYZ.duration.quarterLength.as_integer_ratio()[0])
+        duration_list_2.append(XYZ.duration.quarterLength.as_integer_ratio()[1])
         if XYZ.volume.velocity is not None:
             volume_list.append(float(XYZ.volume.velocity))
         else:
@@ -100,8 +106,8 @@ def extract_xyz_coordinates_to_array( in_stream, velocities=90.0):
         print("There were no velocity values for these notes. Velocities set to volume.realized * 127.")
         volume_list = substitute_volumes
     #Create a numpy array with the the concatenated x,y,z data as its elements.
-    note_coordinates = np.r_['1, 2, 0', offset_list, pitch_list, volume_list, duration_list]
-    new_coordinates = np.array(note_coordinates, dtype=np.float16)
+    note_coordinates = np.r_['1, 2, 0', offset_list, pitch_list, volume_list, duration_list_1, duration_list_2]
+    new_coordinates = np.array(note_coordinates, dtype=np.float32)
     del(note_coordinates)
     print("New coords", new_coordinates)
     #Save memory.
@@ -116,13 +122,23 @@ def extract_xyz_coordinates_to_array( in_stream, velocities=90.0):
 #3D-2.
 def extract_xyz_coordinates_to_stream( coords_array, part=False, durations=False):
     """
-        This function takes a numpy array of coordinates, 3 x, y, z values per coordinates, and turns it into a music21
-    stream with those coordinates as .offset, .pitch, and .volume.velocity values for x, y, and z. ---Note for user.
-    If note.quarterLength and note.volume.velocity are unassigned, they default to 1.0 and None respectively.
-    In addition, extra values may be extracted from the coords_array in the form of duration, smallestallowednote, and
+        This function takes a numpy array of coordinates, x, y, z , and turns those it into a music21
+    stream with those coordinates as .offset, .pitch.ps, and .volume.velocity values for x, y, and z.
+    ---Note for user: If note.quarterLength and note.volume.velocity are unassigned, they default to 1.0 and None
+    respectively.---
+    In addition, extra values may be extracted from\added to the coords_array in the form of duration,
+    smallestallowednote, and possibly color data.
 
-    :param coords_array:        A 2D Numpy array of coordinate data.
-    :param part:                A bool kwarg of separate_notes_to_parts_by_velocity().
+    :param coords_array:        A 2D Numpy array of coordinate data. --->np.array([x, y, z, a, b, c, d])
+                                Objects involved: music21.note.Note(), music21.pitch.Pitch(), music21.volume.Volume(),
+                                music21.duration.Duration()
+                                n1 = music21.note.Note()
+                                x == n1.offset
+                                y == n1.pitch.ps
+                                z == n1.volume.velocity
+                                a == n1.duration
+                                b == unused.....
+    :param part:                A bool kwarg of separate_notes_to_parts_by_velocity() being used or not.
     :param durations:           Bool determing whether to extract durations from the coords_array. Off by default
                                 as point clouds\pictures do not inherently position duration values.
     :return: parts_stream:      A music21 stream.
@@ -143,7 +159,7 @@ def extract_xyz_coordinates_to_stream( coords_array, part=False, durations=False
         newpitch.ps = (float(coords_array[i][1]))
         newdur = music21.duration.Duration()            #Duration
         if durations:
-            newdur.quarterLength = (float(coords_array[i][3]))
+            newdur.quarterLength = (float(coords_array[i][3]) / coords_array[i][4])
         else:
             pass
         newnote = music21.note.Note(newpitch)           #Note
@@ -345,7 +361,7 @@ def delete_redundant_points( coords_array, stray=True):
     """
 
     set_list = midiart.array_to_lists_of(coords_array, tupl=True)
-    assert set_list is not None, print("Your zplane does not have any notes yet.")
+    assert set_list is not None, print("Your zplane does not have any notes yet.")  #Todo zplane? 01/02/2022
     #big_set = set(set_list)
     #print("Set_List", set_list)
     big_dict = OrderedDict.fromkeys(set_list)
@@ -384,7 +400,7 @@ def delete_select_points(coords_array, choice_list, tupl=False):
 
 
 #3D-11.
-def get_planes_on_axis( coords_array, axis="z", ordered=False, clean=True, array=False):
+def get_planes_on_axis(coords_array, axis="z", ordered=False, clean=True, array=False):
     """
         This function acquires all the "planes" (2d instances of data) along a specified axis and puts them into an
     Ordered Dict. The order of the dict can be set.
@@ -399,7 +415,9 @@ def get_planes_on_axis( coords_array, axis="z", ordered=False, clean=True, array
     """
 
     if clean == True:
-        coords_array = delete_redundant_points(coords_array, stray=False) #TODO See if stray will still need to be true for scans.
+        coords_array = delete_redundant_points(coords_array, stray=False)
+        print("Redundant points removed.")
+        #TODO See if stray will still need to be true for scans.
     else:
         pass
 
@@ -527,7 +545,7 @@ def transform_points_by_axis(coords_array, offset=0, axis='y', center_axis=False
 
 #Position, orientation, and #TODO origin functions.
 #TODO This is a numpy function. Allocate accordingly?
-
+#3D-14.
 def set_z_to_single_value(value, self=None, coords=None,  actor=None):
     """
         This function takes in a coords_array and changes all the (*, *, z, *, *, *) z values to the designated 'value'
@@ -558,6 +576,88 @@ def set_z_to_single_value(value, self=None, coords=None,  actor=None):
         coords_array[:, 2] = np.full((len(coords_array_z), 1), value)[:, 0]
         Midas.mlab_calls[actor].mlab_source.points = coords_array
     return coords_array
+
+#3D-15.
+def get_point_indices(coords_array, point_selection=None, _array4D=None, z=None, selected_zplane_only=False, on_points=False):
+    """
+        This function acquires the value(s) of the indices of a point or selection of points in a provided coords_array
+    along the 1rst axis. Advanced use in Midas allowed involving the input of a Midas.m_v.CurrentActor()._array4D
+    in order to acquire on_points automatically. Clever use might involve zipping or enumerating the acquired result
+    indices with coords_array for a variety of uses.
+
+    #Standard use case:
+    >>>coords_array = np.array([[1,2,3], [4,5,6], [7,8,9], [10,11,12]], dtype=np.float32)
+    >>>point_selection = np.array([[ 4.,  5.,  6.], [ 7.,  8.,  9.]], dtype=np.float64)  #6
+    >>>#Expected Result: Indices === np.array([1])
+    >>>midiart3D.get_point_indices(coords_array, point_selection, z=6, selected_zplane_only=True, on_points=False)
+    >>>#Expected Result: Indices === np.array([1, 2])
+    >>>midiart3D.get_point_indices(coords_array, point_selection, selected_zplane_only=False, on_points=False)
+
+
+    #Advanced use 1 in the pycrust of Midas:
+    >>>midiart3D.get_point_indices(Midas.mayavi_view.CurrentActor()._points, point_selection=None, _array4D=Midas.mayavi_view.CurrentActor()._array4D, z=None, selected_zplane_only=False, on_points=True)
+
+    #Proof 1
+    >>>indices = _
+    >>>len(indices)
+    >>>len(Midas.mayavi_view.CurrentActor()._points)
+    >>>len(midiart3D.delete_redundant_points(Midas.mayavi_view.CurrentActor()._points))
+    >>>len(midiart3D.delete_redundant_points(Midas.mayavi_view.CurrentActor()._points, stray=False))
+
+    #Advanced use 2 in the pycrust of Midas:
+    >>>midiart3D.get_point_indices(Midas.mayavi_view.CurrentActor()._points, point_selection=None, _array4D=Midas.mayavi_view.CurrentActor()._array4D, z=Midas.mayavi_view.cur_z, selected_zplane_only=True, on_points=True)
+
+
+    :param coords_array:        Our host coords_array in which we search.
+    :param point_selection:     A list of lists\\tuples, a tuple of lists\\tuples, a 2D
+                                np.array([[x,y,z], ....[x,y,z]]) point or 2D coords_array
+                                of points with equivalent np.dtype to coords_array. (i.e np.float32, since our points
+                                are usually float32 in Midas.)
+    :param z:                   If on_points is True and selected_zplane_only is True,
+                                z is the zplane valued required for concatenating a
+    :param on_points:           Bool determining if to get on_points from np.argwhere using _array4D.
+    :return:                    An array of indices.
+    """
+    #Split this up.
+
+    if on_points is True:
+        #Redundant use case. Point_selection not applied in this if block.
+        assert _array4D is not None, "If on_points is true, you must supply an _array4D as an argument."
+        if selected_zplane_only is False:
+            point_selection = np.argwhere(_array4D[:,:,:,0]==1.0) #3 element arrays.
+            point_selection = np.array(point_selection, dtype=coords_array.dtype) #Forces the correct dtype.
+            print("point_selection_dtype", point_selection.dtype)
+        if selected_zplane_only is True:
+            assert z is not None, "If selected_zplane_only is True, 'z' must be supplied as an argument." \
+                                  "(i.e. Midas.mayavi_view.cur_z)"
+            z = z
+            point_selection = np.argwhere(_array4D[:,:,z,0]==1.0) #2 element arrays
+            print("Point_Selection1", point_selection)
+            _z = np.full((len(point_selection), 1), z, dtype=coords_array.dtype) #Should ideally be float32
+            #hstacked to 3 element arrays, search ready
+            point_selection = np.array(np.hstack([point_selection, _z]), dtype=coords_array.dtype) #float 32 forced.
+            print("point_selection_dtype", point_selection.dtype)
+
+    else:
+        # Manually defined, handles single or even multiple points for which we desire indices.
+        point_selection = np.array([np.array(i, dtype=coords_array.dtype) for i in point_selection],
+                                   dtype=coords_array.dtype)
+        print("Point_Selection2", point_selection)
+        if selected_zplane_only:
+            assert z is not None, "If selected_zplane_only is True, 'z' must be supplied as an argument." \
+                                  "(i.e. Midas.mayavi_view.cur_z)"
+            dict_selection = get_planes_on_axis(point_selection, axis="z", array=True)
+            #all_points = restore_coords_array_from_ordered_dict(dict_selection)
+            point_selection = np.array(dict_selection[z], dtype=coords_array.dtype)
+            print("Point_selection", point_selection)
+        else:
+            pass
+
+    # Making sure it's our (x,y,z) point, and not (x,y,z, a, b) in which we can't search for x,y,z...
+    search_points = np.column_stack([coords_array[:, 0], coords_array[:, 1], coords_array[:, 2]])
+    #Search for indices.
+    selection_index = npi.indices(search_points, [i for i in point_selection], axis=0, missing='mask')
+    return selection_index
 
 
 #Todo

@@ -3,8 +3,8 @@
 ###NOTE: IMPORTANT STUFF
 #quarterLengthDivisor---DETERMINES QUANTIZATION and THUS the PRESERVATION OF NOTES THAT ARE PARSED FROM A MIDI FILE.
 import music21
-##sparklead1 = r"resources\OneSpark.mid"
-##spark21 = music21.converter.parse(sparklead1, quantizePost=True, quarterLengthDivisors=(8,6), makeNotation=True)
+# sparklead1 = r"resources\OneSpark.mid"
+# spark21 = music21.converter.parse(sparklead1, quantizePost=True, quarterLengthDivisors=(8,6), makeNotation=True)
 
 #import pygame
 #import mido

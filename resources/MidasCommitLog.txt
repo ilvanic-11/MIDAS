@@ -509,7 +509,7 @@ In midiart
 --> Added import mido to list of imports within module
 --> New function: create_midi_header()
 In music21funcs
---> New function add__timesig_and_metronome()
+--> New function: add__timesig_and_metronome()
 In Gdrive
 --> Updated Our MCV data model visual aid. https://docs.google.com/presentation/d/1MLFkx_NM9iuqqOkiotOjKu_NlJvfuvHfmvdkFjdLK6g/edit#slide=id.g812d8adfec_0_7
 In color_palettes
@@ -547,7 +547,7 @@ In MIDAS_wx.py
 --> Added multiprocessing to the list of imports
 --> Used multiprocessing to allow the program to load WHILE the Musical_Matrix_Rain.py is running.
 In Musical_Matrix_Rain
---> Changed delay value at end from 5000 to 19500
+--> Changed delay value at end from 5000 to 19500 (miliseconds)
 --> Reinstantiated in MIDAS_wx.py. (Turn off for testing.)
 --> Added "♫VISUAL || MUSIC♫" to the possible strings that are rained.
 --> Eliminated the FULLSCREEN and replaced with Sreen mode sized a number of pixels above screen-max so as to create the "maximized" fullscreen look whilst ensuring that it runs everytime.
@@ -556,17 +556,67 @@ In Preferences
 --> Cleaned up imports at top of module.
 --> Added a now multiprocessing based _Timer() class for use in the InfiniteTimer() class. Didn't work as expected.
 
---IP--Commit  May ???, 2021--
+
+--IP--Commit  January 2, 2022--
+--IP--VACATION AND NEW YEAR COMMIT
+In General, overall
+--> Incorporated Core Data Update focus on durations, our _array4D and _points found in our Actor() class.
+--> Fixed alb and zlb listbox scroll bugs.
+--> Fixed miscellaneous bugs as per development; testing ongoing.
+--> Cleaned up some docstrings, wrote some new functions
 In Mayavi3DView, Mayavi3DWindow
 --> In generate_plane_scroll() function, changed .position = i to .trait_set(position = i)
+--> Renamed mlab_calls list to "sources". Deleted mlab_calls as "mlab_calls" and "sources" were identical lists. Came from scenario of two programmers doing the same work and arriving at the same conclusion for list usage, naming them differently.
+--> Immediately reversed this, restoring mlab_calls as a list.
+--> HUGE: Shortenend the length of the self.grid_cells_length from 2500 to 256. Makes colors imports super speedy fast.
+--> In establish_highlighterplane(), fixed the red_reticle box to load position correctly on startup when there are no actors loaded.
+--> Fixed startup configurations where The Midas Display is as accurate without as with an actor loaded.
+--> Moved class functions zoom_to_coordinates(), redraw_mayaviview(), and clear_all_and_redraw()to MIDAS_wx MainWindow() class functions.
+--> In traits function reset_index_attributes(), fixed a variable name bug preventing the 2nd half of the function from running (self.filter changed to alb.filter). Also added prints to the function to for testing. Currently, all delete actor functions are working. 
+--> In Actor() class, and project throughout, changed all instances of old array3D to array4D as well as in hash and array3Dchangedflag to array4Dchangedflag
+--> In Actor() class, wrote in some comments about color changing.
+--> In Actor() class, wrote function get_points_with_all_data(z=None, _array4D=None). np.argwhere does not get our new duration data, so this function was created to replace and add to our use of np.argwhere.
+In midiart
+--> In function array_to_lists_of(), added an assert statement at the top to assert for type numpy.ndarray
 In midiart3D
 --> Eliminated the round() calls from the rotate_point_about_axis() function.
+--> Edited the docstring of extract_xyz_coordinates_to_stream()
+--> New function: get_point_indices() making use of imported module numpy_indexed as npi. Installed options for on_points from np.argwhere and current_zplane_only. Tested. Works. Pycrust examples included in the docstring. The type checking was probably why I failed before.
+--> In function 
 In PianoRoll
--->Changed  ...array4D[:, :, self.m_v.cur_z][0]  TO-->  ..array4D[:, :, self.m_v.cur_z, 0] in function GridToStream(). This fixed a bug with the Main Button, "Update Stream."
+--> Changed  ...array4D[:, :, self.m_v.cur_z][0]  TO-->  ..array4D[:, :, self.m_v.cur_z, 0] in function GridToStream(). This fixed a bug with the Main Button, "Update Stream."
+--> In self.PCR, in Draw() function, synced wx.grid Draw() color with the mayavi_view.CurrentActor() color.
+--> Created function AdjustGridLengthBasedOnCPQN(self, newcpqn, oldcpqn, oldNumCols). This function was required to make self.grid_cells_length = 256 work properly and efficiently.
+--> In _table, modified DeleteCols() and AppendCols() appropriately for new grid adjustment functionality.
+--> Added new class variables self.draw_velocity AND self.draw_duration.  These work together with our Core Data Update, self.draw_cell_size, and self._cells_per_qrtrnote to effectively implement the drawing of durations in our _array4D, _points, and _stream actor attributes.
+--> Added function SetDrawingDurationValue()
+--> Added function SetDrawCellSizeValue()
+--> Added function GetMusic21DurationRatio()
+--> Changed drop down button "Cell Draw Size" to "Drawing Duration"
+--> In ._table (our PianoRollDataTable(), adjusted function SetValue() accordingly for our new data setting (ON, VElOCITY, DUR1, DUR2).
+In actorsListBox
+--> Added ClearZPlane() to alb.DeleteCurrentActor()
+--> Updated alb.filter logic in UpdateFilter() function.
 In ZplanesListBox
--->
-
-
+--> Updated alb.filter logic.
+--> ADDED UpdateFilter() function and applied same logic for zlb.filter.
+In mainbuttons
+--> Adjusted layout of MIDIartdialog() by adding AddSpacer() to the layout calls of one of the box sizers.
+In Midas_wx
+--> In function ShowCurrents(), added self.m_v.current_pallete_name, self.m_v.default_color_palette, and self.m_v.default_mayavi_palette to list of "currents" shown with this function.
+--> Moved mayavi_view functions zoom_to_coordinates(), redraw_mayaviview(), and clear_all_and_redraw() here to MIDAS_wx MainWindow() class functions.
+--> Updated function ShowCurrents() per work on colors stuff.
+--> In function OnScrollActors_Zplanes(), fixed scroll bug using alb.filter and zlb.filter methodology.
+In musicode.py
+-->In musicode class, fixed bugs from zplov commit. rdbtnMusicodeChoice list wasn't being updated when a user created a musicode, as a line was deleted. 
+-->In _translate_musicode_letter() made fix with line --> element_wrapper = [i for i in measure.getElementsByClass(["ElementWrapper"])][0] instead of what was a bunch if-elif in a block.
+In MenuButtons.py
+--> In function OnIntermediaryPath(), moved dropdown menulist string "Midi files (*.mid)|*.mid|" to the top. Changed order to .mid, .txt, .png, .jpg, .ply, allfiles.
+In Project
+--> Eliminated 'f*ck' prints vulgarities from everwhere.
+--> Changed ALL non-MIDAS_wx "self.mayavi_view" instances\variables to "self.m_v". DID NOT do a refactor, I found\replaced them manually using Ctrl+Shift+F within pycharm.
+	--(cont.) --> Now, when I search for "mayavi_view" with ctrl F, it finds all the primary instantiations in each class in the form of self.m_v = self.GetTopLevelParent().mayavi_view.
+	
 
 ++++++++++++
 #############################################

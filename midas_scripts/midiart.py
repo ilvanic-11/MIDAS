@@ -86,6 +86,7 @@ import os
 # }
 
 #SAVE THIS, I'm testing something over the long term... #TODO 1\21\2021
+#SWAP HERE ------- See trello card: --> https://trello.com/c/O67MrqpT
 FLStudioColors = {
     1: (158, 209, 165),  # "Green"),
     2: (159, 211, 186),  # "Pale Green"),
@@ -124,6 +125,7 @@ FLStudioColors = {
 #     16: (0.615686274509804,  0.8196078431372549, 0.6627450980392157 )}
 
 #DITTO
+#SWAP HERE ------- See trello card: --> https://trello.com/c/O67MrqpT
 FLStudioMayaviColors = {
     1: (0.6196078431372549, 0.8196078431372549, 0.6470588235294118),
     2: (0.6235294117647059, 0.8274509803921568, 0.7294117647058823),
@@ -151,11 +153,11 @@ FLStudioMayaviColors = {
 
 def filter_notes_by_key(stream, key, in_place=True):
     """
-        Removes notes from a stream, if they are not pitches that are part of the given key.
+        Removes notes from a stream if they are not pitches that are part of the given key.
 
     :param stream:      the input stream to operate on
     :param key:         music21.key.Key object for the chosen key
-    :param in_place:    boolean to either operate directly on the input stream or return a deepcopy
+    :param in_place:    boolean for to either operate directly on the input stream or return a deepcopy
     :return
     """
 
@@ -294,8 +296,8 @@ def make_midi_from_grayscale_pixels(pixels, granularity, connect=False, note_pxl
 ###TODO Figure out threshold ranges. K-D Trees stuff. (by threshold ranges, at the time, I was processing the how-to of this function in a different way then it ended up 09/25/20)
 def set_to_nn_colors(im_array, clrs=None):
     """
-        This function takes a 3D numpy color array(i.e an image), and converts all of the color tuples of that image to
-    16 different colors. This allows for display in FL studio with those 16 colors.
+        This function takes a 3D numpy color array(i.e an image), and reduces\\converts all of the color tuples of that
+    image to 16 different colors. This allows for display in FL studio with those 16 colors.
 
     :param im_array:    A 3D numpy image array.
     :param clrs:        A user defined dictionary of colors, allowing for greater possibility of colors for future
@@ -325,6 +327,7 @@ def set_to_nn_colors(im_array, clrs=None):
         p_lizt.append(clrs[ix])
     p_array = np.array(p_lizt)
     pcloud.points = open3d.utility.Vector3dVector(p_array)
+    #Note -- ".utility" doesn't work on laptop --> It's possible the open3d on laptop hasn't been updated.
     kd_tree = open3d.geometry.KDTreeFlann(pcloud)
 
     # work_cloud = musicode.mc.array_to_lists_of(clean_cloud)
@@ -530,7 +533,7 @@ def stagger_pitch_range(in_stream, stepsize=1, ascending=True, starting_offset=N
     # print("Notelist")
     for n in notelist:
         print(n)
-    # Step Fucking 2: Starting Offset
+    # Step Frickin 2: Starting Offset
     if starting_offset is not None:
         start = starting_offset
     else:
@@ -554,7 +557,7 @@ def stagger_pitch_range(in_stream, stepsize=1, ascending=True, starting_offset=N
             start = current_highest.offset
 
     # print("start=%d" % start)
-    # Step Fucking 3
+    # Step Frickin 3
     temp_stream = music21.stream.Stream()
     # temp_measure = stream.Measure()
     # temp_measure.offset = m.offset
@@ -988,6 +991,7 @@ def array_to_lists_of(coords_array, tupl=True):
     :return:                A List of lists or list of tuples.
     """
 
+    assert type(coords_array) == numpy.ndarray, "Your coords_array is not a numpy array."
     if coords_array.ndim == 2:
         lok = list()
         for i in coords_array:
@@ -1019,7 +1023,8 @@ def array_to_lists_of(coords_array, tupl=True):
 
 
 # MA-17.
-def separate_pixels_to_coords_by_color(image, z_value, nn=False, dimensionalize=None, display=False, clrs=None, num_dict=False): ###, stream=False):
+def separate_pixels_to_coords_by_color(image, z_value, nn=False, dimensionalize=None, display=False, clrs=None,
+                                       num_dict=False): ###, stream=False):
     """
         Created for testing purposes, this function takes an input image and returns an Ordered Dictionary of coordinate
     arrays separated by color value. It has the added options of displaying a mayavi mlab visualization and
@@ -1059,7 +1064,7 @@ def separate_pixels_to_coords_by_color(image, z_value, nn=False, dimensionalize=
     #Get colors from image and place in clrs_list.
     for y in range(0, len(image)):
             for x in range(0, len(image[y])):
-                #Colors tuples converted immediately to mayavi float colors here via dividing by 255
+                #Colors tuples converted immediately to mayavi float colors here via dividing by 255 #TODO Is this necessary?!?!?!?
                 clr = (tuple((image[y][x] / 255).flatten()))
                 clrs_list.append(clr)
     #Create an ordered dict using clrs_list. The colors as keys will be kept in order, and duplicates will be discarded.
@@ -1091,6 +1096,7 @@ def separate_pixels_to_coords_by_color(image, z_value, nn=False, dimensionalize=
         odict1[r] = np.hstack((odict1[r], np.full((len(odict1[r][:, 0]), 1), z_value)))
         #If display is true, use coords for mlab calls and append them to a list.
         if display:
+            ##SWAP HERE ------- See trello card: --> https://trello.com/c/O67MrqpT
             #Color tuple used here is reversed for displaying correct colors.
             actor = mlab.points3d(odict1[r][:, 0], odict1[r][:, 1], odict1[r][:, 2], color=(r[-1], r[-2], r[-3]), mode='cube', scale_factor=1)
             mlab_list.append(actor)
@@ -1100,7 +1106,8 @@ def separate_pixels_to_coords_by_color(image, z_value, nn=False, dimensionalize=
     print("Clrs:", clrs)
 
     if num_dict:
-        # TODO This logic needs to go INSIDE the separte_pixels_to_coords_by_color function.
+        #TODO This logic needs to go INSIDE the separte_pixels_to_coords_by_color function.
+        # DONE
         numdict = OrderedDict().fromkeys([num for num in clrs.keys()])
 
         #Conversion to Mayavi floats.
@@ -1150,8 +1157,14 @@ def get_color_palettes(mypath=None, ncp=False):
         name = os.path.splitext(os.path.basename(j))[0]
         dict = {}
         k = cv2.imread(j)
+        #11/30/2021--
+        #https: // note.nkmk.me / en / python - opencv - bgr - rgb - cvtcolor /
+        #k = cv2.cvtColor(k, cv2.COLOR_BGR2RGB) #This line is special. Does the same thing as swapping 0 and 2 below.
         for i, x in enumerate(k[0]):
-            dict[i+1] = tuple(x)   #COULD IT BE HERE?!?!?! WHERE IT ALL GETS FIIIIXED!?!?!?!?!  #SWAP HERE?  #TODO This was the color inversion bug that was hard to fix.
+            #print("Tuple_X", tuple(x))
+            dict[i+1] = tuple([x[0], x[1], x[2]]) #0 and 2 here. tuple(x)  #COULD IT BE HERE?!?!?! WHERE IT ALL GETS FIIIIXED!?!?!?!?!  #SWAP HERE ------- See trello card: --> https://trello.com/c/O67MrqpT?  #TODO This was the color inversion bug that was hard to fix.
+            #YES. Inverting, here at a root point, fixes the writing of the rest of my colors_dict code.
+            #TODO BEWARE: Write in a case that handles the incidental inverting of your ncps.
         dict_list[name] = dict
     if ncp is True:
         convert_rgb_to_ncp(dict_list)
@@ -1163,7 +1176,8 @@ def get_color_palettes(mypath=None, ncp=False):
 # MA-19.
 def convert_dict_colors(colors_dict, invert=False, both=False):
     """
-        Function to divide dict color tuple values by 255 for use in the mayavi view. Resulting values are floats thus:
+        This function takes a dict of colors as input and divides the dict color tuple values by 255 for use in the
+        mayavi view. Resulting values are floats thus:
         (0.0 <= a floating point number <= 1.0)
     :param colors_dict:     Dict of colors, usually of 16 colors.
     :param invert:          Parameter to switch the "R" value with the "B" value in the tuple, if true.
@@ -1172,17 +1186,20 @@ def convert_dict_colors(colors_dict, invert=False, both=False):
     """
     new_dict = copy.deepcopy(colors_dict)
     if both is True:
+        print("Both is True. Converting to floats AND swapping R with B.")
         for i in new_dict.keys():
             #print(colors_92[i])
             new_color = tuple([new_dict[i][2]/255, new_dict[i][1]/255, new_dict[i][0]/255])  ## Converts the color tuple to mayavi floats.
             new_dict[i] = new_color
     else:
         if invert is False:
+            print("Invert is False. Converting to floats only.")
             for i in new_dict.keys():
                 #print(colors_92[i])
                 new_color = tuple([new_dict[i][0]/255, new_dict[i][1]/255, new_dict[i][2]/255])  ## Converts the color tuple to mayavi floats.
                 new_dict[i] = new_color
         if invert is True:
+            print("Invert is True. Swapping R with B only.")
             for i in new_dict.keys():
                 #print(colors_92[i])
                 new_color = tuple([new_dict[i][2], new_dict[i][1], new_dict[i][0]])
@@ -1245,7 +1262,8 @@ def cv2_tuple_reconversion(image, inPlace=False, conversion ='Edges'):
     format np.array for the 'edges'. (same for monochrome, or whatever prior cv transformation the user performed.)
     ---(i.e. Canny, cvtColor(image, cv2.COLOR_BGR2GRAY))
     The 'original' "image" is a 3D array(technically a 2D of 3-value color tuples), while a Canny array is a 2D array of
-    single values, the result of the edge detection, which is not the same format as the 'original'.
+    single values ---the result of the edge detection--- which is not the same data format as the 'original'. Hence
+    this function.
 
     :param image:       A cv2.imread(r"filepath") image.
     :param inPlace:     Bool determining whether to operate on original image in place and return it, or to return a

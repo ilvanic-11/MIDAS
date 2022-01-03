@@ -6,6 +6,9 @@ import music21
 import copy
 import logging
 import numpy as np
+
+import os
+import signal
 from wx._core import PaintDC
 import math
 #from midas_scripts import musicode, music21funcs
@@ -83,7 +86,7 @@ class PianoRollColLabelRenderer(glr.GridLabelRenderer):
         #self.DrawText(grid, dc, rect, text, hAlign, vAlign)
 
 class PianoRollDataTable(wx.grid.GridTableBase):
-    """ A grid data table that connects to the traited 3D array in the mayavi_view
+    """ A grid data table that connects to the traited 4D array in the mayavi_view
     """
 
     #log = logging.getLogger("PianoRollDataTable")
@@ -100,10 +103,12 @@ class PianoRollDataTable(wx.grid.GridTableBase):
 
     def GetNumberCols(self):
         if self._cur_actor:
+            #print("CUR_SHAPE_X", self._cur_actor._array4D.shape[0])
             return self._cur_actor._array4D.shape[0]   #Todo Will this mess up on CORE UPDATE? 04/13/2021
         else:
             #return self._cur_actor.grid_length
             return self.pianorollpanel.GetTopLevelParent().mayavi_view.grid_cells_length
+
 
     def GetNumberRows(self):
         #print("GetNumberCols(): {}".format(self.parent.GetTopLevelParent().mayavi_view.CurrentActor()._array3D.shape[1]))
@@ -114,7 +119,9 @@ class PianoRollDataTable(wx.grid.GridTableBase):
         else:
             return 128
 
+
     def GetValue(self, row, col):
+        # try:
         if self._cur_actor:
             if (self.pianorollpanel):
                 z = self.pianorollpanel.currentZplane
@@ -125,26 +132,96 @@ class PianoRollDataTable(wx.grid.GridTableBase):
             return str(int(self._cur_actor._array4D[int(col)][127 - row][z][0]))
         else:
             return ""
+        # except IndexError as e:
+        #     print("Index error here. Your array4D code is messed up")
+        #     #This helped solve a bug.
+        #     #os.kill(0, signal.CTRL_C_EVENT)
+        #     return ""
+
 
     def SetValue(self, row, col, value):
         if self._cur_actor:
+            pr = self.pianorollpanel.pianoroll
+            dur = pr.GetMusic21DurationRatio()
+            print("DUR", dur)
             z = self.pianorollpanel.currentZplane
 
             #TODO Be minddful of these ints() when debugging.   col/self.pianorollpanel.pianoroll._cells_per_qrtrnote
-
             #self._cur_actor._draw_array3D[int(col)][127-row][z] = int(value)
-            self._cur_actor._array4D[int(col)][127 - row][z][0] = int(value)
+            print("Index", ([int(col)],[127 - row],[z]))
+            #ON
+            self._cur_actor._array4D[int(col)][int(127 - row)][int(z)][int(0)] = int(value)
+            # VELOCITY
+            self._cur_actor._array4D[int(col)][int(127 - row)][int(z)][int(1)] = int(pr.draw_velocity) \
+                if pr.drawing == 1 else value #value is 0 when pr.drawing == 0
+            # DURATION1
+            self._cur_actor._array4D[int(col)][int(127 - row)][int(z)][int(2)] = int(dur[0]) \
+                if pr.drawing == 1 else value
+            # DURATION2
+            self._cur_actor._array4D[int(col)][int(127 - row)][int(z)][int(3)] = int(dur[1]) \
+                if pr.drawing == 1 else value
 
 
-    def AppendCols(self, numCols=1, updateLables=True):
+    def AppendCols(self, numCols=1, updateLables=True, change_value=0):
         #print("Super", super())
         #wx.grid.GridTableBase.AppendCols(self, numCols)
-        pass #TODO WHY does this have to be pass when overriding? I don't fully understand this.
+
+        #THIS LINE CRASHES MIDAS
+        #self.pianorollpanel.pianoroll.AppendCols(numCols=numCols)
+
+        ###BIG FIX
+        #https://stackoverflow.com/questions/43102681/cant-add-columns-in-wxpython-virtual-grid
+        gridlib = wx.grid
+        msg = gridlib.GridTableMessage(self,  # The table
+                                       gridlib.GRIDTABLE_NOTIFY_COLS_APPENDED,  # what we did to it
+                                       numCols)  # how many
+        self.GetView().ProcessTableMessage(msg)
+        pass #TODO WHY does this have to be pass when overriding...overloading? I don't fully understand this.
+        ###
+
+
+    # class HugeTable(wx.grid.PyGridTableBase):
     #
+    #     """
+    #     Table class for virtual grid
+    #     """
+    #
+    #     def __init__(self, log, num_rows, num_cols):
+    #         wx.grid.PyGridTableBase.__init__(self)
+    #
+    #     def AppendCols(self, *args):
+    #         pass
+
+
     def DeleteCols(self, pos=0, numCols=1, updateLables=True):  #Overload duplicates original here.
         #print("Super", super())
         #wx.grid.GridTableBase.DeleteCols(self, pos, numCols)
-        pass
+
+        #THIS LINE CRASHES MIDAS
+        #self.pianorollpanel.pianoroll.DeleteCols(pos=pos, numCols=numCols)
+
+        ###BIG FIX
+        #https://stackoverflow.com/questions/43102681/cant-add-columns-in-wxpython-virtual-grid
+
+        gridlib = wx.grid
+        print("Delete_method_num_cols", numCols)
+        rqst = gridlib.GRIDTABLE_NOTIFY_COLS_DELETED
+        print("cols_DEL", rqst)
+
+        ##BIGGER FIX
+        #https://bytes.com/topic/python/answers/38376-wxpython-grid-gridtable_notify_rows_deleted
+        msg = gridlib.GridTableMessage(self,  # The table
+            gridlib.GRIDTABLE_NOTIFY_COLS_DELETED, self.GetNumberCols()-numCols,  # what we did to it, #starting index,
+            numCols)  # how many
+        ###
+
+        print("SEXY SEXY SEXY HERE")
+        self.GetView().ProcessTableMessage(msg)
+        print("MORE MORE MORE HERE")
+        return
+
+        #pass
+
 
     def GetColSize(self, col):  # real signature unknown; restored from __doc__
         """
@@ -155,6 +232,7 @@ class PianoRollDataTable(wx.grid.GridTableBase):
         #pass
         return 0
 
+
     def GetRowSize(self, row):  # real signature unknown; restored from __doc__
         """
         GetRowSize(row) -> int
@@ -164,7 +242,43 @@ class PianoRollDataTable(wx.grid.GridTableBase):
         return 0
 
 
+    def GetOnCells(self):
+        """
+        Written to solve a bug, this function is intended to work on wx grid cells only, and ignores a
+        currentActor()._array4D. This function returns a list of all "on" (black) cells in the wx.Grid--
+        (our pianoroll._table)--
+        :return: List of cell coords(in the order wx uses them in SetValue---GetValue functions)
+        """
+        cells_list = []
+        for i in range(0, self.GetNumberCols()):
+            for j in range(0, self.GetNumberRows()):
+                if self.GetValue(j, i) != "0":
+                    cell = (j, i)
+                    cells_list.append(cell)
+                    #print("Cell", j, i)
+                    #print(self.GetValue(j, i))
+        return cells_list
+
+
+    def ClearCells(self):
+        """
+        This functions sets on "1" cell's values to "0", turning them from black to white. Does not update an _array4D.
+        (although, the current _array4D will still update when the flag is triggered (such as OnMouseLeftUp))
+
+        ---As it is a quick fix for leftover cells in the grid piano roll after all actors are deleted and
+        len(Midas.mayavi.actors) == 0, this function does not have to handle the dynamics of our Core Data Update.
+        See Trello Cards "Checkpoint" and "Core Data Update."
+        https://trello.com/c/MXKIQFAL
+        https://trello.com/c/YWiioaqo
+
+        :return: None
+        """
+        for i in self.GetOnCells():
+            self.pianorollpanel.pianoroll.SetCellValue(i[0], i[1], "0")
+
     #self.pianorollpanel.pianoroll.GetRowSize()
+
+
 
 
 # Main Class for the PianoRoll, based orn wx.Grid
@@ -188,7 +302,7 @@ class PianoRoll(wx.grid.Grid, glr.GridWithLabelRenderersMixin):
         self._table = PianoRollDataTable(self.GetParent().GetParent())
 
         #current array_3d
-        self.cur_array3d = None
+        self.cur_array4d = None
 
         self.SetTable(self._table, True)
 
@@ -198,7 +312,8 @@ class PianoRoll(wx.grid.Grid, glr.GridWithLabelRenderersMixin):
         self.SetDefaultRenderer(self.PCR)
         
 
-        #One measure and one octave at a time.
+
+        #Scroll one measure and one octave at a time.
         self.SetScrollRate(160, 120)  #For precision scrolling, use scrollbar arrows, or scroll-bar right-click-->"Scroll Here" or MIDDLE-CLICK ZOOM SCROLL.
 
         self.cur_scrollrate = self.GetScrollPixelsPerUnit()
@@ -209,12 +324,22 @@ class PianoRoll(wx.grid.Grid, glr.GridWithLabelRenderersMixin):
         self.max_x = 600  # max zoom-in
         self.max_y = 400  # max zoom-in
 
+
         self.zoom_interval = 4
+
 
         self.drawing = 1  # Used for click and drag to draw notes
 
-        self.draw_cell_size = 1
+        self.draw_cell_size = 1  #TODO Make into drawn_note_duration. 12/31/2021
+
+        self.draw_velocity = 90 #TODO Make scrollable button on the dash to change this.
+
+        self.drawing_duration_value = 1.0 #TODO Make scrollable button on the dash to change this.
+
+
         self._cells_per_qrtrnote = 1
+
+
 
         self.SetColMinimalAcceptableWidth(3)
         self.SetRowMinimalAcceptableHeight(3)
@@ -232,7 +357,7 @@ class PianoRoll(wx.grid.Grid, glr.GridWithLabelRenderersMixin):
         # Set up the "piano" with note labels
         for i in reversed(range(self.NumberRows)):
             self.SetRowSize(i, 10)
-            #crazy fuck math I'll never remember to label the piano roll notes and octaves
+            #crazy whack math I'll never remember to label the piano roll notes and octaves
             self.SetRowLabelValue(i, SEMITONE_NOTES[(NUM_TONES - 1 - i) % 12] + str(10 - int((i+4)/12)))
 
             if SEMITONE_PIANO[NUM_TONES - 1 - i]:
@@ -349,7 +474,7 @@ class PianoRoll(wx.grid.Grid, glr.GridWithLabelRenderersMixin):
         pos = state.GetPosition()
         new_pos = self.ScreenToClient(pos)
         grid_cell = self.XYToCell(
-            self.CalcGridWindowUnscrolledPosition((new_pos[0] - 59,new_pos[1] - 19),gridWindow=self), gridWindow=self)
+            self.CalcGridWindowUnscrolledPosition((new_pos[0] - 59, new_pos[1] - 19), gridWindow=self), gridWindow=self)
   
         return grid_cell
 
@@ -412,7 +537,7 @@ class PianoRoll(wx.grid.Grid, glr.GridWithLabelRenderersMixin):
         #dc = wx.AutoBufferedPaintDC(self)
         #TODO What Dafuq calls Draw() in the CellRenderer?
         #TODO Then
-        #TODO DO DRAW SHIT HERE, LICKABITCH
+        #TODO DO DRAW STUFF HERE
 
 
     def DrawColumnLabels(self):
@@ -442,6 +567,37 @@ class PianoRoll(wx.grid.Grid, glr.GridWithLabelRenderersMixin):
         #print("Here5.")
 
 
+    def SetDrawingDurationValue(self):
+        self.drawing_duration_value = self.draw_cell_size / self._cells_per_qrtrnote
+        #dv = (dcs/cpqn)
+        #dv*cpqn = dcs
+        #self.drawing_duration_value / self._cells_per_qrtrnote = self.draw_cell_size
+
+        temp_duration = music21.duration.Duration(self.drawing_duration_value)
+        quarterLength_ratio = temp_duration.quarterLength.as_integer_ratio()
+        print("Drawing_duration:", self.drawing_duration_value)
+        return quarterLength_ratio
+
+
+    def SetCellDrawingSizeValue(self):
+        self.draw_cell_size = self.drawing_duration_value*self._cells_per_qrtrnote
+        #dv = (dcs/cpqn)
+        #dv*cpqn = dcs
+        #self.drawing_duration_value / self._cells_per_qrtrnote = self.draw_cell_size
+
+        temp_duration = music21.duration.Duration(self.drawing_duration_value)
+        quarterLength_ratio = temp_duration.quarterLength.as_integer_ratio()
+        print("Drawing_duration:", self.drawing_duration_value)
+        return quarterLength_ratio
+
+
+    def GetMusic21DurationRatio(self):
+        temp_duration = music21.duration.Duration(self.drawing_duration_value)
+        quarterLength_ratio = temp_duration.quarterLength.as_integer_ratio()
+        print("Drawing_duration:", self.drawing_duration_value)
+        return quarterLength_ratio
+
+
     def ChangeCellsPerQrtrNote(self, newcpqnvalue):
         if newcpqnvalue == self._cells_per_qrtrnote:
             pass
@@ -455,25 +611,52 @@ class PianoRoll(wx.grid.Grid, glr.GridWithLabelRenderersMixin):
 
         #Change number of columns
         oldNumCols = self._table.GetNumberCols()
+        print("OLD_NUM_COLS_TWO", oldNumCols)
+
         #print("Here5.2")
-        newNumCols = int((newcpqnvalue / self.m_v.CurrentActor().old_cpqn * oldNumCols))
+        newNumCols = int(((newcpqnvalue / self.m_v.CurrentActor().old_cpqn) * oldNumCols))
+
         #print("Here5.3")
         if newNumCols > oldNumCols:
             #print("Here5.4, --newNumCols is >")
+
+            # Patch in new grid length.
+            if newcpqnvalue == self.m_v.CurrentActor().old_cpqn:
+                pass
+            else:
+                self.AdjustGridLengthBasedOnCPQN(newcpqnvalue, self.m_v.CurrentActor().old_cpqn, oldNumCols)
             self._table.AppendCols(newNumCols - oldNumCols, True)
+            self.AdjustCellsBasedOnCPQN(self.m_v.CurrentActor().cur_z, newcpqnvalue, self.m_v.CurrentActor().old_cpqn)
+
+            # Reset Grid
+            self.DrawColumnLabels()
+            print("CPQN Changed Successfully.")
+            return True
             #print("Here5.5.")
+
         elif oldNumCols > newNumCols:
             #print("Here5.4, --newNumCols is <")
+            self.AdjustCellsBasedOnCPQN(self.m_v.CurrentActor().cur_z, newcpqnvalue, self.m_v.CurrentActor().old_cpqn)
             self._table.DeleteCols(0, oldNumCols - newNumCols, True)
+
+            # Patch in new grid length.
+            if newcpqnvalue == self.m_v.CurrentActor().old_cpqn:
+                pass
+            else:
+                self.AdjustGridLengthBasedOnCPQN(newcpqnvalue, self.m_v.CurrentActor().old_cpqn, oldNumCols)
+
+            # Reset Grid
+            self.DrawColumnLabels()
+
+            print("CPQN Changed Successfully.")
+            return True
+
             #print("Here5.6.")
 
-        #Reset Grid
-        self.DrawColumnLabels()
+
         #Reset Mayavi representative values by factoring cpqn.
         #--> Here.
 
-        self.AdjustCellsBasedOnCPQN(self.m_v.CurrentActor().cur_z, newcpqnvalue, self.m_v.CurrentActor().old_cpqn)
-        print("Adjusted successfully.")
 
         # TODO GRID CELLS ADJUSTMENT HERE, MAH BITCH!
         # Todo Condition check for successive factoring
@@ -484,7 +667,7 @@ class PianoRoll(wx.grid.Grid, glr.GridWithLabelRenderersMixin):
         # Draw notes based on the saved stream
         # self.StreamToGrid(self.stream) #TODO WE don't use a stream here anymore?
 
-        #self.m_v.CurrentActor().array3Dchangedflag = not self.m_v.CurrentActor().array3Dchangedflag
+        #self.m_v.CurrentActor().array4Dchangedflag = not self.m_v.CurrentActor().array4Dchangedflag
 
         #print("Here6.")
 
@@ -496,26 +679,42 @@ class PianoRoll(wx.grid.Grid, glr.GridWithLabelRenderersMixin):
         """
         This function operates on the selected zplane and changes all the cells in that selected grid by factoring in
         newvcpqnalue. Newcpqnvalue will always be a new cellsperqrtrnote value. (i.e. If cpqn was 1, and we're changing it to 4,
-        all cells in the wx.Grid will be multiplied by a factor of 4)
+        all cells in the wx.Grid will be multiplied by a factor of 4).
+
+        In addition, if the CPQN is increased or decreased, the x value of the CurrentActor()'s _array4D will be
+        increased or decreased as well using np.vstack or np.vsplit.
+        (i.e. CurrentActor().
+        #>>>cur_array4D = m_v.CurrentActor()._array4D
+        #>>>cur_array4D.shape --> (256, 128, 128, 5)
+        #CPQN Change:
         :param zplane:          Operand zplane, established as an Int.
-        :param newcpqnvalue:    New cells per qrtr note value to which we are changing.
+        :param oldcpqnvalue:    Old cells per qrtr note value FROM which we are changing.
+        :param newcpqnvalue:    New cells per qrtr note value TO which we are changing.
         :return:                N\A
         """
 
+        print("Changing cellsperqrtrnote.")
 
-        cells_change = np.argwhere(self.m_v.CurrentActor()._array4D[:, :,
-                                   zplane, 0] == 1.0)  # CRITICAL--> current zplane only.
+        cpqn_change_ratio = newcpqnvalue/oldcpqnvalue
+
+        cells_change = np.argwhere(self.m_v.CurrentActor()._array4D[:, :, zplane, 0] == 1.0)  # CRITICAL--> current zplane only.
+
+        #I think this is that one exception to our get_points_with_all_data uses.
+        #cells_change = self.m_v.CurrentActor().get_points_with_all_data(z=zplane)
+
+        #Grid cells accessibility
         cells_change[:, 1] = cells_change[:, 1] - 127
         cells_change[:, 1] = cells_change[:, 1] * -1
+        #Grid cells set.
         for q in cells_change:
             self.SetCellValue(q[1], q[0], '0')
 
         if newcpqnvalue > oldcpqnvalue:
-            cells_change[:, 0] = cells_change[:, 0] * (newcpqnvalue / oldcpqnvalue)
+            cells_change[:, 0] = cells_change[:, 0] * cpqn_change_ratio
         elif newcpqnvalue < oldcpqnvalue:
-            cells_change[:, 0] = cells_change[:, 0] * (newcpqnvalue / oldcpqnvalue)
+            cells_change[:, 0] = cells_change[:, 0] * cpqn_change_ratio
             # TODO Changing from one cpqn to another is producing an inaccurate display, FIXED.
-                     # NOTE: This method won't work if dealing with odd-metered time signatures.
+            # NOTE: This method won't work if dealing with odd-metered time signatures.
         elif newcpqnvalue == oldcpqnvalue:
             cells_change[:, 0] = cells_change[:, 0]
 
@@ -524,8 +723,85 @@ class PianoRoll(wx.grid.Grid, glr.GridWithLabelRenderersMixin):
             # self._table.SetValue(q[1], q[0], '1')
             self.SetCellValue(q[1], q[0], '1')
         #print("Cells_CHANGED", cells_change)
-        
+        print("Cells Adjusted Successfully.")
+        return True
 
+
+    def AdjustGridLengthBasedOnCPQN(self, newcpqn, oldcpqn, oldNumCols):
+        """
+
+        :param newcpqn:
+        :param oldcpqn:
+        :param oldnumcols:
+        :return:
+        """
+        #Increase x length of cells in the grid by a factor of the cpqn using np.vsplit and np.vstack for _array4D.
+        #Method involves appending or shaving off appropriate-shaped empty '_array4Ds' from main _array4D.
+        cur_array4D = self.m_v.CurrentActor()._array4D
+        print("new", newcpqn)
+        print("old", oldcpqn)
+        cpqn_change_ratio = newcpqn/oldcpqn
+        cur_x_length = cur_array4D.shape[0]
+        new_x_length = int(((cur_x_length * cpqn_change_ratio) - cur_x_length))
+        print("NEW_X_LENGTH", new_x_length)
+
+        if cpqn_change_ratio > 1: #If we are increasing our cpqn, then this value will always be greater than 1.
+            print("NEW_X_LENGTH2", new_x_length)
+
+            new_array = np.zeros(dtype=np.int8, shape=(new_x_length, 128, 128, 5))
+            print("NEW_X_LENGTH3", new_x_length)
+
+            self.m_v.CurrentActor()._array4D = np.vstack([cur_array4D,
+                                                          new_array])
+                                                        #As cool as this 'unpacking' was, it was the wrong logic here.
+                                                        #*[new_array for i in range(0, int(cpqn_change_ratio)-1, 1)]]])
+
+        elif cpqn_change_ratio < 1: #If we are decreasing our cpqn, then this value will always be less than 1.
+            self.m_v.CurrentActor()._array4D = np.vsplit(self.m_v.CurrentActor()._array4D, oldcpqn/newcpqn).pop(0)
+            #print("FORCED RETURN HERE")
+            print("m_v_array4D.shape", self.m_v.CurrentActor()._array4D.shape)
+            #return self.m_v.CurrentActor()._array4D.shape[0]
+
+            #del(new_arrays)
+        # except ValueError as e:
+        #     print("?", e)
+        #     print("Value Error?")
+        #     pass
+        #
+        #
+        # elif cpqn_change_ratio == 1:
+        #     pass
+        # except IndexError as e:
+        #     print("NEW_X_LENGTH", new_x_length)
+        #     return
+
+
+        newNumCols = cur_array4D.shape[0]
+
+        if newNumCols > oldNumCols:
+            # print("Here5.4, --newNumCols is >")
+            self._table.AppendCols(newNumCols - oldNumCols, True)
+            # print("Here5.5.")
+
+
+
+
+        elif oldNumCols > newNumCols:
+            # print("Here5.4, --newNumCols is <")
+            self._table.DeleteCols(pos=0, numCols=(oldNumCols - newNumCols), updateLables=True)
+            # print("Here5.6.")
+
+
+        #Write new cells_length to m_v variable. -->This must be direct access, not a pointer.
+        self.m_v.grid_cells_length = self.m_v.CurrentActor()._array4D.shape[0]
+
+        self.Refresh()
+        self.ForceRefresh()
+        print("Grid Length Adjusted Successfully.")
+
+
+        #NOTE: self.DrawColumnLabels() is called shortly after this point.
+        return True
         #TODO Return to this for implementing duration data.
 
 
@@ -671,7 +947,7 @@ class PianoRoll(wx.grid.Grid, glr.GridWithLabelRenderersMixin):
                 self._table.SetValue(y, x, str(matrix[x][y]))
 
         self.UpdateStream()
-
+        print("IS THIS USED?!?!?!??!?")
 
     def OnCellSelected(self, evt):
         #self.log.info("onCellSelected():")
@@ -681,6 +957,7 @@ class PianoRoll(wx.grid.Grid, glr.GridWithLabelRenderersMixin):
 
 
     def OnGridLClick(self, evt):
+        #TODO DOC, relearn, and clean this sh*t up. 12/03/2021
 
         z = self.GetTopLevelParent().pianorollpanel.currentZplane
         current_actor = self.m_v.CurrentActor()
@@ -713,8 +990,8 @@ class PianoRoll(wx.grid.Grid, glr.GridWithLabelRenderersMixin):
 
         evt.Skip()
         #After the drawing event, update the array_3d accordingly.
-        #TODO FIGURE OUT--- DO I FUCKING NEED THIS LINE OF CODE?
-        #self.m_v.actors[self.m_v.cur_ActorIndex].array3Dchangedflag = not self.m_v.actors[self.m_v.cur_ActorIndex].array3Dchangedflag
+        #TODO FIGURE OUT--- DO I FRICKIN NEED THIS LINE OF CODE?
+        #self.m_v.actors[self.m_v.cur_ActorIndex].array4Dchangedflag = not self.m_v.actors[self.m_v.cur_ActorIndex].array4Dchangedflag
 
 
         # on_points = np.argwhere(current_actor._array3D[row, col, z] >= 1.0)
@@ -724,7 +1001,7 @@ class PianoRoll(wx.grid.Grid, glr.GridWithLabelRenderersMixin):
         #
         # current_actor._array3D[:, :, z] = current_actor._array3D[:, :, z] * 0
         # self.ForceRefresh()
-        # self.m_v.actors[self.m_v.cur_ActorIndex].array3Dchangedflag += 1
+        # self.m_v.actors[self.m_v.cur_ActorIndex].array4Dchangedflag += 1
         # self.ResetGridCellSizes()
         # self.ForceRefresh()
 
@@ -823,42 +1100,68 @@ class PianoRoll(wx.grid.Grid, glr.GridWithLabelRenderersMixin):
         :param cell_note_size:  note duration that each cell/pixel represents
         :return: 				np.array
         """
+
         if z is None:
             z = self.GetTopLevelParent().pianorollpanel.currentZplane
 
         self.ClearGrid()
 
-
-
-        for n in in_stream.flat.getElementsByClass(["Chord", "Note"]):
-            if type(n) is music21.chord.Chord:
-                for p in n.pitches:
-                    x = int(self._cells_per_qrtrnote * n.offset)
-                    y = 127 - p.midi
-                    size = int(self._cells_per_qrtrnote * n.duration.quarterLength)
+        for c in in_stream.flat.getElementsByClass(["Chord", "Note"]):
+            if type(c) is music21.chord.Chord:
+                for n in c.notes:  #was .pitches, changed 12/31/2021
+                    x = int(self._cells_per_qrtrnote * c.offset)
+                    y = 127 - n.pitch.ps  #was p.midi, changed 12/31/2021
+                    size = int(self._cells_per_qrtrnote * c.duration.quarterLength)
                     if size < 1:
-                        print("Chord: Note size is too small for current grid CellsPerNote(%s)." % self._cells_per_qrtrnote)
+                        print("Chord: Note size is too small for current grid CellsPerQrtrNote(%s)." % self._cells_per_qrtrnote)
                     else:
                         self._table.SetValue(y, x, "1")
+                        #ON
                         self.m_v.CurrentActor()._array4D[x, 127 - y, z][0] = 1
-                        #self.SetCellSize(y, x, 1, size)     #TODO Code in workaround for cells already part of another cell.
-                # print(matrix)
-            elif type(n) is music21.note.Note:
-                x = int(self._cells_per_qrtrnote * n.offset)
-                y = 127 - n.pitch.midi
-                size =  int(self._cells_per_qrtrnote * n.duration.quarterLength)
+                        #VELOCITY
+                        self.m_v.CurrentActor()._array4D[x, 127 - y, z][1] = n.volume.velocity \
+                            if n.volume.velocity is not None else z   #self.m_v.CurrentActor().cur_z
+                        #DURATION
+                        self.m_v.CurrentActor()._array4D[x, 127-y, z][2] = \
+                            n.duration.quarterLength.as_integer_ratio()[0]
+                        self.m_v.CurrentActor()._array4D[x, 127-y, z][3] = \
+                            n.duration.quarterLength.as_integer_ratio()[1]
 
-                if size < 1:
+                        #int(n.duration * 10000) #Must be int.
+                        #SAD?
+                        #self.m_v.CurrentActor()._array4D[x, 127 - y, z][4]
+                        #self.SetCellSize(y, x, 1, size)     #TODO Code in workaround for cells already part of another cell.
+
+                # print(matrix)
+            elif type(c) is music21.note.Note:
+                n = c
+                x = int(self._cells_per_qrtrnote * c.offset)
+                y = 127 - c.pitch.midi
+
+                size =  int(self._cells_per_qrtrnote * c.duration.quarterLength)
+
+                if size < 1:  #TODO IS THIS THE CORRECT CALL?
                     print("Note: Note size is too small for current grid CellsPerNote.")
 
                 else:
                     self._table.SetValue(y, x, "1")
+                    #ON
                     self.m_v.CurrentActor()._array4D[x, 127 - y, z][0] = 1
+                    #VELOCITY
+                    self.m_v.CurrentActor()._array4D[x, 127 - y, z][1] = n.volume.velocity \
+                        if n.volume.velocity is not None else z   #self.m_v.CurrentActor().cur_z
+                    #DURATION
+                    self.m_v.CurrentActor()._array4D[x, 127 - y, z][2] = n.duration.quarterLength.as_integer_ratio()[0]
+                    self.m_v.CurrentActor()._array4D[x, 127 - y, z][3] = n.duration.quarterLength.as_integer_ratio()[1]
+                    #int(n.duration.quarterLength * 10000) #Must be int.
+                    #SAD?
+
                     self.SetCellSize(y, x, 1, size)
 
         # print(matrix)
 
-        self.m_v.CurrentActor().array3Dchangedflag += 1
+        #self.m_v.CurrentActor().array4Dchangedflag += 1
+        self.m_v.CurrentActor().array4Dchangedflag = not self.m_v.CurrentActor().array4Dchangedflag
         self.stream = in_stream
 
 
@@ -893,11 +1196,15 @@ class PianoRoll(wx.grid.Grid, glr.GridWithLabelRenderersMixin):
         #         #print(self.GetCellValue(x,y))
         #         #time.sleep(1)
         #         if (self._table.GetValue(x, y) == "1"):
+
         #TODO Keep an eye on this here line and lines like it. Has to do with correct data access for our new array4D.
         #TODO 08/18/2021
         #This works -- > ...array4D[:, :, self.m_v.cur_z, 0]
         #But this doesn't --> ...array4D[:, :, self.m_v.cur_z][0] Why? 08/18/2021
-        on_points = np.argwhere(self.m_v.CurrentActor()._array4D[:, :, self.m_v.cur_z, 0] >= 1.0)
+
+        on_points = self.m_v.CurrentActor().get_points_with_all_data(z=self.m_v.cur_z)
+        #on_points = np.argwhere(self.m_v.CurrentActor()._array4D[:, :, self.m_v.cur_z, 0] >= 1.0)
+
         print("On_Points", on_points)
         for i in on_points:
             (span, sx, sy) = self.GetCellSize(i[1], i[0])
@@ -905,10 +1212,13 @@ class PianoRoll(wx.grid.Grid, glr.GridWithLabelRenderersMixin):
             n = music21.note.Note()
             #print("A note:", n)
             #print("3")
-            n.pitch.midi = i[1]
             n.offset = i[0] / self._cells_per_qrtrnote
-            n.duration.quarterLength = sy / self._cells_per_qrtrnote
-            n.volume.velocity = self.m_v.cur_z
+            n.pitch.midi = i[1]
+            n.volume.velocity = i[2]
+            ##n.volume.velocity = self.m_v.cur_z  ##Pretty sure this was temporary.
+            n.duration.quarterLength = i[3]/i[4]    #i[3]/10000
+            # n.duration.quarterLength = \
+            #     sy/self._cells_per_qrtrnote  #This should be == self.draw_cell_size / self._cells_per_qrtrnote
             s.insert(n.offset, n)
 
         print("4")
@@ -920,7 +1230,7 @@ class PianoRoll(wx.grid.Grid, glr.GridWithLabelRenderersMixin):
         else:
             pass
         s.show('txt')
-        #self.m_v.CurrentActor().array3Dchangedflag += 1  #TODO Change to 'not' method?
+        #self.m_v.CurrentActor().array4Dchangedflag += 1  #TODO Change to 'not' method?
         return s
 
 
@@ -1014,7 +1324,7 @@ class PianoRoll(wx.grid.Grid, glr.GridWithLabelRenderersMixin):
         # # Deletes 'selected' not 'activated' actors.
         # alb = self.GetTopLevelParent().pianorollpanel.actorsctrlpanel.actorsListBox
         # print("J_list", [j for j in range(len(self.mayavi_view.actors), -1, -1)])
-        # for j in range(len(self.mayavi_view.actors), 0, -1):  # Fucking OBOE errors...
+        # for j in range(len(self.mayavi_view.actors), 0, -1):  # Stupid OBOE errors...
         #     print("J", j)
         #     if alb.IsSelected(j - 1):
         #         self.OnBtnDelActor(evt=None, cur=j - 1)
@@ -1088,12 +1398,17 @@ class PianoRollCellRenderer(wx.grid.GridCellRenderer):
         wx.grid.GridCellRenderer.__init__(self)
         #self.window = wx.Window()
         self.parent = parent
-
        
     def Draw(self, grid, attr, dc, rect, row, col, isSelected):
         
 
         self.grid_highlight_color = "LIGHT BLUE"
+
+        if len(self.parent.GetTopLevelParent().mayavi_view.actors) == 0:
+            self.current_cells_color = "BLACK"
+        else:
+            m_v_actor = self.parent.GetTopLevelParent().mayavi_view.CurrentActor()
+            self.current_cells_color = (m_v_actor.color[0]*255, m_v_actor.color[1]*255, m_v_actor.color[2]*255)
 
         value = grid.GetCellValue(row, col)
         #values = grid._table.Get
@@ -1101,15 +1416,20 @@ class PianoRollCellRenderer(wx.grid.GridCellRenderer):
         ##NOTE: "value" is a string.
         # if value == "":
         #     dc.SetBrush(wx.Brush("WHITE", wx.BRUSHSTYLE_SOLID))
-        if value == "1":
-            dc.SetBrush(wx.Brush("BLACK", wx.BRUSHSTYLE_SOLID))
-        elif int(value) == 2:
-            #ValueError: invalid literal for int() with base 10: '' THIS is the error acquired when you try do draw without an actor.
-            dc.SetBrush(wx.Brush(self.grid_highlight_color, wx.BRUSHSTYLE_SOLID))
-        elif int(value) >= 3:
-            dc.SetBrush(wx.Brush("GREEN", wx.BRUSHSTYLE_SOLID))
-        else:
-            dc.SetBrush(wx.Brush("WHITE", wx.BRUSHSTYLE_SOLID))
+        try:
+
+            if value == "1":
+                dc.SetBrush(wx.Brush(self.current_cells_color, wx.BRUSHSTYLE_SOLID))
+            elif int(value) == 2:
+                #ValueError: invalid literal for int() with base 10: '' THIS is the error acquired when you try do draw without an actor.
+                dc.SetBrush(wx.Brush(self.grid_highlight_color, wx.BRUSHSTYLE_SOLID))
+            elif int(value) >= 3:
+                dc.SetBrush(wx.Brush("GREEN", wx.BRUSHSTYLE_SOLID))
+            else:
+                dc.SetBrush(wx.Brush("WHITE", wx.BRUSHSTYLE_SOLID))
+        except ValueError:
+            print("Drawing in emptiness. TODO---scratch pad for drawing without actors on startup.")
+            pass
         try:
             dc.SetClippingRegion(rect.x, rect.y, rect.width, rect.height)
             dc.SetPen(wx.TRANSPARENT_PEN)

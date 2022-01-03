@@ -530,19 +530,35 @@ class Musicode():
 			#self.dictionaries.update(User_Generated=self.userCreated)
 			print("C:", c)
 			print("Here")
-			#print("Here 2:", self.userCreated)
+			print("Here 2:", self.user_Created)
 			#self.userCreated.show()
 			for measure in self.user_Created:
-				#print("How bout here?")
-				#print("User_Created:", self.userCreated.show('txt'))
-				element_wrapper = measure[-1]
-				if type(element_wrapper) == music21.note.Rest:
-					element_wrapper = measure[-2]
-				if type(element_wrapper) == music21.bar.Barline:
-					element_wrapper = measure[-3]
+				print("How bout here?")
+				print("User_Created:")
+				self.user_Created.show('txt')
+
+				#TODO Write this block differently?
+				# element_wrapper = measure[-1]
+				# if type(element_wrapper) == music21.note.Rest:
+				# 	element_wrapper = measure[-2]
+				# elif type(element_wrapper) == music21.bar.Barline:
+				# 	element_wrapper = measure[-3]
+				# elif type(element_wrapper) == music21.note.Note:
+				# 	element_wrapper = measure[-2]
+				# else:
+				# 	pass
+
+				#This call's list should always have only one element.
+				element_wrapper = [i for i in measure.getElementsByClass(["ElementWrapper"])][0]
+
+				print("Measure")
+				measure.show('txt')
+				print("Element_wrapper", element_wrapper)
+				print("Element_wrapper_object:", element_wrapper.obj)
+
 				if element_wrapper.obj == c:
 					new_measure = copy.deepcopy(measure)
-					#print("New_Measure:", new_measure)
+					print("New_Measure:", new_measure)
 					return new_measure
 				elif element_wrapper.obj not in c:
 					print("Your user-generated musicode does not have this '%s' string character:" % c)
@@ -646,7 +662,7 @@ class Musicode():
 						for p in z.pitches:
 							i.transposePitchKeyAware(p, k, inPlace=True)
 					else:
-						print("You fucked up. Type of z is wrong.")
+						print("You messed up. Type of z is wrong.")
 						print(type(z))
 					new_measure.show('txt')
 				# 4. Insert into stream.
@@ -668,8 +684,8 @@ class Musicode():
 	# M21-7.
 	def make_musicode(self, in_stream, musicode_name="User_Generated", shorthand="sh", filepath=None, selection=None, write=True, timeSig='4/4'):
 		"""
-			This function take a string and an input stream with equal lengths (# of measures equals # of string characters)
-		and conjoins them to create a user-generated assignment of musicodes to be called by said string character.
+			This function take a string and an input stream with equal lengths (# of measures == # of string characters)
+		and zips them together to create a user-generated assignment of musicodes to be called by said string character.
 		Choice included to write to file and to provide a selection. Selection should ideally match input stream,
 		although creativity is highly encouraged!
 
@@ -704,8 +720,13 @@ class Musicode():
 			selection = self.Latin_Script
 		print("User Selection:", selection)
 
+
+
 		if len(selection) != len(in_stream):
+			print("Selection", len(selection))
+			print("In_Stream", len(in_stream))
 			print("Your selected string assignment does not match the length of your created musicode.")
+			print("Musicode creation failed.")
 			return None
 
 		# Establish Writing Path Name (created on call of function whether writing or not, overwritten if already existing)
@@ -719,8 +740,10 @@ class Musicode():
 				shutil.rmtree(resource_path + musicode_name + "\\\\", ignore_errors=True)  #Caution with this?
 			os.mkdir(resource_path + musicode_name + "\\")
 			self.full_new_musicode_path = resource_path + musicode_name + "\\\\"
+			print("Full_New_Musicode_Path created.", self.full_new_musicode_path)
 			self.create_directories()		#* Create Directories within Path since write and file_path are true, and we're writing to it.
 		# print(resource_path + musicode_name + "\\")
+
 		elif filepath is not None and write is True:  ##This block executes to save to specified fullpath.
 			self.full_new_musicode_path = filepath + os.sep + self.musicode_name
 			print("FNMP", self.full_new_musicode_path)
@@ -758,7 +781,7 @@ class Musicode():
 
 		#Checks
 		print("NEW_STREAM:")
-		#self.new_stream.show('txt')
+		self.new_stream.show('txt')
 		print("NEW_STREAM_LENGTH", len(self.new_stream))
 
 		#If write==True,  Write to established directories:
@@ -804,7 +827,14 @@ class Musicode():
 				  "Call makeMeasures() --> input_stream.makeMeasures(inPlace=True)")
 			pass
 
-		self.new_stream.write('mid', self.full_new_musicode_path + os.sep + self.musicode_name + ".mid")
+
+		#This call is for "translate musicode" only, which writes to directories. It is not for "create musicode."
+		if filepath is None and write is False:
+			print("Creating and storing new musicode measures....")
+			pass
+		else:
+			print("Midi writing...", self.full_new_musicode_path + os.sep + self.musicode_name + ".mid")
+			self.new_stream.write('mid', self.full_new_musicode_path + os.sep + self.musicode_name + ".mid")
 
 		# Account for the " " space string manually, so user is encouraged not to set a musicode for a space.
 		# Append "space_measure" to user-generated musicode.
@@ -814,4 +844,5 @@ class Musicode():
 		print("FINAL_NEW_STREAM:")
 		#self.new_stream.show('txt')
 		self.user_Created = self.new_stream
-		return self.zip_dict, self.new_stream,
+		print("Musicode Created.")
+		return self.zip_dict, self.new_stream

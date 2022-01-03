@@ -79,6 +79,22 @@ Midas Key Bindings
 "Ctrl V"
 
 
+#--PyCrust--#
+"Ctrl+PageUp\PageDown"   -- Cycles through the tabs of the pycrust.(Namespace, Display, Calltip, History, Dispatcher)
+
+"Ctrl+SHIFT+C"    		 -- Copy Highlighted in console.
+
+"Ctrl+SHIFT+X"    		 -- Cut Highlighted in console.
+
+"Ctrl+SHIFT+V"    		 -- Paste AND Execute(unless in F12 mode) Highlighted in console.
+
+"Ctrl+Up Arrow" 		 -- Cycle up last executed.
+
+"Ctrl+Shift+Up Arrow"    -- Cycle up AND APPEND last executed.
+
+"Alt+Shift + Curser(arrows or mouse)" --Multiple cursors
+
+
 
 Primary Interface Bindings.
 #############################################
@@ -105,6 +121,8 @@ Primary Interface Bindings.
 #Zplane Scrolling
 		After a selection has been made, we can push and pull it by small increments(to be added to preferences.) Press "F7" to set focus on the pianorollpanel.
 		Then, hold down CTRL+SHIFT+ALT and Scroll up to push the selection into the background (effectively making it quieter in terms of velocity) or Scroll down to pull it closer and louder.
+		
+		
 		
 Mayavi2 Key Bindings
 #############################################
