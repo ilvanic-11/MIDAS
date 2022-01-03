@@ -63,7 +63,13 @@ class Actor(HasTraits):
 
     _array4D = Array()   #dtype=np.int8, shape=(5000, 128, 128, 4)
     #_array4D = Array(dtype=np.int8, shape=(5000, 128, 128, 4))
-    #5000  #[x, y, z] coordinates of [on\off, Velocity, Duration, Smallest-Allowed-Duration(SAD)] values.
+    #5000  #[x, y, z] coordinates of [on\off, Duration, Velocity, Smallest-Allowed-Duration(SAD)?, color?] values.
+    #Velocity doesn't need to be a uniquely stored element on the 4th dimension. It's already our z-value.
+    #Example CurrentActor()._array4D[x,y,z] == np.array([0,0,0,0,0]). We have 5 elements here. We already have velocity,
+    #so I changed it to 4 elements.
+    #Edit: I was wrong, velocity needs to be an independent value because of the track<--to\\from-->velocity modes I
+    #       wish to establish. HOWEVER, Smallest ALlowed Duration is derived inherently from Cells Per Quarter Note and
+    #Note Duration. Thus, SAD is redundant.
 
     _stream = Any()  # TODO For exporting, finish. Not used atm.
 
@@ -72,15 +78,18 @@ class Actor(HasTraits):
 
     # For trait flagging.
 
-    array3Dchangedflag = Int()
+    array4Dchangedflag = Int()
+
     pointschangedflag = Int()
     # streamchangedflag = Int()
 
     # For trait-syncing.
-    cur_z = Int(90)            # Synced one-way to mayavi_view.cur_z trait.
+    cur_z = Int(90)
+    # Synced one-way to mayavi_view.cur_z trait.
     previous_z = None
 
     color = Tuple(1., 0., 0.)  # Synced two_way with the pipeline's current_actor.property.color trait.
+                               #Because of this, we didn't need a change_color() function.
     position = Array()         # Synced two-way with the pipeline's current_actor.actor.actor.position trait.
 
     # cur = Int()
@@ -89,8 +98,8 @@ class Actor(HasTraits):
     def __init__(self, mayavi_view, index):
         HasTraits.__init__(self)
         self.index = index
-        self.mayavi_view = mayavi_view
-        self.toplevel = self.mayavi_view.parent
+        self.m_v = mayavi_view
+        self.toplevel = self.m_v.parent
 
         self.colors_instance = ""  #Denotes to what instance of a loaded color image this actor belongs. (call1, call2, etc.)
         self.part_num = 0  #For stream.Part purposes, used in colors function.
@@ -98,7 +107,15 @@ class Actor(HasTraits):
         self.cpqn = self.toplevel.pianorollpanel.pianoroll._cells_per_qrtrnote
         self.old_cpqn = None
 
-        self._array4D = np.zeros(dtype=np.int8, shape=(self.mayavi_view.grid_cells_length, 128, 128, 5))
+        #Our _array4D allows us vectorized access to individual point coordinates via the power of numpy.
+        self._array4D = np.zeros(dtype=np.int8, shape=(self.m_v.grid_cells_length, 128, 128, 5))
+
+        #TODO Pages workaround for CPQN-changed data loss.
+        self._array_pages = []
+
+        self._all_points = None
+        self._cur_plane = None
+
 
         #*
         #Working Attempt at individual array3Ds for every zplane.
@@ -108,29 +125,46 @@ class Actor(HasTraits):
         #np.dstack([self._array3D_dict[i] for i in self._array3D_dict.keys()])
         #*
 
-        #Todo Delete? Redundant? 04/13/2021
-        ##Copied from traits_update function. I need these class attributes.
-        points = np.argwhere(self._array4D == 1.0)   #TODO This will mess up.
-        try:
-            self._all_points = midiart3D.get_planes_on_axis(points, array=True)
-        except IndexError:
-            points = np.array(
-                [[0, 0, 0]])  # A temporary origin point that acts as a fill, so that get_planes on axis executes.
 
-            self._all_points = midiart3D.get_planes_on_axis(points, array=True)
 
-        try:
-            self._cur_plane = self._all_points[self.cur_z]  # Key error can happen here.... #TODO FIX
-            #print("Type_Cur_Plane", type(self._cur_plane))
-            print(self._cur_plane)
-            self._cur_plane[:, 0] = self._cur_plane[:,
-                                    0] ##/ self.cpqn  # Account for cpqn. All 'x' values.  X axis "Slice" item assignment here.
+        #TODO This will mess up.     ???
 
-            #print("HERE, BABY")
-            self._all_points[self.cur_z] = self._cur_plane
-        except Exception as e:
-            print(e)
-            print("Exception as e1:", e)
+
+        #self.get_ON_points_as_odict()
+
+        #??? Necessary?
+        points =  self.get_points_with_all_data()
+
+        # #Todo Delete? Redundant? 04/13/2021
+        # ##Copied from traits_update function. I need these class attributes.
+        # try:
+        #     #An OrderedDict.
+        #     self._all_points = midiart3D.get_planes_on_axis(points, array=True)
+        #
+        # except IndexError:
+        #
+        #     points = np.array(
+        #         [[0, 0, 0]])  # A temporary origin point that acts as a fill, so that get_planes on axis executes.
+        #
+        #     self._all_points = midiart3D.get_planes_on_axis(points, array=True)
+        #
+        # try:
+        #     #The key value value pair of above Odict accessed by current zplane.
+        #
+        #     self._cur_plane = self._all_points[self.cur_z]  # Key error can happen here.... #TODO FIX
+        #     #print("Type_Cur_Plane", type(self._cur_plane))
+        #
+        #     print(self._cur_plane)
+        #
+        #     # Account for cpqn. All 'x' values.  X axis "slice" item assignment here.
+        #     self._cur_plane[:, 0] = self._cur_plane[:, 0] / self.cpqn
+        #
+        #     #print("HERE, BABY")
+        #     self._all_points[self.cur_z] = self._cur_plane
+        #
+        # except Exception as e:
+        #     print(e)
+        #     print("Exception: Your 'points' do not have this --'%s'-- zplane value" % self.cur_z, e)
 
 
         #_array3D = np.full([2500, 128, 128, 3], np.array([0, 1, 90]))
@@ -140,15 +174,104 @@ class Actor(HasTraits):
         #print("_Points", self._points, self._points.dtype)
 
     #3d numpy array---> True\False map of existing coords for rapid access.
+
+
     def change_array4D(self, array4D):
         self._array4D = array4D
-        self.array3Dchangedflag = not self.array3Dchangedflag
+        self.array4Dchangedflag = not self.array4Dchangedflag
 
 
     #2d numpy array---> List of actual coordinates
     def change_points(self, points):
-        self._points = points
+        #TODO Make into pianoroll property. 12/31/2021
+        print("points_shape", points.shape)
+        pr = self.m_v.parent.pianorollpanel.pianoroll
+
+        duration_ratio = pr.GetMusic21DurationRatio()
+
+        if points.shape[1] < 4:
+            #NOTE: substitute_durations1/substitute_duration2 == desired music21.duration.quarterLength
+            #See music21.note.Note().duration.quarterLength.as_integer_ratio()
+            substitute_durations1 = np.full((len(points), 1),
+                                                  duration_ratio[0], dtype=np.float16)
+            print("substitute_durations1", substitute_durations1)
+            substitute_durations2 = np.full((len(points), 1),
+                                                  duration_ratio[1], dtype=np.float16)
+            print("substitute_durations2", substitute_durations2)
+
+            #music21 NOTE: 1.0 is 1 quarternote in quarterLength duration units.
+            #A point should now be : [x, y, z, d1, d2]
+
+            print("points_shape2", points.shape)
+            self._points = np.hstack([points, substitute_durations1, substitute_durations2])
+            #self._points = np.r_['1,2,0', points, substitute_durations1, substitute_durations2]
+            #self._points.dtype = np.float16
+            print("_points_dtype", self._points.dtype)
+            print("Change_points:", self._points)
+            print("Change_points_shape:", self._points.shape)
+        else:
+            self._points = points
+            #self._points.dtype = np.float16
         self.pointschangedflag = not self.pointschangedflag
+
+
+    def get_points_with_all_data(self, z=None, _array4D=None):
+        """
+            This function is intended to expand the power of np.argwhere for musical purposes with our data setup.
+        It's functionality concatenates the duration data extracted from an _array4D onto the points acquired from
+        np.argwhere. (i.e instead of points  np.array([[x, y, z]]) we get instead points np.array([[x, y, z, d1, d2]]).
+        As Midas scales, new data may be concatenated as needed to our coords_array structuring of points.
+
+        Furthermore, it will be an intended feature that the two duration values always be at the end of the _array4D
+        and our new coords_arrays. Therefore, new arrays will always look like :
+        np.array([[x, y, z, a, b, c, ..., d1, d2]]) pending the addition of new data per note.
+
+        :param _array4D:       This usually will be the m_v.CurrentActor()._array4D, but may be user-supplied else-wise.
+        :param z:              If z is specified, only operate on the current zplane, else operate on entire _array4D.
+        :return:               Our new coords_array of points with duration data.
+        """
+        if _array4D is None:
+            _array4D = self._array4D
+        else:
+            _array4D = _array4D
+
+        points = np.argwhere(_array4D[:, :, :, 0] == 1.0) if z is None else np.argwhere(_array4D[:, :, z, 0] == 1.0)
+        if z:
+            _z = np.full((len(points), 1), z, dtype=np.int8) #int, because floats cannot be indices.
+            points = np.column_stack([points, _z])
+
+
+        # if z is None:
+        #     #z = self.cur_z
+        #     points = np.argwhere(_array4D[:, :, :, 0] == 1.0)
+        # else:
+        #     #z = z
+        #     points = np.argwhere(_array4D[:, :, z, 0] == 1.0)
+
+        print("POINTS", points)
+        print("POINTS_dtype", points.dtype)
+        # if points.size == 0:
+        #     return
+        #else:
+        _dur1 = []
+        _dur2 = []
+        for point in points:
+            print("-point-", point)
+            #print("-point_data_in_array4D", _array4D[point[0], point[1], point[2]])
+            _dur1.append(_array4D[point[0], point[1], point[2], 2])
+            _dur2.append(_array4D[point[0], point[1], point[2], 3])
+        _dur_array1 = np.array(_dur1, dtype=np.float16).reshape((len(points), 1))
+        _dur_array2 = np.array(_dur2, dtype=np.float16).reshape((len(points), 1))
+        print("durray1", _dur_array1)
+        print("durray2", _dur_array2)
+        #(len(points), 1)
+        #points = np.r_['1,2,0', points, _dur_array1, _dur_array2]
+        points = np.hstack([points, _dur_array1, _dur_array2])
+
+        #points.dtype = np.float32
+        print("POINTS; get_points_with_all_data", points)
+        print("Points_dtype:", points.dtype)
+        return points
 
 
     #music21 stream---> Stream for stream purposes.
@@ -169,79 +292,126 @@ class Actor(HasTraits):
     #TODO Is this fired when an actor is deleted? If so, can we shut that off?
 
 
-    @on_trait_change("array3Dchangedflag")
-    def actor_array3D_changed(self):
-        print("actor_array3D_changed")
+    @on_trait_change("array4Dchangedflag")
+    def actor_array4D_changed(self):
         #print("actor_index  ", self.index)
 
 
-        #Reacquire
+        #Reacquire cpqn
+
         self.cpqn = self.toplevel.pianorollpanel.pianoroll._cells_per_qrtrnote
         #print("_POINTS Type", type(self._points), self._points.dtype)
 
-
+        #CORE
         self.get_ON_points_as_odict()  #Returns an OrderedDict()
         self._points = midiart3D.restore_coords_array_from_ordered_dict(self._all_points)
         #self._points = midiart3D.delete_select_points(self._points, [[0, 0, 0]], tupl=False)
 
-        #print("_points", self._points)
+        print("r4Dchangedflag_points", self._points) #[[x,y,z,d1,d2]
+                                                      #[x,y,z,d1,d2]
+                                                      #[x,y,z,d1,d2]   #vstacked?
+                                                      #[x,y,z,d1,d2]]
 
         try:
-            self.mayavi_view.sources[self.index].mlab_source.trait_set(
-                points=self._points)  # TODO Redundant? Traitset happens on x axis item slice reassignment above.
+            #THIS IS WHERE WE WILL GET A WORKING VERSION OF DISPLAYING DURATIONS. IT WILL BE BASED ON CHOP_UP_NOTES()
+            points = np.column_stack([self._points[:,0], self._points[:,1], self._points[:,2]]) #[x,y,z]
+            #points = np.vstack([points, new_points])
+            print("DISPLAY_POINTS:", points)
+            self.m_v.sources[self.index].mlab_source.trait_set(
+                points=points)  # TODO Redundant? Traitset happens on x axis item slice reassignment above.
             #NOTE: Cannot trait_set with an empty array, one without points. Clear instead? Workaround?
         except Exception as e:
-            print("Error Here", e)
+            print("Error Here; array_4d_changed", e)
             pass
+        print("actor_array4D_changed")
 
 
-    #Named weird, I don't f*((%king care right now.
+    #Named weird, I don't frickin care right now.
     def get_ON_points_as_odict(self):
 
-        points = np.argwhere(self._array4D[:, :, :, 0] == 1.0)
+
+        #points = np.argwhere(self._array4D[:, :, :, 0] == 1.0)
+
+        points = self.get_points_with_all_data()
+
 
         try:
+             #An OrderedDict.
             self._all_points = midiart3D.get_planes_on_axis(points, array=True)
+
         except IndexError:
             points = np.array(
                 [[0, 0, 0]])  # A temporary origin point that acts as a fill, so that get_planes_on_axis executes.
-            # TODO Write in methods to delete this, so that midi exports don't have a stupid useless note in every file.
+            # TODO Write in methods to delete this, so that midi exports don't have a useless note in every file?
             self._all_points = midiart3D.get_planes_on_axis(points, array=True)
 
         # print("ARRAYCHECK", cur_plane[0])
         # print("ARRAYTYPECHECK", type(cur_plane[0]))
 
         try:
+            #The key value value pair of above Odict accessed by current zplane.
             self._cur_plane = self._all_points[self.cur_z]  # Key error can happen here.... #TODO FIX
+            print(self._cur_plane)
 
 
-            self._cur_plane[:, 0] = self._cur_plane[:, 0] / self.cpqn   #TODO For selection sending between Actors, bool condition needed here to shut this off for those sends.
             # CRITICAL: Account for cpqn. All 'x' values.  X axis "Slice" item assignment here.
+            self._cur_plane[:, 0] = self._cur_plane[:, 0] / self.cpqn   #TODO For selection sending between Actors, bool condition needed here to shut this off for those sends.
 
+
+            #Reinsert into _all_points via key access.
 
             self._all_points[self.cur_z] = self._cur_plane
         except Exception as e:
             print(e)
-            print("Exception as e32:", e)
+            print("Exception; get_ON_points_as_odict: Your 'points' do not have this --'%s'-- zplane value." % self.cur_z, e)
         #return self._all_points
 
 
     @on_trait_change("pointschangedflag")
     def actor_points_changed(self):
-        #print("actor_points_changed")
         cpqn = self.toplevel.pianorollpanel.pianoroll._cells_per_qrtrnote
         #print("CPQN", cpqn)
 
 
-        new_array4D = np.zeros(self._array4D.shape, dtype=np.int16)
+        new_array4D = np.zeros(self._array4D.shape, dtype=np.int8)
         for p in np.arange(0, len(self._points), 1):   #TODO MAJOR self._points WILL CONTAIN our core update data. However, the
-                                 #  mayavi_view traits set will not.  04/11/2021
+                                                       # m_v traits set will not.  04/11/2021
+            #CORE
 
             try:
+                ##IN ORDER
+                #ON
                 new_array4D[int(self._points[p][0]), int(self._points[p][1]), int(self._points[p][2])][0] = 1.0   #TODO Account for cpqn.  * cpqn
+
+                #VELOCITY
+                new_array4D[int(self._points[p][0]), int(self._points[p][1]), int(self._points[p][2])][1] = \
+                    int(self._points[p][2])
+                #2 BECAUSE z IS our velocity from imported points.
+
+                #DURATION
+                #SUPER NOTE!
+                # --Duration needs two values that work together as a ratio on order to acquire an appropriate
+                # --float value for music21.duration.quarterLength.
+                # --See music21.duration.quarterLength.as_integer_ratio().
+                # --THIS allows us to maintain our _array4D as dtype of int8, saving memory.
+                #DUR1
+                new_array4D[int(self._points[p][0]), int(self._points[p][1]), int(self._points[p][2])][2] \
+                    = int(self._points[p][3])
+                #DUR2
+                new_array4D[int(self._points[p][0]), int(self._points[p][1]), int(self._points[p][2])][3] \
+                    = int(self._points[p][4])
+
+                #    int(self._points[p][3] * 10000)
+                #print("DURATION:", int(self._points[p][3] * 10000))
+
+                #SMALLEST ALLOWED NOTE --- ?? This is inherently derived from duration and cpqn. Eliminate?
+                #new_array4D[int(self._points[p][0]), int(self._points[p][1]), int(self._points[p][2])][4] = \
+
+
             except Exception as e:
-                print("EXCEPTION", e)
-        self.mayavi_view.parent.pianorollpanel.pianoroll.cur_array3d = self._array4D = new_array4D
+                print("EXCEPTION; actor_points_changed:", e)
+
+        self.m_v.parent.pianorollpanel.pianoroll.cur_array4d = self._array4D = new_array4D
 
         #self._points[:, 0] = self._points[:, 0]
 
@@ -251,10 +421,12 @@ class Actor(HasTraits):
         update_points = np.r_['1,2,0', self._points[:, 0], self._points[:, 1], self._points[:, 2]]
         #print("UPDATE_POINTS", update_points)
 
-        self.mayavi_view.sources[self.index].mlab_source.trait_set(points=update_points)
 
+        self.m_v.sources[self.index].mlab_source.trait_set(points=update_points)
 
         #print("sources trait_set after actor_points_changed")
+
+        print("actor_points_changed")
 
 
     @on_trait_change('color')
@@ -265,8 +437,9 @@ class Actor(HasTraits):
 
     @on_trait_change('position')
     def show_position(self):
+        #TODO Doc and refigure this. 12/02/2021
         #print("POSITION TRAIT CHANGED:", self.position)
-        self.mayavi_view.cur_ActorIndex = self.index
+        self.m_v.cur_ActorIndex = self.index
 
 
 
@@ -306,14 +479,17 @@ class Mayavi3idiView(HasTraits):
     def __init__(self, parent):
         HasTraits.__init__(self)
 
-        #self.on_trait_event(self._array3D_changed, 'array3Dchangedflag')
+        #self.on_trait_event(self._array4D_changed, 'array4Dchangedflag')
         self.parent = parent
+
         self.engine = self.scene3d.engine
         self.engine.start()  # TODO What does this do?
         self.scene = self.engine.scenes[0]
         self.figure = self.scene3d.mayavi_scene
 
-        self.grid_cells_length = 2500
+        #TODO Write new handlers that deal with imports that exceed this value. 12/02/2021
+        self.grid_cells_length = 256  #512  #1250 #2500   #Rename to "grid_cells_x_max"?
+        #NOTE: If this is a high number, colors imports will be unusably slow.
 
         # Common Scene Properties #TODO Should these be traits? (I think grid3d_span should be...at least)
         self.grid3d_span = 254  # For right now.
@@ -322,9 +498,11 @@ class Mayavi3idiView(HasTraits):
         #self.time_sig = '4/4' #TODO Set based on music21.meter.TimeSignature object.  Make this a trait???
 
 
-        #Calls for colors ---for exporting.
+        #Calls for colors ---for importing and exporting.
+        self.colors_calling = False
         self.colors_call = 0   #No color calls yet. #TODO Make this part of the actor class in new method that doesn't include the actor listbox name.
         self.colors_name = ""
+        self.colors_increment = 1
 
         #For a trait function, this lets user know what if it's a 'colors' actor before it's actually destroyed.
         self.deleting_actor = ''
@@ -349,13 +527,19 @@ class Mayavi3idiView(HasTraits):
 
         #Imports Colors
 
+        #SWAP HERE ------- See trello card: --> https://trello.com/c/O67MrqpT?
+
         self.clr_dict_list = midiart.get_color_palettes(r".\resources\color_palettes")
+        #print("B palm.")
         #Append FLStudioColors to clr_dict_list
         self.clr_dict_list.update([("FLStudioColors", midiart.FLStudioColors)])
-
-
+        #Set FL colors default variable here.
         self.default_color_palette = self.clr_dict_list["FLStudioColors"]
-        self.default_mayavi_palette = midiart.convert_dict_colors(self.default_color_palette, invert=False)
+        #Division to float colors here.
+        self.default_mayavi_palette = midiart.convert_dict_colors(self.default_color_palette, both=True) #invert=False)#
+        #NOTE: These two attributes are modified by the MidiartDialog() function --> OnChangeColor().
+
+        #print("C palm.")
 
 
 
@@ -365,7 +549,7 @@ class Mayavi3idiView(HasTraits):
 
 
         #Grid Construct
-        self.mlab_calls = []  #TODO Note: mlab.clf() in the pyshell does not clear this list.
+        self.mlab_calls = []  #TODO Note: mlab.clf() in the pyshell does not clear this list. Also, rename to mlab_calls? 12/01/2021
         self.text3d_calls = []
         self.text3d_default_positions = []
 
@@ -387,7 +571,7 @@ class Mayavi3idiView(HasTraits):
     def Append_Streams(self):
         pass
 
-    #Grid Establisher.
+    #Interactive Visualization Establisher.
     #@on_trait_change('scene3d.engine.current_scene.scene.activated')
     @on_trait_change('scene3d.activated')
 
@@ -489,7 +673,7 @@ class Mayavi3idiView(HasTraits):
     def rebind_picker(self):
 
         #self.scene.on_mouse_pick(self.zoom_to_coordinates, type='point', button='Middle', remove=True)
-        self.scene.on_mouse_pick(self.zoom_to_coordinates, type='point', button='Middle', remove=False)
+        self.scene.on_mouse_pick(self.parent.zoom_to_coordinates, type='point', button='Middle', remove=False)
 
     # @mlab.clf
     # def clear_lists(self):
@@ -499,29 +683,7 @@ class Mayavi3idiView(HasTraits):
     #     self.text3d_calls.clear()
     #     self.text3d_default_positions.clear()
 
-    def clear_all_and_redraw(self):
-        #TODO CLEAR ALL ACTOR"S AND ZPLANES AS WELL ---> 04/17/2021
-        self.scene3d.disable_render = True
-        mlab.clf()
-        self.sources.clear()
-        self.mlab_calls.clear()
-        self.highlighter_calls.clear()
-        self.text3d_calls.clear()
-        self.text3d_default_positions.clear()
-        self.create_3dmidiart_display()
-        self.scene3d.disable_render = False
-        #TODO Add delete_actors stuff here too. New Session function?! :)
 
-
-    #TODO Redundant now?
-    def redraw_mayaviview(self, event):
-        self.scene3d.disable_render = True
-        mlab.clf()                  #Be Careful with mlab.clf() 04/17/2021
-        self.create_3dmidiart_display()
-        self.scene3d.disable_render = False
-        #Set focus on mbp for fast use of "F" hotkeys.
-        self.parent.mainbuttonspanel.SetFocus()
-        self.parent.pianorollpanel.actorsctrlpanel.actorsListBox.Activate_Actor(self.cur_ActorIndex)   #TODO Watch for cpqn bugs here. 04/17/2021
 
     def remove_mlab_actor(self, actor_child): #TODO Write from scenes[0].children stuff. CHECK--Use child.remove()
         actor_child.remove()  #Must be an actor_child found in scene3d.engine.scenes[0].children. Use subscript for it.
@@ -577,7 +739,17 @@ class Mayavi3idiView(HasTraits):
         a.name = name
         a.color = color
 
+        #This is\was intended to handle a micro-case where the actor_label in the highlighter plane wasn't updating
+        #after ALL actors had been deleted and THEN  the new_actor button is clicked.
+        # if len(self.actors) != 0:
+        #     if self.colors_calling is False:
+        #         self.parent.pianorollpanel.actorsctrlpanel.actorsListBox.Activate_Actor(self.cur_ActorIndex)
+        #     else:
+        #         pass
+        # else:
+        #     pass
 
+        #print("Flag 2")
         self.cur_changed_flag = not self.cur_changed_flag
 
         #self.scene3d.disable_render = False
@@ -626,9 +798,10 @@ class Mayavi3idiView(HasTraits):
             color = self.actors[self.cur_ActorIndex].color
         else:
             color = color
-        mlab_data = mlab.points3d(array_2d[:, 0], array_2d[:, 1], array_2d[:, 2],
+        mlab_data = self.scene.scene.mlab.points3d(array_2d[:, 0], array_2d[:, 1], array_2d[:, 2],
                                   color=color, figure=figure, mode=mode, name=name,
                                   scale_factor=scale_factor)
+        #mlab.points3d
         return mlab_data
 
 
@@ -638,7 +811,7 @@ class Mayavi3idiView(HasTraits):
         array_data = midiart3D.extract_xyz_coordinates_to_array(in_stream)
         array_data = array_data.astype(float)
         # print(array_data)
-        mlab_data = mlab.points3d(array_data[:, 0], array_data[:, 1], array_data[:, 2],
+        mlab_data = self.scene3d.mlab.points3d(array_data[:, 0], array_data[:, 1], array_data[:, 2],
                                   color=color, figure=figure, mode=mode, name=name,
                                   scale_factor=scale_factor)
         self.mlab_calls.append(mlab_data)
@@ -650,7 +823,7 @@ class Mayavi3idiView(HasTraits):
 
         text_stream = self.parent.musicode.mc.translate(mc, text)
         text_array = midiart3D.extract_xyz_coordinates_to_array(text_stream)
-        mlab_data = mlab.points3d(text_array[:, 0], text_array[:, 1], text_array[:, 2], color=color, figure=figure,
+        mlab_data = self.scene3d.mlab.points3d(text_array[:, 0], text_array[:, 1], text_array[:, 2], color=color, figure=figure,
                                   mode=mode, name=name,
                                   scale_factor=scale_factor)
         self.mlab_calls.append(mlab_data)
@@ -774,7 +947,7 @@ class Mayavi3idiView(HasTraits):
 
 
     #Highlighter Plane functions.
-    def establish_highlighter_plane(self, z_points=0, z_marker=0, position = np.array([0, 0, 90]), color=(0, 1, 0),
+    def establish_highlighter_plane(self, z_points=0, z_marker=90, position = np.array([0, 0, 90]), color=(0, 1, 0),
                                     figure=None, grandstaff=True, length=None):
         figure = self.scene3d.mayavi_scene if figure is None else figure
 
@@ -821,10 +994,10 @@ class Mayavi3idiView(HasTraits):
                                        figure=figure, line_width=.5, name="Staff Lines", opacity=1., tube_radius=None)
             self.gscalls.name = "Staff Lines"
             #Treble Clef
-            self.gclef_call = mlab.points3d(gclef[:, 0], gclef[:, 1], gclef[:, 2], color=(0,1,0), figure=figure,
+            self.gclef_call = self.scene3d.mlab.points3d(gclef[:, 0], gclef[:, 1], gclef[:, 2], color=(0,1,0), figure=figure,
                                             mode='cube', name="Treble Clef", opacity=.015, scale_factor=.25)
             #Bass Clef
-            self.fclef_call = mlab.points3d(fclef[:, 0], fclef[:, 1], fclef[:, 2], color=(0,1,0), figure=figure,
+            self.fclef_call = self.scene3d.mlab.points3d(fclef[:, 0], fclef[:, 1], fclef[:, 2], color=(0,1,0), figure=figure,
                                             mode='cube', name="Bass Clef", opacity=.015, scale_factor=.25)
             #self.mlab_calls.append(self.gscalls)
             self.highlighter_calls.append(self.gscalls)
@@ -837,22 +1010,26 @@ class Mayavi3idiView(HasTraits):
         #Z-Plane marker.
         #a_marker = self.parent.pianorollpanel.actorsctrlpanel.actorsListBox.GetItemText(self.cur_ActorIndex)
 
-        a_label = mlab.text3d(-40, -10, 0, "Actor_0", color=(0, 1., .75), figure=figure, name="Actor_Label",
-                              orient_to_camera=False, scale=4)
-        z_label = mlab.text3d(-40, 0, 0, "Z-Plane_%s" % z_marker, color=(.55, .55, .55), figure=figure,
+        a_label = mlab.text3d(-40, -10, 90, "Actor_None",
+                              color=(0.6196078431372549, 0.8196078431372549, 0.6470588235294118), # (0, 1., .75) (158, 209, 165)
+                              figure=figure,
+                              name="Actor_Label",
+                              orient_to_camera=False,
+                              scale=4)
+        z_label = mlab.text3d(-40, 0, 90, "Z-Plane_%s" % z_marker, color=(.55, .55, .55), figure=figure,
                               name="Z_Label", orient_to_camera=False, scale=4)
         self.highlighter_calls.append(a_label)
         self.highlighter_calls.append(z_label)
 
         self.initial_reticle = np.asarray(np.vstack(((0, 127 - 0, 0),
-                                                     (149, 127 - 0, 0),
-                                                     (149, 127 - 22, 0),
-                                                     (0, 127 - 22, 0),
+                                                     (147, 127 - 0, 0), #149
+                                                     (147, 127 - 24, 0), #149, 22
+                                                     (0, 127 - 24, 0),   #22
                                                      (0, 127 - 0, 0))), dtype=np.float32)
         ##Red Grid Reticle Box
-        self.grid_reticle = mlab.plot3d( self.initial_reticle[:, 0],  self.initial_reticle[:, 1],
-                                         self.initial_reticle[:, 2], color=(1,.42, 0), figure=figure, line_width=2.,
-                                         name="Red Edges", opacity=1., tube_radius=None, tube_sides=12)
+        self.grid_reticle = mlab.plot3d(self.initial_reticle[:, 0],  self.initial_reticle[:, 1],
+                                        self.initial_reticle[:, 2], color=(1,.42, 0), figure=figure, line_width=2.,
+                                        name="Red Edges", opacity=1., tube_radius=None, tube_sides=12)
         self.grid_reticle.name = "Red Edges"
         self.highlighter_calls.append(self.grid_reticle)
         self.scene3d.disable_render = False
@@ -868,9 +1045,17 @@ class Mayavi3idiView(HasTraits):
             elif h.name == "Actor_Label":
                 h.actor.actor.position = np.array([position[0]-40, position[1]-10, position[2]])
                 h.text = self.parent.pianorollpanel.actorsctrlpanel.actorsListBox.GetItemText(self.cur_ActorIndex)
+            # elif h.name == "Red Edges":
+            #      h.actor.actor.trait_set(position = np.array([0., 0., 0.]))
             else:
                 h.actor.actor.position = position
+
+
+    def set_grid_reticle_position(self, z):
+        self.grid_reticle.actor.actor.trait_set(position=z)
+        #self.grid_reticle.actor.actor.position = np.array([0, 0, z])
         #return plane
+
 
 
         # TODO Tie this to a button.
@@ -1027,54 +1212,6 @@ class Mayavi3idiView(HasTraits):
             for n in range(0, len(self.text3d_calls)):
                 self.text3d_calls[n].actor.actor.position = pos
 
-
-    def zoom_to_coordinates(self, picker):
-        print("PICKER", picker)
-        print("PICKER_TYPE", type(picker))
-        print("Point", picker.point_id)
-        picker.tolerance = 0.01
-        picked = picker.actors
-        print("Picked", picked)
-        #print(picker.trait_names())
-        print("Selection Point:", picker.pick_position)
-
-        mproll = self.parent.pianorollpanel.pianoroll
-
-        self.ret_x = picker.pick_position[0] * self.cpqn  ######Account for cpqn here.
-        self.ret_y = picker.pick_position[1]
-        self.ret_z = picker.pick_position[2]
-
-        #In scrollunits, which should == to pixels.
-
-        #TODO..Conversions for cells, coords, and scrollunits?
-        #10 pixels per cell
-        #ScrollRate = Pixels/Scrollunit
-
-        #Pixels to Cell --- User Grid.XYToCell()
-        #Cell to Pixels -- Cell Row\Col * 10
-
-        #Cell to ScrollUnits -- Cell * 10 / ScrollRate
-        #Measure to ScrollUnits -- Measure * (Cell * PixelsperCell-->10 * CellsperMeasure-->(timesig_numerator*cellsperqrtrnote))
-
-        #Cell to Mayavi_Coords --  Synced as ints.
-        #MayaviCoords to Cell -- Synced as ints.
-
-        #( 160 * 10) / (160 / 4 * (4 * 10)
-        self.cur_scroll_x = (int(self.ret_x) *10) / mproll.GetScrollPixelsPerUnit()[0]  #Scrollrate / cells per measure #TODO CPQN FACTORED IN HERE -- Acounted for above.
-        self.cur_scroll_y = ((127-int(self.ret_y)) * 10) / mproll.GetScrollPixelsPerUnit()[1]   #Scrollrate Y / cells per two octaves == 24
-
-        #TODO Fix this limit cap.
-        if self.cur_scroll_y > 1040:   #Caps off scrolling at the bottom, so the rectangle doesn't go funky.
-            self.cur_scroll_y = 1040    #Sash position affects this because num of pixels in client view relates to ViewStart().
-
-        print("Coord", self.ret_x, self.ret_y, self.ret_z)
-        if mproll is not None:
-
-            #Zooms on middle click.  #TODO Math is not exact yet...
-            mproll.Scroll(self.cur_scroll_x, self.cur_scroll_y)
-            self.new_reticle_box()
-        else:
-            pass
 
 
     ###DEFINE MUSIC ANIMATION
@@ -1267,9 +1404,9 @@ class Mayavi3idiView(HasTraits):
         PianoWhiteNotes = MusicObjects.piano_white_notes()
         # Render Piano
         self.scene3d.disable_render = True
-        mlab.points3d(PianoBlackNotes[:, 0], PianoBlackNotes[:, 1], (PianoBlackNotes[:, 2] / 4), color=(0, 0, 0),
+        self.scene3d.mlab.points3d(PianoBlackNotes[:, 0], PianoBlackNotes[:, 1], (PianoBlackNotes[:, 2] / 4), color=(0, 0, 0),
                       figure=figure, mode='cube', scale_factor=1)
-        mlab.points3d(PianoWhiteNotes[:, 0], PianoWhiteNotes[:, 1], (PianoWhiteNotes[:, 2] / 4), color=(1, 1, 1),
+        self.scene3d.mlab.points3d(PianoWhiteNotes[:, 0], PianoWhiteNotes[:, 1], (PianoWhiteNotes[:, 2] / 4), color=(1, 1, 1),
                       figure=figure, mode='cube', scale_factor=1)
         # mlab.outline()
 
@@ -1278,16 +1415,16 @@ class Mayavi3idiView(HasTraits):
         x2 = np.zeros(127)
         x3 = np.zeros(127)
         Grid = np.column_stack((x1, x2, x3))
-        #mlab.points3d(Grid[:, 0], Grid[:, 1], Grid[:, 2], color=(1, 0, 0), mode="2dthick_cross", scale_factor=.75)
-        mlab.points3d(Grid[:, 1], Grid[:, 0], Grid[:, 2], color=(1, 0, 0), figure=figure, mode="2ddash", scale_factor=1)
-        mlab.points3d(Grid[:, 1], Grid[:, 2], Grid[:, 0], color=(1, 0, 0), figure=figure, mode="2ddash", scale_factor=1)
+        #self.scene3d.mlab.points3d(Grid[:, 0], Grid[:, 1], Grid[:, 2], color=(1, 0, 0), mode="2dthick_cross", scale_factor=.75)
+        self.scene3d.mlab.points3d(Grid[:, 1], Grid[:, 0], Grid[:, 2], color=(1, 0, 0), figure=figure, mode="2ddash", scale_factor=1)
+        self.scene3d.mlab.points3d(Grid[:, 1], Grid[:, 2], Grid[:, 0], color=(1, 0, 0), figure=figure, mode="2ddash", scale_factor=1)
 
         ###---##Extended X Axis....
         x4 = np.array(range(0, int(length)), dtype=np.float16)
         x5 = np.zeros(int(length))
         x6 = np.zeros(int(length))
         Xdata = np.column_stack((x4, x5, x6))
-        mlab.points3d(Xdata[:, 0], Xdata[:, 1], Xdata[:, 2], color=(1, 0, 0), figure=figure,
+        self.scene3d.mlab.points3d(Xdata[:, 0], Xdata[:, 1], Xdata[:, 2], color=(1, 0, 0), figure=figure,
                       mode="2dthick_cross", scale_factor=.75)
 
         # GridTe
@@ -1377,14 +1514,37 @@ class Mayavi3idiView(HasTraits):
             self.new_reticle_box()
             #pass
 
+
     @on_trait_change('position')  #Split for a tested reason.
     def highlighter_actor_chase(self):
         # Align Highlighter on position change.
         if self.cur_ActorIndex < 0:
             return
         else:
-            self.highlighter_transformation()
+            #print("Flag 5?")
+            #print("Colors_calling", self.colors_calling)
+            print("Colors_increment:", self.colors_increment)
+
+            #This block may not be necessary now.
+            # if self.colors_calling is True:
+            #     print("Colors_increment:", self.colors_increment)
+            #     if self.colors_increment != 16:
+            #         pass
+            #     else:
+            #         print("Flag 6")
+            #         print("Highlighter_transformation already called, passing....")
+            #         #self.highlighter_transformation()
+
+            #This was a fun detail; it stopped 16 weird extra self.highlighter_transformation() calls at the end
+            #of a a colors load
+            if self.colors_calling is True and self.disable_render is False:
+                return
+            else:
+                #print("Flag 7")
+                self.highlighter_transformation()
+            #self.highlighter_transformation()
             self.new_reticle_box()
+
 
     @on_trait_change('position')  #Split for a tested reason.
     def select_moved_actor(self):
@@ -1396,7 +1556,6 @@ class Mayavi3idiView(HasTraits):
                 #If it's selected, unselect it.
                 if alb.IsSelected(i):
                     alb.Select(i, on=0)
-
         else:
             pass
 
@@ -1406,11 +1565,13 @@ class Mayavi3idiView(HasTraits):
         #TODO Causes a red error on startup and at some color loading because of pos changes, but non-breaking.
             ###This: >>> "4:19:02 AM: Error: Couldn't retrieve information about list control item 0."
 
+
     @on_trait_change('cur_z')
     def highlighter_plane_chase(self):
         # Align Z-value
         if self.cur_ActorIndex < 0:
             return
+        print("Flag 4?")
         self.highlighter_transformation()
         #print("Highlighter Aligned")
         self.new_reticle_box()
@@ -1434,14 +1595,42 @@ class Mayavi3idiView(HasTraits):
 
     @on_trait_change('actor_deleted_flag')
     def reset_index_attributes(self):
+        #NOTE: This function has weird pycharm introspection quirks. An if-else statement wasn't working when it should,
+        #'self.actors' is throwing a ""Expected type 'Sized', got 'List' instead"" warning, among others. Beware.
+
+        alb = self.parent.pianorollpanel.actorsctrlpanel.actorsListBox
+
         #Reset actor.index attributes.
         for k in range(0, len(self.actors)):
             self.actors[k].index = k
         #print("actor.index attributes reset")
-        print("actor.index attributes reset")
+        print("actor.index attributes reset.")
 
+        # .filter has nothing to do with each actors "index." It has to do with values calculated in tandem with the
+        # GTLP.actor_scrolled position.
+        ##This call reduces the ordered range of elements in .filter by one, because deletion.
+        alb.filter = [f for f in range(0, len(alb.filter), 1)]
+        print("Scroll filter list reset.", self.parent.pianorollpanel.actorsctrlpanel.actorsListBox.filter)
+
+        print("Actors length:", len(self.actors))
+
+        #If-else syntax failed here in one case, so rewrote as single line. Logic left for reference.
+        # self.parent.pianorollpanel.last_actor = 0 if len(self.actors) == 0 else self.parent.pianorollpanel.last_actor
+        # print("No actors, 'prp.last_actor' set to 0") if len(self.actors) == 0 else None
+
+        #Same thing. Easier to read, takes up more lines.
         if len(self.actors) == 0:
             self.parent.pianorollpanel.last_actor = 0
+            print("No actors, 'prp.last_actor' set to 0")
+        else:
+            pass
+
+
+
+
+
+        #alb.filter.remove()
+
 
         # if len(self.actors) == 0:
         #     self.parent.pianorollpanel.last_actor = 0
@@ -1469,7 +1658,7 @@ class Mayavi3idiView(HasTraits):
         if zplane is not None:
             pass
         else:
-            zplane = 0   ###self.cur_z
+            zplane = 0   ###self.cur_z  0
 #        if self.parent.parentpianorollpanel:
 
         #TODO Needs Cells per quarter note factored in. ----Once CellsPerQuarterNote is fixed.
@@ -1511,9 +1700,8 @@ class Mayavi3idiView(HasTraits):
                 print("FIXED POINT")
                 topleft = mproll.XYToCell(mproll.CalcUnscrolledPosition(0, 0))  # New Topleft
                 bottomleft = (127, topleft[1]) #New Bottomleft
-                topright = (topleft[0], 2499)
-                bottomright = (127, 2499)
-
+                topright = (topleft[0], self.grid_cells_length -1)
+                bottomright = (127, self.grid_cells_length -1)
             elif bottomleft[1] == -1 and bottomright[1] == -1:  #Bottom glitch.
 
                 topleft = mproll.XYToCell(mproll.CalcUnscrolledPosition(0, 0)) #New Topleft
@@ -1535,9 +1723,8 @@ class Mayavi3idiView(HasTraits):
                     #(127, topleft[1])  # New Bottomleft
                 #topright = mproll.XYToCell(mproll.CalcUnscrolledPosition(client_size[0] - 58, bottomleft[1]))
                 #topright = mproll.XYToCell(mproll.CalcUnscrolledPosition(client_size[0] - 58, 0))  # New Topright
-                topright = (topleft[0], 2499)
-                bottomright = (bottomleft[0], 2499)
-
+                topright = (topleft[0],self.grid_cells_length -1)
+                bottomright = (bottomleft[0], self.grid_cells_length -1)
                 # bottomright = mproll.XYToCell(mproll.CalcUnscrolledPosition(0,0)[0], )
                 # Bottom is ( , 127)
 
@@ -1555,21 +1742,29 @@ class Mayavi3idiView(HasTraits):
 
                 pass
 
+            # print("TOPRIGHT", topright[0])
+            # print("BOTTOMRIGHT", bottomright[0])
+            # print("BOTTOMLEFT", bottomleft[0])
+            # print("TOPLEFT", topleft[0])
+            # print("TOPRIGHT", topright[0])
+            #
+            # print("----")
+            #
+            # print("TOPRIGHT", topright[1])
+            # print("BOTTOMRIGHT", bottomright[1])
 
-
-
-            reticle = np.asarray(np.vstack(((topleft[1], 127-topleft[0], 0),
-                                 (topright[1], 127-topright[0], 0),
-                                 (bottomright[1], 127-bottomright[0], 0),
-                                 (bottomleft[1], 127-bottomleft[0], 0),
-                                 (topleft[1], 127-topleft[0], 0))), dtype=np.float32)
+            reticle = np.asarray(np.vstack(((topleft[1], 127-topleft[0], zplane),
+                                 (topright[1], 127-topright[0], zplane),
+                                 (bottomright[1], 127-bottomright[0], zplane),
+                                 (bottomleft[1], 127-bottomleft[0], zplane),
+                                 (topleft[1], 127-topleft[0], zplane))), dtype=np.float32)
 
             #In place slice reassignment.
             reticle[:, 0] = reticle[:, 0] / cpqn #TODO Once cpqn is fixed. CHECK-- Now that cpqn is fixed, create a trait event for it so that this reticle--
                                                                                                       #TODO---(among other things) updates automatically when cpqn is changed.
             #Traits notification
             self.grid_reticle.mlab_source.trait_set(points=reticle)
-
+            self.parent.mayaviviewcontrolpanel.Refresh()
             #Points Update
             #self.grid_reticle.mlab_source.points = reticle
 
@@ -1596,6 +1791,7 @@ class Mayavi3idiView(HasTraits):
 
 
     def highlighter_transformation(self, labels_only=False):
+        print("Highlighter transforming....")
         for i in self.highlighter_calls:
             pos = self.sources[self.cur_ActorIndex].actor.actor.position
             i_z = pos[2]

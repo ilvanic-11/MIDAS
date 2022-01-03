@@ -229,7 +229,7 @@ def rain_execute():
         col.append(Column(i * row_width, screen, font))
 
     screen.fill(BLACK)
-    pygame.time.set_timer(pygame.QUIT, 19500)
+    pygame.time.set_timer(pygame.QUIT, 7250) #19500
 
     while True:
         for event in pygame.event.get():
@@ -241,7 +241,7 @@ def rain_execute():
         for c in col:
             c.move()
             c.update()
-        pygame.time.wait(20)
+        pygame.time.wait(20) #20
         pygame.display.flip()
         #time.sleep(5)
         #pygame.display.toggle_fullscreen()
