@@ -6,8 +6,11 @@ from wx.adv import SplashScreen as SplashScreen
 #from mayavi3D import Mayavi3idiArtAnimation
 from mayavi3D import Mayavi3DWindow, MusicObjects
 from gui import StatusBar
+import numpy as np
 import pyo
 import os
+import gc
+import sys
 import wx._adv, wx._html, wx._xml, wx.py, time
 import threading
 import multiprocessing
@@ -172,6 +175,8 @@ class MainWindow(wx.Frame):
         self.mainpanel.SetSizerAndFit(sizer)
 
         #Icon
+        ass = r".\resources"
+        print("RESOURCES", ass)
         self.icon = wx.Icon()
         self.icon.LoadFile(r".\resources\TrebleClefIcon.bmp", type=wx.BITMAP_TYPE_ANY)     #, desiredHeight=10, desiredWidth=10)
         #self.icon.SetHeight(25)
@@ -426,6 +431,16 @@ class MainWindow(wx.Frame):
         #     self.mainbuttonspanel.SetFocus()
         alb = self.pianorollpanel.actorsctrlpanel.actorsListBox
         zlb = self.pianorollpanel.zplanesctrlpanel.ZPlanesListBox
+        self.mayavi_view.scene3d.disable_render=True
+
+        # TEMPORARY STUFF
+        if self.mayavi_view.volume_slice:
+            self.ipw = self.mayavi_view.image_plane_widget.ipw
+            self.ipw2 = None
+        else:
+            self.ipw = self.mayavi_view.slice.actor.actor
+            self.ipw2 = self.mayavi_view.slice_edges.actor.actor
+
 
         if event.GetWheelAxis() == wx.MOUSE_WHEEL_HORIZONTAL or event.GetWheelDelta() < 120:
             event.Skip()
@@ -438,13 +453,15 @@ class MainWindow(wx.Frame):
         ##ACTORS List Box
         #if event.GetUnicodeKey() == ord('A'):
         if mousestate.ControlDown():  #HOLD CTRL
+
             if mousestate.ShiftDown():  #HOLD SHIFT AND SCROLL TO DESIRED ACTOR LIST ITEM
                 #self.IsActorScrolling = True
                 alb.SetFocus()
+
                 #Scrolling up, decreasing in value.
                 if event.GetWheelRotation() >= 120:
                     #if self.actor_scrolled == 0:
-                    if self.actor_scrolled == alb.filter[0]:
+                    if self.actor_scrolled == alb.filter[0]:   #First in the filter list, we don't go past it.
                         pass
                     else:
                         self.actor_scrolled = alb.filter[alb.filter.index(self.actor_scrolled) - 1]
@@ -466,10 +483,11 @@ class MainWindow(wx.Frame):
                         else:
                             alb.Select(self.actor_scrolled, on=1)
                     # self.pianorollpanel.actorsctrlpanel.actorsListBox.Select
+
                 #Scrolling down, increasing in value
                 elif event.GetWheelRotation() <= -120:
                     #if self.actor_scrolled == alb.GetItemCount() - 1:
-                    if self.actor_scrolled == alb.filter[-1]:
+                    if self.actor_scrolled == alb.filter[-1]:   #Last in the filter list, we don't go past it.
                         pass
                     else:
                         self.actor_scrolled = alb.filter[alb.filter.index(self.actor_scrolled) + 1]
@@ -490,12 +508,14 @@ class MainWindow(wx.Frame):
                         #Else, select the current.
                         else:
                             alb.Select(self.actor_scrolled, on=1)
+
             elif mousestate.AltDown():  # HOLD ALT AND SCROLL TO DESIRED Z-PLANE LIST ITEM   # and event.ShiftDown():
                 #self.IsZPlaneScrolling = True
+
                 #Scrolling up, decreasing in value.
                 if event.GetWheelRotation() >= 120:
                     #if self.zplane_scrolled == 0:
-                    if self.zplane_scrolled == zlb.filter[0]:
+                    if self.zplane_scrolled == zlb.filter[0]:  #First in the filter list, we don't go past it.
                         pass
                     else:
                         #say, from 90 to 95
@@ -517,15 +537,28 @@ class MainWindow(wx.Frame):
                         #Else, select the current.
                         else:
                             zlb.Select(self.zplane_scrolled, on=1)
-                    # self.pianorollpanel.actorsctrlpanel.actorsListBox.Select
+                            #GREEN HERE
+                            if self.mayavi_view.quick_plane:  #TODO Create option to turn off.
+                                self.mayavi_view.highlighter_calls[0].actor.actor.trait_set(position=np.array([0., 0., self.zplane_scrolled]))
+
+                                # if self.mayavi_view.volume_slice:
+                                #     self.ipw.trait_set(slice_position=self.zplane_scrolled)  ##ipw.position = i  #/i_div
+                                #     # self.scene3d.disable_render=False
+                                #
+                                # else:
+                                #     pos = np.array([self.zplane_scrolled, 0, 0])
+                                #     self.ipw.trait_set(position=pos)
+                                #     self.ipw2.trait_set(position=pos)
+
+
                 #Scrolling down, increasing in value.
                 elif event.GetWheelRotation() <= -120:
                     #if self.zplane_scrolled == 127:
-                    if self.zplane_scrolled == zlb.filter[-1]:
+                    if self.zplane_scrolled == zlb.filter[-1]:  #Last in the filter list, we don't go past it.
                         pass
                     else:
                     #From, say, 90 to 95
-                        self.zplane_scrolled = zlb.filter[zlb.filter.index(self.zplane_scrolled) + 1]
+                        self.zplane_scrolled = zlb.filter[zlb.filter.index(self.zplane_scrolled) + 1] #The next one.
                         #self.zplane_scrolled += 1
                     #print("Zplane Scrolled -->", self.zplane_scrolled)
                     zlb.Select(self.zplane_scrolled)
@@ -543,6 +576,20 @@ class MainWindow(wx.Frame):
                         #Else, select the current.
                         else:
                             zlb.Select(self.zplane_scrolled, on=1)
+                            #GREEN HERE
+                            if self.mayavi_view.quick_plane:
+                                self.mayavi_view.highlighter_calls[0].actor.actor.trait_set(position = np.array([0., 0., self.zplane_scrolled]))
+
+                                # if self.mayavi_view.volume_slice:
+                                #     self.ipw.trait_set(slice_position=self.zplane_scrolled)  ##ipw.position = i  #/i_div
+                                #     # self.scene3d.disable_render=False
+                                #
+                                # else:
+                                #     pos = np.array([self.zplane_scrolled, 0, 0])
+                                #     self.ipw.trait_set(position=pos)
+                                #     self.ipw2.trait_set(position=pos)
+
+
 
             else:  #RELEASE SHIFT, SCROLL ONE MORE TIME HERE, IN EITHER DIRECTION, TO ACTIVATE.
                 #TODO SCROLL UP FOR ACTOR? SCROLL DOWN FOR ZPLANE? Brilliant....
@@ -559,6 +606,7 @@ class MainWindow(wx.Frame):
                 elif event.GetWheelRotation() <= -120:
                     zlb.Activate_Zplane(self.zplane_scrolled)
 
+        self.mayavi_view.scene3d.disable_render=False
         event.Skip()
 
 
@@ -594,7 +642,7 @@ class MainWindow(wx.Frame):
             self.pianorollpanel.ArrayFromSelection(self.pianorollpanel.selected_notes, scroll_value=self.zplane_scrolled, carry=True)
             self.selection_print = "Selection sent here to the pyshell as variables Midas_Array and Midas_Stream.\n Midas_Array is an np.array.\n Midas_Stream is a music21.stream.Stream()."
             self.pyshellpanel.shell.Execute("Midas_Array = Midas.pianorollpanel.selection_array")
-            self.pyshellpanel.shell.Execute("Midas_Stream = midiart3D.extract_xyz_coordinates_to_stream(Midas.pianorollpanel.ArrayFromSelection(Midas.pianorollpanel.selected_notes, scroll_value=Midas.zplane_scrolled, carry=True))")
+            self.pyshellpanel.shell.Execute("Midas_Stream = midiart3D.extract_xyz_coordinates_to_stream(Midas.pianorollpanel.ArrayFromSelection(Midas.pianorollpanel.selected_notes, scroll_value=Midas.zplane_scrolled, carry=True), durations=True)")
 
             self.pyshellpanel.shell.Execute("print(Midas_Array)")
             #self.pyshellpanel.shell.Execute("print(Midas_Stream)")
@@ -719,9 +767,9 @@ class MainWindow(wx.Frame):
         print("\n")
         print("Current palette name        -->", self.mayavi_view.current_palette_name)
         print("Current color palette       -->")
-        print(self.mayavi_view.default_color_palette)
+        print(self.mayavi_view.current_color_palette)
         print("Current mayavi palette      -->  #Note: R and B will appear swapped here, but this is handled in the workflows.") #12/03/2021
-        print(self.mayavi_view.default_mayavi_palette)
+        print(self.mayavi_view.current_mayavi_palette)
         #TODO Change default to "current" with these last two names. 12/03/2021
 
 
@@ -745,6 +793,7 @@ class MainWindow(wx.Frame):
         self.mayavi_view.scene3d.disable_render = False
         # TODO Add delete_actors stuff here too. New Session function?! :)
 
+
     # TODO Redundant now?
     def redraw_mayaviview(self, event):
         self.mayavi_view.scene3d.disable_render = True
@@ -761,6 +810,74 @@ class MainWindow(wx.Frame):
         self.mainbuttonspanel.SetFocus()
         self.pianorollpanel.actorsctrlpanel.actorsListBox.Activate_Actor(
             self.cur_ActorIndex)  # TODO Watch for cpqn bugs here. 04/17/2021
+
+
+    def _delete_mayavi_views(self):
+    #NOT meant to be used casually. This was intended to be the start of a chain of logic that solved a memory problem.
+
+        """
+        Warning: Executing this function will require a restart of Midas in order to continue using Midas.
+        . Use only if you know what you are doing.
+
+        This function DELETES all POINTERS\INSTAANCES of the Mayavi3idiView() class instantiated as  m_v throughout
+        MIDAS. It was intended to solve a memory problem. The ONLY instance it doesn't delete is the main one here in
+        our MainWindow class, self.mayavi_view; this is for confirmation purposes.
+
+        NOTE: The referrence count will print "3" at the end, but note that there are TWO pointers within the scope of
+        this function that don't get garbage collected themselves obviously until the interpreter has exited this
+        function's scope. And since this function doesn't delete the main self.mayavi_view pointer, running
+        sys.getrefcount(Midas.mayavi_view) in the pycrust, should return 2, which means there's only one left;
+        the main one. (because 2 minus sys.getrefcounts()'s pointer == 1)
+
+        #TODO Write sister function that restores all m_v's during mainloop running.
+        :return:
+        """
+        try:
+            ref_list = gc.get_referrers(self.mayavi_view) #Temp pointer here 1.
+            del (self.pianorollpanel.m_v)
+            del (self.pianorollpanel.pianoroll.m_v)
+            del (self.menuBar.m_v)
+            del (self.mainbuttonspanel.m_v)
+            del (self.pianorollpanel.actorsctrlpanel.m_v)
+            del (self.pianorollpanel.actorsctrlpanel.actorsListBox.m_v)
+            del (self.pianorollpanel.zplanesctrlpanel.m_v)
+            del (self.pianorollpanel.zplanesctrlpanel.ZPlanesListBox.m_v)
+            # ref_list[1]['__sync_trait__']['cur_z']  #deletes a weakreference
+            if len(Midas.mayavi_view.actors) != 0:
+                for i in Midas.mayavi_view.actors:
+                    del (i.m_v)
+
+            deletion_list = ['object', 'default_value', '_traits_cache_context_object', '_object']  # 'mayavi_view' is last
+            for i in range(0, len(ref_list)):
+                for j in deletion_list:
+                    try:
+                        k = [x for x in ref_list[i].keys()]
+                        if j in k:
+                            del (ref_list[i][j])
+                        else:
+                            pass
+                    except Exception as e:
+                        print(e)
+                        pass
+            # print(ref_list[1])
+            print("Ctrait?", [ref_list[5]])
+            ctrait_ref_list = gc.get_referrers(ref_list[5])
+            print("Ctrait_ref_list??", ctrait_ref_list)
+            print("  --  ")
+            print("Ctrait?", ctrait_ref_list[-1]['object'])
+            print("Ctrait type?", type(ctrait_ref_list[-1]))
+            assert ctrait_ref_list[-1]['object'] == ref_list[5], "Ctrait no match here."
+            del (ctrait_ref_list[-1]['object'])
+            print("Crait deleted.")
+            count = sys.getrefcount(Midas.mayavi_view)  #Temp pointer here 2.
+            print("Count", count)
+            # del(Midas.mayavi_view)
+            # count -=1
+            print("Count", count)
+        except TypeError as e:
+            print("TypeError", e)
+            return
+        return count
 
 
     def zoom_to_coordinates(self, picker):

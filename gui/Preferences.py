@@ -1,4 +1,5 @@
 import inspect
+import types
 from midas_scripts.midiart import *
 from midas_scripts.midiart3D import *
 
@@ -16,11 +17,13 @@ import threading
 from traits.api import Any, HasTraits, Button, Instance, Range
 from traitsui.api import View, Group, Item
 
+from wx import Timer as wxTimer
 from pyo.lib._widgets import *
 #from pyo.lib._widgets import createServerGUI
-from pyface.timer.api import Timer
+from pyface.timer.api import Timer  #GARBAGE TIMER
 from mayavi.tools import animator
 from multiprocessing import Process, Event
+
 
 # import wx
 # import pyo
@@ -530,6 +533,24 @@ def gui(self, locals=None, meter=True, timer=True, exit=True, title=None):
     else:
         win.mainLoop()
 
+#Modified
+def on_quit1(self, evt=None):
+    if self.getIsBooted():
+        self.shutdown()
+        #time.sleep(0.25)
+    self.Destroy()
+    if self.exit:
+        sys.exit()
+
+#Original
+def on_quit(self, evt):
+    if self.exit and self.getIsBooted(): #In original, self.exit == False; should be true--->this is a bad if statement.
+        self.shutdown()
+        time.sleep(0.25)
+    self.Destroy()
+    if self.exit:
+        sys.exit()
+
 
 class Animator(HasTraits):
     """ Convenience class to manage a timer and present a convenient
@@ -633,53 +654,70 @@ class Animator(HasTraits):
             t.Start(value)
 
 
-class InfiniteTimer:
+class wxInfiniteTimer:
     """A Timer class that does not stop, unless you want it to.
+    --Modified for use with wxTimer instead of Threading.Timer.  ...bummer. It's inaccurate.
     --Code attributed to Bill Schumacher, stackoverflow
     https://stackoverflow.com/questions/12435211/python-threading-timer-repeat-function-every-n-seconds
     https: // stackoverflow.com / users / 7370877 / bill - schumacher"""
-    def __init__(self, seconds, target):
+    def __init__(self, seconds, target, window):
         self._should_continue = False
         self.is_running = False
         self.seconds = seconds
-        self.target = target
-        self.thread = None
-        self.lock = threading.Lock()
+        self.target = target()  #In this case, target must be a generator, and it is activated here.
+        #self.thread = None
+        self.window = window
+        self.thread = wxTimer(self.window) #Todo refactor thread
+
+        #self.lock = threading.Lock()
         #self.semaphore = threading.Semaphore()
 
-    def _handle_target(self):
+    def _handle_target(self, evt):
         self.is_running = True
 
-        self.target()
+                      #Need to SET target here too?
+        #if type(self.target) is types.GeneratorType:
+
+        self.target.__next__()          #Call target
         self.is_running = False
-        self._start_timer()
+        #self._start_timer()
+
 
     def _start_timer(self):
         #self.lock.acquire()
         # self.semaphore.acquire()
         if self._should_continue:  # Code could have been running when cancel was called.
-            self.thread = threading.Timer(self.seconds, self._handle_target)   ##_Timer
-            self.thread.start()
+            self.thread = wxTimer(owner=self.window)  #owner=self._handle_target)     #(self.seconds, self._handle_target) ##threading. #_Timer.
+            #self.target()
+            self.window.Bind(wx.EVT_TIMER, self._handle_target, id=self.thread.GetId())
+            print("THREAD_ID", self.thread.GetId())
+            self.thread.Start(milliseconds=self.seconds, oneShot=wx.TIMER_CONTINUOUS)  #start() for threading.Timer--_Timer
+            #print("blah")
             #self.lock.release()
             # self.semaphore.release()
+
 
     def start(self):
         #self.lock.acquire()
         #self.semaphore.acquire()
+        print("Here 1")
         if not self._should_continue and not self.is_running:
             self._should_continue = True
+
             self._start_timer()
             #self.lock.release()
             #self.semaphore.release()
         else:
             print("Timer already started or running, please wait if you're restarting.")
 
+
     def stop(self):
         #self.lock.acquire()
         # self.semaphore.acquire()
         if self.thread is not None:
             self._should_continue = False  # Just in case thread is running and cancel fails.
-            self.thread.cancel()            #Todo This gives attribute error, wtf? 04/11/2021 It shouldn't.
+
+            self.thread.Stop() ##cancel()            #Todo This gives attribute error, wtf? 04/11/2021 It shouldn't.
             #self.lock.release()
             # self.semaphore.release()
         else:
@@ -687,9 +725,236 @@ class InfiniteTimer:
 
 
 
+class InfiniteTimer:
+    """A Timer class that does not stop, unless you want it to.
+    --Code attributed to Bill Schumacher, stackoverflow
+    https://stackoverflow.com/questions/12435211/python-threading-timer-repeat-function-every-n-seconds
+    https: // stackoverflow.com / users / 7370877 / bill - schumacher"""
+
+    def __init__(self, seconds, target, window, player=True):
+        self._should_continue = False
+        self.is_running = False
+        self.seconds = seconds
+        self.target = target
+        self.thread = None
+        self.lock = threading.Lock()
+        self.m_v = window if player is False else window.mayavi_view
+        # self.semaphore = threading.Semaphore()
+
+    def _handle_target(self):
+        self.is_running = True
+
+        #self.window.scene3d.render_window.make_current()
+
+        self.target()
+        self.is_running = False
+        self._start_timer()
+
+    def _start_timer(self):
+        # self.lock.acquire()
+        # self.semaphore.acquire()
+        if self._should_continue:  # Code could have been running when cancel was called.
+
+            ####wglMakeCurrent(NULL, NULL)
+
+
+            #self.m_v.scene3d.render_window._vtk_obj.PushContext()
+            #context = self.m_v.scene3d.render_window._vtk_obj.PopContext()
+
+            self.thread = threading.Timer(self.seconds, self._handle_target)  ##_Timer
+            if self.m_v is None:
+                pass
+            else:
+                pass
+                #self.m_v.scene3d.render_window.make_current()
+                #self.m_v.scene3d.render_window._vtk_obj.ReleaseGraphicsResources(None)
+
+                ####wglMakeCurrent(NULL, NULL)
+                ####ReleaseDC()
+
+
+            self.thread.start()
+            # self.lock.release()
+            # self.semaphore.release()
+
+    def start(self):
+        # self.lock.acquire()
+        # self.semaphore.acquire()
+        if not self._should_continue and not self.is_running:
+            self._should_continue = True
+            self._start_timer()
+            # self.lock.release()
+            # self.semaphore.release()
+        else:
+            print("Timer already started or running, please wait if you're restarting.")
+
+    def stop(self):
+        # self.lock.acquire()
+        # self.semaphore.acquire()
+        if self.thread is not None:
+            self._should_continue = False  # Just in case thread is running and cancel fails.
+            self.thread.cancel()
+            # self.lock.release()
+            # self.semaphore.release()
+        else:
+            print("Timer never started or failed to initialize.")
+
+
+class asyncInfiniteTimer:
+    """A Timer class that does not stop, unless you want it to.
+    --Code attributed to Bill Schumacher, stackoverflow
+    https://stackoverflow.com/questions/12435211/python-threading-timer-repeat-function-every-n-seconds
+    https: // stackoverflow.com / users / 7370877 / bill - schumacher"""
+
+    def __init__(self, seconds, target, window):
+        self._should_continue = False
+        self.is_running = False
+        self.seconds = seconds
+        self.target = target
+        self.thread = None
+        self.lock = threading.Lock()
+        self.window = window   #Todo Use.
+        # self.semaphore = threading.Semaphore()
+
+    def _handle_target(self):
+        self.is_running = True
+
+        #self.window.scene3d.render_window.make_current()
+
+        self.target()
+        self.is_running = False
+        self._start_timer()
+
+    def _start_timer(self):
+        # self.lock.acquire()
+        # self.semaphore.acquire()
+        if self._should_continue:  # Code could have been running when cancel was called.
+            self.thread = asyncTimer(self.seconds, self._handle_target, context=None, first_immediately=None, timer_name="A_Sync")  ##_Timer
+            #TODO Finish
+            #self.thread. .start()
+
+            # self.lock.release()
+            # self.semaphore.release()
+
+    def start(self):
+        # self.lock.acquire()
+        # self.semaphore.acquire()
+        if not self._should_continue and not self.is_running:
+            self._should_continue = True
+            self._start_timer()
+            # self.lock.release()
+            # self.semaphore.release()
+        else:
+            print("Timer already started or running, please wait if you're restarting.")
+
+    def stop(self):
+        # self.lock.acquire()
+        # self.semaphore.acquire()
+        if self.thread is not None:
+            self._should_continue = False  # Just in case thread is running and cancel fails.
+            self.thread.cancel()  # Todo This gives attribute error, wtf? 04/11/2021 It shouldn't.
+            # self.lock.release()
+            # self.semaphore.release()
+        else:
+            print("Timer never started or failed to initialize.")
+
+
+
+class mpInfiniteTimer:
+    """A Timer class that does not stop, unless you want it to.
+    ---Modified for using with multiprocessing and a multiprocessing-derived _Timer.   ---Does not work as intended.
+    --- Method handler functionality had to be explicitly executed WITHIN this class.
+    --Code attributed to Bill Schumacher, stackoverflow
+    https://stackoverflow.com/questions/12435211/python-threading-timer-repeat-function-every-n-seconds
+    https: // stackoverflow.com / users / 7370877 / bill - schumacher"""
+
+    def __init__(self, seconds, target, parent):
+        self._should_continue = False
+        self.is_running = False
+        self.seconds = seconds
+        self.target = iter(target)
+        self.thread = None
+        #self.lock = threading.Lock()
+        self.parent = parent   #Todo Use.
+        # self.semaphore = threading.Semaphore()
+
+        #WHACK JOB PART 1
+        if self.parent.volume_slice:
+            self.ipw = self.parent.image_plane_widget.ipw
+            self.ipw2 = None
+        else:
+            self.ipw = self.parent.slice.actor.actor
+            self.ipw2 = self.parent.slice_edges.actor.actor
+
+    def _handle_target(self):
+        self.is_running = True
+
+        i = self.target.__next__()
+
+        #WHACK JOB PART 2
+        if i == self.parent.x_length:  # Because we animate ACROSS our desired range max, we are making darn sure that this
+            # condition is met.
+            # Destroy the volume_slice and rebuild it at the end of the animating generator function.
+            self.parent.reset_volume_slice(self.parent.grid3d_span, volume_slice=self.parent.volume_slice)
+            # Fire a "loop_end" flag so we can turn off "movie_maker.record" if we intend to animate without generating frames.
+            self.loop_end = True
+            # Might change this later, for playback stuff.
+            if self.loop_end is True:
+                self.parent.scene.scene.movie_maker.record = False
+
+            self.parent.scene3d.anti_aliasing_frames = 8  # TODO Check this again.
+            # pass
+            return i
+        else:
+            if self.parent.volume_slice:
+                self.ipw.trait_set(slice_position=i)  ##ipw.position = i  #/i_div
+                # self.scene3d.disable_render=False
+
+            else:
+                pos = np.array([i, 0, 0])
+                self.ipw.trait_set(position=pos)
+                self.ipw2.trait_set(position=pos)
+
+            time.sleep(self.seconds)
+
+            self.is_running = False
+            self._start_timer()
+
+    def _start_timer(self):
+        # self.lock.acquire()
+        # self.semaphore.acquire()
+        if self._should_continue:  # Code could have been running when cancel was called.
+            self.thread = _Timer(0, self._handle_target)  ##_Timer uses multiprocessing
+            self.thread.start()
+            # self.lock.release()
+            # self.semaphore.release()
+
+    def start(self):
+        # self.lock.acquire()
+        # self.semaphore.acquire()
+        if not self._should_continue and not self.is_running:
+            self._should_continue = True
+            self._start_timer()
+            # self.lock.release()
+            # self.semaphore.release()
+        else:
+            print("Timer already started or running, please wait if you're restarting.")
+
+    def stop(self):
+        # self.lock.acquire()
+        # self.semaphore.acquire()
+        if self.thread is not None:
+            self._should_continue = False  # Just in case thread is running and cancel fails.
+            self.thread.cancel()  # Todo This gives attribute error, wtf? 04/11/2021 It shouldn't.
+            # self.lock.release()
+            # self.semaphore.release()
+        else:
+            print("Timer never started or failed to initialize.")
+
 
 class _Timer(Process):
-    """ Attritution:
+    """ Multiprocessing timer instead of threading timer.
+    Attritution:
     Dano -- https://stackoverflow.com/questions/25297627/why-no-timer-class-in-pythons-multiprocessing-module
     https://stackoverflow.com/users/2073595/dano
     """
@@ -711,6 +976,56 @@ class _Timer(Process):
         if not self.finished.is_set():
             self.function(*self.args, **self.kwargs)
         self.finished.set()
+
+import asyncio
+
+
+class asyncTimer:
+    def __init__(self, interval, callback, first_immediately, timer_name, context):
+        self._interval = interval
+        self._first_immediately = first_immediately
+        self._name = timer_name
+        self._context = context
+        self._callback = callback
+        self._is_first_call = True
+        self._ok = True
+        self._task = asyncio.ensure_future(self._job())
+        print(timer_name + " init done")
+
+    async def _job(self):
+        try:
+            while self._ok:
+                if not self._is_first_call or not self._first_immediately:
+                    await asyncio.sleep(self._interval)
+                await self._callback(self._name, self._context, self)
+                self._is_first_call = False
+        except Exception as ex:
+            print(ex)
+
+    def cancel(self):
+        self._ok = False
+        self._task.cancel()
+
+
+async def some_callback(timer_name, context, timer):
+    context['count'] += 1
+    print('callback: ' + timer_name + ", count: " + str(context['count']))
+
+    if timer_name == 'Timer 2' and context['count'] == 3:
+        timer.cancel()
+        print(timer_name + ": goodbye and thanks for all the fish")
+
+
+# timer1 = Timer(interval=1, first_immediately=True, timer_name="Timer 1", context={'count': 0}, callback=some_callback)
+# timer2 = Timer(interval=5, first_immediately=False, timer_name="Timer 2", context={'count': 0}, callback=some_callback)
+#
+# try:
+#     loop = asyncio.get_event_loop()
+#     loop.run_forever()
+# except KeyboardInterrupt:
+#     timer1.cancel()
+#     timer2.cancel()
+#     print("clean up done")
 
 
 
@@ -735,6 +1050,11 @@ file_editor.SimpleEditor.init = init_1
 #Mayavi Animator Overwrite (fixes the unwanted 10 mil second delay; makes it 0.)
 mayavi.tools.animator.Animator = Animator
 
+
 #Pyo Gui bug patch.
 #Server.gui = gui  #-Attempt 1
 #pyo.lib._widgets.createServerGUI = createServerGUI  #Attempt 2, works.
+
+#Pyo shutdown bug workaround patch; restores original code after overwrite when gui is terminated from Playback class.
+ServerGUI.on_quit = on_quit1  #--First overwrite.
+#ServerGUI.on_quit = on_quit  --implemented in Playback.

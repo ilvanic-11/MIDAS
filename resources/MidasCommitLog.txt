@@ -617,10 +617,58 @@ In Project
 --> Changed ALL non-MIDAS_wx "self.mayavi_view" instances\variables to "self.m_v". DID NOT do a refactor, I found\replaced them manually using Ctrl+Shift+F within pycharm.
 	--(cont.) --> Now, when I search for "mayavi_view" with ctrl F, it finds all the primary instantiations in each class in the form of self.m_v = self.GetTopLevelParent().mayavi_view.
 	
+	
+--IP--Commit  February 14, 2022--
+In Project
+-->-->Made passes and adjustments for extract_xyz_coords_to_array()stream() in all places adding "durations=True" as necessary
+
+In pianoroll
+--> Fixed bug in ChangeCellsPerQrtrNote() fuction where self.SetCellDrawingSizeValue() was being called before the 'write' instance of self._cells_per_qrtrnote
+In MainButtons
+--> In function OnLoadImage(), fixed a bug in the "wildcard" argument of wx.FileDialog that was preventing jpgs from being usable.
+In ActorsControlPanel
+--> In function OnBtnDelActor(), fixed a bug where function ClearZplane(z) was calling for "current" which was referring to an actor index; a small mistake.
+--> New function --> OnGoToFirstEmptyActor()
+--> New function --> OnGoToNearestEmptyActor()
+
+In ZPlanesControlPanel
+--> New function --> OnGoToFirstEmptyZplane()
+--> New function --> OnGoToNearestEmptyZplane()
+
+In PianoRoll
+--> In class our _table PianoRollDataTable, rewrote _table.SetValue() and GetValue() functions to appropriately allow for the getting and setting of duration data and other data.
+--> Refactored variables in appropriate functions to accomodate this CORE DATA UPDATE. Testing in progress...
+--> Fixed a bug in function AdjustCellsBasedOnCPQN() that prevented execution when the zplane to which user was switching was activated.
+In PianoRollPanel
+--> In function OnMouseLeftUp(), added self.pianoroll.ForceRefresh() to force the durations to update 'appearance-wise' in the grid upon drawing a note and then deleting it at note-onset(not the tail of the note) right away.
+In MainWindow
+--> Wrote protected function _delete_mayavi_views(), which deletes all instantiations of self.m_v pointers\variables to self.mayavi_view throughout Midas. The only pointer that this function doesn't delete is the main one: "self.mayavi_view".
+In midiart3D
+--> Fixed a bug in get_planes_on_axis() function that prevented the "ordered" kwarg functionality from doing what it was supposed to do; the odict actually wasn't ordered when set to True-- FIXED!
+In Mayavi3DView
+--> Fixed a calculation bug in generate_plane_scroll() (for the final time....) where frames_per_beat was being factored in twice. 
+--> 
+
+In midas_scripts/musicode
+--> In make_musicode(), fixed a bug in the file path where the files weren't getting written to the correct directory.
+--> In make_musicode function, moved the "Assert for measures" code block up so that it gets called at the appropriate time, order-wise. The measures check is now working as such.
+In midas_scripts/midiart
+--> Fixed documentation of make_midi_from_colored_pixels() function. Changed "list" to "dict" in parameter docstring.
+--> In function make_pixels_from_midi(), changed np.zeros method to np.full, giving the user option to select pixel\note color AND background color.
+In Midas-Mayavi_Pip_Batch_Install
+--> Added LICENSE mark to all packages. 
+
+In Kivy
+--> REVIVED KIVY
+--> Got working instances of translation functions complete
+--> Got working instances of midiart functions complete
+--> GUI layout DONE.
+--> Named Kivy version MIDAS_Mobile
+--> Got MIDAS_Mobile complete!!!!!!!!  The only thing that would add to it is the funciton --> filter_pixels_by_key()
 
 ++++++++++++
 #############################################
-##Git adds. Update as needed. (Git can adds a LOT at once, if separated without commas.)
+##Git adds. Update as needed. (Git can adds a LOT at once, if separated without commas.) Highlight this line below, copy, and paste into git to git add all quickly.
 git add MIDAS_wx.py gui/ActorsControlPanel.py gui/MainButtons.py  gui/MenuButtons.py gui/PianoRoll.py gui/PianoRollPanel.py gui/Preferences.py gui/ZPlanesControlPanel.py mayavi3D/Mayavi3DWindow.py mayavi3D/Mayavi3idiArtAnimation.py midas_scripts/midiart3D.py midas_scripts/music21funcs.py midas_scripts/musicode.py midas_scripts/midiart.py resources/Midas-Mayavi_Pip_Batch_Install.bat resources/MidasCommitLog.txt resources/Midas_Startup_Configs.py resources/HotkeyAssignments.txt gui/Playback.py gui/Musical_Matrix_Rain.py mayavi3D/MusicObjects.py resources/MIDAS_splash.png resources/color_palettes/
 ##
 #############################################

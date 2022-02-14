@@ -1,3 +1,4 @@
+import matlab
 import wx
 import wx.lib.plot
 import music21
@@ -28,6 +29,7 @@ class ActorsControlPanel(wx.Panel):
         sizer.Add(self.toolbar)
         sizer.Add(self.actorsListBox, 1, wx.EXPAND)
         self.SetSizerAndFit(sizer)
+
 
     def SetupToolBar(self):
         btn_size = (8, 8)
@@ -90,6 +92,7 @@ class ActorsControlPanel(wx.Panel):
         else:
             pass
 
+
     def OnBtnToggleAll(self, event):
         """
         TO show all actors in the listbox
@@ -99,8 +102,13 @@ class ActorsControlPanel(wx.Panel):
         self.actorsListBox.showall = not (self.actorsListBox.showall)
         self.actorsListBox.UpdateFilter()
 
+
     def OnBtnNewActor(self, evt):
         i = len(self.m_v.actors)
+
+        if i == 0:
+            self.GetTopLevelParent().pianorollpanel.ClearZPlane(z=self.m_v.cur_z)
+
         self.actorsListBox.new_actor(i)
         # if self.m_v.colors_calling is True:
         #     if self.m_v.colors_call is not 16:
@@ -122,8 +130,9 @@ class ActorsControlPanel(wx.Panel):
         else:
             current = cur
 
-
-        self.GetTopLevelParent().pianorollpanel.ClearZPlane(current)
+        #Bug: index for actor and zplane mixed up here.
+        #Todo Put at end of function?
+        self.GetTopLevelParent().pianorollpanel.ClearZPlane(self.m_v.cur_z)
 
 
         self.m_v.cur_ActorIndex = current - 1
@@ -209,6 +218,7 @@ class ActorsControlPanel(wx.Panel):
 
         #self.mayavi_view.scene3d.disable_render=False
 
+
     def OnBtnDelEmtpyActors(self, evt):
         #TODO Make a button?
         self.m_v.scene3d.disable_render=True
@@ -261,8 +271,8 @@ class ActorsControlPanel(wx.Panel):
             self.Bind(wx.EVT_MENU, self.OnPopupFive, id=self.popupID5)
             self.Bind(wx.EVT_MENU, self.OnDeleteSelection, id=self.popupID6)
             self.Bind(wx.EVT_MENU, self.OnPopupSeven, id=self.popupID7)
-            self.Bind(wx.EVT_MENU, self.OnPopupEight, id=self.popupID8)
-            self.Bind(wx.EVT_MENU, self.OnPopupNine, id=self.popupID9)
+            self.Bind(wx.EVT_MENU, self.OnGoToFirstEmptyActor, id=self.popupID8)
+            self.Bind(wx.EVT_MENU, self.OnGoToNearestEmptyActor, id=self.popupID9)
 
         # make a menu
         menu = wx.Menu()
@@ -279,29 +289,35 @@ class ActorsControlPanel(wx.Panel):
         menu.Append(self.popupID6, "Delete Selection")
         # make a submenu
         sm = wx.Menu()
-        sm.Append(self.popupID8, "sub item 1")
-        sm.Append(self.popupID9, "sub item 1")
-        menu.Append(self.popupID7, "Test Submenu", sm)
+        menu.Append(self.popupID7, "Go to...", sm)
+        sm.Append(self.popupID8, "..First Empty Actor")
+        sm.Append(self.popupID9, "..Nearest Empty Actor")
 
         # Popup the menu.  If an item is selected then its handler
         # will be called before PopupMenu returns.
         self.PopupMenu(menu)
         menu.Destroy()
 
+
     def OnPopup_Properties(self, event):
         pass
+
 
     def OnPopupTwo(self, event):
         pass
 
+
     def OnPopupThree(self, event):
         pass
+
 
     def OnPopupFour(self, event):
         pass
 
+
     def OnPopupFive(self, event):
         pass
+
 
     def OnDeleteSelection(self, event):
         #Deletes 'selected' not 'activated' actors.
@@ -322,14 +338,35 @@ class ActorsControlPanel(wx.Panel):
         if len(self.m_v.actors) == 0:
             self.GetTopLevelParent().pianorollpanel.pianoroll._table.ClearCells()
 
+
     def OnPopupSeven(self, event):
         pass
 
-    def OnPopupEight(self, event):
-        pass
 
-    def OnPopupNine(self, event):
-        pass
+    def OnGoToFirstEmptyActor(self, event):
+        zero_list = [i.index for i in self.m_v.actors if i._points.size == 0]
+
+        if zero_list[0] == self.m_v.cur_ActorIndex:
+            pass
+        else:
+            self.actorsListBox.Activate_Actor(zero_list[0])
+            self.GetTopLevelParent().actor_scrolled = zero_list[0]
+
+
+    def mattty(self):
+        assray = matlab.array([1,2,3])
+
+
+
+    def OnGoToNearestEmptyActor(self, event):
+        zero_list = [i.index for i in self.m_v.actors if i._points.size == 0]
+        a = min(zero_list, key=lambda x: abs(x - self.m_v.cur_ActorIndex))
+
+        if a == self.m_v.cur_ActorIndex:
+            pass
+        else:
+            self.actorsListBox.Activate_Actor(a)
+            self.GetTopLevelParent().actor_scrolled = a
 
 
 class CustomActorsListBox(wx.ListCtrl, CheckListCtrlMixin):
@@ -349,8 +386,8 @@ class CustomActorsListBox(wx.ListCtrl, CheckListCtrlMixin):
         self.SetBackgroundColour((0, 0, 0))
         self.SetTextColour((191, 191, 191))
 
-        self.InsertColumn(0, "Visible", wx.LIST_FORMAT_CENTER, width=50)
-        self.InsertColumn(1, "Actor", wx.LIST_FORMAT_CENTER, width=64)    #1
+        #self.InsertColumn(0, "Visible", wx.LIST_FORMAT_CENTER, width=50)
+        self.InsertColumn(0, "Actor", wx.LIST_FORMAT_CENTER, width=164)     #164 #114,  #1
 
         self.filter = list()
 
@@ -370,8 +407,12 @@ class CustomActorsListBox(wx.ListCtrl, CheckListCtrlMixin):
         """
         self.Activate_Actor(evt.Index)
 
+        # self.GetTopLevelParent().pianorollpanel.pianoroll.ResetGridCellSizes()
+        # self.GetTopLevelParent().pianorollpanel.pianoroll.Refresh()
+
 
     def Activate_Actor(self, index):
+
         self.log.info("OnListItemActivated():")
         print(f"Index = {index}")
 
@@ -383,7 +424,11 @@ class CustomActorsListBox(wx.ListCtrl, CheckListCtrlMixin):
         self.m_v.cur_z = self.m_v.actors[index].cur_z
         print("Flag 1")
         self.m_v.cur_changed_flag = not self.m_v.cur_changed_flag
+
         self.GetTopLevelParent().pianorollpanel.pianoroll.ForceRefresh()
+
+
+
 
     # def OnGetItemText(self, item, column):
     #     if column == 0:
@@ -397,6 +442,7 @@ class CustomActorsListBox(wx.ListCtrl, CheckListCtrlMixin):
     # def GetItemCount(self, count):
     #     self.log.debug(f" GetItemCount(): itemcount = {len(self.filter)}")
     #     return len(self.filter)
+
 
     def UpdateFilter(self):
         self.log.info("UpdateFilter():")
@@ -440,6 +486,7 @@ class CustomActorsListBox(wx.ListCtrl, CheckListCtrlMixin):
             print(len(self.filter))
             return len(self.filter)
 
+
     def new_actor(self, i, name = None):
 
         if name is None:
@@ -451,22 +498,22 @@ class CustomActorsListBox(wx.ListCtrl, CheckListCtrlMixin):
         #TODO Account for noncolorscall deletion.
         #TODO Make palette calls consistent.
         if self.m_v.number_of_noncolorscall_actors > 16:
-            color = self.m_v.default_color_palette[1]
+            color = self.m_v.current_color_palette[1]
             #SWAP HERE ------- See trello card: --> https://trello.com/c/O67MrqpT.
             color = tuple([color[2] / 255, color[1] / 255, color[0] / 255])     #TODO THIS explains the colors_dicts inversion bug.... 11/25/2020
             self.m_v.number_of_noncolorscall_actors = 1  # The count starts over.
         else:
             if i == 16:
-                color = self.m_v.default_mayavi_palette[i]
+                color = self.m_v.current_mayavi_palette[i]
                 # SWAP HERE.
                 color = tuple([color[2], color[1], color[0]])
             elif i > 16:
                 color_index = 0
-                color = self.m_v.default_mayavi_palette[color_index + 1]
+                color = self.m_v.current_mayavi_palette[color_index + 1]
                 # SWAP HERE.
                 color = tuple([color[2], color[1], color[0]])
             else:
-                color = self.m_v.default_mayavi_palette[i + 1]
+                color = self.m_v.current_mayavi_palette[i + 1]
                #print("'i' HERE", i + 1)
                 #SWAP HERE ------- See trello card: --> https://trello.com/c/O67MrqpT.
                 color = tuple([color[2], color[1], color[0]])

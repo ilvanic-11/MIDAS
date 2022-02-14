@@ -226,7 +226,8 @@ class CustomMenuBar(wx.MenuBar):
                     intermediary_path = os.getcwd() + os.sep + "resources" + os.sep + "intermediary_path" + os.sep
                     filename = self.m_v.actors[i].name
                     output = intermediary_path + filename + ".mid"
-                    selected_stream = midiart3D.extract_xyz_coordinates_to_stream(self.m_v.actors[i]._points)
+                    selected_stream = midiart3D.extract_xyz_coordinates_to_stream(self.m_v.actors[i]._points,
+                                                                                  durations=True)
                     selected_stream.write('mid', output)
         else:
             pass
@@ -243,7 +244,8 @@ class CustomMenuBar(wx.MenuBar):
                 intermediary_path = os.getcwd() + os.sep + "resources" + os.sep + "intermediary_path" + os.sep
                 filename = self.m_v.actors[i].name
                 output = intermediary_path + filename + ".mid"
-                self.m_v.actors[i]._stream = midiart3D.extract_xyz_coordinates_to_stream(self.m_v.actors[i]._points)
+                self.m_v.actors[i]._stream = midiart3D.extract_xyz_coordinates_to_stream(self.m_v.actors[i]._points,
+                                                                                         durations=True)
                 self.m_v.actors[i]._stream.write('mid', output)
         pass
         print("All Actors Exported Successfully!")
@@ -260,7 +262,7 @@ class CustomMenuBar(wx.MenuBar):
         output = intermediary_path + filename + ".mid"
         zplane = midiart3D.get_planes_on_axis(self.m_v.CurrentActor()._points)[  #Todo use GridToStream()
             eval('self.m_v.cur_z')] #TODO Watch for debug errors here.
-        self.m_v.CurrentActor()._stream = midiart3D.extract_xyz_coordinates_to_stream(zplane)
+        self.m_v.CurrentActor()._stream = midiart3D.extract_xyz_coordinates_to_stream(zplane, durations=True)
         self.m_v.CurrentActor()._stream.insert(0, tempo)
         self.m_v.CurrentActor()._stream.insert(0, timesig)
         self.m_v.CurrentActor()._stream.write('mid', output)
@@ -276,7 +278,7 @@ class CustomMenuBar(wx.MenuBar):
         for zplane in planes_dict.keys():
             filename = self.m_v.CurrentActor().name + "_" + str(zplane)
             output = intermediary_path + filename + ".mid"
-            stream = midiart3D.extract_xyz_coordinates_to_stream(planes_dict[zplane])
+            stream = midiart3D.extract_xyz_coordinates_to_stream(planes_dict[zplane], durations=True)
             stream.write('mid', output)
         print("All Current Actor's Zplanes Exported Successfully!")
 
@@ -292,7 +294,8 @@ class CustomMenuBar(wx.MenuBar):
                     intermediary_path = os.getcwd() + os.sep + "resources" + os.sep + "intermediary_path" + os.sep
                     filename = self.m_v.actors[i].name
                     output = intermediary_path + filename + ".mid"
-                    self.m_v.actors[i]._stream = midiart3D.extract_xyz_coordinates_to_stream(self.m_v.actors[i]._points)
+                    self.m_v.actors[i]._stream = midiart3D.extract_xyz_coordinates_to_stream(self.m_v.actors[i]._points,
+                                                                                             durations=True)
                     self.m_v.actors[i]._stream.write('mid', output)
         pass
         print("Selection Exported Successfully!")
@@ -301,15 +304,22 @@ class CustomMenuBar(wx.MenuBar):
         print("Exporting Colors....")
         self.m_v = self.GetTopLevelParent().mayavi_view
         print("evid", event.GetId())
-        self.m_v.colors_call = int(self.GetTopLevelParent().menuBar.colors.FindItemById(event.GetId()).GetItemLabelText())  ##.Name in wx(4.0.7)
+        self.m_v.colors_call = \
+            int(self.GetTopLevelParent().menuBar.colors.FindItemById(event.GetId()).GetItemLabelText())
+            ##.Name in wx(4.0.7)
 
         #In the mv.actors list, get all actor that are part of a colors import instance.
         for i in range(0, len(self.m_v.actors)):
-            if "Clrs%s" % str(self.m_v.colors_call) == self.m_v.actors[i].colors_instance:   #  (if is colors_instance  is "Clrs1"...)
-                #Make _stream from _points, name it's part correctly, set it's music21 sort priority, then append it to the main export mv.stream.
-                self.m_v.actors[i]._stream = midiart3D.extract_xyz_coordinates_to_stream(self.m_v.actors[i]._points, part=True)
+            #  (if is colors_instance  is "Clrs1"...)
+            if "Clrs%s" % str(self.m_v.colors_call) == self.m_v.actors[i].colors_instance:
+                #Make _stream from _points,
+                self.m_v.actors[i]._stream = midiart3D.extract_xyz_coordinates_to_stream(self.m_v.actors[i]._points,
+                                                                                         part=True, durations=True)
+                # name it's part correctly,
                 self.m_v.actors[i]._stream.partsName = self.m_v.actors[i].part_num
+                # set it's music21 sort priority,
                 self.m_v.actors[i]._stream.priority = self.m_v.actors[i].priority
+                # then append it to the main export mv.stream.
                 self.m_v.stream.insert(0.0, self.m_v.actors[i]._stream)
 
             else:
@@ -580,7 +590,7 @@ class CustomMenuBar(wx.MenuBar):
     def OnShowInDAW(self, event):
             # s = music21funcs.matrix_to_stream(matrix, True, self.GetTopLevelParent().pianorollpanel.currentPage.pix_note_size)
             #"&ShowInDAW\tAlt+F+1"
-        s = midiart3D.extract_xyz_coordinates_to_stream(self.m_v.CurrentActor()._points)
+        s = midiart3D.extract_xyz_coordinates_to_stream(self.m_v.CurrentActor()._points, durations=True)
         #s = self.GetTopLevelParent().pianorollpanel.currentPage.stream #TODO Change upon implementing Actors and Zplanes.
         s.show('txt')
 
@@ -598,7 +608,7 @@ class CustomMenuBar(wx.MenuBar):
     def OnShowInMuseScore(self, event):
         # TODO Change upon implementing Actors and Zplanes.
         #s = self.GetTopLevelParent().pianorollpanel.currentPage.stream
-        s = midiart3D.extract_xyz_coordinates_to_stream(self.m_v.CurrentActor()._points)
+        s = midiart3D.extract_xyz_coordinates_to_stream(self.m_v.CurrentActor()._points, durations=True)
 
         s.show('txt')
 
@@ -935,16 +945,16 @@ class CustomMenuBar(wx.MenuBar):
                 self.m_v.frames_per_beat = float(dialog.input_i_div.GetLineText(0))
 
             if dialog.popupCtrl.GetStringValue() == "FLStudioColors":
-                self.m_v.default_color_palette = midiart.FLStudioColors
-                self.m_v.default_mayavi_palette = \
-                    midiart.convert_dict_colors(self.m_v.default_color_palette, invert=False)
+                self.m_v.current_color_palette = midiart.FLStudioColors
+                self.m_v.current_mayavi_palette = \
+                    midiart.convert_dict_colors(self.m_v.current_color_palette, invert=False)
                 self.m_v.current_palette_name = "FLStudioColors"
                 #print("FL Fthwack")
             else:
-                self.m_v.default_color_palette = midiart.get_color_palettes()[dialog.popupCtrl.GetStringValue()]
+                self.m_v.current_color_palette = midiart.get_color_palettes()[dialog.popupCtrl.GetStringValue()]
 
-                self.m_v.default_mayavi_palette = \
-                    midiart.convert_dict_colors(self.m_v.default_color_palette, invert=False)
+                self.m_v.current_mayavi_palette = \
+                    midiart.convert_dict_colors(self.m_v.current_color_palette, invert=False)
                     #A tuple R\B switch happens here; tuple is inverted.
                 self.current_palette_name = dialog.popupCtrl.GetStringValue()
                 # print("Here3")

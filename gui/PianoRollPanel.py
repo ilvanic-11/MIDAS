@@ -240,11 +240,9 @@ class PianoRollPanel(wx.Panel):
         eval_value = eval(self.cbCellsPerQrtrNote.GetValue())
         newvalue = eval_value[0]
         self.m_v.cpqn = newvalue
-        print("Changing CPQN, updating grid reticle.")
-
-        self.pianoroll.SetCellDrawingSizeValue()
 
         # need to redraw current piano roll and update stream
+
         self.pianoroll.ChangeCellsPerQrtrNote(newvalue)
 
 
@@ -311,7 +309,9 @@ class PianoRollPanel(wx.Panel):
 
 
         if self.m_v.CurrentActor() == None:
-            pass
+            #Clear leftover grid notes upon all actors deletions.
+            if len(self.m_v.actors) == 0:
+                self.pianoroll._table.ClearCells()
             # current_actor = self.pianoroll.cur_array3d
         else:
             current_actor = self.m_v.CurrentActor()
@@ -321,31 +321,28 @@ class PianoRollPanel(wx.Panel):
             print("On_Points", on_points)
 
             #Grid set.
+            print("Here, dude 4.")
             for i in on_points:
-                self.pianoroll._table.SetValue(127 - i[1], i[0], "0")
+                self.pianoroll._table.SetValue(127 - i[1], i[0], "0", importing=True)
                 # TODO Track mode stuff! What can the 'value' parameter be?
 
             #_array4D set.
-            for i in range(0, current_actor._array4D.shape[3]):
-                current_actor._array4D[:, :, z, 0] = current_actor._array4D[:, :, z, i] * 0
+            # for i in range(0, current_actor._array4D.shape[3]):
+            #     current_actor._array4D[:, :, z, 0] = current_actor._array4D[:, :, z, i] * 0
+
+            #Manual override, trait update method not working....
+            try:
+                self.m_v.actors[self.m_v.cur_ActorIndex].actor_array4D_changed()
+            except Exception as e:
+                print("Clear Zplane Error:", e)
+
             # TODO Different way to write this? Multiply whole array3d by 0?
 
-        self.pianoroll.ForceRefresh()
             #self.m_v.actors[self.m_v.cur_ActorIndex].array4Dchangedflag += 1
         self.pianoroll.ResetGridCellSizes()
         #self.m_v.actors[self.m_v.cur_ActorIndex].array4Dchangedflag = not self.m_v.actors[self.m_v.cur_ActorIndex].array4Dchangedflag
 
-        #Manual override, trait update method not working....
-        try:
-            self.m_v.actors[self.m_v.cur_ActorIndex].actor_array4D_changed()
-        except Exception as e:
-            print("Clear Zplane Error:", e)
-
         self.pianoroll.ForceRefresh()
-
-        #Clear leftover grid notes upon all actors deletions.
-        if len(self.m_v.actors) == 0:
-            self.pianoroll._table.ClearCells()
 
 
     def Scroll_ZPlanesVelocities(self, event):
@@ -477,12 +474,14 @@ class PianoRollPanel(wx.Panel):
                         ##Note: zplane_scrolled here, NOT last_actor.....
 
                         # We are pushing our 'selection' FROM the cur_z TO somewhere else.
-                        if self.GetTopLevelParent().zplane_scrolled != self.m_v.CurrentActor().cur_z and self.last_push == self.m_v.CurrentActor().cur_z:  ##Note: zplane_scrolled here, NOT last_actor.....
+                        if self.GetTopLevelParent().zplane_scrolled != self.m_v.CurrentActor().cur_z and self.last_push \
+                                == self.m_v.CurrentActor().cur_z:  ##Note: zplane_scrolled here, NOT last_actor.....
                             self.m_v.CurrentActor()._array4D[int(i[0] / self.pianoroll._cells_per_qrtrnote), i[1], i[
                                 2]][0] = 1.0  # Scrolled-to plane notes become activated.
                             # TODO HERE>
 
-                            # This condition block accounts for a 'first miss'. In our logic, the first case is exceptional.
+                            # This condition block accounts for a 'first miss'.
+                            # In our logic, the first case is exceptional.
                             if i[2] == self.last_push:
                                 self.m_v.CurrentActor()._array4D[i[0], i[1], self.m_v.CurrentActor().cur_z][0] = 0.
                             elif i[2] != self.last_push:
@@ -490,7 +489,8 @@ class PianoRollPanel(wx.Panel):
                             #print("A1")
 
                         # We are pushing our 'selection' FROM somewhere else TO our CurrentActor's cur_z.
-                        elif self.GetTopLevelParent().zplane_scrolled == self.m_v.CurrentActor().cur_z and self.last_push != self.m_v.CurrentActor().cur_z:
+                        elif self.GetTopLevelParent().zplane_scrolled == self.m_v.CurrentActor().cur_z and \
+                                self.last_push != self.m_v.CurrentActor().cur_z:
                             self.m_v.CurrentActor()._array4D[
                                 i[0], i[1], i[2]][0] = 1.0  # Scrolled-to plane notes become activated.
                             # TODO HERE>
@@ -505,19 +505,26 @@ class PianoRollPanel(wx.Panel):
                             #print("A2")
 
                         # We are pushing our 'selection' FROM somewhere else TO another somewhere else that isn't cur_z.
-                        elif self.GetTopLevelParent().zplane_scrolled != self.m_v.CurrentActor().cur_z and self.last_push != self.m_v.CurrentActor().cur_z:
+                        elif self.GetTopLevelParent().zplane_scrolled != self.m_v.CurrentActor().cur_z and \
+                                self.last_push != self.m_v.CurrentActor().cur_z:
                             self.m_v.CurrentActor()._array4D[
-                                int(i[0] / self.pianoroll._cells_per_qrtrnote), i[1], i[2]][0] = 1.0  # Scrolled-to plane notes become activated.
+                                int(i[0] / self.pianoroll._cells_per_qrtrnote), i[1], i[2]][0] = 1.0
+                                # Scrolled-to plane notes become activated.
                             # TODO HERE>
 
-                            # This condition block accounts for a 'first miss'. In our logic, the first case is exceptional.
+                            # This condition block accounts for a 'first miss'.
+                            # In our logic, the first case is exceptional.
                             if i[2] == self.last_push:
-                                self.m_v.CurrentActor()._array4D[int(i[0] / self.pianoroll._cells_per_qrtrnote), i[1], self.m_v.CurrentActor().cur_z][0] = 0.
+                                self.m_v.CurrentActor()._array4D[int(i[0] / self.pianoroll._cells_per_qrtrnote), i[1],
+                                                                 self.m_v.CurrentActor().cur_z][0] = 0.
                             elif i[2] != self.last_push:
-                                self.m_v.CurrentActor()._array4D[int(i[0] / self.pianoroll._cells_per_qrtrnote), i[1], self.last_push][0] = 0.
+                                self.m_v.CurrentActor()._array4D[int(i[0] / self.pianoroll._cells_per_qrtrnote), i[1],
+                                                                 self.last_push][0] = 0.
 
-                        # Accounting for a possible user mis-click, we are pushing our 'selection' FROM our cur_z right back TO our cur_z. #TODO Use Pass?
-                        elif self.GetTopLevelParent().zplane_scrolled == self.m_v.CurrentActor().cur_z and self.last_push == self.m_v.CurrentActor().cur_z:
+                        # Accounting for a possible user mis-click,
+                        # we are pushing our 'selection' FROM our cur_z right back TO our cur_z. #TODO Use Pass?
+                        elif self.GetTopLevelParent().zplane_scrolled == self.m_v.CurrentActor().cur_z and \
+                                self.last_push == self.m_v.CurrentActor().cur_z:
                             #Turn on..
                             self.m_v.CurrentActor()._array4D[
                                 i[0], i[1], i[2]][0] = 1.0  # Scrolled-to plane notes become activated.
@@ -533,9 +540,11 @@ class PianoRollPanel(wx.Panel):
 
                     elif carry_to_z is False:
                         #If carry-to-actor AND carry-to-z are both false, are we really carrying anything?! Pass here?
-                        self.m_v.CurrentActor()._array4D[i[0], i[1], i[2]][0] = 1.0  # Scrolled-to plane notes become activated.
+                        self.m_v.CurrentActor()._array4D[i[0], i[1], i[2]][0] = 1.0
+                        # Scrolled-to plane notes become activated.
 
-                        self.m_v.CurrentActor()._array4D[i[0], i[1], i[2] - scroll_value][0] = 0.   #Abandoned plane notes are zero'd.
+                        self.m_v.CurrentActor()._array4D[i[0], i[1], i[2] - scroll_value][0] = 0.
+                        #Abandoned plane notes are zero'd.
 
 
                 elif carry_to_actor is True: #If carry_to_actor is True....    #Scroll-to_actor method.
@@ -546,12 +555,16 @@ class PianoRollPanel(wx.Panel):
                         ##Note: zplane_scrolled here, NOT last_actor.....
 
                         # We are pushing our 'selection' FROM the cur_z TO somewhere else.
-                        if self.GetTopLevelParent().zplane_scrolled != self.m_v.CurrentActor().cur_z and self.last_push == self.m_v.CurrentActor().cur_z:  ##Note: zplane_scrolled here, NOT last_actor.....
-                            self.m_v.actors[self.GetTopLevelParent().actor_scrolled]._array4D[int(i[0] / self.pianoroll._cells_per_qrtrnote), i[1], i[
-                                2]][0] = 1.0  # Scrolled-to plane notes become activated.
+                        if self.GetTopLevelParent().zplane_scrolled != self.m_v.CurrentActor().cur_z \
+                                and self.last_push == self.m_v.CurrentActor().cur_z:
+                            ##Note: zplane_scrolled here, NOT last_actor.....
+                            self.m_v.actors[self.GetTopLevelParent().actor_scrolled]._array4D[int(i[0] /
+                                self.pianoroll._cells_per_qrtrnote), i[1], i[2]][0] = 1.0
+                            # Scrolled-to plane notes become activated.
                             # TODO HERE>
 
-                            # This condition block accounts for a 'first miss'. In our logic, the first case is exceptional.
+                            # This condition block accounts for a 'first miss'.
+                            # In our logic, the first case is exceptional.
                             if i[2] == self.last_push:
                                 self.m_v.actors[self.last_actor]._array4D[i[0], i[1], self.m_v.CurrentActor().cur_z][0] = 0.
                             elif i[2] != self.last_push:
@@ -559,48 +572,64 @@ class PianoRollPanel(wx.Panel):
                             print("S1.")
 
                         # We are pushing our 'selection' FROM somewhere else TO our CurrentActor's cur_z.
-                        elif self.GetTopLevelParent().zplane_scrolled == self.m_v.CurrentActor().cur_z and self.last_push != self.m_v.CurrentActor().cur_z:
-                            self.m_v.actors[self.GetTopLevelParent().actor_scrolled]._array4D[i[0], i[1], i[2]][0] = 1.0  # Scrolled-to plane notes become activated.
+                        elif self.GetTopLevelParent().zplane_scrolled == self.m_v.CurrentActor().cur_z \
+                                and self.last_push != self.m_v.CurrentActor().cur_z:
+                            self.m_v.actors[self.GetTopLevelParent().actor_scrolled]._array4D[i[0], i[1], i[2]][0] = 1.0
+                            # Scrolled-to plane notes become activated.
                             # TODO HERE>
 
                             # This condition block accounts for the first miss.
                             if i[2] == self.last_push:
-                                self.m_v.actors[self.last_actor]._array4D[int(i[0] / self.pianoroll._cells_per_qrtrnote), i[1], self.m_v.CurrentActor().cur_z][0] = 0.
+                                self.m_v.actors[self.last_actor]._array4D[int(i[0] /
+                                    self.pianoroll._cells_per_qrtrnote), i[1], self.m_v.CurrentActor().cur_z][0] = 0.
                             elif i[2] != self.last_push:
-                                self.m_v.actors[self.last_actor]._array4D[int(i[0] / self.pianoroll._cells_per_qrtrnote), i[1], self.last_push][0] = 0.
+                                self.m_v.actors[self.last_actor]._array4D[int(i[0] /
+                                    self.pianoroll._cells_per_qrtrnote), i[1], self.last_push][0] = 0.
                             print("S2")
 
                         # We are pushing our 'selection' FROM somewhere else TO another somewhere else that isn't cur_z.
-                        elif self.GetTopLevelParent().zplane_scrolled != self.m_v.CurrentActor().cur_z and self.last_push != self.m_v.CurrentActor().cur_z:
-                            self.m_v.actors[self.GetTopLevelParent().actor_scrolled]._array4D[int(i[0] / self.pianoroll._cells_per_qrtrnote), i[1], i[
+                        elif self.GetTopLevelParent().zplane_scrolled != self.m_v.CurrentActor().cur_z and \
+                                self.last_push != self.m_v.CurrentActor().cur_z:
+                            self.m_v.actors[self.GetTopLevelParent().actor_scrolled]._array4D[int(i[0] /
+                                self.pianoroll._cells_per_qrtrnote), i[1], i[
                                     2]][0] = 1.0  # Scrolled-to plane notes become activated.
                             # TODO HERE>
 
-                            # This condition block accounts for a 'first miss'. In our logic, the first case is exceptional.
+                            # This condition block accounts for a 'first miss'.
+                            # In our logic, the first case is exceptional.
                             if i[2] == self.last_push:
-                                self.m_v.actors[self.last_actor]._array4D[int(i[0] / self.pianoroll._cells_per_qrtrnote), i[1], self.m_v.CurrentActor().cur_z][0] = 0.
+                                self.m_v.actors[self.last_actor]._array4D[int(i[0] /
+                                    self.pianoroll._cells_per_qrtrnote), i[1], self.m_v.CurrentActor().cur_z][0] = 0.
                             elif i[2] != self.last_push:
-                                self.m_v.actors[self.last_actor]._array4D[int(i[0] / self.pianoroll._cells_per_qrtrnote), i[1], self.last_push][0] = 0.
+                                self.m_v.actors[self.last_actor]._array4D[int(i[0] /
+                                    self.pianoroll._cells_per_qrtrnote), i[1], self.last_push][0] = 0.
                             print("S3")
 
-                        # Accounting for a possible user mis-click, we are pushing our 'selection' FROM our cur_z right back TO our cur_z. #TODO Use Pass?
-                        elif self.GetTopLevelParent().zplane_scrolled == self.m_v.CurrentActor().cur_z and self.last_push == self.m_v.CurrentActor().cur_z:
-                            self.m_v.actors[self.GetTopLevelParent().actor_scrolled]._array4D[int(i[0] / self.pianoroll._cells_per_qrtrnote), i[1], i[2]][0] = 1.0  # Scrolled-to plane notes become activated.
+                        # Accounting for a possible user mis-click,
+                        # we are pushing our 'selection' FROM our cur_z right back TO our cur_z. #TODO Use Pass?
+                        elif self.GetTopLevelParent().zplane_scrolled == self.m_v.CurrentActor().cur_z and \
+                                self.last_push == self.m_v.CurrentActor().cur_z:
+                            self.m_v.actors[self.GetTopLevelParent().actor_scrolled]._array4D[int(i[0] /
+                                self.pianoroll._cells_per_qrtrnote), i[1], i[2]][0] = 1.0
+                            # Scrolled-to plane notes become activated.
                             # TODO HERE>
 
                             # This condition block accounts for the first miss.
                             if i[2] == self.last_push:
-                                self.m_v.actors[self.last_actor]._array4D[i[0], i[1], self.m_v.CurrentActor().cur_z][0] = 0.
+                                self.m_v.actors[self.last_actor]._array4D[i[0],i[1],self.m_v.CurrentActor().cur_z][0]=0.
                             elif i[2] != self.last_push:
                                 self.m_v.actors[self.last_actor]._array4D[i[0], i[1], self.last_push][0] = 0.
                             print("S4")
 
                         ## index = npi.indices(self.m_v.CurrentActor()._points, ),
-                        #self.m_v.actors[self.GetTopLevelParent().actor_scrolled]._array3D[i[0], i[1], i[2]] = 1.0  # Scrolled-to plane notes become activated.
-                        #self.m_v.actors[self.last_actor]._array3D[i[0], i[1], self.last_push] = 0.   # Abandoned plane notes are zero'd.
+                        #self.m_v.actors[self.GetTopLevelParent().actor_scrolled]._array3D[i[0], i[1], i[2]] = 1.0
+                        # Scrolled-to plane notes become activated.
+                        #self.m_v.actors[self.last_actor]._array3D[i[0], i[1], self.last_push] = 0.
+                        # Abandoned plane notes are zero'd.
 
                     elif carry_to_z is False:
-                        self.m_v.actors[self.GetTopLevelParent().actor_scrolled]._array4D[i[0], i[1], self.m_v.CurrentActor().cur_z][0] = 1.0  # Scrolled-to plane notes become activated.
+                        self.m_v.actors[self.GetTopLevelParent().actor_scrolled]._array4D[i[0], i[1],
+                            self.m_v.CurrentActor().cur_z][0] = 1.0  # Scrolled-to plane notes become activated.
                         self.m_v.actors[self.last_actor]._array4D[
                             i[0], i[1], self.last_push][0] = 0.  # Abandoned plane notes are zero'd.
                         #
@@ -647,7 +676,7 @@ class PianoRollPanel(wx.Panel):
                 # self.m_v.actors[self.GetTopLevelParent().actor_scrolled].array4Dchangedflag = not self.m_v.actors[
                 #     self.GetTopLevelParent().actor_scrolled].array4Dchangedflag
 
-                #TODO MAKE SURE ALL CARRY METHODS ARE CONSISTENT WITH THEIR RESPECTIVE array3D updating!!
+                #TODO MAKE SURE ALL CARRY METHODS ARE CONSISTENT WITH THEIR RESPECTIVE array4D updating!!
 
                 self.m_v.CurrentActor().array4Dchangedflag = not self.m_v.CurrentActor().array4Dchangedflag
 
@@ -767,6 +796,7 @@ class PianoRollPanel(wx.Panel):
             pass
 
         else:
+            #if brush mode?
             pass
             # self.mayavi_view.CurrentActor()._array3D[int(col / cpqn), int(127 - row), int(z)] = 1
             # print("x=%d, y=%d, row=%d, col=%d" % (x,y,row,col))
@@ -921,6 +951,7 @@ class PianoRollPanel(wx.Panel):
                     wx.CallAfter(self.clear_out_highlight, event)
                     #wx.CallAfter(self.m_v.CurrentActor().actor_array4D_changed, event)
                     #self.m_v.CurrentActor().actor_array4D_changed()
+
         elif self.mode == self.draw_mode:
             #self.m_v.CurrentActor().array4Dchangedflag = not self.m_v.CurrentActor().array4Dchangedflag
             #print("Drawing 2 HERE")
@@ -950,9 +981,9 @@ class PianoRollPanel(wx.Panel):
 
     def onDragSelection(self, event):
         """
-        Gets the cells that are selected by holding the left
-        mouse button down and dragging
-        This is a repeatedly firing function because of a drag event, meaning there are multiple calls before the final "LEFT_UP" event.
+        Gets the cells that are selected by holding the left mouse button down and dragging in the grid.
+        This is a repeatedly firing function because of a drag event, meaning there are multiple calls before the final
+        "LEFT_UP" event.
         """
         # import inspect
         # for i in inspect.getmembers(event):
@@ -963,7 +994,10 @@ class PianoRollPanel(wx.Panel):
         if event.ShiftDown() and self.mode == self.select_mode:
             if self.pianoroll.GetSelectionBlockTopLeft():
                 #--acquiring our top_left and bottom_right, respectively, from it.
-                top_left = self.pianoroll.GetSelectionBlockTopLeft()[0] #This is repeatedly overwritten, but stays the same coordinate.
+                #This is repeatedly overwritten,
+                # but stays the same coordinate.
+                top_left = self.pianoroll.GetSelectionBlockTopLeft()[0]
+
                 bottom_right = self.pianoroll.GetSelectionBlockBottomRight()[0]
 
                 #If already a shift-highlight...we don't clear it out.
@@ -1027,16 +1061,20 @@ class PianoRollPanel(wx.Panel):
         #np.full((Midas.pianorollpanel.cols_end+1, 1), Midas.pianorollpanel.rows_start)
 
         #(0, 0) (0, 1) (0, 2) (0, 3)
-        top_edge_cells = np.hstack([np.full((len(cols), 1), rows_start), np.arange(cols_start, cols_end+1, 1).reshape(len(cols), 1)])
+        top_edge_cells = np.hstack([np.full((len(cols), 1), rows_start), np.arange(cols_start,
+                                                                                cols_end+1, 1).reshape(len(cols), 1)])
 
         #(0, 0) (1, 0) (2, 0) (3, 0)
-        left_edge_cells = np.hstack([np.arange(rows_start, rows_end+1, 1).reshape(len(rows), 1), np.full((len(rows), 1), cols_start)])
+        left_edge_cells = np.hstack([np.arange(rows_start, rows_end+1, 1).reshape(len(rows), 1),
+                                     np.full((len(rows), 1), cols_start)])
 
         #(3, 0) (3, 1) (3, 2) (3, 3)
-        bottom_edge_cells = np.hstack([np.full((len(cols),  1), rows_end), np.arange(cols_start, cols_end+1, 1).reshape(len(cols), 1)])
+        bottom_edge_cells = np.hstack([np.full((len(cols),  1), rows_end), np.arange(cols_start,
+                                                                                cols_end+1, 1).reshape(len(cols), 1)])
 
         #(0, 3) (1, 3) (2, 3) (3, 3)
-        right_edge_cells = np.hstack([np.arange(rows_start, rows_end+1, 1).reshape(len(rows), 1), np.full((len(rows), 1), cols_end)])
+        right_edge_cells = np.hstack([np.arange(rows_start, rows_end+1, 1).reshape(len(rows), 1),
+                                      np.full((len(rows), 1), cols_end)])
 
         self.all_edges = np.vstack([top_edge_cells, left_edge_cells, bottom_edge_cells, right_edge_cells])
 
@@ -1133,11 +1171,12 @@ class PianoRollPanel(wx.Panel):
             #THIS IS THE UPDATE FLAG FOR DRAWING NOW. It is no longer in the draw function.
             try:
                 m_v.CurrentActor().array4Dchangedflag = not m_v.CurrentActor().array4Dchangedflag
+                print("Flag changed now.", m_v.CurrentActor().array4Dchangedflag)
+                self.pianoroll.ForceRefresh()
             except AttributeError:
                 pass
                 #MAKE SCRATCH ACTOR?
 
-            print("Flag changed now.", m_v.CurrentActor().array4Dchangedflag)
 
 
         elif self.mode == self.select_mode:

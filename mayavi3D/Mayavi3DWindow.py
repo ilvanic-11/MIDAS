@@ -1,4 +1,8 @@
+import copy
 import random
+import threading
+import asyncio
+
 import music21
 import wx    # TODO how to do simpler imports (i.e. just what we need instead of all of wx)
 import time
@@ -176,6 +180,7 @@ class Actor(HasTraits):
 
         duration_ratio = pr.GetMusic21DurationRatio()
 
+        #If we don't have durations data, (say, from a point cloud or picture), supply it anyway.
         if points.shape[1] < 4:
             #NOTE: substitute_durations1/substitute_duration2 == desired music21.duration.quarterLength
             #See music21.note.Note().duration.quarterLength.as_integer_ratio()
@@ -223,10 +228,12 @@ class Actor(HasTraits):
             _array4D = _array4D
 
         points = np.argwhere(_array4D[:, :, :, 0] == 1.0) if z is None else np.argwhere(_array4D[:, :, z, 0] == 1.0)
+        print("Z", z)
+        #This if statement isn't working....
         if z:
             _z = np.full((len(points), 1), z, dtype=np.int8) #int, because floats cannot be indices.
             points = np.column_stack([points, _z])
-
+        print("BITCH")
 
         # if z is None:
         #     #z = self.cur_z
@@ -247,8 +254,8 @@ class Actor(HasTraits):
             #print("-point_data_in_array4D", _array4D[point[0], point[1], point[2]])
             _dur1.append(_array4D[point[0], point[1], point[2], 2])
             _dur2.append(_array4D[point[0], point[1], point[2], 3])
-        _dur_array1 = np.array(_dur1, dtype=np.float16).reshape((len(points), 1))
-        _dur_array2 = np.array(_dur2, dtype=np.float16).reshape((len(points), 1))
+        _dur_array1 = np.array(_dur1, dtype=np.float32).reshape((len(points), 1))  #was 16?
+        _dur_array2 = np.array(_dur2, dtype=np.float32).reshape((len(points), 1))  #was 16?
         print("durray1", _dur_array1)
         print("durray2", _dur_array2)
         #(len(points), 1)
@@ -313,7 +320,10 @@ class Actor(HasTraits):
 
     #Named weird, I don't frickin care right now.
     def get_ON_points_as_odict(self):
+        """
 
+        :return:
+        """
         #points = np.argwhere(self._array4D[:, :, :, 0] == 1.0)
 
         points = self.get_points_with_all_data()
@@ -332,13 +342,15 @@ class Actor(HasTraits):
         # print("ARRAYTYPECHECK", type(cur_plane[0]))
 
         try:
-            #The key value value pair of above Odict accessed by current zplane.
-            self._cur_plane = self._all_points[self.cur_z]  # Key error can happen here.... #TODO FIX
+            #The zplane 'value' where self.cur_z is the 'key.
+            self._cur_plane = self._all_points[self.cur_z]  # Key error can happen here.... #TODO FIX?
             print(self._cur_plane)
 
             # CRITICAL: Account for cpqn. All 'x' values.  X axis "Slice" item assignment here.
+            # CRITICAL: CPQN Compensation here.
             self._cur_plane[:, 0] = self._cur_plane[:, 0] / self.cpqn   #TODO For selection sending between Actors, bool condition needed here to shut this off for those sends.
 
+            # CRITICAL: Insert compensation into _all_points.
             #Reinsert into _all_points via key access.
             self._all_points[self.cur_z] = self._cur_plane
         except Exception as e:
@@ -355,7 +367,7 @@ class Actor(HasTraits):
         new_array4D = np.zeros(self._array4D.shape, dtype=np.int8)
         for p in np.arange(0, len(self._points), 1):   #TODO MAJOR self._points WILL CONTAIN our core update data. However, the
                                                        # m_v traits set will not.  04/11/2021
-            #CORE
+            #CORE --- A Values-Setting Operation
             try:
                 ##IN ORDER
                 #ON
@@ -375,14 +387,21 @@ class Actor(HasTraits):
                 #DUR1
                 new_array4D[int(self._points[p][0]), int(self._points[p][1]), int(self._points[p][2])][2] \
                     = int(self._points[p][3])
+
                 #DUR2
                 new_array4D[int(self._points[p][0]), int(self._points[p][1]), int(self._points[p][2])][3] \
                     = int(self._points[p][4])
+
+                #PianoRoll SetCellSizes  based on new duration data
+                #self.toplevel.pianorollpanel.pianoroll.SetCellSize(127-p[1], p[0],
+                                                                   #(self._points[p][3]/self._points[p][4]), 1)
+
 
                 #    int(self._points[p][3] * 10000)
                 #print("DURATION:", int(self._points[p][3] * 10000))
 
                 #SMALLEST ALLOWED NOTE --- ?? This is inherently derived from duration and cpqn. Eliminate?
+                #cell_draw_size = duration.quarterLength * cpqn
                 #new_array4D[int(self._points[p][0]), int(self._points[p][1]), int(self._points[p][2])][4] = \
 
 
@@ -429,7 +448,10 @@ class Mayavi3idiView(HasTraits):
 
     actor = Any()
     actors = List(Actor)
-
+    #center = Tuple()
+    #point1 = Array()
+    #point2 = Array()
+    normal = Array()
 
     cur_ActorIndex = Int()
     previous_ActorIndex = None
@@ -470,6 +492,9 @@ class Mayavi3idiView(HasTraits):
         self.frames_per_beat = 2  #Upon further review, i_div IS frames per beat.
         #self.time_sig = '4/4' #TODO Set based on music21.meter.TimeSignature object.  Make this a trait???
 
+        #Durations flags.
+        self.durations = True
+        self.durations_in_first_empty = False
 
         #Calls for colors ---for importing and exporting.
         self.colors_calling = False
@@ -504,12 +529,15 @@ class Mayavi3idiView(HasTraits):
         #Append FLStudioColors to clr_dict_list
         self.clr_dict_list.update([("FLStudioColors", midiart.FLStudioColors)])
         #Set FL colors default variable here.
-        self.default_color_palette = self.clr_dict_list["FLStudioColors"]
+        self.current_color_palette = self.clr_dict_list["FLStudioColors"]
         #Division to float colors here.
-        self.default_mayavi_palette = midiart.convert_dict_colors(self.default_color_palette, both=True) #invert=False)#
+        self.current_mayavi_palette = midiart.convert_dict_colors(self.current_color_palette, both=True) #invert=False)#
         #NOTE: These two attributes are modified by the MidiartDialog() function --> OnChangeColor().
 
         #print("C palm.")
+
+
+        self.quick_plane = True  #TODO create toggle
 
 
         #TODO Should this be in main MIDAS_wx?
@@ -550,7 +578,7 @@ class Mayavi3idiView(HasTraits):
 
         #self.scene.render_window.line_smoothing = True
 
-        self.midi = music21.converter.parse(r".\resources\Spark4.mid")
+        #self.midi = music21.converter.parse(r".\resources\Spark4.mid")
         #self.midi = midiart3D.extract_xyz_coordinates_to_array(self.midi)
 
 
@@ -838,14 +866,22 @@ class Mayavi3idiView(HasTraits):
             # xtent = np.array([0, 127, 0, 127, 0, 127])
             self.image_plane_widget = mlab.volume_slice(xh, yh, zh, Scalars_2, figure=figure, opacity=.7, plane_opacity=.7, plane_orientation='x_axes',
                               transparent=True)
+
             #if self.volume_slice is not None:
             self.slice = self.image_plane_widget.parent.parent
             print(self.image_plane_widget)
-            self.image_plane_widget.ipw.origin = array([0., 0., 0.])
-            self.image_plane_widget.ipw.point1 = array([0.0, 127., 0.0])
-            self.image_plane_widget.ipw.point2 = array([0.0, 0.0, 127.])
-            self.image_plane_widget.ipw.slice_position = 1
-            self.image_plane_widget.ipw.slice_position = 0
+
+            self.anchor_volume_slice()
+            # self.image_plane_widget.ipw.origin = array([0., 0., 0.])
+            # self.image_plane_widget.ipw.point1 = array([0.0, 127., 0.0])
+            # self.image_plane_widget.ipw.point2 = array([0.0, 0.0, 127.])
+            # self.image_plane_widget.ipw.slice_position = 1
+            # self.image_plane_widget.ipw.slice_position = 0
+
+            # Makes it impossible to rotate the planescroll
+            self.image_plane_widget.ipw.margin_size_x = 0
+            self.image_plane_widget.ipw.margin_size_y = 0
+
 
         else:
             x1, y1, z1 = (0, 0, 0)  # | => pt1
@@ -869,6 +905,18 @@ class Mayavi3idiView(HasTraits):
                                     tube_radius=None)
 
         self.scene3d.disable_render = False
+
+        #self.image_plane_widget.ipw.sync_trait('point1', self, mutual=False)
+        #self.image_plane_widget.ipw.sync_trait('point2', self, mutual=False)
+        #self.image_plane_widget.ipw.poly_data_algorithm.sync_trait('normal', self, mutual=False)
+        #self.on_trait_change(self.anchor_volume_slice, 'point1')
+        #self.on_trait_change(self.anchor_volume_slice, 'point2')
+        #self.on_trait_change(self.anchor_volume_slice, 'normal')
+
+
+        #center,normal trait of ipw is 'read-only', so mutual can only be False for this.
+        #"Center trait one-way - synced: ipw.center - --to - --> mayavi_view.center."
+
         return self.slice, self.slice_edges
 
 
@@ -887,8 +935,9 @@ class Mayavi3idiView(HasTraits):
         if self.slice_edges is not None:
             self.slice_edges.remove()
         self.insert_volume_slice(length=length, volume_slice=volume_slice)
-        #self.insert_volume_slice(length)
+        self.volume_slice = volume_slice
 
+        #self.insert_volume_slice(length)
 
 
     #Highlighter Plane functions.
@@ -901,6 +950,7 @@ class Mayavi3idiView(HasTraits):
             length = length
         else:
             length = self.grid3d_span
+
         x1, y1, z1 = (0, 0, z_points)  # | => pt1
         x2, y2, z2 = (0, 127, z_points)  # | => pt2
         x3, y3, z3 = (length, 0, z_points)  # | => pt3
@@ -908,13 +958,13 @@ class Mayavi3idiView(HasTraits):
         linebox = MusicObjects.line_square(length=length, z_axis=z_points)
         #Green Surface
         plane = mlab.mesh([[x1, x2],
-                                 [x3, x4]],  # | => x coordinate
+                           [x3, x4]],  # | => (x, coordinate
 
-                                  [[y1, y2],
-                                  [y3, y4]],  # | => y coordinate
+                          [[y1, y2],
+                           [y3, y4]],  # | => y, coordinate
 
-                                  [[z1, z2],
-                                  [z3, z4]],  # | => z coordinate
+                          [[z1, z2],
+                           [z3, z4]],  # | => z) coordinate
 
                                   color=color, figure=figure, line_width=5.0, mode='sphere', name="Green Surface",
                           opacity=.125, scale_factor=1, tube_radius=None)  # black#extent=(-50, 128, -50, 128, 114, 114)
@@ -922,6 +972,7 @@ class Mayavi3idiView(HasTraits):
         #TODO This is a mayavi bug. I had to name the .name trait in a separate line. 04/09/2021
         plane.name = "Green Surface"
         self.highlighter_calls.append(plane)
+        #print("GREEN_HIGHLIGHTER_PLANE_INDEX", self.highlighter_calls.index(plane))
         #White Edges
         plane_edges = mlab.plot3d(linebox[:, 0], linebox[:, 1], linebox[:, 2]+.25,
                                          color=(1,1,1), figure=figure, line_width=.5, name="White Edges", opacity=1.,
@@ -1159,9 +1210,34 @@ class Mayavi3idiView(HasTraits):
                 self.text3d_calls[n].actor.actor.position = pos
 
 
+    def generate_plane_scroll2(self, x_length=None, bpm=None, frames_per_beat=None, volume_slice=None):
+        generation = []
+        x_length = self.grid3d_span if x_length is None else x_length
+        bpm = self.bpm if bpm is None else bpm
+        frames_per_beat = self.frames_per_beat if frames_per_beat is None else frames_per_beat
+        volume_slice = self.volume_slice if volume_slice is None else volume_slice
+        #                    # Equals class variable                   # Equals user set variable.
+
+        fps = (bpm * frames_per_beat) / 60  # frames_per_second
+        dbf = 1 / fps
+
+
+        sleep = dbf  ####/frames_per_beat    #TODO CHECK THIS MATH just one more....time..... :p Nice. :)
+        print("SLEEPIES", sleep)
+        if volume_slice:
+            ipw = self.image_plane_widget.ipw
+            ipw2 = None
+        else:
+            ipw = self.slice.actor.actor
+            ipw2 = self.slice_edges.actor.actor
+        for i in np.arange(1, (x_length + 1), 1 / frames_per_beat):
+            generation.append(i)
+        return generation
+
 
     ###DEFINE MUSIC ANIMATION
-    def generate_plane_scroll(self, x_length, bpm, frames_per_beat, volume_slice=None):
+    #@asyncio.coroutine
+    def generate_plane_scroll(self, x_length=None, bpm=None, frames_per_beat=None):  #volume_slice=None
         """
             Mlab animate's builtin delay has to be specified as an integer in milliseconds with a minimum of 10,
         and also could not be removed, so we subtracted .01 seconds (or 10 milliseconds) in a workaround delay of
@@ -1172,13 +1248,24 @@ class Mayavi3idiView(HasTraits):
         :return: N/A
         """
 
-        if volume_slice is None:
-            volume_slice = self.volume_slice  #Equals class variable
-        else:
-            volume_slice = volume_slice       #Equals user set variable.
+
+
+
+        x_length = self.grid3d_span if x_length is None else x_length
+        bpm = self.bpm if bpm is None else bpm
+        frames_per_beat = self.frames_per_beat if frames_per_beat is None else frames_per_beat
+        #volume_slice = self.volume_slice if volume_slice is None else volume_slice
+        #                    # Equals class variable                   # Equals user set variable.
+
+
 
         fps = (bpm * frames_per_beat) / 60   #frames_per_second
         dbf = 1 / fps                        #delay_between_frames
+
+        #dbf = 1 / fps                        #delay_between_frames
+        #fps = (bpm * frames_per_beat) / 60   #frames_per_second
+        #bpm = 60/(fpb*dbf)
+
         # Todo calculate into generate_plane_scroll() and add to yield_midi() function in Playback.
         #Calculate nano_delay for sleep call based on bpm and frames_per_beat input.
         # if bpm is None or 0:
@@ -1197,16 +1284,21 @@ class Mayavi3idiView(HasTraits):
         #     sleep = 0
         # sleep = sleep / frames_per_beat
 
-        sleep = dbf/frames_per_beat
-
+        sleep = dbf   ####/frames_per_beat    #TODO CHECK THIS MATH just one more....time..... :p Nice. :)
+        print("SLEEPIES", sleep)
         # The "+ 1" in this range is a compensation value. For some unknown reason, the correct range is not being
         # fully animated. It's always 2 'i' range values off (which is 8 iterations if i_div is 4 because we're
         # incrementing at fractional step values) The desired range is still x_length, we just made it go a little
         # over that to make darn sure the whole range is captured, which makes it work as desired.
-        if volume_slice:
+
+
+        print("Volume_Bool:", self.volume_slice)
+        if self.volume_slice is True:
+            print("Volume_Bool:", self.volume_slice)
             ipw = self.image_plane_widget.ipw
             ipw2 = None
         else:
+            print("Volume_Bool:", self.volume_slice)
             ipw = self.slice.actor.actor
             ipw2 = self.slice_edges.actor.actor
 
@@ -1228,7 +1320,7 @@ class Mayavi3idiView(HasTraits):
             if i == x_length:  # Because we animate ACROSS our desired range max, we are making darn sure that this
                 # condition is met.
                 # Destroy the volume_slice and rebuild it at the end of the animating generator function.
-                self.reset_volume_slice(self.grid3d_span, volume_slice=volume_slice)
+                self.reset_volume_slice(self.grid3d_span, volume_slice=True)
                 # Fire a "loop_end" flag so we can turn off "movie_maker.record" if we intend to animate without generating frames.
                 self.loop_end = True
                 # Might change this later, for playback stuff.
@@ -1238,16 +1330,41 @@ class Mayavi3idiView(HasTraits):
                 self.scene3d.anti_aliasing_frames = 8  # TODO Check this again.
                 # pass
                 return i #print("True")
+
             else:
-                time.sleep(sleep)
-                if volume_slice:
-                    ipw.trait_set(slice_position = i)  ##ipw.position = i  #/i_div
-                else:
+                # # self.scene3d.disable_render=True
+                # #self.scene3d.render_window.make_current()
+
+                time.sleep(sleep)  #If our first tick generated is 1, which it is, and our starting position is 0
+                                   #then time.sleep needs to happen in between 0 and our first tick.
+                                   #Ergo, here.....
+
+                if self.volume_slice == True:
+                    #ipw.trait_set(slice_position=i)  ##
+                    ipw.slice_position = i                  #/i_div
+                    ## self.scene3d.disable_render=False
+                    print("IPW", i)
+
+                elif self.volume_slice == False:
                     pos = np.array([i, 0, 0])
-                    ipw.trait_set(position = pos)
-                    ipw2.trait_set(position = pos)
-                    #ipw2.position = ipw.position = pos
-                yield  ###print(i)
+                    ##ipw.trait_set(position=pos)
+                   # print("IPW", ipw)
+                    ##ipw2.trait_set(position=pos)
+                   # print("IPW2", ipw2)
+                    # # self.scene3d.disable_render=False
+                    ipw2.position = ipw.position = pos
+                    print("IPW", i)
+                    print("IPW2", i)
+                yield
+
+                                  #And NOT here....!
+
+                # #print("IPW_Current_Thread", threading.currentThread())
+                # #print("IPW_Current_Thread_Name", threading.currentThread().getName())
+                # #print("IPW_allThreads", threading.enumerate())
+                # #print("IPW_allThreadsCount", threading.active_count())
+                #from asyncio.sleep(sleep)
+                ###print(i)
 
 
     def animate(self, time_length, bpm=None, frames_per_beat=4):
@@ -1410,11 +1527,14 @@ class Mayavi3idiView(HasTraits):
         # scene.scene.x_minus_view()
         #self.image_plane_widget = self.engine.scenes[0].children[6].children[0].children[0]
         print("IPW TYPE:", type(self.image_plane_widget))
-        self.image_plane_widget.ipw.origin = array([0., 0.0, 0.0])
-        self.image_plane_widget.ipw.point1 = array([0.0, 127., 0.0])
-        self.image_plane_widget.ipw.point2 = array([0.0, 0.0, 127.])
-        self.image_plane_widget.ipw.slice_position = 1      #These calls eliminate those "white lines" created in the
-        self.image_plane_widget.ipw.slice_position = 0      #construction and repositioning of the volume_slice.
+
+        self.anchor_volume_slice()
+        # self.image_plane_widget.ipw.origin = array([0., 0.0, 0.0])
+        # self.image_plane_widget.ipw.point1 = array([0.0, 127., 0.0])
+        # self.image_plane_widget.ipw.point2 = array([0.0, 0.0, 127.])
+        # self.image_plane_widget.ipw.slice_position = 1      #These calls eliminate those "white lines" created in the
+        # self.image_plane_widget.ipw.slice_position = 0      #construction and repositioning of the volume_slice.
+
         self.scene.scene.z_plus_view()
         self.scene.scene.camera.position = [-75.6380940108963, 154.49428308844531, 497.79655837964555]
         self.scene.scene.camera.focal_point = [132.7793834578315, 47.95558391240606, 44.03267908678528]
@@ -1478,8 +1598,8 @@ class Mayavi3idiView(HasTraits):
             #         #self.highlighter_transformation()
 
             #This was a fun detail; it stopped 16 weird extra self.highlighter_transformation() calls at the end
-            #of a a colors load
-            if self.colors_calling is True and self.disable_render is False:
+            #of a colors load
+            if self.colors_calling is True and self.scene3d.disable_render is False:  #self.scene3d.disable_render?
                 return
             else:
                 #print("Flag 7")
@@ -1585,6 +1705,55 @@ class Mayavi3idiView(HasTraits):
         #Reset x-axis scaling?
 
         #for i in self.actors:
+
+
+    # @on_trait_change('image_plane_widget.ipw.poly_data_algorithm.normal')
+    # def print_ass(self):
+    #     print("ASS")
+
+    #@on_trait_change('normal')
+    def anchor_volume_slice(self):
+        # If it's the movable volume_slice, not the 'surface' version....
+        self.scene3d.disable_render =True
+        #self.on_trait_change(self.anchor_volume_slice, 'origin', remove=True)
+
+        if self.volume_slice is False:
+            pass
+        else:
+            if self.image_plane_widget.ipw.center[1] == 63.5 and self.image_plane_widget.ipw.center[2] == 63.5:
+                pass
+            else:
+
+                # print("Anchoring2...")
+                x = self.image_plane_widget.ipw.center[0]
+                #x2 = self.image_plane_widget.ipw.point2[0]
+                #x3 = self.image_plane_widget.ipw.origin[0]
+                #po_copy = copy.deepcopy(self.image_plane_widget.ipw.plane_orientation)
+
+                self.image_plane_widget.ipw.trait_set(trait_change_notify=False, plane_orientation=1)  #TODO Figure out how to flag a trait's changed
+                                                                                   # even though we didn't change it.
+                self.image_plane_widget.ipw.trait_set(trait_change_notify=True, plane_orientation=3)  # so we don't have to y then x here.
+    #            self.image_plane_widget.ipw._plane_orientation_changed('x_axes', 'x_axes')
+
+                #self.image_plane_widget.ipw.poly_data_algorithm.normal = np.array([1., 0., 0.])
+
+                self.image_plane_widget.ipw.trait_set(origin=array([x, 0.0, 0.0]))
+                self.image_plane_widget.ipw.trait_set(point1=array([x, 127., 0.0]))
+                self.image_plane_widget.ipw.trait_set(point2=array([x, 0.0, 127.]))
+                # # ..and if it's accidentally spun out of position--
+                # print("Anchoring...")
+
+                #These calls eliminate those "white after-effect lines" created in the
+                # construction and repositioning of the volume_slice.
+                self.image_plane_widget.ipw.slice_position = x+1
+                #self.image_plane_widget.ipw.trait_set(slice_position=x+.0000000001)
+                # --re-anchor it back into position.
+                self.image_plane_widget.ipw.slice_position = x
+                #self.image_plane_widget.ipw.trait_set(slice_position=x)
+                # print("Anchored.")
+                # self.scene.scene.render()
+        self.scene3d.disable_render = False
+        #self.resync_origin()
 
 
     ###Trait Sub-Functions
@@ -1694,7 +1863,7 @@ class Mayavi3idiView(HasTraits):
 
             #In place slice reassignment.
             reticle[:, 0] = reticle[:, 0] / cpqn #TODO Once cpqn is fixed. CHECK-- Now that cpqn is fixed, create a trait event for it so that this reticle--
-                                                                                                      #TODO---(among other things) updates automatically when cpqn is changed.
+                                                                                                      #TODO---(among other things) updates automatically when cpqn is changed. --FIXED, DONE!
             #Traits notification
             self.grid_reticle.mlab_source.trait_set(points=reticle)
             self.parent.mayaviviewcontrolpanel.Refresh()

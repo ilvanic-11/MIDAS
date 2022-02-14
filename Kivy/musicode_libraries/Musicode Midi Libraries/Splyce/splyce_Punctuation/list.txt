@@ -1,0 +1,16 @@
+list.txt
+musicode_splyce_apostrophe.mid
+musicode_splyce_backslash.mid
+musicode_splyce_closebracket.mid
+musicode_splyce_closeparenthesis.mid
+musicode_splyce_colon.mid
+musicode_splyce_comma.mid
+musicode_splyce_decimalpoint.mid
+musicode_splyce_doublequotationmark.mid
+musicode_splyce_exclamationmark.mid
+musicode_splyce_hyphen.mid
+musicode_splyce_openbracket.mid
+musicode_splyce_openparenthesis.mid
+musicode_splyce_period.mid
+musicode_splyce_semicolon.mid
+musicode_splyce_singlequotationmark.mid
