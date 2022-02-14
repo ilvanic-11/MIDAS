@@ -6,7 +6,11 @@ from wx.lib.mixins.listctrl import CheckListCtrlMixin
 from midas_scripts import music21funcs    #musicode,
 from gui.Playback import Player, Animator
 import multiprocessing
+import asyncio
+import itertools
+import more_itertools
 import os
+import time
 
 # import math
 # import music21
@@ -34,33 +38,36 @@ class ZPlanesControlPanel(wx.Panel):
 		self.SetSizerAndFit(sizer)
 
 		self.Bind(wx.EVT_LIST_ITEM_RIGHT_CLICK, self.OnZplaneRightClick)
-		
+
+
 	def SetupToolBar(self):
 		btn_size = (8, 8)
 		self.toolbar.SetToolBitmapSize(btn_size)
-		
+
 		bmp_showall = wx.ArtProvider.GetBitmap(wx.ART_LIST_VIEW, wx.ART_TOOLBAR, btn_size)
-		
+
 		id_showall = 10
 		self.toolbar.AddCheckTool(id_showall, "ShowAll", bmp_showall, wx.NullBitmap,
 								  '''Toggle between \"All\" and \"Notes-Only\" Zplanes''',
-		                          "???", None)  #???What's supposed to be here?
+								  "???", None)  #???What's supposed to be here?
 		self.Bind(wx.EVT_TOOL, self.OnToolBarClick, id=id_showall)
-		
+
 		self.toolbar.Realize()
-		
+
+
 	def OnToolBarClick(self, event):
 		"""
-        Event handler for when user clicks a button on the toolbar.
-        Determines which button was called and calls sub-handler functions
-        :return:
-        """
+		Event handler for when user clicks a button on the toolbar.
+		Determines which button was called and calls sub-handler functions
+		:return:
+		"""
 		print("OnToolBarClick():")
 		if event.GetId() == 10:
 			self.OnBtnShowAll(event)
 		else:
 			pass
-	
+
+
 	def OnBtnShowAll(self, event):
 		"""
 		TO show all planes in the listbox
@@ -101,8 +108,8 @@ class ZPlanesControlPanel(wx.Panel):
 			self.Bind(wx.EVT_MENU, self.OnPopupFive, id=self.popupID5)
 			self.Bind(wx.EVT_MENU, self.OnClearSelection, id=self.popupID6)
 			self.Bind(wx.EVT_MENU, self.OnPopupSeven, id=self.popupID7)
-			self.Bind(wx.EVT_MENU, self.OnPopupEight, id=self.popupID8)
-			self.Bind(wx.EVT_MENU, self.OnPopupNine, id=self.popupID9)
+			self.Bind(wx.EVT_MENU, self.OnGoToFirstEmptyZplane, id=self.popupID8)
+			self.Bind(wx.EVT_MENU, self.OnGoToNearestEmptyZplane, id=self.popupID9)
 
 		# make a menu
 		menu = wx.Menu()
@@ -119,51 +126,79 @@ class ZPlanesControlPanel(wx.Panel):
 		menu.Append(self.popupID6, "Clear Selection")
 		# make a submenu
 		sm = wx.Menu()
-		sm.Append(self.popupID8, "sub item 1")
-		sm.Append(self.popupID9, "sub item 1")
-		menu.Append(self.popupID7, "Test Submenu", sm)
+		menu.Append(self.popupID7, "Go To...", sm)
+		sm.Append(self.popupID8, "..First Empty Zplane")
+		sm.Append(self.popupID9, "..Nearest Empty Zplane")
 
 		# Popup the menu.  If an item is selected then its handler
 		# will be called before PopupMenu returns.
 		self.PopupMenu(menu)
 		menu.Destroy()
 
+
 	def OnPopup_Properties(self, event):
 		pass
 
 
+	def execute_animator(self):
+		self.GetTopLevelParent().planescroll_animator = \
+			Animator(0, self.m_v.generate_plane_scroll(x_length=self.m_v.grid3d_span,  # animator.
+													   bpm=self.m_v.bpm,
+													   frames_per_beat=self.m_v.frames_per_beat  ##/2
+													   # delay=10,
+													   ).__next__, window=self.m_v)
+
+
+	def execute_player(self):
+		self.GetTopLevelParent().player = Player(midifilepath=self.output,
+												 parent=self.GetTopLevelParent(),
+												 play_now=True,
+												 from_gui=True)
+
 
 	def OnPlayback_Zplane(self, event):
+
 		intermediary_path = os.getcwd() + os.sep + "resources" + os.sep + "intermediary_path" + os.sep
 		filename = "Temp_Midi" + "_" + "Z-" + str(self.m_v.CurrentActor().cur_z)
-		output = intermediary_path + filename + ".mid"
+		self.output = intermediary_path + filename + ".mid"
 		zplane = midiart3D.get_planes_on_axis(self.m_v.CurrentActor()._points)[  # Todo use GridToStream()
 			eval('self.m_v.cur_z')]  # TODO Watch for debug errors here.
-		self.m_v.CurrentActor()._stream = midiart3D.extract_xyz_coordinates_to_stream(zplane)
+		self.m_v.CurrentActor()._stream = midiart3D.extract_xyz_coordinates_to_stream(zplane, durations=True)
 		music21funcs.add_timesig_and_metronome(self.m_v.CurrentActor()._stream, bpm=self.m_v.bpm, timesig="4/4")
-		self.m_v.CurrentActor()._stream.write('mid', output)
-		def execute_animator():
-			self.GetTopLevelParent().planescroll_animator = \
-				Animator(0, self.m_v.generate_plane_scroll(x_length=self.m_v.grid3d_span,  # animator.
-														   bpm=self.m_v.bpm,
-														   frames_per_beat=self.m_v.frames_per_beat  ##/2
-														   # delay=10,
-														   ).__next__)
-		def execute_player():
-			self.GetTopLevelParent().player = Player(midifile=output, parent=self.GetTopLevelParent(), play_now=True, from_gui=True)
+		self.m_v.CurrentActor()._stream.write('mid', self.output)
+		print("Playing back zplane....")
+
 
 		try:
-			#TODO This is multiprocessing, threading, parallelism stuff...help.
-			##multiprocessing.Process(target=execute_animator).start()
-			self.GetTopLevelParent().planescroll_animator = \
-				Animator(0, self.m_v.generate_plane_scroll(x_length=self.m_v.grid3d_span,  # animator.
-															bpm=self.m_v.bpm,
-															frames_per_beat=self.m_v.frames_per_beat  ##/2
-															# delay=10,
-															).__next__)
 
+			#TODO This is multiprocessing, threading, parallelism stuff...help.
+
+			# ass1 = multiprocessing.Process(target=self.execute_animator)
+			# ass1.start()
+			# print("ass1")
+
+			# fps = (self.m_v.bpm * self.m_v.frames_per_beat) / 60
+			# dbf = 1 / fps
+
+			# SUPER IMPORTANT :USE SURFACE (self.volume_slice=False) FOR ALL RENDERING OF OUR PLANE SCROLL 01/17/2022
+			self.m_v.reset_volume_slice(self.m_v.grid3d_span, volume_slice=False)  # if volume_slice is not None else None
+			print("VOLUME_SLICE", self.m_v.volume_slice)
+
+			self.GetTopLevelParent().planescroll_animator = \
+				Animator(0,  self.m_v.generate_plane_scroll().__next__, window=self.GetTopLevelParent().mayavi_view, player=False) #2 #, timer_delay=dbf) #().__next__)# ,
+				#Animator(0, self.m_v.generate_plane_scroll()) #().__next__)# ,
+															#(x_length=self.m_v.grid3d_span,     #itertools.tee(   animator.
+															#bpm=self.m_v.bpm,
+															#frames_per_beat=self.m_v.frames_per_beat    ##/ 2
+															#),  #, 1)[0]
+															## delay=10, .__next__
+			time.sleep(.5)
+			print("Animator here...")
 			self.GetTopLevelParent().planescroll_animator._stop_fired()
 
+
+			#self.m_v.scene3d.disable_render = True
+			#print("Render disabled?")
 			#self.GetTopLevelParent().planescroll_animator.timer._start_timer()
 			#self.m_v.scene3d.render_window.make_current()
 
@@ -171,18 +206,24 @@ class ZPlanesControlPanel(wx.Panel):
 			# 														   bpm=Midas.mayavi_view.bpm,
 			# 			 												frames_per_beat=Midas.mayavi_view.frames_per_beat)
 
-			##multiprocessing.Process(target=execute_player).start()
-			self.GetTopLevelParent().player = Player(midifile=output, parent=self.GetTopLevelParent(), play_now=True,
-														from_gui=True)
+			# argh2 = multiprocessing.Process(target=self.execute_player)
+			# argh2.start()
 
+			print("Output", self.output)
+			self.GetTopLevelParent().player = Player(midifilepath=self.output, parent=self.GetTopLevelParent(), play_now=True,
+														from_gui=True, player=True)
+			print("Player here...?")
 
 			# for i in np.arange(0, 50, 1):
 			#      Midas.mayavi_view.volume_slice.actor.actor.position = np.array([i, 0, 0])
-
 			#self.GetTopLevelParent().planescroll_animator = self.m_v.animate(self.m_v.grid3d_span, self.m_v.bpm, self.m_v.frames_per_beat)
+
 		except StopIteration:
 			del(self.GetTopLevelParent().player)
+			print("Player deleted?")
+
 		finally:   #Todo Process this, read the docs and Dan Bader's book.
+			#Midas.mayavi_view.slice_edges.actor.actor.trait_set(position=np.array([i, 0, 0]))Midas.mayavi_view.slice_edges.actor.actor.trait_set(position=np.array([i, 0, 0]))self.m_v.scene3d.disable_render=False
 
 		#player.load_midifile(midifile=output, bpm=160)
 		#player.open_gui()
@@ -198,11 +239,14 @@ class ZPlanesControlPanel(wx.Panel):
 
 			pass
 
+
 	def OnPopupThree(self, event):
 		pass
 
+
 	def OnPopupFour(self, event):
 		pass
+
 
 	def OnPopupFive(self, event):
 		pass
@@ -220,23 +264,70 @@ class ZPlanesControlPanel(wx.Panel):
 		# 		print("Seletion %s Deleted." % (j - 1))
 		# self.GetTopLevelParent().pianorollpanel.pianoroll.ForceRefresh()
 
+
 	def OnPopupSeven(self, event):
 		pass
+
 
 	def OnPopupEight(self, event):
 		pass
 
+
 	def OnPopupNine(self, event):
 		pass
-	
+
+
+	def OnGoToFirstEmptyZplane(self, event):
+		assert self.m_v.CurrentActor()._points.size != 0, \
+			print("Your actor has no points, so your zplane won't either.")
+		z_dict = midiart3D.get_planes_on_axis(self.m_v.CurrentActor()._points, ordered=True, array=True)
+		list_1 = [i for i in z_dict.keys() if i.size != 0]
+		list_1.sort()
+		set_1 = set(list_1)
+		list_2 = [i for i in range(0, 128, 1)]
+		set_2 = set(list_2)
+		zero_list = set_2.difference(set_1)
+		zero_list = list(zero_list)
+		zero_list.sort()
+		print("Zero_list", zero_list)
+
+		if zero_list[0] == self.m_v.cur_z:
+			pass
+		else:
+			self.ZPlanesListBox.Activate_Zplane(zero_list[0])
+			self.GetTopLevelParent().zplane_scrolled = zero_list[0]
+
+	def OnGoToNearestEmptyZplane(self, event):
+		assert self.m_v.CurrentActor()._points.size != 0, \
+			print("Your actor has no points, so your zplane won't either.")
+		z_dict = midiart3D.get_planes_on_axis(self.m_v.CurrentActor()._points, ordered=True, array=True)
+		list_1 = [i for i in z_dict.keys() if i.size != 0]
+		list_1.sort()
+		set_1 = set(list_1)
+		list_2 = [i for i in range(0, 128, 1)]
+		set_2 = set(list_2)
+		zero_list = set_2.difference(set_1)
+		zero_list = list(zero_list)
+		zero_list.sort()
+		print("Zero_list", zero_list)
+		a = min(zero_list, key=lambda x: abs(x - self.m_v.cur_z))
+		print("Nearest_0", a)
+
+		if a == self.m_v.cur_z:
+			pass
+		else:
+			self.ZPlanesListBox.Activate_Zplane(a)
+			self.GetTopLevelParent().zplane_scrolled = a
+
+
 class CustomZPlanesListBox(wx.ListCtrl, CheckListCtrlMixin):
 	def __init__(self, parent, log):
 		wx.ListCtrl.__init__(self, parent, -1,
-		                     style=wx.LC_REPORT |
-		                            wx.LC_VIRTUAL
-		                            #wx.LC_NO_HEADER |
-		                            #wx.LC_SINGLE_SEL  #TODO Turned this off to allow for interesting multi-select functions for zplanes.
-		                     )
+							 style=wx.LC_REPORT |
+									wx.LC_VIRTUAL
+									#wx.LC_NO_HEADER |
+									#wx.LC_SINGLE_SEL  #TODO Turned this off to allow for interesting multi-select functions for zplanes.
+							 )
 
 		#TODO I turned this off as well; it gets rid of those weird unused check boxes in the list box. So far,
 		# I haven't run into errors from disabling it. 11/29/2021
@@ -249,18 +340,19 @@ class CustomZPlanesListBox(wx.ListCtrl, CheckListCtrlMixin):
 		self.m_v = self.GetTopLevelParent().mayavi_view
 
 
-		self.InsertColumn(0,"Visible", wx.LIST_FORMAT_CENTER, width=50)
-		self.InsertColumn(1,"ZPlane", wx.LIST_FORMAT_CENTER, width=64)  #1
-		
-		
+		#self.InsertColumn(0,"Visible", wx.LIST_FORMAT_CENTER, width=50)
+		self.InsertColumn(0,"ZPlane", wx.LIST_FORMAT_CENTER, width=64)  #1
+
+
 		self.showall = False
-		
+
 		self.filter = list()
 
 		self.SetItemCount(0)
-		
+
 		self.Bind(wx.EVT_LIST_ITEM_ACTIVATED, self.OnListItemActivated)
-		
+
+
 	def OnListItemActivated(self, evt):
 		print("EVENT INDEX", evt.Index)
 		self.Activate_Zplane(evt.Index)
@@ -308,15 +400,17 @@ class CustomZPlanesListBox(wx.ListCtrl, CheckListCtrlMixin):
 			return f"{self.filter[item]}"
 		else:
 			return ""
-		
+
+
 	def OnGetItemImage(self, item):
 		return item
-		
+
+
 	def GetItemCount(self, count):
 		self.log.debug(f" GetItemCount(): itemcount = {len(self.filter)}")
 		return len(self.filter)
-		
-		
+
+
 	def UpdateFilter(self):
 		self.log.info("UpdateFilter():")
 		try:
@@ -325,7 +419,7 @@ class CustomZPlanesListBox(wx.ListCtrl, CheckListCtrlMixin):
 			print("There are no actors yet.")
 			pass
 		#print(np.shape(a3D))
-		
+
 		self.filter = list()
 		if self.showall:
 			self.filter = [_ for _ in range(128)]
@@ -333,16 +427,16 @@ class CustomZPlanesListBox(wx.ListCtrl, CheckListCtrlMixin):
 			for i in range(np.shape(a4D)[2]):
 				if np.count_nonzero(a4D[:, :, i]) > 0:
 					self.filter.append(i)
-		
+
 		#print(f"filter = {self.filter}")
-		
+
 		self.SetItemCount(len(self.filter))
 		if self.GetTopLevelParent().zplane_scrolled > self.filter[-1]:
 			self.GetTopLevelParent().zplane_scrolled = self.filter[-1]
 		self.Refresh()
 		return len(self.filter)
-		
-		
+
+
 	#
 	###---------------------
 	#####----------------------------------
@@ -391,5 +485,4 @@ class CustomZPlanesListBox(wx.ListCtrl, CheckListCtrlMixin):
 
 		accel = wx.AcceleratorTable(entries)
 		self.SetAcceleratorTable(accel)
-	
-	
+

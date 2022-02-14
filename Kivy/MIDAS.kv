@@ -1,0 +1,291 @@
+#:kivy 1.0.9
+#:import F kivy.factory.Factory
+#:import S MIDAS_Settings
+
+
+
+<AlignedTextInput@TextInput>
+    font_name: "terminat"
+
+
+<MidasButton@Button>
+    font_name: "terminat"
+    font_size: 16
+
+
+
+<HeightPopup@Popup>:
+    title: 'Height'
+    auto_dismiss: False
+    size_hint: 0.5, 0.2
+    note_HeightSlider: note_HeightSlider
+    BoxLayout:
+        Slider:
+            id: note_HeightSlider
+            range: 12,127
+            orientation: 'horizontal'
+            value: S.noteHeight
+            value_track: True
+            step: 1
+        Label:
+            id: slider_Label
+            text: str(note_HeightSlider.value)
+        Button:
+            id: slider_Done
+            text: 'Done'
+            on_press: root.HeightPopupDone()
+
+
+
+<MainUI>:
+
+    size_hint: 1,1
+    rows: 2
+    columns: 2
+
+    MidasButton:
+        id: midas_Button
+        size_hint: 0.2,0.1
+        text: "MIDAS"
+        background_normal: ''
+        background_down: S.button_down
+        background_color: 0.25607843137254902, 0.7031372549019608, 0.867843137254902, 1
+        on_press: root.refresh()
+
+    MusicodeArea:
+        id: musicode_Area
+        size_hint: 0.8,0.1
+
+    MidiArtButtons:
+        id: midiart_Buttons
+        size_hint: 0.2,0.9
+
+    BoxLayout:
+        id: box_Split
+        orientation: 'vertical'
+
+
+        Splitter:
+            id: drawarea_Splitter
+            sizable_from: 'bottom'
+            #add_widget: image_View
+            #add_widget(layout_or_widget_instance)
+            min_size: 75
+            max_size: 765
+            strip_size: '5pt'
+            size_hint: 1, 0.23
+
+            #pos: tuple([0, 0])
+            #border = ListProperty([1,1,1,1])
+
+            MusicodeDrawArea:
+                id: musicodedraw_Area
+                #size_hint: 1, .0005
+
+        ImageDrawArea:
+            id: imagedraw_Area
+            size: 8,8
+            #size_hint: 0.65, 0.65
+
+
+
+<MusicodeArea>
+    txt_Input: txt_Input
+    musicode_Choice: musicode_Choice
+    orientation: 'horizontal'
+    Label:
+        id: textt2trans_Label
+        text: 'Text to Translate -->'
+        halign: 'right'
+    TextInput:
+        id: txt_Input
+        text: ""
+    Spinner:
+        id: musicode_Choice
+        text: '  Select \n\nA Musicode'
+        font_name: "terminat"
+        #font_size: 17
+        values: [m for m in root.musicodes_sh]
+    MidasButton:
+        id: translate_Btn
+        text: 'Translate'
+        on_press: root.translate_txt()
+        background_normal: ''
+        background_down: S.button_down
+        background_color: 0.25607843137254902, 0.7031372549019608, 0.867843137254902, 1
+
+
+<MidiArtButtons>
+    orientation: 'vertical'
+    granularity_Choice: granularity_Choice
+    #txt_Key: txt_Key
+
+
+    BoxLayout:
+        orientation: 'horizontal'
+        padding_vertical: 0.05, 0.05
+        Button:
+            id: 'note_HeightBtn'
+            size_hint: 0.7, 1
+            text: 'Height'
+            on_release: root.heightPopup.open()
+        Label:
+            id: note_Height
+            size_hint: 0.3, 1
+            text: '127'  #str(root.note_Height)
+    BoxLayout:
+        orientation: 'horizontal'
+        padding_vertical: 0.05, 0.05
+        Spinner:
+            id: granularity_Choice
+            #text: "Note Duration"
+            orientation: 'horizontal'
+            text: "Note Durations"      #'\'Note Durations\''
+            values: [m for m in root.granularities]
+            on_text: root.updateGranularity()
+    BoxLayout:
+        orientation: 'horizontal'
+        padding_vertical: 0.05, 0.05
+        Label:
+            size_hint: 0.7, 1
+            text: 'Connect\nNotes?'
+        BoxLayout:
+            orientation: 'vertical'
+            size_hint: 0.3, 1
+            ToggleButton:
+                id: tb_Y
+                text: 'Yes'
+                state: 'down'
+                group: 'connectNotes'
+                on_release: root.updateConnectNotes()
+            ToggleButton:
+                id: tb_N
+                text: 'No'
+                group: 'connectNotes'
+                on_release: root.updateConnectNotes()
+    BoxLayout:
+        orientation: 'horizontal'
+        size_hint_y: 0.25
+        Label:
+            size_hint_x: .7
+            text: 'Key'
+            valign: 'middle'
+        Spinner
+            id: txt_Key
+            text: "Key"
+            font_name: "times"
+            font_size: 14
+            size_hint_x: 0.3
+            values: S.key_list
+            on_text: root.updateKey()
+        #AlignedTextInput:
+            #id: txt_Key
+            #font_name: "times"
+            #font_size: 14
+            #size_hint_x: 0.3
+            #multiline: False
+            #valign: 'middle'
+
+    Spinner:
+        id: colors_Choice
+        size_hint_y: 0.4
+        text: 'Select Color'
+        #font_size: 13
+        sync_height: True
+        #font_name: "terminat"
+        values: [clrs for clrs in S.clr_dict_list]
+        on_text: root.updateColor()
+        #background_normal: ''
+        #background_down: S.button_down
+        #background_color: 0.19607843137254902, 0.6431372549019608, 0.807843137254902, 1
+
+    MidasButton:
+        id: load_Image
+        text: "Load Image"
+        on_release: root.show_load()
+    Spinner:
+        id: midiart_Choice
+        text: 'Midiart'
+        font_name: "terminat"
+        values: ["Edges", "Color", "Monochrome"]
+        #on_release:
+        on_text: root.transform_image(S.image)
+        background_normal: ''
+        background_down: S.button_down
+        background_color: 0.19607843137254902, 0.6431372549019608, 0.807843137254902, 1
+
+
+<MusicodeDrawArea>
+    AsyncImage:
+        id: musicode_View
+        #size: root.width, root.height
+        #size_hint: .65,.65
+        #nocache: True
+        source: root.musicode_source   #musicode_source
+        allow_stretch: True
+        keep_ratio: False
+
+
+
+<ImageDrawArea>
+    AsyncImage:
+        #source: '<random_name>.jpg'
+        id: image_View
+        #size: root.width, root.height
+        size_hint: 1,1
+        #nocache: True
+        source: root.image_source
+        allow_stretch: True
+        keep_ratio: True #False
+
+
+
+
+
+<LoadDialog>:
+    BoxLayout:
+        size: root.size
+        pos: root.pos
+        orientation: "vertical"
+        FileChooserListView:
+            id: filechooser
+
+        BoxLayout:
+            size_hint_y: None
+            height: 30
+            Button:
+                text: "Cancel/Last Image"
+                on_release: root.cancel()
+
+            Button:
+                text: "Load"
+                on_release: root.load(filechooser.path, filechooser.selection)
+              
+                
+
+<SaveDialog>:
+    text_input: text_input
+    BoxLayout:
+        size: root.size
+        pos: root.pos
+        orientation: "vertical"
+        FileChooserListView:
+            id: filechooser
+            on_selection: text_input.text = self.selection and self.selection[0] or ''
+
+        TextInput:
+            id: txtFileLoad
+            size_hint_y: None
+            height: 30
+            multiline: False
+
+        BoxLayout:
+            size_hint_y: None
+            height: 30
+            Button:
+                text: "Cancel"
+                on_release: root.cancel()
+
+            Button:
+                text: "Save"
+                on_release: root.save(filechooser.path, text_input.text)

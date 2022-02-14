@@ -2,6 +2,10 @@
 
 ###NOTE: IMPORTANT STUFF
 #quarterLengthDivisor---DETERMINES QUANTIZATION and THUS the PRESERVATION OF NOTES THAT ARE PARSED FROM A MIDI FILE.
+import threading
+import asyncio
+import itertools
+
 import music21
 # sparklead1 = r"resources\OneSpark.mid"
 # spark21 = music21.converter.parse(sparklead1, quantizePost=True, quarterLengthDivisors=(8,6), makeNotation=True)
@@ -9,16 +13,25 @@ import music21
 #import pygame
 #import mido
 #import pyo
+import gui.Preferences
 from midas_scripts import midiart
 import pyo
+import pyo.lib.server
+from pyo.lib import _wxwidgets
 #pyo.PYO_USE_WX = False
 
 import mido
+from wx import Timer as wxTimer
 import os
+import time
+import sys
 #from pyo.lib.server import Server
 from traits.api import Any, HasTraits, Button, Range  ##Instance,
 from traitsui.api import View, Group, Item
-from gui.Preferences import InfiniteTimer
+from gui.Preferences import InfiniteTimer  #uses threading.Timer
+from gui.Preferences import mpInfiniteTimer   #uses a multiprocessing-derived Timer
+from gui.Preferences import wxInfiniteTimer   #uses a wx.Timer()
+from gui.Preferences import on_quit, on_quit1
 
 #####################################################
 ####METHOD 1----Complete Working Method.
@@ -32,11 +45,12 @@ from gui.Preferences import InfiniteTimer
 class Player():
     """A class object for midi playback via a python generator and a simple pyo synthesizer. Class must be instantiated
     with a midifile input."""
-    def __init__(self, midifile=None, parent=None, bpm=None, waveform='Sine', play_now=True, from_gui=False, multi_server=False):   #TODO Multi-server stuff.
+    def __init__(self, midifilepath=None, parent=None, bpm=None, waveform='Sine', play_now=True, from_gui=False, multi_server=False, player=True):   #TODO Multi-server stuff.
+        self.midifilepath = midifilepath
         self.mid = None
         try:
-            if midifile is not None:
-                self.mid = mido.MidiFile(midifile)
+            if midifilepath is not None:
+                self.mid = mido.MidiFile(midifilepath)
         except:
             self.mid = None
         if parent is None:
@@ -50,6 +64,10 @@ class Player():
 
         self.establish_synthesizer(waveform=waveform)
 
+        #Bool determining what version of InfiniteTimer methodology to use.
+        self.player = player
+
+        #All attributes must be established before self.open_gui() is called.
         if play_now:
             #self.load_midifile(midifile=midifile, bpm=bpm, from_gui=from_gui)
             self.create_generator()
@@ -57,6 +75,9 @@ class Player():
         else:
             pass
 
+
+        #self.mainThread = threading.currentThread()
+        #self.timerThread =
 
     #TODO Redundant? Currently implementing method to have timesignature objects and metronomeMark objects in the streams
     # that write to ('mid') file.
@@ -93,20 +114,43 @@ class Player():
         self.mid = self.reset_midi_header(midifile, from_gui=from_gui)
         self.change_tempo(bpm)
 
+
     def create_generator(self):
         m_v = self.parent.mayavi_view
-        self.timer = InfiniteTimer(seconds=0, target=self.yield_midi().__next__)
+        assert self.parent is not None, print("You must supply a wx window or frame as self.parent.")
+        self.timer = InfiniteTimer(seconds=0, target=self.yield_midi().__next__, window=self.parent, player=self.player) #.__next__  Infinite  wx   seconds=0, target=   itertools.tee(   , 1)[0]
+        self.timer.start()
+        self.timer.stop()
         ### Overloads (using redefined methods ^)
         #self.timer2 = InfiniteTimer(seconds=0, target=m_v.generate_plane_scroll(m_v.grid3d_span, m_v.bpm, m_v.frames_per_beat).__next__)
+
 
     def open_gui(self):
         self.server.start = self.start
         self.server.stop = self.stop
-        self.server.shutdown = self.quit
 
-        #self.server.stop()
+        print("Here5")
+        print("shutdown method", self.server.shutdown)
+
+        self.server.shutdown = self.shutdown
+
+        print("shutdown method", self.server._server.shutdown)
+        print("Here6")
+
+        #FORCED WORKAROUND -- original code restored at end of use.
+        _wxwidgets.ServerGUI.on_quit = on_quit1
+        print("Here7")
+
         self.server.gui(locals(), exit=False)  #If exit=True, the entire Midas app will shutdown.
-        self.server._server.shutdown()
+        print("Here8")
+
+        #self.server.shutdown = self.quit
+        #self.server.closeGui = self.quit
+        #self.server.stop()
+        #self.server._server.on_quit = self.quit
+        #self.server._server.shutdown()
+
+
     #Initiate pyo server for hosting\processing real-time audio\midi.
 
 
@@ -116,15 +160,24 @@ class Player():
         Start the audio callback loop and begin processing.
         Start the midi generator function.
         """
+        #self.parent.mayavi_view.scene3d.disable_render = True
+        print("Here 2")
+
         self.server._server.start()
 
-        self.timer.start()
+       #self.timer.thread.
+        print("Here 3")
+
+        self.timer.start()   #start()
         #self.timer2.start()
+        print("Here 4")
 
         self.parent.planescroll_animator._start_fired()
+
         # c_timer.start()
         # anim._start_fired()
         return self.server._server
+
 
 
     def stop(self):
@@ -132,22 +185,43 @@ class Player():
         Stop the audio callback loop.
         Stop the midi generator function.
         """
+        #self.parent.mayavi_view.scene3d.disable_render = False
+
         self.parent.planescroll_animator._stop_fired()
         self.server._server.stop()
-        self.timer.stop()
+        self.timer.stop()  #stop()
+
         #self.timer.thread.finished.set()
         #self.timer2.cancel()
 
         # c_timer.stop()
         # anim._start_fired()
 
-    def quit(self, midifile):  #The server's method is called shutdown. We will rebind that.
-        self.server._server.shutdown()
+    #Overwriter
+    def shutdown(self):  # The server's method is called shutdown. We will rebind that.
 
-        self.server = None #self.server._server
-        print("Playback ended, gui closed, temp_file deleted.")  # TODO Figure out why I can never get here......
-        if os.path.isfile(midifile):
-            os.remove(midifile)
+        self.parent.mayavi_view.reset_volume_slice(self.parent.mayavi_view.grid3d_span, volume_slice=True)
+        print("Volume slice reset.")
+
+
+        #We make the shutdown happen anyway.
+        self.server._server.shutdown()
+        print("Server shutdown.")
+
+        self.server = None  # self.server._server
+        if os.path.isfile(self.midifilepath):
+            os.remove(self.midifilepath)
+        print("Playback ended, gui closed, temp_file deleted.")
+                                                    # TODO Figure out why I can never get here......CHECK
+                                                    #  parameter 'self.exit' was false in _wxwidgets.ServerGUI.on_quit
+                                                    #  when it should have been True.
+
+        #Restore original code here, so if the _wxwidgets gui is used again else where in the program,
+        #it won't run into problems from this workaround.
+        #Written this way to preserve code as it was pipinstalled.
+        _wxwidgets.ServerGUI.on_quit = on_quit
+        print("Overwrite of 'on_quit' function restored to original.")
+
 
     def change_tempo(self, bpm):
         if bpm is None:
@@ -163,13 +237,19 @@ class Player():
 
     #### ... and reading its content.
     #@mlab.animate(delay=0, ui=True, support_movie=False)    ##Because f*(*&k movies in this context....
-    def yield_midi(self):
+    def yield_midi(self):  ##, ipw_position):
         #m_v = self.parent.mayavi_view
 
         #yield from  self.parent.mayavi_view.generate_plane_scroll(m_v.grid3d_span, m_v.bpm, m_v.frames_per_beat)
         for message in self.mid.play():
             #Todo Put generate_plane_scroll generator here? With sleep value set to message.sleep?
+            # print("Midi_Gen_Thread", threading.currentThread())
+            # print("Midi_Gen_Thread_Name", threading.currentThread().getName())
+            # print("Midi_Gen_allThreads", threading.enumerate())
+            # print("Midi_Gen_allThreads", threading.active_count())
+            print("MIDI_GEN")
             yield self.server.addMidiEvent(*message.bytes())
+            #yield # from #ipw_position
 
     #Generator\server is stopped immediately, allowing user to control it at their leisure.
 
@@ -191,6 +271,7 @@ class Player():
 ###################
 # Animator Re-write
 ###################
+#TODO Sync with preferences Animator patch.
 class Animator(HasTraits):
     """ Convenience class to manage a timer and present a convenient
         UI.  This is based on the code in `tvtk.tools.visual`.
@@ -241,7 +322,7 @@ class Animator(HasTraits):
 
     ######################################################################
     # Initialize object
-    def __init__(self, millisec, callable, *args, **kwargs):
+    def __init__(self, millisec, callable, window, player, *args, **kwargs):  # timer_delay,
         r"""Constructor.
 
         **Parameters**
@@ -260,7 +341,7 @@ class Animator(HasTraits):
         HasTraits.__init__(self)
         self.delay = millisec
         self.ui = None
-        self.timer = InfiniteTimer(millisec, callable)
+        self.timer = InfiniteTimer(millisec, callable, window, player)  #wx mp timer_delay
 
     ######################################################################
     # `Animator` protocol.
