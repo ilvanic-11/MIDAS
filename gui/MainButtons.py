@@ -40,12 +40,12 @@ class MainButtonsPanel(wx.Panel):
         self.main_buttons_sizer.Add(self.btn_musicode, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL, 9)
         self.Bind(wx.EVT_BUTTON, self.OnMusicodeDialog, self.btn_musicode)
 
-        self.btn_MIDIart = wx.Button(self, -1, "MIDI Art")
+        self.btn_MIDIart = wx.Button(self, -1, "MidiArt")  #MIDI Art
         self.btn_MIDIart.SetBackgroundColour((0, 222, 70, 255))
         self.main_buttons_sizer.Add(self.btn_MIDIart, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL, 9)
         self.Bind(wx.EVT_BUTTON, self.OnMIDIArtDialog, self.btn_MIDIart)
 
-        self.btn_MIDIart3D = wx.Button(self, -1, "3IDI Art")
+        self.btn_MIDIart3D = wx.Button(self, -1, "3iDiArt")  #3IDI Art
         self.btn_MIDIart3D.SetBackgroundColour((222, 222, 0, 255))
         self.main_buttons_sizer.Add(self.btn_MIDIart3D, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL, 9)
         self.Bind(wx.EVT_BUTTON, self.OnMIDIArt3DDialog, self.btn_MIDIart3D)
@@ -145,7 +145,7 @@ class MainButtonsPanel(wx.Panel):
         self.Bind(wx.EVT_MENU, self.focus_on_pycrust, id=new_id8)
         self.Bind(wx.EVT_MENU, self.focus_on_mayavi_view, id=new_id9)
         self.GetTopLevelParent().mayaviviewcontrolpanel.Bind(wx.EVT_MENU,
-                                    self.GetTopLevelParent().mainbuttonspanel.focus_on_mainbuttonspanel, id=new_id10)
+        self.GetTopLevelParent().mainbuttonspanel.focus_on_mainbuttonspanel, id=new_id10)
 
         #Shift into which gear.
         entries[0].Set(wx.ACCEL_NORMAL, wx.WXK_F1, new_id1)
@@ -360,8 +360,8 @@ class MainButtonsPanel(wx.Panel):
             print("pixels shape", numpy.shape(pixels))
 
             m_v = self.GetTopLevelParent().mayavi_view
-            default_color_palette = m_v.default_color_palette
-            mayavi_color_palette = m_v.default_mayavi_palette
+            default_color_palette = m_v.current_color_palette
+            mayavi_color_palette = m_v.current_mayavi_palette
 
             if dialog.EdgesCheck:
                 edges = cv2.Canny(pixels, 100, 200)
@@ -382,6 +382,7 @@ class MainButtonsPanel(wx.Panel):
                         print("Points here?")
                         j.change_points(points)
                 m_v.disable_render = False
+                print("Edges load completed.")
 
 
             elif dialog.ColorsCheck:
@@ -456,6 +457,7 @@ class MainButtonsPanel(wx.Panel):
                 print("Colors load completed.")
 
             elif dialog.MonochromeCheck:
+
                 stream = midiart.make_midi_from_grayscale_pixels(pixels, gran, False, note_pxl_value=0)
                 stream.show('txt')
                 points = midiart3D.extract_xyz_coordinates_to_array(stream, velocities=m_v.cur_z)
@@ -471,6 +473,7 @@ class MainButtonsPanel(wx.Panel):
                         print("Points here?")
                         j.change_points(points)
                 m_v.disable_render = False
+                print("Monochrome load completed.")
 
                 #self.GetTopLevelParent().pianorollpanel.pianoroll.StreamToGrid(stream)
 
@@ -487,7 +490,7 @@ class MainButtonsPanel(wx.Panel):
 
         if btn == "OK":
             m_v = self.GetTopLevelParent().mayavi_view
-            color_palette = m_v.default_color_palette
+            color_palette = m_v.current_color_palette
 
             stream = music21.converter.parse(dialog.midi)
             stream.show('txt')
@@ -805,6 +808,7 @@ class MIDIArtDialog(wx.Dialog):
         for clrs in midiart.get_color_palettes():
             self.listCtrl.InsertItem(self.index, clrs)
             self.index += 1
+
         self.static_color = self.name_static = wx.StaticText(self, -1, "              Select Color Palette")
 
 
@@ -894,7 +898,8 @@ class MIDIArtDialog(wx.Dialog):
 
 
     def OnLoadImage(self, evt):
-        with wx.FileDialog(self, "Open image file", wildcard="IMG files (*.png)|*.png|(*.jpeg)|*.jpeg",
+        with wx.FileDialog(self, "Open image file", wildcard="PNG (*.png)|*.png|"
+                                                             "JPG (*.jpg)|*.jpg|",
                            style=wx.FD_OPEN | wx.FD_FILE_MUST_EXIST) as fileDialog:
 
             if fileDialog.ShowModal() == wx.ID_CANCEL:
@@ -946,6 +951,9 @@ class MIDIArtDialog(wx.Dialog):
         self.resizedImg = cv2.resize(self.img, (width, height), cv2.INTER_AREA)
         self.resizedImg2 = cv2.resize(self.img2, (width, height), cv2.INTER_AREA)
 
+        #This error happens if your image dtype is float; cv2.resize() operates with ints:
+        # TypeError: only size-1 arrays can be converted to Python scalars"
+
 
         #Preview stuff.
         preview = cv2.resize(self.img2, (width, height), cv2.INTER_AREA)
@@ -969,9 +977,9 @@ class MIDIArtDialog(wx.Dialog):
             ##print("Default_Color_Palette", m_v.default_color_palette)
             #NOTE: This uses default_color_palette, which DOES NOT have floats for color values. Mayavi float colors
             #do not work for this preview.
-            swaprnb = midiart.convert_dict_colors(m_v.default_color_palette, invert=True) #invert=True)
+            swaprnb = midiart.convert_dict_colors(m_v.current_color_palette, invert=True) #invert=True)
             ##print("Default_Color_Palette_SWAPPED", swaprnb)
-            print("DEFAULT_COLOR_PALETTE_1--preview.", m_v.default_color_palette)
+            print("DEFAULT_COLOR_PALETTE_1--preview.", m_v.current_color_palette)
             preview = midiart.set_to_nn_colors(preview, swaprnb)  #m_v.default_color_palette) #
 
             self.previewImg = cv2.resize(preview, (self.pixScaler * width * 4, height * 4),
@@ -1073,11 +1081,11 @@ class MIDIArtDialog(wx.Dialog):
         #TODO Test color constistency across all views (preview, mayaviview, exported to FL)
         if self.listCtrl.GetItemText(self.listCtrl.GetFocusedItem()) == "FLStudioColors":
 
-            m_v.default_color_palette = midiart.FLStudioColors
+            m_v.current_color_palette = midiart.FLStudioColors
 
             #Convert
-            m_v.default_mayavi_palette = \
-            midiart.convert_dict_colors(m_v.default_color_palette, invert=False)
+            m_v.current_mayavi_palette = \
+            midiart.convert_dict_colors(m_v.current_color_palette, invert=False)
 
             m_v.current_palette_name = "FLStudioColors"
             print("FL Colors Here.")
@@ -1085,7 +1093,7 @@ class MIDIArtDialog(wx.Dialog):
         #Colors Dicts
         else:
             #Assign Dict.
-            m_v.default_color_palette = m_v.clr_dict_list[self.listCtrl.GetItemText(self.listCtrl.GetFocusedItem())]
+            m_v.current_color_palette = m_v.clr_dict_list[self.listCtrl.GetItemText(self.listCtrl.GetFocusedItem())]
 
             #Invert tuples.
             #m_v.default_color_palette = midiart.convert_dict_colors(m_v.default_color_palette, invert=True)
@@ -1094,11 +1102,11 @@ class MIDIArtDialog(wx.Dialog):
             #SWAP HERE ------- See trello card: --> https://trello.com/c/O67MrqpT
             #Convert to mayavi floats and necessary compensatory SWAP because of cvt BGR inversion and to make all rest code cleaner.
 
-            m_v.default_mayavi_palette = midiart.convert_dict_colors(m_v.default_color_palette, both=True) #invert=True)
+            m_v.current_mayavi_palette = midiart.convert_dict_colors(m_v.current_color_palette, both=True) #invert=True)
 
             #print("MAYAVI PALETTE", m_v.default_mayavi_palette)
             #m_v.default_mayavi_palette = midiart.convert_dict_colors(m_v.default_mayavi_palette, invert=True)
-            print("MAYAVI PALETTE", m_v.default_mayavi_palette)
+            print("MAYAVI PALETTE", m_v.current_mayavi_palette)
             #palette = \
             #midiart.convert_dict_colors(m_v.default_color_palette, invert=False)
             #Invert tuples.
