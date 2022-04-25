@@ -28,6 +28,7 @@ welcome = r".\resources\welcome_banner.png"
 welcome_default = r".\resources\welcome_banner.png"
 
 image = r".\resources\MIDAS_Mobile_splash.png"
+last_image = ""
 default_image = r".\resources\MIDAS_Mobile_splash.png"
 
 button_down = r".\resources\button_pressed_modified.png"

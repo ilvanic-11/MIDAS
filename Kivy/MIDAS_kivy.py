@@ -174,7 +174,8 @@ class MidiArtButtons(BoxLayout):
         self.note_Height = str(MIDAS_Settings.noteHeight)
         self.granularity = str(MIDAS_Settings.granularity)
         self.heightPopup.bind(on_dismiss = self.updateHeightLabel)
-
+        self.load_or_cancel = True
+        self.load_count = 0
 
     def updateHeightLabel(self,instance):
         self.note_Height = str(MIDAS_Settings.noteHeight)
@@ -212,7 +213,7 @@ class MidiArtButtons(BoxLayout):
 
 
     def show_load(self):
-        content = LoadDialog(load=self.load, cancel=self.dismiss_popup)
+        content = LoadDialog(load=self.load, cancel=self.cancel)
         self._popup = Popup(title="Load file", content=content,
                             size_hint=(0.9, 0.9))
         self._popup.open()
@@ -227,23 +228,41 @@ class MidiArtButtons(BoxLayout):
 
     def load(self, path, filename):
         try:
-            MIDAS_Settings.image = os.path.join(path, filename[0])
-
-
-
+            self.load_or_cancel = True
+            if self.load_count == 0:
+                MIDAS_Settings.image = os.path.join(path, filename[0])
+                MIDAS_Settings.last_image = MIDAS_Settings.image
+            else:
+                MIDAS_Settings.last_image = MIDAS_Settings.image
+                MIDAS_Settings.image = os.path.join(path, filename[0])
+            self.load_count += 1
         #/musicode/Kivy/MIDAS_kivy.py", line 138, in load
         #MIDAS_Settings.image = os.path.join(path, filename[0])
         #IndexError: list index out of range
         except IndexError as i:
-            print("INDEX ERRRROROROR", i)
+            print("INDEX ERROR", i)
             pass
         self.dismiss_popup()
         print("Loaded: -->", MIDAS_Settings.image)
 
+
+    def cancel(self):
+        try:
+            self.load_or_cancel = False
+
+            #MIDAS_Settings.image = os.path.join(path, filename[0])
+        #/musicode/Kivy/MIDAS_kivy.py", line 138, in load
+        #MIDAS_Settings.image = os.path.join(path, filename[0])
+        #IndexError: list index out of range
+        except IndexError as i:
+            print("INDEX ERROR", i)
+            pass
+        self.dismiss_popup()
+
+
     def save(self, path, filename):
         with open(os.path.join(path, filename), 'w') as stream:
             stream.write(self.text_input.text)
-
         self.dismiss_popup()
 
 
@@ -256,7 +275,14 @@ class MidiArtButtons(BoxLayout):
         #self.ids["image_View"].source = MIDAS_Settings.image
         #self.parent.midi_draw_area.ids["image_View"].source = MIDAS_Settings.image
         #MidiDrawArea()
-        self.parent.ids.imagedraw_Area.change_image(MIDAS_Settings.image)
+        if self.load_or_cancel is True:
+            self.parent.ids.imagedraw_Area.change_image(MIDAS_Settings.image)
+        elif self.load_or_cancel is False:
+            if self.load_count == 0:
+                pass
+            else:
+                self.parent.ids.imagedraw_Area.change_image(MIDAS_Settings.last_image)
+
 
         self.parent.refresh_counter = 0
         if self.parent.refresh_counter == 0:
@@ -489,8 +515,8 @@ class MusicodeDrawArea(BoxLayout):
 class ImageDrawArea(BoxLayout):
     splash = MIDAS_Settings.image
     default_splash = MIDAS_Settings.default_image
-    #musicode_source = ObjectProperty()
     image_source = ObjectProperty(splash)  #StringProperty?
+    #musicode_source = ObjectProperty()
     #print("self.ids", ids)
     def __init__(self,**kwargs):
         super(ImageDrawArea, self).__init__(**kwargs)
@@ -586,7 +612,7 @@ class MainUI(GridLayout):
         self.ids.midiart_Buttons.ids.tb_Y.state is "down",
         self.ids.midiart_Buttons.ids.txt_Key.text is "Key",
         self.ids.midiart_Buttons.ids.granularity_Choice.text == "Note Durations",
-        self.ids.midiart_Buttons.ids.note_Height.text is '127',
+        self.ids.midiart_Buttons.ids.note_Height.text == '127',
         self.ids.musicode_Area.ids.musicode_Choice.text == '  Select \n\nA Musicode',
         self.ids.musicode_Area.ids.txt_Input.text is ""]
 

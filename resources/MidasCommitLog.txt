@@ -627,7 +627,7 @@ In pianoroll
 In MainButtons
 --> In function OnLoadImage(), fixed a bug in the "wildcard" argument of wx.FileDialog that was preventing jpgs from being usable.
 In ActorsControlPanel
---> In function OnBtnDelActor(), fixed a bug where function ClearZplane(z) was calling for "current" which was referring to an actor index; a small mistake.
+--> In function OnBtnDelActor(), fixed a bug where function ClearZplane(z) was calling for the variable "current" which was referring to an actor index; a small mistake.
 --> New function --> OnGoToFirstEmptyActor()
 --> New function --> OnGoToNearestEmptyActor()
 
@@ -666,11 +666,35 @@ In Kivy
 --> Named Kivy version MIDAS_Mobile
 --> Got MIDAS_Mobile complete!!!!!!!!  The only thing that would add to it is the funciton --> filter_pixels_by_key()
 
+
+
+
+--IP Commit April 25th, 2022--
+PYCON commit to pull for laptop.
+In PianoRoll
+--> In function StreamToGrid(), change n.offset to c.offset, fixing a bug.
+
+In Mayavi3DWindow
+--> In function get_points_with_all_data(), 
+
+In MainButtons
+--> In MusicodeDialog(), changed the style parameter of the self.inputTxt wx.TextCtrl to wx.TextCtrl(.... style=wx.TE_MULTILINE) so that we can have multiple lines translated in musicode translations!!
+--> Added new function
+--> Added new function
+--> Added new function
+--> Added new function
+--> Added new function
+--> Implemented ability to select multiple images in with "Load Image" button in Midiart Main Button dialog.
+
 ++++++++++++
 #############################################
 ##Git adds. Update as needed. (Git can adds a LOT at once, if separated without commas.) Highlight this line below, copy, and paste into git to git add all quickly.
 git add MIDAS_wx.py gui/ActorsControlPanel.py gui/MainButtons.py  gui/MenuButtons.py gui/PianoRoll.py gui/PianoRollPanel.py gui/Preferences.py gui/ZPlanesControlPanel.py mayavi3D/Mayavi3DWindow.py mayavi3D/Mayavi3idiArtAnimation.py midas_scripts/midiart3D.py midas_scripts/music21funcs.py midas_scripts/musicode.py midas_scripts/midiart.py resources/Midas-Mayavi_Pip_Batch_Install.bat resources/MidasCommitLog.txt resources/Midas_Startup_Configs.py resources/HotkeyAssignments.txt gui/Playback.py gui/Musical_Matrix_Rain.py mayavi3D/MusicObjects.py resources/MIDAS_splash.png resources/color_palettes/
 ##
+##
+git add Kivy/MIDAS.kv Kivy/MIDAS_Settings.py Kivy/MIDAS_kivy.py
+##
+
 #############################################
 git add test/MIDAS_UnitTests.py 
 resources/intermediary_path/Lotus 004.png
