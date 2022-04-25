@@ -30,12 +30,15 @@
 
 import copy
 import music21
+import cv2
+import numpy as np
 import re
 import os
 import random
 #from midas_scripts import music21funcs
 import midas_scripts
 from midas_scripts import music21funcs
+from midas_scripts.midiart import cv2_tuple_reconversion, make_midi_from_grayscale_pixels
 from collections import OrderedDict
 from traits.api import HasTraits
 from traits.trait_types import Any
@@ -239,6 +242,7 @@ class Musicode():
 		r.insert(rest)
 		mdict[' '] = r
 	#end _setup_letters_and_numbers()
+
 
 	def _setup_am_dict(self):
 		self._setup_letters_and_numbers("Animuse")
@@ -461,6 +465,7 @@ class Musicode():
 				new_measure = self._translate_letter(c, musicode, num)
 				s.append(new_measure)
 				num = num + 1
+			return s
 		elif musicode == self.musicode_name:
 			s = music21.stream.Part()
 			num = 0
@@ -469,47 +474,84 @@ class Musicode():
 				print("New_Measure:", new_measure)
 				s.append(new_measure)
 				num = num + 1
-
+			return s
 		#else:
 			#for c in string:
 
-		return s
+
 
 	#UA-2.
-	def translate_from_text_file(self, musicode, file_name):
+	def translate_multiline(self, musicode, file_name, write=False,
+							write_name = "Multiline_Musicode_Write", from_text_file=False):
 		"""
 			Translates input from a text file.
 
-		:param text: 	The file name.
-		:return: 		Stream.
+		:param musicode: 	The user-selected musicode.
+		:param file_name: 	The file name OR the string to translate if from_text_file is False.
+		:return: 			music21.stream.Stream full of music21.stream.Part()s for every "\n".
 		"""
 		# TODO: Find a way to add option to split each line of text into a different midi track
+		if from_text_file:
+			file = open(file_name, "r")
+			string = file.read()
 
-		file = open(file_name, "r")
+		else:
+			string = file_name
+
 		s = music21.stream.Part()
 		num = 0
-		line = 0
+		line = 1
+		#print("LINE", line)
 		ss = music21.stream.Part()
 		w = music21.ElementWrapper("Line: %d" % line)
 		ss.insert(w)
-		c = file.read(1)
-		while c:
+		ss.partName = line
+		#line += 1
+		#string_character = file.read(1)
+		#while string_character:
+		for c in string:
+			#print("C", c)
 			if c == "\n":
 				s.insert(ss)
 				ss = music21.stream.Part()
 				line = line + 1
 				w = music21.ElementWrapper("Line: %d " % line)
 				ss.insert(w)
+				#print("LINE2", line)
+				ss.partName = line
+				#print("LINE3", line)
 			else:
+				#If a dictionary has been setup
+				if False in [len(self.dictionaries[i]) is 0 for i in self.dictionaries.keys()]:
+					#Check c contents
+					if c != "\n":
+						#Via an assert.
+						assert c in self.dictionaries[
+							musicode].keys(), "String character '%s' not a valid musicode character." % c
+				else:
+					print("Your musicodes dictionaries have not been established yet.")
 				new_measure = self._translate_letter(c, musicode, num)
 				ss.append(new_measure)
 				num = num + 1
-			c = file.read(1)
+			#string_character = file.read(1)
 		# for note in ss.flat.notes:
 		#     note.show('txt')
 		if (len(ss.flat.notes) != 0):
 			s.insert(ss)
-		return s
+		if write:
+			for i in s:
+				if from_text_file:
+					name = os.path.splitext(os.path.basename(file_name))[0]
+				else:
+					name = os.path.splitext(os.path.basename(write_name))[0]
+				intermediary_path = os.getcwd() + os.sep + "resources" + os.sep + "intermediary_path" + os.sep
+				i.write("mid", intermediary_path + "Ln-%s" % i.partName + "_" + name + ".mid" )
+			print("Write successful!")
+			return s
+		else:
+			print("Musicode stream successful!")
+			return s
+
 
 	#UA-3.
 	def _translate_letter(self, c, musicode, num = None):
@@ -548,7 +590,8 @@ class Musicode():
 				# else:
 				# 	pass
 
-				#This call's list should always have only one element.
+				#This call's list should always have only one element for our purposes.
+				# (Unless other elementwrappers are added to these musicode measures, for some unknown reason.)
 				element_wrapper = [i for i in measure.getElementsByClass(["ElementWrapper"])][0]
 
 				print("Measure")
@@ -566,13 +609,29 @@ class Musicode():
 
 		elif musicode != self.musicode_name:
 			#self.dictionaries.update(User_Generated=self.userCreated)
-			rt = (self.dictionaries[musicode].get(c))
+
+			rt = self.dictionaries[musicode].get(c)
+			if not rt:
+				self._setup_letters_and_numbers(musicode)
+				rt = self.dictionaries[musicode].get(c)
 			if rt:
+				print("RT", rt)
 				new_measure = copy.deepcopy(rt)
+				#print("NEW_MEASURE1", new_measure)
+
 			else:
-				new_measure = copy.deepcopy(self.dictionaries[musicode].get(" "))
-			new_measure.number = num
+				try:
+					new_measure = copy.deepcopy(self.dictionaries[musicode].get(" "))
+					#print("NEW_MEASURE2", new_measure)
+					new_measure.number = num
+				except AttributeError as i:
+					#print("Attr Error:", i)
+					space_measure = music21funcs.empty_measure()   #NOTE: timesig won't always be set here. Be aware.
+					self.dictionaries[musicode].update([(" ", space_measure)])
+					new_measure = copy.deepcopy(self.dictionaries[musicode].get(" "))
+					new_measure.number = num
 			return new_measure
+
 	#UA-4.
 	def translate_each_letter_to_random_musicode(self, text):
 		"""
@@ -672,6 +731,201 @@ class Musicode():
 
 		s.makeMeasures()
 		return s
+
+	def filter_to_NOT_gray_or_white(self, img):
+		indices = np.where(img != [255, 255, 255])
+		coordinates = zip(indices[0], indices[1])
+		coordinate_list = [i for i in OrderedDict.fromkeys(coordinates).keys()] #OrderedDict gets rid of duplicates.
+		# For every coordinate that is not a white color tuple....
+		for i in coordinate_list:
+			if list(img[i[0], i[1]]) == [204, 204, 204] or list(img[i[0], i[1]]) == [255, 255, 255]:
+				pass
+			else:
+				img[i[0], i[1]] = np.array([255, 255, 255])
+
+
+	def get_cropped_empty_box_ROI_compensation(self):
+		###Compensation charactar box
+		compensation_bounding_box = cv2.imread(r".\resources\empty_box.png")
+		operation_image = cv2.imread(r".\resources\empty_box_compensation.png")
+		#self.filter_to_NOT_gray_or_white(compensation_bounding_box)
+		compensation_gray = cv2.cvtColor(operation_image, cv2.COLOR_BGR2GRAY)
+		comp_thresh, comp_bnwi = cv2.threshold(compensation_gray, 127, 255, cv2.THRESH_BINARY)
+		image = compensation_bounding_box
+		gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+		thresh = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)[1]
+		_a, cntrs, heirarchy = cv2.findContours(thresh, cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
+		x, y, w, h = cv2.boundingRect(cntrs[0])
+		#cv2.rectangle(image, (x, y), (x + w, y + h), (36, 255, 12), 2)
+		ROI = comp_bnwi[y:y + h, x:x + w]
+
+		#cv2.imshow('ROI_before_crop', ROI)
+		#cv2.waitKey(0)
+		#cv2.destroyAllWindows()
+
+		th, threshed = cv2.threshold(ROI, 240, 255, cv2.THRESH_BINARY_INV)
+		kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (11, 11))
+		morphed = cv2.morphologyEx(threshed, cv2.MORPH_CLOSE, kernel)
+		cnts2 = cv2.findContours(morphed, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)[-2]
+		cnt = sorted(cnts2, key=cv2.contourArea)[-1]
+		x2, y2, w2, h2 = cv2.boundingRect(cnt)
+		cropped_ROI = ROI[y2:y2 + h2, x2:x2 + w2]
+		#cv2.imshow('ROI_AFTER_crop', cropped_ROI)
+		#cv2.waitKey(0)
+		#cv2.destroyAllWindows()
+		return cropped_ROI
+
+
+	####FINAL FUNCTION
+	def create_musicode_unicode_master_dict_and_stream(self, mypath=r".\resources\unicode_rapid_tables\\"):
+		#originalImage = cv2.imread(r"C:\Users\Isaac's\Desktop\PicPick AutoSave-T\Image 1584.png")
+		#img = originalImage
+		start = 0
+		unicode_master_dict = OrderedDict()
+		unicode_master_stream = music21.stream.Stream()
+		files = [os.path.join(mypath, f) for f in os.listdir(mypath) if os.path.isfile(os.path.join(mypath, f))]
+
+		for i in files:
+			master_tuple = self.create_musicodes_from_unicode_rapidtable(cv2.imread(i), start_index=start)
+			#unicode_master_dict.update(master_tuple[0])
+			#unicode_master_stream.append(master_tuple[1])
+			print("Rapid Table of unicode characters %s" % str(start) + "-%s" % str(start + 256) + " processed successfully!")
+			start += 256
+		return (unicode_master_dict, unicode_master_stream)
+
+
+
+	def create_musicodes_from_unicode_rapidtable(self, img, start_index):
+
+		picklepath = os.path.abspath(r"C:\Users\Isaac's\Midas\resources\pickles\unicode_stream_pickles")
+
+
+		###Our instantiation image data.
+		originalimage1 = copy.deepcopy(img)
+		#originalimage2 = copy.deepcopy(img)
+		###Get a grey image for filtering purposes.
+		grayImage = cv2.cvtColor(originalimage1, cv2.COLOR_BGR2GRAY)
+		###Get our main black and white image.
+		thresh, bnwi = cv2.threshold(grayImage, 127, 255, cv2.THRESH_BINARY)
+
+		###Get color-filtered rapid table image from MAIN img in order to acquire appropriate bounding box data.
+		###Change all color pixels that aren't the grey borders or white background to white here. Happens in place.
+		self.filter_to_NOT_gray_or_white(img)
+
+		#For Testing#
+		# cv2.imshow('Chessboard, white with grey borders.', img)
+		# cv2.waitKey(0)
+		# cv2.destroyAllWindows()
+
+		#TODO copy.deepcopy here?
+		image = img
+		# original = image.copy() ##this be a copy of original filtered grid
+		gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+		thresh = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)[1]  #Critical.
+
+		###Acquire our contours (cnts) which allows us to acquire our bounding box data for our Regions Of Interest.
+		_a, cnts, heirarchy = cv2.findContours(thresh, cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
+		# cnts = cnts[0] if len(cnts) == 2 else cnts[1]
+
+		###Get rid of the "global" bounding box, the border of the image surrounding all the little boxes.
+		cnts.pop(-1)
+
+		###Counter variables.
+		###Rapid tables are 16X16 tables of unicode character points. Every time one is parsed, we up the counter by 256
+		end_index = start_index + 256
+		inverse_index = end_index - 1
+		ROI_number = 0
+
+		###Our OrderedDict that will be returned at the end. Established with a specific range of unicode values.
+		unicode_dict = OrderedDict.fromkeys([chr(i) for i in range(start_index, end_index, 1)])
+		unicode_stream = music21.stream.Part()   #All 256 rapid tables will be their own music21.stream.Part()
+
+		###Core
+		print("Core")
+		assert len([i for i in range(start_index, end_index, 1)]) == 256, "Len of values range should be 256."
+		print("Core start.")
+		for i in range(start_index, end_index, 1):    # in cnts:
+			try:
+				print("I -->", i)
+				###Acquire our REGION OF INTEREST from our filtered rapid table.
+				x, y, w, h = cv2.boundingRect(cnts[i - start_index])      ### if i > 256 else cv2.boundingRect(cnts[i])]
+				cv2.rectangle(image, (x, y), (x + w, y + h), (36, 255, 12), 2)  # Not needed? Draws that green line.
+				ROI = bnwi[y:y + h, x:x + w]
+				#cv2.imwrite(r"C:\Users\Isaac's\Desktop\ROI_Folder\\" + 'ROI_{}.png'.format(ROI_number), ROI)
+
+				#####--->Filter out whitespace around unicode character in our ROI.
+				### (1) Convert to gray, and threshold
+				#gray = cv2.cvtColor(ROI, cv2.COLOR_BGR2GRAY)  # img
+				th, threshed = cv2.threshold(ROI, 240, 255, cv2.THRESH_BINARY_INV)
+				### (2) Morph-op to remove noise
+				kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (11, 11))
+				morphed = cv2.morphologyEx(threshed, cv2.MORPH_CLOSE, kernel)
+				### (3) Find the max-area contour
+				cnts2 = cv2.findContours(morphed, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)[-2]
+				#try:
+				cnt = sorted(cnts2, key=cv2.contourArea)[-1]
+				#except IndexError as i:
+					#print("Index Error", i)
+
+					#return unicode_dict
+				### (4) Crop our new ROI!! (This is our unicode character WITHOUT the surrounding white color tuples)
+				x2, y2, w2, h2 = cv2.boundingRect(cnt)
+				cropped_ROI = ROI[y2:y2 + h2, x2:x2 + w2]
+			except IndexError as i:
+				print("Index Error", i)
+				print("Unicode character %s on rapidtable is found to be empty. "
+					  "Compensating with 'nac - empty box' as character." % chr(inverse_index))
+				cropped_ROI = self.get_cropped_empty_box_ROI_compensation()
+
+			#cv2.imwrite(r"C:\Users\Isaac's\Desktop\ROI_Folder\\" + 'cropped_ROI_{}.png'.format(ROI_number), cropped_ROI)
+
+			#TODO conversion necessary?
+			#conversion = cv2_tuple_reconversion(cropped_ROI,
+			#									inPlace = False,
+			#									conversion = 'Monochrome')
+			#preview = conversion[1]
+			#preview2 = conversion[0]
+
+			#####Midiart transformation -- monochrome method turning black pixels into midi notes.
+			###Get music21.stream
+			stream = make_midi_from_grayscale_pixels(cropped_ROI,
+													 granularity = .125,  # 32nd note
+													 connect = False,  # dialog.chbxConnect.GetValue(), ###MIDAS_Settings.connectNotes,
+													 note_pxl_value = 0)
+			stream.makeMeasures(inPlace=True)
+			#print("Here 4")
+			assert stream.hasMeasures(), "Your stream does not have measures. Check for problems."
+			###Get the measure with our musical data.
+			measure = stream[0]
+			#print("MEASURE", measure)
+			###Create an element wrapper with the corresponding musicode unicode str in it.
+			ele = music21.ElementWrapper(obj=chr(inverse_index))
+			measure.append(copy.deepcopy(ele))
+
+			###Cap the measure with correct rests.
+			music21funcs.fill_measure_end_gaps(measure, inPlace=True)  # TODO Time consideration in future.
+
+			# WE DO INVERSE INDEX method BECAUSE Our ROIs are acquired from bottom right of our image(s) to top left.
+			###Update dict where key==unicode "chr" and value == musicode stream.measure()
+
+			#print("Here4.5")
+			unicode_dict[chr(inverse_index)] = measure
+			measure.number = inverse_index
+			#print("MEASURE NUMBER HERE-->", measure.number)
+			unicode_stream.insert(inverse_index*4, measure)
+			#print("Here4.7")
+
+			inverse_index -= 1
+			# stream.write('mid', )
+			#print("Here5")
+			ROI_number += 1
+		#print(os.path.dirname(r".\resources"))
+		music21.converter.freeze(unicode_stream,
+								 fp = picklepath + os.sep +
+									  "unicode_musicode_pickle---CHARACTERS(%s" % str(start_index) + "-%s).p" % str(end_index-1))
+		#unicode_stream.makeMeasures(inPlace=True) #Purpose of this is to sort the already-made measures in the stream.
+		return (unicode_dict, unicode_stream)
+
 
 	def create_directories(self):
 		if os.path.exists(self.full_new_musicode_path) is False:

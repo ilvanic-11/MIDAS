@@ -1069,7 +1069,7 @@ def fill_measure_end_gaps(measure, timeSig=None, inPlace=True):
     time_list = []
     for i in measure.flat.getElementsByClass(music21.meter.TimeSignature):
         time_list.append(i)
-    if len(time_list) == 1:
+    if len(time_list) != 1: #Todo is this a good check?  ==?
         print("You have zero or more than one time signature object in this measure."
               "/n If zero, input timeSig will be used.")
 
@@ -1120,7 +1120,7 @@ def fill_measure_end_gaps(measure, timeSig=None, inPlace=True):
             return new_measure
 
 
-def empty_measure(timeSig):
+def empty_measure(timeSig="4/4"):
     """
         This simple call creates an empty measure whose entire duration is filled with a rest object and which possesses
     a music21.ElementWrapper(obj =" ") with string " " as its object. Used for musicode purposes when calling for a
