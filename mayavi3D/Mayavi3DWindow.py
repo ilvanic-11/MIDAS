@@ -247,7 +247,10 @@ class Actor(HasTraits):
         if z:
             _z = np.full((len(points), 1), z, dtype=np.int8) #int, because floats cannot be indices.
             points = np.column_stack([points, _z])
-        print("BITCH")
+        else:
+            pass
+        print("BOOM!")
+
 
         # if z is None:
         #     #z = self.cur_z
@@ -266,10 +269,10 @@ class Actor(HasTraits):
         for point in points:
             print("-point-", point)
             #print("-point_data_in_array4D", _array4D[point[0], point[1], point[2]])
-            _dur1.append(_array4D[point[0], point[1], point[2], 2])
-            _dur2.append(_array4D[point[0], point[1], point[2], 3])
-        _dur_array1 = np.array(_dur1, dtype=np.float32).reshape((len(points), 1))  #was 16?
-        _dur_array2 = np.array(_dur2, dtype=np.float32).reshape((len(points), 1))  #was 16?
+            _dur1.append(_array4D[point[0], point[1], point[2], 2])  #DURATION VALUE Numerator
+            _dur2.append(_array4D[point[0], point[1], point[2], 3])  #DURATION VALUE Denominator
+        _dur_array1 = np.array(_dur1, dtype=np.float32).reshape((len(points), 1))  #was float16?
+        _dur_array2 = np.array(_dur2, dtype=np.float32).reshape((len(points), 1))  #was float16?
         print("durray1", _dur_array1)
         print("durray2", _dur_array2)
         #(len(points), 1)
@@ -322,7 +325,7 @@ class Actor(HasTraits):
 
         try:
             #THIS IS WHERE WE WILL GET A WORKING VERSION OF DISPLAYING DURATIONS. IT WILL BE BASED ON CHOP_UP_NOTES()
-            points = np.column_stack([self._points[:,0], self._points[:,1], self._points[:,2]]) #[x,y,z]
+            points = np.column_stack([self._points[:, 0], self._points[:, 1], self._points[:, 2]]) #[x,y,z]
             #points = np.vstack([points, new_points])
             print("DISPLAY_POINTS:", points)
             self.m_v.sources[self.index].mlab_source.trait_set(
@@ -344,12 +347,19 @@ class Actor(HasTraits):
 
         #points = np.argwhere(self._array4D[:, :, :, 0] == 1.0)
 
-        points = self.get_points_with_all_data()
+        if self.m_v.z_flag is True:
+            points = self.get_points_with_all_data(self.cur_z)
+        else:
+            points = self.get_points_with_all_data()
+
+        #points = self.get_points_with_all_data(self.cur_z) if self.m_v.z_flag is True else self.get_points_with_all_data()
+
 
 
         try:
              #An OrderedDict.
             self._all_points = midiart3D.get_planes_on_axis(points, array=True)
+
 
         except IndexError:
             points = np.array(
@@ -357,6 +367,7 @@ class Actor(HasTraits):
             # TODO Write in methods to delete this, so that midi exports don't have a useless note in every file?
             self._all_points = midiart3D.get_planes_on_axis(points, array=True)
 
+        print("_ALL_POINTS", self._all_points)
         # print("ARRAYCHECK", cur_plane[0])
         # print("ARRAYTYPECHECK", type(cur_plane[0]))
 
@@ -387,6 +398,8 @@ class Actor(HasTraits):
         cpqn = self.toplevel.pianorollpanel.pianoroll._cells_per_qrtrnote
         #print("CPQN", cpqn)
 
+
+        print("_ARRAY4D.SHAPE", self._array4D.shape)
 
         new_array4D = np.zeros(self._array4D.shape, dtype=np.int8)
         for p in np.arange(0, len(self._points), 1):   #TODO MAJOR self._points WILL CONTAIN our core update data. However, the
@@ -439,7 +452,7 @@ class Actor(HasTraits):
         #self._points[:, 0] = self._points[:, 0]
 
 
-        #TODO MAJOR NOTE: trait_set only takes standard coords_arrays. SOOO, with our new core data update, we have
+        #TODO MAJOR NOTE: trait_set only takes standard coords_arrays. SOOO, with our new core data update, we have to
         # handle every individual case with this new line:
         update_points = np.r_['1,2,0', self._points[:, 0], self._points[:, 1], self._points[:, 2]]
         #print("UPDATE_POINTS", update_points)
@@ -571,6 +584,7 @@ class Mayavi3idiView(HasTraits):
         #print("C palm.")
 
 
+        # Scrolly green plane feature
 
         self.quick_plane = True  #TODO create toggle
 
@@ -597,6 +611,10 @@ class Mayavi3idiView(HasTraits):
         self.sources = list()
         #TODO I don't like "sources" as the name of this list. Sources is actually a trait in the mayavi pipeline somewhere....
         #TODO Also, sources and mlab_calls are virtually the same thing. Delete one?
+
+
+        #Musicode flag -- notifier determining a scenario of zplane only or entire array4D --- for an import.
+        self.z_flag = False
 
         #self.append_actor("0")
 

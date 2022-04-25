@@ -3,6 +3,7 @@ from midas_scripts import midiart, midiart3D, musicode # music21funcs,
 import music21
 import cv2, numpy
 import os
+import shutil
 from collections import OrderedDict
 from mayavi3D.Mayavi3DWindow import Mayavi3idiView, MayaviMiniView
 import gc
@@ -97,7 +98,7 @@ class MainButtonsPanel(wx.Panel):
         # self.mc_dialog.user_named = self.GetTopLevelParent().musicode.musicode_name
 
 
-    # For a bug fix---------------
+        # For a bug fix---------------
         #id = 7182389573431346  , id=id
         self.musicode_btn_colour = self.btn_musicode.GetBackgroundColour()
         self.btn_musicode.Bind(wx.EVT_ENTER_WINDOW, self.onMouseOver)
@@ -145,7 +146,7 @@ class MainButtonsPanel(wx.Panel):
         self.Bind(wx.EVT_MENU, self.focus_on_pycrust, id=new_id8)
         self.Bind(wx.EVT_MENU, self.focus_on_mayavi_view, id=new_id9)
         self.GetTopLevelParent().mayaviviewcontrolpanel.Bind(wx.EVT_MENU,
-        self.GetTopLevelParent().mainbuttonspanel.focus_on_mainbuttonspanel, id=new_id10)
+                                                             self.GetTopLevelParent().mainbuttonspanel.focus_on_mainbuttonspanel, id=new_id10)
 
         #Shift into which gear.
         entries[0].Set(wx.ACCEL_NORMAL, wx.WXK_F1, new_id1)
@@ -319,19 +320,33 @@ class MainButtonsPanel(wx.Panel):
             print("DialogCheck:", dialog.create_musicode.GetValue())
             stream = self.GetTopLevelParent().pianorollpanel.pianoroll.GridToStream(update_actor=False)
             self.musicode.make_musicode(stream, musicode_name, shorthand_name, filepath=None,
-                                     selection=str(dialog.inputTxt.GetLineText(0)), write=False, timeSig=None)
+                                        selection=str(dialog.inputTxt.GetLineText(0)), write=False, timeSig=None)
             self.GetTopLevelParent().pianorollpanel.ClearZPlane(self.m_v.cur_z)
 
 
         elif dialog.create_musicode.GetValue() is False and btn == "OK":
-            print("DialogCheck:", dialog.create_musicode.GetValue())
-            stream = self.musicode.translate(
-                dialog.rdbtnMusicodeChoice.GetString(dialog.rdbtnMusicodeChoice.GetSelection()),
-                dialog.inputTxt.GetLineText(0))
-            print("LINETEXT:", dialog.inputTxt.GetLineText(0))
-            self.GetTopLevelParent().pianorollpanel.pianoroll.StreamToGrid(stream)
+            if dialog.translate_multiline_musicode.GetValue() is False:
+                print("DialogCheck:", dialog.create_musicode.GetValue())
+                stream = self.musicode.translate(
+                    dialog.rdbtnMusicodeChoice.GetString(dialog.rdbtnMusicodeChoice.GetSelection()),
+                    dialog.inputTxt.GetLineText(0))
+                print("LINETEXT:", dialog.inputTxt.GetLineText(0))
+                self.m_v.z_flag = True
+                self.GetTopLevelParent().pianorollpanel.pianoroll.StreamToGrid(stream)
+                self.m_v.z_flag = False
+            else:
+                write_name = dialog.pathname
+                string = dialog.inputTxt.GetValue()
+                print("LINETEXT:", string)
+                self.musicode.translate_multiline(
+                    dialog.rdbtnMusicodeChoice.GetString(dialog.rdbtnMusicodeChoice.GetSelection()),
+                    string,
+                    write=True,
+                    write_name=write_name,
+                    from_text_file=False)
         else:
             pass
+        pass
 
 
     def _OnMIDIArtDialogClosed(self, dialog, evt):
@@ -344,138 +359,420 @@ class MainButtonsPanel(wx.Panel):
             btn = '<unknown>'
 
         if btn == "OK":
-            #pathname = dialog.pathname
+            #En Mass Export Directly to File.
+            if dialog.MultipleCheck == True and dialog.AllCheck == True:
+                #pathname = dialog.pathname
+                num = 0
+                for i in dialog.pathnames:
+                    for j in range(0, dialog.listCtrl.ItemCount):
+                        palette_name = dialog.listCtrl.GetItemText(j)
+                        # self.pathname = pathname
+                        img = cv2.imread(i, 0)  # 2D array (2D of only on\off values.)
+                        img2 = cv2.imread(i,
+                                          cv2.IMREAD_COLOR)  # 3D array (2D of color tuples, which makes a 3D array.)
+                        # height = MIDAS_Settings.noteHeight
+                        height = int(dialog.sldrHeight.GetValue())
+                        width = int(height / len(img) * len(img[0]))
+                        # print(type(self.img))
+                        ###Name without filetype suffix '.png'
+                        img_name = os.path.basename(i).partition('.png')[0]
+                        # print("IMG_NAME", img_name)
+                        resizedImg = cv2.resize(img, (width, height), cv2.INTER_AREA)
+                        resizedImg2 = cv2.resize(img2, (width, height), cv2.INTER_AREA)
+                        pixels = resizedImg  # 2D array (2D of only on\off values.)
+                        pixels2 = resizedImg2  # 3D array (2D of color tuples)
+                        self.transform_images(i, (pixels, pixels2), height, img_name, dialog, num,
+                                              palette_name=palette_name)
+                    num += 1
+            elif dialog.MultipleCheck == True and dialog.AllCheck == False:
+                num = 0
+                for i in dialog.pathnames:
+                    # self.pathname = pathname
+                    img = cv2.imread(i, 0)  # 2D array (2D of only on\off values.)
+                    img2 = cv2.imread(i,
+                                      cv2.IMREAD_COLOR)  # 3D array (2D of color tuples, which makes a 3D array.)
+                    # height = MIDAS_Settings.noteHeight
+                    height = int(dialog.sldrHeight.GetValue())
 
-            pixels = dialog.resizedImg     #2D array (2D of only on\off values.)
-            pixels2 = dialog.resizedImg2   #3D array (2D of color tuples)
+                    width = int(height / len(img) * len(img[0]))
+                    # print(type(self.img))
+                    ###Name without filetype suffix '.png'
+                    img_name = os.path.basename(i).partition('.png')[0]
+                    # print("IMG_NAME", img_name)
+                    resizedImg = cv2.resize(img, (width, height), cv2.INTER_AREA)
+                    resizedImg2 = cv2.resize(img2, (width, height), cv2.INTER_AREA)
+                    pixels = resizedImg  # 2D array (2D of only on\off values.)
+                    pixels2 = resizedImg2  # 3D array (2D of color tuples)
+                    self.transform_images(i, (pixels, pixels2), height, img_name, dialog, num)
+                    num += 1
 
-            #Test -This was the magical one that found our bug. 11/30/2021
-            #pixels2 = cv2.cvtColor(pixels2, cv2.COLOR_BGR2RGB)
+            #Load to Gui Grid.
+            else:
+                pixels = dialog.resizedImg     #2D array (2D of only on\off values.)
+                pixels2 = dialog.resizedImg2   #3D array (2D of color tuples)
 
-            #pixels_resized = dialog.resizedImg
-            gran = dialog.pixScaler
-            print("PIXELS", pixels)
-            print("PIXELS2", pixels2)
-            print("PIXELS_RESIZED:", pixels, type(pixels))
-            print("pixels shape", numpy.shape(pixels))
+                #Test -This was the magical one that found our bug. 11/30/2021
+                #pixels2 = cv2.cvtColor(pixels2, cv2.COLOR_BGR2RGB)
 
-            m_v = self.GetTopLevelParent().mayavi_view
-            default_color_palette = m_v.current_color_palette
-            mayavi_color_palette = m_v.current_mayavi_palette
+                #pixels_resized = dialog.resizedImg
+                gran = dialog.pixScaler
+                print("PIXELS", pixels)
+                print("PIXELS2", pixels2)
+                print("PIXELS_RESIZED:", pixels, type(pixels))
+                print("pixels shape", numpy.shape(pixels))
 
-            if dialog.EdgesCheck:
-                edges = cv2.Canny(pixels, 100, 200)
-                stream = midiart.make_midi_from_grayscale_pixels(edges, gran, True,  note_pxl_value=255)   ##dialog.inputKey.GetValue(), , colors=False
+                m_v = self.GetTopLevelParent().mayavi_view
+                default_color_palette = m_v.current_color_palette
+                mayavi_color_palette = m_v.current_mayavi_palette
 
-
-                print("EdgeStream:", stream)
-                stream.show('txt')
-                points = midiart3D.extract_xyz_coordinates_to_array(stream, velocities=m_v.cur_z)
-                index = len(m_v.actors)
-                name = str(len(m_v.actors)) + "_" + "Edges" + "_" + dialog.img_name
-                #clr = color_palette[random.randint(1, 16)]  #TODO Random color of 16 possible for now?
-                m_v.disable_render = True
-                actor = self.GetTopLevelParent().pianorollpanel.actorsctrlpanel.actorsListBox.new_actor(index, name)
-                #self.GetTopLevelParent().pianorollpanel.pianoroll.StreamToGrid(stream)
-                for j in m_v.actors:
-                    if j.name == name:
-                        print("Points here?")
-                        j.change_points(points)
-                m_v.disable_render = False
-                print("Edges load completed.")
+                if dialog.EdgesCheck:
+                    edges = cv2.Canny(pixels, 100, 200)
+                    stream = midiart.make_midi_from_grayscale_pixels(edges, gran, True,  note_pxl_value=255)   ##dialog.inputKey.GetValue(), , colors=False
 
 
-            elif dialog.ColorsCheck:
-                #TODO Display in grid upon completion of Actors\Z-Planes classes.
-                print("PREPixels2:", pixels2)
-                print("Gran", gran)
-                print("Here.")
-
-                print("DEFAULT_COLOR_PALETTE_2, import.", default_color_palette)
-                #The default_color_palette is the dictionary of colors by which our coords must be sorted.
-                self.num_dict = midiart.separate_pixels_to_coords_by_color(pixels2, m_v.cur_z, nn=True, clrs=default_color_palette, num_dict=True)
-                #TODO DOUBLE CHECK THIS #TODO use default_color_palette---Yes, the sorting MUST be based on the INT colors.
-                print('Num_dict:', self.num_dict)
-                m_v.colors_call += 1
-                #TODO Add colors menu append here.
-                m_v.colors_name = dialog.img_name + "_" + "Clrs"
-
-                #Menu Appends for new menu export method.
-                new_id = wx.NewIdRef()
-                self.GetTopLevelParent().menuBar.colors.Append(new_id, str(m_v.colors_call) + "\tCtrl+Shift+%s" % m_v.colors_call)
-                self.GetTopLevelParent().Bind(wx.EVT_MENU, self.GetTopLevelParent().menuBar.OnExport_Colors, id=new_id)
-
-
-                print("And Here2.")
-                print("Palette", mayavi_color_palette)
-
-                #Main call.
-                m_v.colors_increment = 1
-                priority_num = -16
-                m_v.scene3d.disable_render = True
-                m_v.colors_calling = True
-                #m_v.scene3d.off_screen_rendering = True
-                for h in self.num_dict.keys():
-                    # m_v.scene3d.off_screen_render = True
+                    print("EdgeStream:", stream)
+                    stream.show('txt')
+                    points = midiart3D.extract_xyz_coordinates_to_array(stream, velocities=m_v.cur_z)
                     index = len(m_v.actors)
-                    # for i in mayavi_color_palette.keys():
-                    #     if mayavi_color_palette[i] == h:
-                    #Get the color we are on.
-
-                    #R and B color values are swapped. This is fixed here, for now.
-                    #TODO Fix inverted color tuples in color dicts? (this is still relevant. It's complicated -- 11/25/20)
-                    #SWAP HERE ------- See trello card: --> https://trello.com/c/O67MrqpT --- we know this is part of it because our R and B values are force-swapped here.
-                    clr = tuple([mayavi_color_palette[h][0], mayavi_color_palette[h][1], mayavi_color_palette[h][2]])
-
-                    name = "Clrs" + str(m_v.colors_call) + "_" + str(h) + "_" + dialog.img_name
+                    name = str(len(m_v.actors)) + "_" + "Edges" + "_" + dialog.img_name
+                    #clr = color_palette[random.randint(1, 16)]  #TODO Random color of 16 possible for now?
+                    m_v.disable_render = True
                     actor = self.GetTopLevelParent().pianorollpanel.actorsctrlpanel.actorsListBox.new_actor(index, name)
-                    m_v.number_of_noncolorscall_actors -= 1 #Cancels += within new_actor() #TODO Make this a kwarg. 11/25/2020
-                    #Colors_call and colors_instance are functionally the same thing, just one in m_v, other in Actor().
-                    #TODO Rename? 12/02/2021
-                    colors_instance = "Clrs" + str(m_v.colors_call)
-                    m_v.actors[index].colors_instance = colors_instance
-
+                    #self.GetTopLevelParent().pianorollpanel.pianoroll.StreamToGrid(stream)
                     for j in m_v.actors:
                         if j.name == name:
-                            #print("Points here?")
-                            if self.num_dict[h] is not None:
-                                j.change_points(self.num_dict[h])
-                            #print("Color Change:", clr)
-                            j.color = clr
-                            j.part_num = m_v.colors_increment
-                            j.priority = priority_num
-                            m_v.colors_increment += 1
-                            priority_num += 1
-                    if m_v.colors_increment >= 16:
-                        m_v.scene3d.disable_render = False
-                        print(m_v.colors_calling)
-                        m_v.colors_calling = False
-                        print(m_v.colors_calling)
+                            print("Points here?")
+                            j.change_points(points)
+                    m_v.disable_render = False
+                    print("Edges load completed.")
 
 
-                #m_v.scene3d.off_screen_rendering = False
-                print("Colors load completed.")
+                elif dialog.ColorsCheck:
+                    #TODO Display in grid upon completion of Actors\Z-Planes classes.
+                    print("PREPixels2:", pixels2)
+                    print("Gran", gran)
+                    print("Here.")
 
-            elif dialog.MonochromeCheck:
+                    print("DEFAULT_COLOR_PALETTE_2, import.", default_color_palette)
+                    #The default_color_palette is the dictionary of colors by which our coords must be sorted.
+                    self.num_dict = midiart.separate_pixels_to_coords_by_color(pixels2, m_v.cur_z, nn=True, clrs=default_color_palette, num_dict=True)
+                    #TODO DOUBLE CHECK THIS #TODO use default_color_palette---Yes, the sorting MUST be based on the INT colors.
+                    print('Num_dict:', self.num_dict)
+                    m_v.colors_call += 1
+                    #TODO Add colors menu append here.
+                    m_v.colors_name = dialog.img_name + "_" + "Clrs"
 
-                stream = midiart.make_midi_from_grayscale_pixels(pixels, gran, False, note_pxl_value=0)
-                stream.show('txt')
-                points = midiart3D.extract_xyz_coordinates_to_array(stream, velocities=m_v.cur_z)
-                index = len(m_v.actors)
-                name = str(len(m_v.actors)) + "_" + "QR-BW" + "_" + dialog.img_name
-                # clr = color_palette[random.randint(1, 16)]  #TODO Random color of 16 possible for now.
-                m_v.disable_render = True
+                    #Menu Appends for new menu export method.
+                    new_id = wx.NewIdRef()
+                    self.GetTopLevelParent().menuBar.colors.Append(new_id, str(m_v.colors_call) + "\tCtrl+Shift+%s" % m_v.colors_call)
+                    self.GetTopLevelParent().Bind(wx.EVT_MENU, self.GetTopLevelParent().menuBar.OnExport_Colors, id=new_id)
 
-                actor = self.GetTopLevelParent().pianorollpanel.actorsctrlpanel.actorsListBox.new_actor(index, name)
-                # self.GetTopLevelParent().pianorollpanel.pianoroll.StreamToGrid(stream)
-                for j in m_v.actors:
-                    if j.name == name:
-                        print("Points here?")
-                        j.change_points(points)
-                m_v.disable_render = False
-                print("Monochrome load completed.")
 
-                #self.GetTopLevelParent().pianorollpanel.pianoroll.StreamToGrid(stream)
+                    print("And Here2.")
+                    print("Palette", mayavi_color_palette)
+
+                    #Main call.
+                    m_v.colors_increment = 1
+                    priority_num = -16
+                    m_v.scene3d.disable_render = True
+                    m_v.colors_calling = True
+                    #m_v.scene3d.off_screen_rendering = True
+                    for h in self.num_dict.keys():
+                        # m_v.scene3d.off_screen_render = True
+                        index = len(m_v.actors)
+                        # for i in mayavi_color_palette.keys():
+                        #     if mayavi_color_palette[i] == h:
+                        #Get the color we are on.
+
+                        #R and B color values are swapped. This is fixed here, for now.
+                        #TODO Fix inverted color tuples in color dicts? (this is still relevant. It's complicated -- 11/25/20)
+                        #SWAP HERE ------- See trello card: --> https://trello.com/c/O67MrqpT --- we know this is part of it because our R and B values are force-swapped here.
+                        clr = tuple([mayavi_color_palette[h][0], mayavi_color_palette[h][1], mayavi_color_palette[h][2]])
+
+                        name = "Clrs" + str(m_v.colors_call) + "_" + str(h) + "_" + dialog.img_name
+                        actor = self.GetTopLevelParent().pianorollpanel.actorsctrlpanel.actorsListBox.new_actor(index, name)
+                        m_v.number_of_noncolorscall_actors -= 1 #Cancels += within new_actor() #TODO Make this a kwarg. 11/25/2020
+                        #Colors_call and colors_instance are functionally the same thing, just one in m_v, other in Actor().
+                        #TODO Rename? 12/02/2021
+                        colors_instance = "Clrs" + str(m_v.colors_call)
+                        m_v.actors[index].colors_instance = colors_instance
+
+                        for j in m_v.actors:
+                            if j.name == name:
+                                #print("Points here?")
+                                if self.num_dict[h] is not None:
+                                    j.change_points(self.num_dict[h])
+                                #print("Color Change:", clr)
+                                j.color = clr
+                                j.part_num = m_v.colors_increment
+                                j.priority = priority_num
+                                m_v.colors_increment += 1
+                                priority_num += 1
+                        if m_v.colors_increment >= 16:
+                            m_v.scene3d.disable_render = False
+                            print(m_v.colors_calling)
+                            m_v.colors_calling = False
+                            print(m_v.colors_calling)
+
+
+                    #m_v.scene3d.off_screen_rendering = False
+                    print("Colors load completed.")
+
+                elif dialog.MonochromeCheck:
+
+                    stream = midiart.make_midi_from_grayscale_pixels(pixels, gran, False, note_pxl_value=0)
+                    stream.show('txt')
+                    points = midiart3D.extract_xyz_coordinates_to_array(stream, velocities=m_v.cur_z)
+                    index = len(m_v.actors)
+                    name = str(len(m_v.actors)) + "_" + "QR-BW" + "_" + dialog.img_name
+                    # clr = color_palette[random.randint(1, 16)]  #TODO Random color of 16 possible for now.
+                    m_v.disable_render = True
+
+                    actor = self.GetTopLevelParent().pianorollpanel.actorsctrlpanel.actorsListBox.new_actor(index, name)
+                    # self.GetTopLevelParent().pianorollpanel.pianoroll.StreamToGrid(stream)
+                    for j in m_v.actors:
+                        if j.name == name:
+                            print("Points here?")
+                            j.change_points(points)
+                    m_v.disable_render = False
+                    print("Monochrome load completed.")
+
+                    #self.GetTopLevelParent().pianorollpanel.pianoroll.StreamToGrid(stream)
+
+    # def update_images(pathname, dialog):
+    #     # self.pathname = pathname
+    #     img = cv2.imread(pathname, 0)  # 2D array (2D of only on\off values.)
+    #     img2 = cv2.imread(pathname, cv2.IMREAD_COLOR)  # 3D array (2D of color tuples, which makes a 3D array.)
+    #
+    #     # height = MIDAS_Settings.noteHeight
+    #     height = int(dialog.sldrHeight.GetValue())
+    #     width = int(height / len(img) * len(img[0]))
+    #
+    #     # print(type(self.img))
+    #     ###Name without filetype suffix '.png'
+    #     #img_name = os.path.basename(pathname).partition('.png')[0]
+    #     #print("IMG_NAME", img_name)
+    #
+    #     resizedImg = cv2.resize(img, (width, height), cv2.INTER_AREA)
+    #     resizedImg2 = cv2.resize(img2, (width, height), cv2.INTER_AREA)
+    #     pixels = resizedImg  # 2D array (2D of only on\off values.)
+    #     pixels2 = resizedImg2  # 3D array (2D of color tuples)
+
+
+    def join_with_piano(self, image, height, piano=r".\resources\ThePhatPiano16.png"):
+        image = image
+        piano = cv2.imread(piano)  # Remember, cv2.imread swaps rgb to bgr.
+
+        height = height#MIDAS_Settings.noteHeight
+        width = int(height / len(piano) * len(piano[0]))
+
+        piano = cv2.resize(piano, (width, height), cv2.INTER_AREA)
+
+        print("IMAGE_ndim", image.ndim)
+        print("IMAGE_shape", image.shape)
+        # piano = cv2.cvtColor(piano, cv2.COLOR_BGR2RGB)   #Keep an EYE on this thang.
+        # if len(image) > 127:
+        # print("The .png file size is too large. Scaling to height of 127.")
+        # height = 127
+        # width = int(127 / len(image) * len(image[0]))
+        # resizedImg = cv2.resize(image, (width, height), cv2.INTER_AREA)
+        musicode_image = numpy.hstack([piano, image])
+        return musicode_image
+
+    #################
+    def transform_images(self, image_path, pxls_tuple, height, img_name, dialog, num, palette_name=None):
+
+        #***Here.
+        filepath = r".\resources\intermediary_path"
+        pathname = image_path
+        print("PATHNAME", pathname)
+
+        height = height
+        img_name = img_name
+
+        pixels = pxls_tuple[0]
+        pixels2 = pxls_tuple[1]
+
+        #Test -This was the magical one that found our bug. 11/30/2021
+        #pixels2 = cv2.cvtColor(pixels2, cv2.COLOR_BGR2RGB)
+
+        #pixels_resized = dialog.resizedImg
+
+        gran = dialog.granularitiesDict[dialog.rdbtnGranularity.GetString(dialog.rdbtnGranularity.GetSelection())]
+            ###MIDAS_Settings.granularity]
+
+        # print("PIXELS", pixels)
+        # print("PIXELS2", pixels2)
+        # print("PIXELS_RESIZED:", pixels, type(pixels))
+        # print("pixel s_shape", np.shape(pixels))
+
+        default_color_palette = self.m_v.current_color_palette  #TODO Is this used?
+        #mayavi_color_palette = self.current_mayavi_palette
+
+        current_palette_name = self.m_v.current_palette_name
+
+        if dialog.EdgesCheck:
+        #if self.ids.midiart_Choice.text == "Edges":
+            print("Transforming Edges!")
+            #IMAGE
+            self.selection = "Edges"
+            self.edges = cv2.Canny(pixels, 100, 200)
+
+            #self.edges2 = cv2.Canny(pixels2, 100, 200)
+            #CONCATENATE with PIANO
+            self.preview = midiart.cv2_tuple_reconversion(pixels2,
+                                                          inPlace=False,
+                                                          conversion='Edges')[1]
+            self.img_without_piano = self.preview
+
+            self.img_with_piano = self.join_with_piano(self.preview, height)
+
+            #NAME
+            self.name = self.selection + "_" + str(num) + "_" + img_name
+
+            #STREAM
+            self.stream = midiart.make_midi_from_grayscale_pixels(self.edges,
+                                                                  gran,
+                                                                  connect=dialog.chbxConnect.GetValue(), ##.connectNotes,
+                                                                  note_pxl_value=255)
+                                                                  ##dialog.inputKey.GetValue(), , colors=False
+            print("EdgeStream:", self.stream)
+            self.stream.show('txt')
+
+            #name = str(len(m_v.actors)) + "_" + "Edges" + "_" + dialog.img_name
+            print("Edges load completed.")
+
+        elif dialog.ColorsCheck:
+        #if self.ids.midiart_Choice.text == "Color":
+            print("Transforming Color!")
+            print("PREPixels2:", pixels2)
+            print("Gran", gran)
+            print("Here.")
+            print("DEFAULT_COLOR_PALETTE_2, import.", default_color_palette)
+            #The default_color_palette is the dictionary of colors by which our coords must be sorted.
+
+            #IMAGE
+            self.selection = "Colors"
+            self.colors = pixels2
+            self.nn_colors = midiart.set_to_nn_colors(pixels2, self.m_v.current_color_palette)
+
+            self.img_without_piano = self.nn_colors
+
+            #CONCATENATE with PIANO
+            self.img_with_piano = self.join_with_piano(self.nn_colors, height)
+
+            #NAME
+            if palette_name is None:
+                palette_name = current_palette_name
+            self.name = self.selection + "_" + str(num) + "_" + palette_name + "_" + img_name
+            #     self.name = self.selection +  "_" + str(num) + "_" + dialog.listCtrl.GetItemText(num) + "_" + img_name
+            # else:
+            #     self.name = self.selection +  "_" + str(num) + "_" + palette_name + "_" + img_name
+
+            #STREAM
+            #swaprnb = midiart.convert_dict_colors(MIDAS_Settings.current_color_palette, invert=True)
+            swaprnb = self.m_v.current_color_palette
+            self.stream = midiart.transcribe_colored_image_to_midiart(self.colors,
+                                                                 granularity=gran,
+                                                                 connect=dialog.chbxConnect.GetValue(),##MIDAS_Settings.connectNotes,
+                                                                 keychoice=dialog.inputKey.GetValue(),
+                                                                 colors=swaprnb,
+                                                                 output_path=None)
+            print("ColorsStream:", self.stream)
+            self.stream.show('txt')
+            print("Colors load completed.")
+
+
+        elif dialog.MonochromeCheck:
+        #if self.ids.midiart_Choice.text == "Monochrome":
+            print("Transforming Monochrome!")
+            #IMAGE
+            self.selection = "Monochrome"
+            self.monochrome = pixels
+            #CONCATENATE with PIANO
+            conversion = midiart.cv2_tuple_reconversion(pixels2,
+                                                        inPlace=False,
+                                                        conversion='Monochrome')
+            self.preview = conversion[1]
+            self.preview2 = conversion[0]
+            # list_1 = [tuple(i) for i in self.preview2]
+            # list_2 = [tuple(i) for i in self.monochrome]
+            # assert list_1 == list_2, print("These are not the same.") assert failed
+
+            self.img_without_piano = self.preview
+
+            self.img_with_piano = self.join_with_piano(self.preview, height)
+
+            #NAME
+            self.name = self.selection + "_" + str(num) + "_" + img_name  # "QR-BW"
+
+            #STREAM
+            self.stream = midiart.make_midi_from_grayscale_pixels(self.preview2,
+                                                                  gran,
+                                                                  dialog.chbxConnect.GetValue(), ###MIDAS_Settings.connectNotes,
+                                                                  note_pxl_value=0)
+            #TODO Temporary
+            #self.m_v.CurrentActor()._stream = self.stream
+
+            print("MonochromeStream:", self.stream)
+            self.stream.show('txt')
+            print("Monochrome load completed.")
+
+        # Strings
+        file_path_img = filepath + os.sep + self.name + ".png"  # str
+        file_path_img_with_piano = filepath + os.sep + self.name + "_with_piano.png"
+        # musicode_default_img = MIDAS_Settings.musicode_default
+
+        # Remove existing, if true
+        # if os.path.exists(file_path_img) is True:
+        #     shutil.rmtree(file_path_img, ignore_errors=True)
+        # if os.path.exists(file_path_img_with_piano) is True:
+        #     shutil.rmtree(file_path_img_with_piano, ignore_errors=True)
+
+
+        ###Midi to file strings
+        filepath_midi = filepath + os.sep + "midiart_%s" % self.name + "_" + ".mid" \
+            if not dialog.ColorsCheck else \
+            filepath + os.sep + "midiart_%s" % self.selection + str(num) + "__%s.mid" \
+            % palette_name
+        # filepath_midi = filepath + os.sep + "midiart_%s.mid" % self.ids.midiart_Choice.text \
+        #     if self.ids.midiart_Choice.text != "Color" else \
+        #     filepath + os.sep + "midiart_%s" % self.ids.midiart_Choice.text + "_%s.mid" \
+        #     % self.m_v.current_palette_name
+
+        ###Existing file cleanup.
+        # if os.path.exists(filepath_midi) is True:
+        #     shutil.rmtree(filepath_midi, ignore_errors=True)
+
+        ###Key filtering
+        midiart.filter_notes_by_key(self.stream, key=dialog.inputKey.GetValue(), in_place=True)
+
+        ###Midi written to file.
+        #print("CHOICE", self.ids.midiart_Choice.text)
+        #if self.ids.midiart_Choice.text != "Midiart":
+        if dialog.ColorsCheck:
+            midiart.set_parts_to_midi_channels(self.stream, filepath_midi)
+        else:
+            self.stream.write("mid", filepath_midi)
+            ##midiart.set_parts_to_midi_channels(self.stream, filepath_midi) \
+            ##        if self.ids.midiart_Choice.text == "Color" else self.stream.write("mid", filepath_midi)
+            ##else:
+            ##    pass
+
+        # Image with midi to file
+        #cv2.imwrite(file_path_img, self.img_without_piano)
+        cv2.imwrite(file_path_img_with_piano, self.img_with_piano)
+
+        #Update Gui View
+        ##self.parent.ids.imagedraw_Area.ids.image_View.source = file_path_img_with_piano
+        #self.parent.ids.imagedraw_Area.ids.image_View.reload()
+
+
+
+
+    #################
+
+
 
 
     def _OnM21ConverterParseDialogClosed(self, dialog, evt):
@@ -567,14 +864,14 @@ class MainButtonsPanel(wx.Panel):
         m_v.scene3d.disable_render = False
 
         #mini_view.scene.close()
-        self.__delattr__('mini_view')
-        dialog.__delattr__("dialog.mini_mv")
-        gc.collect()
+        #self.__delattr__('mini_view')
+        #dialog.__delattr__("dialog.mini_mv")
+        #gc.collect()
 
         #index_list = [k for k in planes_dict.keys()]
-                # for k in index_list:
-                #     self.GetTopLevelParent().pianorollpanel.InsertNewPianoRoll(int(index_list.index(k)))
-                #     self.GetTopLevelParent().pianorollpanel.pianoroll.StreamToGrid(midiart3D.extract_xyz_coordinates_to_stream((np.array(planes_dict[k]))))
+        # for k in index_list:
+        #     self.GetTopLevelParent().pianorollpanel.InsertNewPianoRoll(int(index_list.index(k)))
+        #     self.GetTopLevelParent().pianorollpanel.pianoroll.StreamToGrid(midiart3D.extract_xyz_coordinates_to_stream((np.array(planes_dict[k]))))
 
 
         #r"C:\Program Files\MuseScore 3\bin\MuseScore3.exe"
@@ -637,21 +934,35 @@ class MusicodeDialog(wx.Dialog):
         wx.Dialog.__init__(self)
         self.Create(parent, id, title, pos, size, style, name)
         self.parent = parent
-        
+
+        self.textinputPanel = wx.Panel(self, -1, wx.DefaultPosition, (254, 162), style=wx.BORDER_RAISED)
+
         #MODE
         self.translate_musicode = wx.CheckBox(self, -1, "Translate Musicode")
         self.create_musicode = wx.CheckBox(self, -1, "Create Musicode")
+        self.translate_multiline_musicode = wx.CheckBox(self, -1, "Translate Multiline")
+        self.translate_multiline_musicode.Enable(enable=False)
+        self.tm_tooltip = wx.ToolTip("Translate multiline checked will translate"
+                                     " all lines in your text directly to individual midi files.")
+        self.translate_multiline_musicode.SetToolTip(self.tm_tooltip)
 
         self.create_musicode.SetValue(True)  ##Set to 'create' a musicode at the ready by default.
 
         #Musicode name.
         self.name_static = wx.StaticText(self, -1, "Musicode Name",     style=wx.ALIGN_LEFT)
-        self.input_mcname = wx.TextCtrl(self, -1, "", size=(90, -1), style=wx.TE_CENTER)
+        self.input_mcname = wx.TextCtrl(self, -1, "Musicode", size=(90, -1), style=wx.TE_CENTER)
 
         #Shorthand variable name.
         self.sh_static = wx.StaticText(self, -1, "Shorthand", style=wx.ALIGN_LEFT)
-        self.input_sh = wx.TextCtrl(self, -1, "", size=(30, -1), style=wx.TE_CENTER)
-        self.inputTxt = wx.TextCtrl(self, -1, "", size=(250, -1), name="Translate\\Create")
+        self.input_sh = wx.TextCtrl(self, -1, "mc", size=(30, -1), style=wx.TE_CENTER)
+
+        #Load text button
+        loadtxtID = wx.NewIdRef()
+        self.loadTxt_Btn = wx.Button(self, loadtxtID, "Load Text File")
+        self.Bind(wx.EVT_BUTTON, self.OnLoadTextFile, id=loadtxtID)
+
+        #Input text box
+        self.inputTxt = wx.TextCtrl(self.textinputPanel, -1, "Enter Musicode Text Here", size=(250, -1), style=wx.TE_MULTILINE, name="Translate\\Create")
 
 
         #####
@@ -725,39 +1036,119 @@ class MusicodeDialog(wx.Dialog):
         self.btnsizer.AddButton(self.btn)
         self.btnsizer.Realize()
 
-        self.sizer.Add(self.sizer2, 0, wx.ALL | wx.ALIGN_TOP, 15)
-        self.sizer.Add(self.sizer3, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL, 30)
-        self.sizer.Add(self.sizer4, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL, 40)
-        self.sizer.Add(self.inputTxt, 0, wx.ALL|wx.ALIGN_CENTER_HORIZONTAL, 20)
+        self.sizer.Add(self.sizer2, 0, wx.ALL | wx.ALIGN_TOP, 10)
+        self.sizer.Add(self.translate_multiline_musicode, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL, 5)
+        self.sizer.Add(self.sizer3, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL, 20)
+        self.sizer.Add(self.sizer4, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL, 20)
+        self.sizer.Add(self.loadTxt_Btn, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL, 20)
+        self.sizer.Add(self.textinputPanel, 0, wx.ALL|wx.ALIGN_CENTER_HORIZONTAL, 20)
         self.sizer.Add(self.rdbtnMusicodeChoice, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL, 20)
         self.sizer.Add(self.btnsizer, 0, wx.ALIGN_CENTER_HORIZONTAL | wx.ALL, 5)
+        #print("Sizer Children", self.sizer.Children)
 
         self.SetSizerAndFit(self.sizer)
-   
+
+    def OnLoadTextFile(self, event):
+        with wx.FileDialog(self, "Open Text File", wildcard="TXT (*.txt)|*.txt|",
+                                                             #"JPG (*.jpg)|*.jpg|",
+                           style=wx.FD_OPEN | wx.FD_FILE_MUST_EXIST) as fileDialog:
+
+            if fileDialog.ShowModal() == wx.ID_CANCEL:
+                return  # the user changed their mind
+
+            # Proceed loading the file chosen by the user
+            self.pathname = fileDialog.GetPath()
+            print("Textfile pathname:", self.pathname)
+            text_read = open(self.pathname, "r", encoding='utf-8')
+            text = text_read.read()
+            try:
+               self.inputTxt.SetValue(text)
+            except IOError:
+                wx.LogError("Cannot open file '%s'." % self.pathname)
+                text_read.close()
+            text_read.close()
+
 
     #TODO Needs work.
     def OnPolarizeCheckboxes(self, event):
         if self.create_musicode.IsChecked(): #Click on other one...
             self.translate_musicode.SetValue(not self.create_musicode.IsChecked())
+            self.translate_multiline_musicode.SetValue(False)
+
             self.rdbtnMusicodeChoice.Enable(enable=False)
             self.name_static.Enable(enable=True)
             self.input_mcname.Enable(enable=True)
             self.input_sh.Enable(enable=True)
             self.sh_static.Enable(enable=True)
+            self.translate_multiline_musicode.Enable(enable=False)
+
+            # self.inputTxt.SetWindowStyle(style=wx.TE_LEFT)
+            self.inputTxt.Destroy()
+            self.inputTxt = wx.TextCtrl(self.textinputPanel, -1, "Enter Musicode Text Here", size=(250, -1),
+                                        style=wx.TE_LEFT,
+                                        name="Translate\\Create")
+            self.textinputPanel.SetSize(253, 27)
+            self.textinputPanel.Refresh()
+            self.Refresh()
+            # self.sizer.Children[3] = self.inputTxt
+
         elif self.translate_musicode.IsChecked():  #True by default.
             #self.translate_musicode.SetValue(not self.translate_musicode.IsChecked()) #
-            self.create_musicode.SetValue(not self.translate_musicode.IsChecked())
+            self.create_musicode.SetValue(False)
+            #self.translate_multiline.SetValue(not self.translate_multiline.IsChecked())
+
+            self.rdbtnMusicodeChoice.Enable(enable=True)
+            self.name_static.Enable(enable=False)
+            self.input_mcname.Enable(enable=False)
+            self.input_sh.Enable(enable=False)
+            self.sh_static.Enable(enable=False)
+            self.translate_multiline_musicode.Enable(enable=True)
+
+            #self.inputTxt.SetWindowStyle(style=wx.TE_LEFT)
+            if self.translate_multiline_musicode.IsChecked():
+                self.inputTxt.Destroy()
+                self.inputTxt = wx.TextCtrl(self.textinputPanel, -1, "Enter Musicode Text Here", size=(250, -1),
+                                            style=wx.TE_MULTILINE,
+                                            name="Translate\\Create")
+                self.textinputPanel.SetSize(254, 162)
+                self.textinputPanel.Refresh()
+                self.Refresh()
+            else:
+                self.inputTxt.Destroy()
+                self.inputTxt = wx.TextCtrl(self.textinputPanel, -1, "Enter Musicode Text Here", size=(250, -1),
+                                            style=wx.TE_LEFT,
+                                            name="Translate\\Create")
+                self.textinputPanel.SetSize(253, 27)
+                self.textinputPanel.Refresh()
+                self.Refresh()
+                # self.sizer.Children[3] = self.inputTxt
+
+                #def OnCheckboxMultiline(self, event):
+        elif self.translate_multiline_musicode.IsChecked():
+            self.create_musicode.SetValue(False) #not self.translate_musicode.IsChecked())
+            self.translate_musicode.SetValue(True)
+
             self.rdbtnMusicodeChoice.Enable(enable=True)
             self.name_static.Enable(enable=False)
             self.input_mcname.Enable(enable=False)
             self.input_sh.Enable(enable=False)
             self.sh_static.Enable(enable=False)
 
+            # self.inputTxt.SetWindowStyle(style=wx.TE_MULTILINE)
+            # self.inputTxt.Destroy()
+            # self.inputTxt = wx.TextCtrl(self.textinputPanel, -1, "Enter Musicode Text Here", size=(250, -1),
+            #                             style=wx.TE_MULTILINE,
+            #                             name="Translate\\Create")
+            # self.textinputPanel.SetSize(254, 162)
+            # self.textinputPanel.Refresh()
+            # self.Refresh()
+            # self.sizer.Children[3] = self.inputTxt
 
         # elif self.translate_musicode.GetValue() is False:
         #     self.create_musicode.SetValue(True)
         # elif self.create_musicode.GetValue() is False:
         #     self.translate_musicode.SetValue(True)
+
 
 
 class CustomColorsListBox(wx.ListCtrl):
@@ -778,7 +1169,7 @@ class CustomColorsListBox(wx.ListCtrl):
 
 
 class MIDIArtDialog(wx.Dialog):
-    def __init__(self,parent,id,title, size=wx.DefaultSize,
+    def __init__(self, parent, id, title, size=wx.DefaultSize,
                  pos=wx.DefaultPosition, style=wx.DEFAULT_DIALOG_STYLE, name='MidiArt' ):
 
         wx.Dialog.__init__(self)
@@ -798,7 +1189,7 @@ class MIDIArtDialog(wx.Dialog):
         # One more call for FL Colors:
         #self.popupCtrl.AddItem("FLStudioColors")
 
-        self.ctrlsPanel = wx.Panel(self, -1, wx.DefaultPosition, (236, 690), style=wx.BORDER_RAISED)
+        self.ctrlsPanel = wx.Panel(self, -1, wx.DefaultPosition, (236, 770), style=wx.BORDER_RAISED)
         self.imgPreviewPanel = wx.Panel(self, -1, wx.DefaultPosition, (515, 515), style=wx.BORDER_RAISED)
         self.displayImage = None
 
@@ -808,22 +1199,39 @@ class MIDIArtDialog(wx.Dialog):
         for clrs in midiart.get_color_palettes():
             self.listCtrl.InsertItem(self.index, clrs)
             self.index += 1
+        print("LISTCTRL_LENGTH:", self.listCtrl.ItemCount)
+        print("ITEM_0", self.listCtrl.GetItemText(0))
 
+                                                                        #Spaces deliberate here.
         self.static_color = self.name_static = wx.StaticText(self, -1, "              Select Color Palette")
 
+        font = wx.Font(9, wx.FONTFAMILY_MODERN, 0, 90, underline=False,
+                       faceName="")
+        self.btnLoadImage = wx.Button(self.ctrlsPanel, -1, "Load Image(s)")
+        self.btnPreviousImage = wx.Button(self.ctrlsPanel, -1, "◄---Prev", size=(83, 17))
+        self.btnNextImage = wx.Button(self.ctrlsPanel, -1, "Next---►", size=(83, 17))
+        self.btnPreviousImage.SetFont(font)
+        self.btnNextImage.SetFont(font)
 
-        self.btnLoadImage = wx.Button(self.ctrlsPanel, -1, "Load Image")
+        #Spaces deliberate here.
+        self.exportStatic = self.name_static = wx.StaticText(self, -1, "              Multi-Export Options")
+        self.chbxMultiple = wx.CheckBox(self.ctrlsPanel, -1, "Multiple")
 
         self.chbxEdges = wx.CheckBox(self.ctrlsPanel, -1, "Edges")
         self.chbxColorImage = wx.CheckBox(self.ctrlsPanel, -1, "Color Image")
         self.chbxColorImage.SetValue(not self.chbxColorImage.IsChecked())
         self.chbxMonochorome = wx.CheckBox(self.ctrlsPanel, -1, "Monochrome")
 
+        self.chbxAllColors = wx.CheckBox(self.ctrlsPanel, -1, "All Colors?")
+
 
         self.sldrHeight = wx.Slider(self.ctrlsPanel, -1, 127, 1, 127, wx.DefaultPosition, (190,40),
                                     wx.SL_HORIZONTAL | wx.SL_LABELS)
         self.txtKey = wx.StaticText(self.ctrlsPanel, -1, "Key", style= wx.ALIGN_RIGHT )
         self.inputKey = wx.TextCtrl(self.ctrlsPanel, -1, "", size=(30, 24), style=wx.TE_CENTER)
+
+        print("inputKey_LABEL", self.inputKey.GetValue()) ##Temporary
+        #self.txtKey.GetLabelText()
 
         self.granularitiesDict = OrderedDict()
         self.granularitiesDict["32nd Note"]      = 0.125
@@ -838,12 +1246,19 @@ class MIDIArtDialog(wx.Dialog):
                                             list(self.granularitiesDict.keys()),
                                             2, wx.RA_SPECIFY_COLS)
 
+        #self.rdbtnGranularity.
+
+        #Should be disabled unless Multiple? is checked.
+        self.chbxConnect = wx.CheckBox(self.ctrlsPanel, -1, "Connect?")
+
         #TODO Change default granularity checked box.
 
         #self.txtConnectNotes = wx.StaticText(self, -1, "Connect Notes?", style=wx.ALIGN_RIGHT)
-
+      
 
         self.Bind(wx.EVT_BUTTON, self.OnLoadImage, self.btnLoadImage)
+        self.Bind(wx.EVT_BUTTON, self.OnCyclePrevious, self.btnPreviousImage)
+        self.Bind(wx.EVT_BUTTON, self.OnCycleNext, self.btnNextImage)
         self.Bind(wx.EVT_SLIDER, self.OnSliderChanged, self.sldrHeight)
         self.Bind(wx.EVT_RADIOBOX, self.OnRadioBoxChanged, self.rdbtnGranularity)
         self.Bind(wx.EVT_CHECKBOX, self.OnCheckBoxSelection)
@@ -853,24 +1268,49 @@ class MIDIArtDialog(wx.Dialog):
         #Sizers
         sizerCtrls = wx.BoxSizer(wx.VERTICAL)
         topSizer = wx.BoxSizer(wx.VERTICAL)
+        #colorSizer = wx.BoxSizer(wx.VERTICAL)
+        cycleimagesSizer = wx.BoxSizer(wx.HORIZONTAL)
+        exportSizer = wx.BoxSizer(wx.HORIZONTAL)
+
         topSizer.Add(self.static_color, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL, 25)
         #sizerCtrls.Add(self.static_color, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL, 10)
         #sizerCtrls.Add(self.comboCtrl, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL, 1)
         topSizer.Add(self.listCtrl, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL, -35)
-        topSizer.AddSpacer(45)
+        topSizer.AddSpacer(50)
+
+        #colorSizer.Add(self.chbxColorImage, 0, wx.ALL | wx.ALIGN_CENTER, 5)
+        #colorSizer.Add(self.chbxAllColors, 0, wx.ALL | wx.ALIGN_CENTER, 5)
+
+        cycleimagesSizer.Add(self.btnPreviousImage, 0, wx.ALL | wx.ALIGN_CENTER, 20)
+        cycleimagesSizer.Add(self.btnNextImage, 0, wx.ALL | wx.ALIGN_CENTER, 20)
+
+        exportSizer.Add(self.chbxMultiple, 0, wx.ALL | wx.ALIGN_CENTER, 3)
+        exportSizer.Add(self.chbxAllColors, 0, wx.ALL | wx.ALIGN_CENTER, 3)
+
         sizerCtrls.Add(topSizer, 0, wx.ALIGN_CENTER_HORIZONTAL, 35)
-        sizerCtrls.Add(self.chbxEdges, 0, wx.ALL  | wx.ALIGN_LEFT, 11)
-        sizerCtrls.Add(self.chbxColorImage, 0, wx.ALL  | wx.ALIGN_CENTER_HORIZONTAL, 11)
+        sizerCtrls.Add(self.chbxEdges, 0, wx.ALL | wx.ALIGN_LEFT, 11)
+        sizerCtrls.Add(self.chbxColorImage, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL, 0) #colorSizer
         sizerCtrls.Add(self.chbxMonochorome, 0, wx.ALL | wx.ALIGN_RIGHT, 11)
-        sizerCtrls.Add(self.btnLoadImage, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL, 20)
+        sizerCtrls.AddSpacer(25)
+        sizerCtrls.Add(self.btnLoadImage, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL, 0)
+        sizerCtrls.Add(cycleimagesSizer, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL, -10)
+
+
+
+        sizerCtrls.AddSpacer(30)
+        sizerCtrls.AddSpacer(40)
+        sizerCtrls.Add(self.exportStatic, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL, -15)
+        sizerCtrls.Add(exportSizer, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL, -35)
+        sizerCtrls.AddSpacer(25)
         sizerCtrls.Add(self.sldrHeight, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL, 20)
 
 
         keysizer = wx.BoxSizer(wx.HORIZONTAL)
         keysizer.Add(self.txtKey, 0, wx.ALL | wx.ALIGN_CENTER, 20)
         keysizer.Add(self.inputKey, 0, wx.ALL | wx.ALIGN_CENTER, 20)
-        sizerCtrls.Add(keysizer, 0, wx.ALIGN_CENTER | wx.ALL, 5)
+        sizerCtrls.Add(keysizer, 0, wx.ALIGN_CENTER | wx.ALL, -10)
         sizerCtrls.Add(self.rdbtnGranularity, 0, wx.ALL | wx.ALIGN_CENTER, 20)
+        sizerCtrls.Add(self.chbxConnect, 0, wx.ALL | wx.ALIGN_CENTER, 10)
 
 
         btnsizer = wx.StdDialogButtonSizer()
@@ -898,30 +1338,31 @@ class MIDIArtDialog(wx.Dialog):
 
 
     def OnLoadImage(self, evt):
-        with wx.FileDialog(self, "Open image file", wildcard="PNG (*.png)|*.png|"
+        with wx.FileDialog(self, "Open Image File(s)", wildcard="PNG (*.png)|*.png|"
                                                              "JPG (*.jpg)|*.jpg|",
-                           style=wx.FD_OPEN | wx.FD_FILE_MUST_EXIST) as fileDialog:
+                           style=wx.FD_OPEN | wx.FD_MULTIPLE | wx.FD_FILE_MUST_EXIST) as fileDialog: #FD_FILE_MUST_EXIST
 
             if fileDialog.ShowModal() == wx.ID_CANCEL:
                 return  # the user changed their mind
 
-            # Proceed loading the file chosen by the user
-            pathname = fileDialog.GetPath()
-            print(pathname)
+            ###Proceed loading the file chosen by the user
+            self.pathnames = fileDialog.GetPaths()
+            if len(self.pathnames) > 1:
+                self.chbxMultiple.SetValue(True)
+                self.pathname = self.pathnames[0] #First image in the list, then we cycle through use (previous, next) btns.
+                self.image_list_counter = 0
+            else:
+                self.chbxMultiple.SetValue(False)
+                self.pathname = self.pathnames[0] ##don't need fileDialog.GetPath() anymore
+                self.image_list_counter = 0
+
+
+            print(self.pathname)
             try:
-                self.EdgesCheck = self.chbxEdges.IsChecked()
-                self.ColorsCheck = self.chbxColorImage.IsChecked()
-                self.MonochromeCheck = self.chbxMonochorome.IsChecked()
-
-                self.pathname = pathname
-                self.img = cv2.imread(pathname, 0)  #2D array (2D of only on\off values.)
-                self.img2 = cv2.imread(pathname, cv2.IMREAD_COLOR)   #3D array (2D of color tuples, which makes a 3D array.)
-                #print(type(self.img))
-                self.img_name = os.path.basename(pathname)
-
+                self.UpdateImageData()
                 self.UpdatePreview()
             except IOError:
-                wx.LogError("Cannot open file '%s'." % pathname)
+                wx.LogError("Cannot open file '%s'." % self.pathname)
 
 
     def OnSliderChanged(self,event):
@@ -935,28 +1376,70 @@ class MIDIArtDialog(wx.Dialog):
             self.UpdatePreview()
 
 
+    def UpdateImageData(self):
+        self.EdgesCheck = self.chbxEdges.IsChecked()
+        self.ColorsCheck = self.chbxColorImage.IsChecked()
+        self.MonochromeCheck = self.chbxMonochorome.IsChecked()
+        self.MultipleCheck = self.chbxMultiple.IsChecked()
+        self.AllCheck = self.chbxAllColors.IsChecked()
+
+        self.pathnames = self.pathnames
+        self.pathname = self.pathname
+
+        self.img = cv2.imread(self.pathname, 0)  # 2D array (2D of only on\off values.)
+        self.img2 = cv2.imread(self.pathname,
+                               cv2.IMREAD_COLOR)  # 3D array (2D of color tuples, which makes a 3D array.)
+        # print(type(self.img))
+        self.img_name = os.path.basename(self.pathname)
+
+
+    def OnCycleNext(self, event):
+        self.image_list_counter += 1
+        if self.image_list_counter > len(self.pathnames) - 1:
+            self.image_list_counter = 0
+        self.pathname = self.pathnames[self.image_list_counter]
+        self.UpdateImageData()
+        self.UpdatePreview()
+
+
+    def OnCyclePrevious(self, event):
+        self.image_list_counter -= 1
+        if self.image_list_counter < 0:
+            self.image_list_counter = len(self.pathnames) - 1
+        self.pathname = self.pathnames[self.image_list_counter]
+        self.UpdateImageData()
+        self.UpdatePreview()
+
+
+    def UpdateAttritutes(self):
+        self.pixScaler = int(
+            8 * self.granularitiesDict[self.rdbtnGranularity.GetString(self.rdbtnGranularity.GetSelection())])
+
+        self.height = int(self.sldrHeight.GetValue())
+        self.width = int(self.height / len(self.img) * len(self.img[0]))
+
+        # Core Images for passing.
+        self.resizedImg = cv2.resize(self.img, (self.width, self.height), cv2.INTER_AREA)
+        self.resizedImg2 = cv2.resize(self.img2, (self.width, self.height), cv2.INTER_AREA)
+
+
     def UpdatePreview(self):
+
+
         #TODO Fix the slider resize for all img instances.
         if self.displayImage:
             self.displayImage.Destroy()
 
         self.update_called = True
 
-        self.pixScaler = int(8 * self.granularitiesDict[self.rdbtnGranularity.GetString(self.rdbtnGranularity.GetSelection())])
 
-        height = int(self.sldrHeight.GetValue())
-        width = int(height / len(self.img) * len(self.img[0]))
-
-        #Core Images for passing.
-        self.resizedImg = cv2.resize(self.img, (width, height), cv2.INTER_AREA)
-        self.resizedImg2 = cv2.resize(self.img2, (width, height), cv2.INTER_AREA)
-
+        self.UpdateAttritutes()
         #This error happens if your image dtype is float; cv2.resize() operates with ints:
         # TypeError: only size-1 arrays can be converted to Python scalars"
 
 
         #Preview stuff.
-        preview = cv2.resize(self.img2, (width, height), cv2.INTER_AREA)
+        preview = cv2.resize(self.img2, (self.width, self.height), cv2.INTER_AREA)
         #self.self.previewImg = cv2.resize(self.resizedImg, (self.pixScaler*width, height), cv2.INTER_AREA)
         #rgb = cv2.cvtColor(self.previewImg, cv2.COLOR_GRAY2RGB)   ###cv2.COLOR_RGB2BGR)   ### ####cv2.COLOR_BGR2HSV)   ### #cv2.RG
 
@@ -982,7 +1465,7 @@ class MIDIArtDialog(wx.Dialog):
             print("DEFAULT_COLOR_PALETTE_1--preview.", m_v.current_color_palette)
             preview = midiart.set_to_nn_colors(preview, swaprnb)  #m_v.default_color_palette) #
 
-            self.previewImg = cv2.resize(preview, (self.pixScaler * width * 4, height * 4),
+            self.previewImg = cv2.resize(preview, (self.pixScaler * self.width * 4, self.height * 4),
                                          cv2.INTER_AREA)  # * 3 increases the size of the preview.
 
             h, w = self.previewImg.shape[:2]
@@ -1001,7 +1484,7 @@ class MIDIArtDialog(wx.Dialog):
             #preview = cv2.Canny(preview, 100, 200)
             #self.im2 = preview
             preview = midiart.cv2_tuple_reconversion(preview, inPlace=False, conversion="Edges")
-            self.previewImg = cv2.resize(preview[1], (self.pixScaler * width * 4, height * 4),
+            self.previewImg = cv2.resize(preview[1], (self.pixScaler * self.width * 4, self.height * 4),
                                          cv2.INTER_AREA)  # * 3 increases the size of the preview.
 
             h, w = self.previewImg.shape[:2]
@@ -1021,7 +1504,7 @@ class MIDIArtDialog(wx.Dialog):
             #print("PREVIEW MC", preview[1])
             #print("PREVIEW MC THRESH", thresh)
 
-            self.previewImg = cv2.resize(preview[1], (self.pixScaler * width * 4, height * 4),
+            self.previewImg = cv2.resize(preview[1], (self.pixScaler * self.width * 4, self.height * 4),
                                          cv2.INTER_AREA)  # * 3 increases the size of the preview.
             
             h, w = self.previewImg.shape[:2]
@@ -1053,20 +1536,24 @@ class MIDIArtDialog(wx.Dialog):
             self.EdgesCheck = False
             self.chbxColorImage.SetValue(False)
             self.ColorsCheck = False
+            self.chbxAllColors.SetValue(False)
+            self.chbxAllColors.Enable(enable=False)
         if self.chbxColorImage.IsChecked():
             self.ColorsCheck = True
             self.chbxEdges.SetValue(False)
             self.EdgesCheck = False
             self.chbxMonochorome.SetValue(False)
             self.MonochromeCheck = False
+            #self.chbxAllColors.SetValue(True)
+            self.chbxAllColors.Enable(enable=True)
         if self.chbxEdges.IsChecked():
             self.EdgesCheck = True
             self.chbxColorImage.SetValue(False)
             self.ColorsCheck = False
             self.chbxMonochorome.SetValue(False)
             self.MonochromeCheck = False
-
-
+            self.chbxAllColors.SetValue(False)
+            self.chbxAllColors.Enable(enable=False)
         self.UpdatePreview()
 
         #print("self.edges.shape=", self.edges.shape)

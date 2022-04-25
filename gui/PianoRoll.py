@@ -6,6 +6,7 @@ import music21
 import copy
 import logging
 import numpy as np
+from midas_scripts.music21funcs import notafy
 
 import os
 import signal
@@ -174,7 +175,8 @@ class PianoRollDataTable(wx.grid.GridTableBase):
 
             #ARRAY4D
 
-            print("Index", ([int(col)],[127 - row],[z]))
+            print("Index", ([int(col)], [127 - row], [z]))
+
             #ON
             self._cur_actor._array4D[int(col)][int(127 - row)][int(z)][0] = int(values) \
                 if pr.drawing == 1 else values  #value is 0 when pr.drawing == 0, a general fyi.
@@ -1293,69 +1295,91 @@ class PianoRoll(wx.grid.Grid, glr.GridWithLabelRenderersMixin):
         :return: 				np.array
         """
 
+        #IN_STREAM notafy processing
+        #notafied_stream = notafy(in_stream)
+
+        print("Initiating StreamToGrid()...")
         if z is None:
             z = self.GetTopLevelParent().pianorollpanel.currentZplane
 
         self.ClearGrid()
 
-        for c in in_stream.flat.getElementsByClass(["Chord", "Note"]):
-            if type(c) is music21.chord.Chord:
-                for n in c.notes:  #was .pitches, changed 12/31/2021
-                    x = int(self._cells_per_qrtrnote * n.offset)  #was c not n, but that didn't make sense if we're individualizing notes from a chord.
-                    y = 127 - n.pitch.ps  #was p.midi, changed 12/31/2021
-                    size = int(self._cells_per_qrtrnote * c.duration.quarterLength)
-                    if size < 1:
-                        print("Chord: Note size is too small for current grid CellsPerQrtrNote(%s)." % self._cells_per_qrtrnote)
-                    else:
+        try:
+            for c in in_stream.flat.getElementsByClass(["Chord", "Note"]):
+                if type(c) is music21.chord.Chord:
+                    for n in c.notes:  #was .pitches, changed 12/31/2021
+                        x = int(self._cells_per_qrtrnote * c.offset) #NOTE: HUGE BUG DISCOVERED.
+                                                                     #Chords objects start at the same offset.
+                                                                     #Therefore, this must be c.offset.
+                        y = 127 - n.pitch.ps  #was p.midi, changed 12/31/2021
+                        size = int(self._cells_per_qrtrnote * c.duration.quarterLength)
+
+                        if size < 1:
+                            print("Chord: Note size is too small for current grid CellsPerQrtrNote(%s)." % self._cells_per_qrtrnote)
+
+                        ###!!!
+                        #else:
                         self._table.SetValue(y, x, "1", importing=True)
                         #ON
-                        self.m_v.CurrentActor()._array4D[x, 127 - y, z][0] = 1
+                        self.m_v.CurrentActor()._array4D[int(x), int(127-y), int(z)][0] = 1
                         #VELOCITY
-                        self.m_v.CurrentActor()._array4D[x, 127 - y, z][1] = n.volume.velocity \
+                        self.m_v.CurrentActor()._array4D[int(x), int(127-y), int(z)][1] = n.volume.velocity \
                             if n.volume.velocity is not None else z   #self.m_v.CurrentActor().cur_z
                         #DURATION
-                        self.m_v.CurrentActor()._array4D[x, 127-y, z][2] = \
+                        self.m_v.CurrentActor()._array4D[int(x), int(127-y), int(z)][2] = \
                             n.duration.quarterLength.as_integer_ratio()[0]
-                        self.m_v.CurrentActor()._array4D[x, 127-y, z][3] = \
+                        self.m_v.CurrentActor()._array4D[int(x), int(127-y), int(z)][3] = \
                             n.duration.quarterLength.as_integer_ratio()[1]
-
                         #int(n.duration * 10000) #Must be int.
                         #SAD?
                         #self.m_v.CurrentActor()._array4D[x, 127 - y, z][4]
+
+                        ###!!!
                         self.SetCellSize(y, x, 1, size)     #TODO Code in workaround for cells already part of another cell.
 
-                # print(matrix)
-            elif type(c) is music21.note.Note:
-                n = c
-                x = int(self._cells_per_qrtrnote * c.offset)
-                y = 127 - c.pitch.midi
+                    # print(matrix)
+                elif type(c) is music21.note.Note:
+                    #n1 = c
+                    x = int(self._cells_per_qrtrnote * c.offset)
+                    y = 127 - c.pitch.ps  #midi
 
-                size =  int(self._cells_per_qrtrnote * c.duration.quarterLength)
+                    size = int(self._cells_per_qrtrnote * c.duration.quarterLength)
 
-                if size < 1:  #TODO IS THIS THE CORRECT CALL?
-                    print("Note: Note size is too small for current grid CellsPerNote.")
+                    if size < 1:  #TODO IS THIS THE CORRECT CALL?
+                        print("Note: Note size is too small for current grid CellsPerNote.")
 
-                else:
+                    ###!!!
+                    #else:
                     self._table.SetValue(y, x, "1", importing=True)
                     #ON
-                    self.m_v.CurrentActor()._array4D[x, 127 - y, z][0] = 1
+                    self.m_v.CurrentActor()._array4D[int(x), int(127 - y), int(z)][0] = 1
                     #VELOCITY
-                    self.m_v.CurrentActor()._array4D[x, 127 - y, z][1] = n.volume.velocity \
-                        if n.volume.velocity is not None else z   #self.m_v.CurrentActor().cur_z
+                    self.m_v.CurrentActor()._array4D[int(x), int(127 - y), int(z)][1] = c.volume.velocity \
+                        if c.volume.velocity is not None else z   #self.m_v.CurrentActor().cur_z
                     #DURATION
-                    self.m_v.CurrentActor()._array4D[x, 127 - y, z][2] = n.duration.quarterLength.as_integer_ratio()[0]
-                    self.m_v.CurrentActor()._array4D[x, 127 - y, z][3] = n.duration.quarterLength.as_integer_ratio()[1]
+                    self.m_v.CurrentActor()._array4D[int(x), int(127 - y), int(z)][2] = \
+                    c.duration.quarterLength.as_integer_ratio()[0]
+                    self.m_v.CurrentActor()._array4D[int(x), int(127 - y), int(z)][3] = \
+                    c.duration.quarterLength.as_integer_ratio()[1]
                     #int(n.duration.quarterLength * 10000) #Must be int.
                     #SAD?
 
+                    ###!!!
                     self.SetCellSize(y, x, 1, size)
+
+        except Exception as e:
+            print("STREAMTOGRID EXCEPTION!", e)
 
         # print(matrix)
 
         #self.m_v.CurrentActor().array4Dchangedflag += 1
         self.m_v.CurrentActor().array4Dchangedflag = not self.m_v.CurrentActor().array4Dchangedflag
+        #Midas.mayavi_view.CurrentActor().array4Dchangedflag = not Midas.mayavi_view.CurrentActor().array4Dchangedflag
         self.stream = in_stream
 
+        #Temporary
+        self.m_v.CurrentActor().stream = in_stream
+        print("Stream To Grid Successful!")
 
     def GridToStream(self, update_actor=True):
         """

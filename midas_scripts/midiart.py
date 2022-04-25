@@ -876,8 +876,8 @@ def get_random_melody(in_stream):
 # MA-13. #TODO Optimize for better sectionalizing.
 def sectionalize_image_array(image_array, sec_root):
     """
-        This functions creates smaller, proportional "tiles" of an input image array that can be indexed. Used with the
-    wxMidas grid.
+        #TODO Needs to be redone.
+        This functions creates smaller, proportional "tiles" of an input image array that can be indexed.
 
     :param image_array:     An input cv2-read image array.
     :param sec_root:        The square root of the # of desired sections. If you want 64 sections, set sec_root to 8.
