@@ -1296,10 +1296,15 @@ class MIDIArtDialog(wx.Dialog):
         sizerCtrls.Add(cycleimagesSizer, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL, -10)
 
 
+        ###NOTE: These space settings are affect by the resolution settings of Windows.
+        ###Of particular note is where it says "Change the size of text, apps, and other items"  '%---'
+        sizerCtrls.AddSpacer(30)  ####* commented out if res settings changed
+        sizerCtrls.AddSpacer(40)  ####* commented out if res settings changed
+        #sizerCtrls.AddSpacer(65)
+        sizerCtrls.Add(self.exportStatic, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL, -15) #-25  swap if res changed
 
-        sizerCtrls.AddSpacer(30)
-        sizerCtrls.AddSpacer(40)
-        sizerCtrls.Add(self.exportStatic, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL, -15)
+        #sizerCtrls.AddSpacer(40)  ####insterted if resolutions settings are changed
+
         sizerCtrls.Add(exportSizer, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL, -35)
         sizerCtrls.AddSpacer(25)
         sizerCtrls.Add(self.sldrHeight, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL, 20)

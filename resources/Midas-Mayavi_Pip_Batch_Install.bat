@@ -60,7 +60,7 @@ python -m pip install --upgrade sympy --user
 python -m pip install --upgrade inspect --user
 :: INSPECT LICENSE: OSI Approved :: Python Software Foundation License
 python -m pip install --upgrade mido --user
-::MIDO LICENSE: OSI Approved :: MIT License
+:: MIDO LICENSE: OSI Approved :: MIT License
 python -m pip install --upgrade pyo --user
 :: PYO LICENSE: GNU General Public License v3
 python -m pip install --upgrade blender --user
@@ -115,9 +115,10 @@ python -m pip install --upgrade requests
 ::pip install naming
 
 ::Kivi Install
-::python -m pip install --upgrade pip wheel setuptools
-::python -m pip install docutils pygments pypiwin32 kivy.deps.sdl2 kivy.deps.glew
-::python -m pip install kivy.deps.gstreamer
-::python -m pip install kivy.deps.angle
-::python -m pip install kivy
-::python -m pip install kivy_examples
+::python -m pip install kivymd==0.104.2
+::python -m pip install --upgrade pip wheel setuptools --user 
+::python -m pip install --upgrade docutils pygments pypiwin32 kivy.deps.sdl2 kivy.deps.glew --user
+::python -m pip install --upgrade kivy.deps.gstreamer --user
+::python -m pip install --upgrade kivy.deps.angle --user
+::python -m pip install --upgrade kivy --user
+::python -m pip install --upgrade kivy_examples --user                                              

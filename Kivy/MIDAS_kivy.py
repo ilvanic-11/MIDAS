@@ -5,6 +5,7 @@ import cv2
 import numpy as np
 import shutil
 import os
+import webbrowser
 from importlib import reload
 
 import sys
@@ -32,6 +33,16 @@ from kivy.factory import Factory
 from kivy.app import App
 from kivy.properties import ObjectProperty, StringProperty, NumericProperty
 
+from kivymd.app import MDApp
+from kivy.core.window import Window
+from kivy.lang import Builder
+from kivy.factory import Factory
+from kivy.uix.modalview import ModalView
+
+from kivymd.uix.filemanager import MDFileManager
+from kivymd.theming import ThemeManager
+from kivymd.toast import toast
+
 from Kivy import musicode
 
 
@@ -51,11 +62,12 @@ class HeightPopup(Popup):
         #self.note_HeightSlider = ObjectProperty(None)
         #self.app = App.get_running_app()
 
-    def HeightPopupDone(self):
+    def height_popup_done(self):
         #super(HeightPopup,self).note_Height = self.note_HeightSlider.value
         MIDAS_Settings.noteHeight = self.note_HeightSlider.value
         print("slider value " + str(self.note_HeightSlider.value))
         self.dismiss()
+
     pass
 
 
@@ -64,19 +76,81 @@ class LoadDialog(FloatLayout):
     load = ObjectProperty(None)
     cancel = ObjectProperty(None)
 
-
-
 class SaveDialog(FloatLayout):
     save = ObjectProperty(None)
     text_input = ObjectProperty(None)
     cancel = ObjectProperty(None)
 
+class OutputDialog(FloatLayout):
+    load = ObjectProperty(None)
+    cancel = ObjectProperty(None)
 
 
 class MusicodeArea(BoxLayout):
     txt_Input = ObjectProperty(None)
     musicodes_sh = sorted(musicode.g.mc.shorthand)
-    
+    #print([i for i in musicode.g.mc.dictionaries.keys()])
+    musicode_info_dict = dict.fromkeys([i for i in musicode.g.mc.dictionaries.keys()])
+    for i in musicode_info_dict.keys():
+        if i == 'Animuse':
+            musicode_info_dict[i] = \
+        "Animuse is the 'print' musicode. A letter is uniformly constructed in a diatonic scale in a single octave with midi notes."
+        if i == 'Asciipher_X':
+            musicode_info_dict[i] = \
+        "Asciipher_X, a pitch-oriented musicode, is based on the American Standard Code for Information Interchange." \
+                                    "\n Its rests and notes correspond to 0s and 1s.                                                                  "
+        if i == 'Asciipher_Y':
+            musicode_info_dict[i] = \
+        "Asciipher_Y, a rhythm-oriented musicode, is based on the American Standard Code for Information Interchange." \
+                                    "\n Its pitches in a scale, missing and not, correspond to 0s and 1s.                                                  "
+        if i == 'Baud-Onkadonk_X':
+            musicode_info_dict[i] = \
+        "Baud-Onkadonk_X, another pitch-oriented musicode, is based on the Baud-Murray code." \
+                                    "\n Its rests and notes correspond to 0s and 1s.                                              "
+        if i == 'Baud-Onkadonk_Y':
+            musicode_info_dict[i] = \
+        "Baud-Onkadonk_Y, another rhythm-oriented musicode, is based on the Baud-Murray code.          " \
+                                    "\n Its pitches in a scale, missing and not, correspond to 0s and 1s, the appropriate 'punch-type' punches."
+        if i == 'BraillePulse':
+            musicode_info_dict[i] = "BraillePulse, the second musicode, is comprised of the embossments of braille.           " \
+                                    "\nRhythms can be created freely, and the tiers of pitches can be adjusted for musical flexibility," \
+                                    "\nideally maintaining the 'shape' of the embossment.                                            "
+        if i == 'MetaMorse':
+            musicode_info_dict[i] = \
+        "MetaMorse, the first musicode, is midi created out of Morse Code created by Samuel Morse." \
+                                    "\n Three 'di's'(...)  equal a 'dah'(-) in duration value in Morse Code.                            \n" \
+                                    "('Midas' =-->  '-- .. -.. .- ...')                                                                  "
+        if i == 'POWerTap_X':
+            musicode_info_dict[i] = \
+        "POWerTap_X, the third musicode, is a pitch-oriented musicode based on the POW code used by prisoners of war.          " \
+                                    "\nIn a 5X5 grid, a pair of frequency-flexible RHYTHMS are assigned to A-Z characters based on row first and column second. \n" \
+                                    "(a=> . . , b=> . .. f=> .. ., z=> ..... .....)                                                                                            "
+        if i == 'POWerTap_Y':
+            musicode_info_dict[i] = \
+        "POWerTap_Y is rhythm-oriented musicode based on the POW code used by prisoners of war.                    " \
+                                    "\n In a 5X5 grid, a pair of rhythm-flexible CHORDS are assigned to A-Z characters based on row first and column second. \n" \
+                                    "(a=> . . , b=> . :, f=> : ., g=> : :, etc.)                                                                                         "
+        if i == 'Script-Ease':
+            musicode_info_dict[i] = \
+        "Script-ease is the cursive musicode.                                                      " \
+                                    "\n Characters are constructed with musical notes spanning 1-2 octaves in a diatonic scale."
+        if i == 'Splyce':
+            musicode_info_dict[i] = \
+        "Splyce is ALL the musicodes juxtaposed together with a strong attempt to make the 'root' of each musicode a 'C'."
+
+    print("MUSICODES", musicode_info_dict)
+
+    def update_musicode(self):
+
+        if self.musicode_Choice.text == '  Select \n\nA Musicode':
+            pass
+        else:
+            MIDAS_Settings.musicode_name = self.musicode_Choice.text
+            print(MIDAS_Settings.musicode_name)
+
+        self.parent.ids.help_Area.ids.helptext_Label.text = self.musicode_info_dict[MIDAS_Settings.musicode_name]
+
+
 
     def translate_txt(self):
         # error check the txt_Input and the selected musicode
@@ -150,8 +224,8 @@ class MusicodeArea(BoxLayout):
             self.parent.ids.musicodedraw_Area.ids.musicode_View.reload()
 
             print(self.txt_Input.text)
-
-
+            print("Musicode translation completed.")
+            self.parent.ids.help_Area.ids.helptext_Label.text = "Musicode translation completed."
 
 
 class MidiArtButtons(BoxLayout):
@@ -180,28 +254,31 @@ class MidiArtButtons(BoxLayout):
     def updateHeightLabel(self,instance):
         self.note_Height = str(MIDAS_Settings.noteHeight)
         print("Note height changed to: ", str(MIDAS_Settings.noteHeight))
-
+        self.parent.ids.help_Area.ids.helptext_Label.text = '''Image height (in pixels) set to  %s.''' % MIDAS_Settings.noteHeight
 
     def updateGranularity(self):
         MIDAS_Settings.granularity = self.granularity_Choice.text
 
         print("Granularity changed to: ", str(MIDAS_Settings.granularity))
+        self.parent.ids.help_Area.ids.helptext_Label.text = '''Note durations set to  %s(s).''' % MIDAS_Settings.granularity
 
 
     def updateConnectNotes(self):
         if (self.ids.tb_Y.state == "down"):
             MIDAS_Settings.connectNotes = True
             print("ConnectNotes changed to: True")
+            self.parent.ids.help_Area.ids.helptext_Label.text = '''Contiguous notes of same color will be connected on output.                        \n(Note: this is faster; moreover, in FL studio there is a "chop" function to individualize notes.'''
+
         elif(self.ids.tb_N.state == "down"):
             MIDAS_Settings.connectNotes = False
             print("ConnectNotes changed to: False")
-
+            self.parent.ids.help_Area.ids.helptext_Label.text = '''Notes will match the pixels of the image note-to-pixel. (Note: this is a bit slower, but has finer detail.)'''
 
     def updateKey(self):
         MIDAS_Settings.key = self.ids.txt_Key.text
         #"A A#m Ab Abm Am B Bb Bbm Bm C C# C#m Cb Cm D D#m Db Dm E Eb Ebm Em F F# F#m Fm G G#m Gb Gm"
         print("Key updated to:", MIDAS_Settings.key)
-
+        self.parent.ids.help_Area.ids.helptext_Label.text = "Your Key is set to:   %s." %MIDAS_Settings.key
 
     def updateColor(self):
         MIDAS_Settings.color = self.ids.colors_Choice.text
@@ -210,7 +287,7 @@ class MidiArtButtons(BoxLayout):
         else:
             MIDAS_Settings.current_color_palette = MIDAS_Settings.clr_dict_list[MIDAS_Settings.color]
         print("Color updated to:", MIDAS_Settings.color)
-
+        self.parent.ids.help_Area.ids.helptext_Label.text = "Your Color Palette is set to:   %s." %MIDAS_Settings.color
 
     def show_load(self):
         content = LoadDialog(load=self.load, cancel=self.cancel)
@@ -244,12 +321,12 @@ class MidiArtButtons(BoxLayout):
             pass
         self.dismiss_popup()
         print("Loaded: -->", MIDAS_Settings.image)
-
+        self.parent.ids.help_Area.ids.helptext_Label.text = "Loaded image --> %s." %MIDAS_Settings.image
 
     def cancel(self):
         try:
             self.load_or_cancel = False
-
+            MIDAS_Settings.image = MIDAS_Settings.last_image
             #MIDAS_Settings.image = os.path.join(path, filename[0])
         #/musicode/Kivy/MIDAS_kivy.py", line 138, in load
         #MIDAS_Settings.image = os.path.join(path, filename[0])
@@ -276,6 +353,15 @@ class MidiArtButtons(BoxLayout):
         #self.parent.midi_draw_area.ids["image_View"].source = MIDAS_Settings.image
         #MidiDrawArea()
         if self.load_or_cancel is True:
+
+            #This block prevents 'page 5' of the MIDAS mainbutton cycle from disallowing the translation of images.
+            #It would normally do so because the proper "image_View" is removed when 'page 5' is loaded.
+            print("COFFEE_MARKER", self.parent.coffee_marker)
+            if self.parent.coffee_marker is True:
+                self.parent.restore_imageView()
+            else:
+                pass
+
             self.parent.ids.imagedraw_Area.change_image(MIDAS_Settings.image)
         elif self.load_or_cancel is False:
             if self.load_count == 0:
@@ -367,6 +453,7 @@ class MidiArtButtons(BoxLayout):
 
                 #name = str(len(m_v.actors)) + "_" + "Edges" + "_" + dialog.img_name
                 print("Edges load completed.")
+                self.parent.ids.help_Area.ids.helptext_Label.text = "Edges load completed."
 
             if self.ids.midiart_Choice.text == "Color":
                 print("Transforming Color!")
@@ -397,6 +484,7 @@ class MidiArtButtons(BoxLayout):
                 print("ColorsStream:", self.stream)
                 self.stream.show('txt')
                 print("Colors load completed.")
+                self.parent.ids.help_Area.ids.helptext_Label.text = "Colors load completed."
 
             if self.ids.midiart_Choice.text == "Monochrome":
                 print("Transforming Monochrome!")
@@ -424,8 +512,9 @@ class MidiArtButtons(BoxLayout):
                 print("MonochromeStream:", self.stream)
                 self.stream.show('txt')
                 print("Monochrome load completed.")
+                self.parent.ids.help_Area.ids.helptext_Label.text = "Monochrome load completed."
 
-            # Strings
+                # Strings
             file_path_img = MIDAS_Settings.filepath + os.sep + self.name + ".png"  # str
             file_path_img_with_piano = MIDAS_Settings.filepath + os.sep + self.name + "_with_piano.png"
             # musicode_default_img = MIDAS_Settings.musicode_default
@@ -471,10 +560,98 @@ class MidiArtButtons(BoxLayout):
         #KIVY BUG - this clears out an event in my workflow be forcing a change to a str while keeping it the same str.
         #This also forced having to put this entire function in a bool code block so that it doesn't execute multiple
         #times. This entire function will be called when self.ids.midiart_Choice.text is changed. Changing it to itself
-        #doesn't actually change it, so I used upper. In code block, if str.isupper(), don't execute. ***Here.
+        #doesn't actually change trigger, so I used upper. In code block, if str.isupper(), don't execute. ***Here.
         self.ids.midiart_Choice.text = self.ids.midiart_Choice.text.upper()
 
         #self.ids.midiart_Choice.text = self.ids.midiart_Choice.text.lower().capitalize()
+
+
+class HelpArea(BoxLayout):
+        txt_Input = ObjectProperty(None)
+
+        def __init__(self, **kwargs):
+            super(HelpArea, self).__init__(**kwargs)
+
+
+        def open_output_folder(self):
+            content = OutputDialog(load=None, cancel=self.dismiss)
+            self._popup = Popup(title="Output Folder -- intermediary_path", content=content,
+                                size_hint=(0.9, 0.9))
+            self._popup.open()
+            self.ids.helptext_Label.text = "<The output folder is %s>" %os.path.abspath(MIDAS_Settings.filepath)
+
+        def load(self):
+            pass
+
+        def dismiss(self):
+            self._popup.dismiss()
+
+
+        #     self.manager_open = False
+        #     self.manager = None
+        #
+        #
+        # def update_padding(self, text_input, *args):
+        #     text_width = text_input._get_text_width(
+        #         text_input.text,
+        #         text_input.tab_width,
+        #         text_input._label_cached
+        #     )
+        #     text_input.padding_x = (text_input.width - text_width) / 2
+        #
+        #
+        #
+        # def build(self):
+        #     return Factory.ExampleFileManager()
+        #
+        #
+        # def file_manager_open(self):
+        #     if not self.manager:
+        #         self.manager = ModalView(size_hint=(1, 1), auto_dismiss=False)
+        #         self.file_manager = MDFileManager(
+        #             exit_manager=self.exit_manager, select_path=self.select_path)
+        #         self.manager.add_widget(self.file_manager)
+        #         self.file_manager.show('/')  # output manager to the screen
+        #     self.manager_open = True
+        #     self.manager.open()
+        #
+        #
+        # def select_path(self, path):
+        #     '''It will be called when you click on the file name
+        #     or the catalog selection button.
+        #
+        #     :type path: str;
+        #     :param path: path to the selected directory or file;
+        #     '''
+        #
+        #     self.exit_manager()
+        #     toast(path)
+        #
+        #
+        # def exit_manager(self, *args):
+        #     '''Called when the user reaches the root of the directory tree.'''
+        #
+        #     self.manager.dismiss()
+        #     self.manager_open = False
+        #
+        #
+        # def events(self, instance, keyboard, keycode, text, modifiers):
+        #     '''Called when buttons are pressed on the mobile device..'''
+        #
+        #     if keyboard in (1001, 27):
+        #         if self.manager_open:
+        #             self.file_manager.back()
+        #     return True
+
+
+# class Example(MDApp):
+#     title = "File Manage"
+#
+#     def __init__(self, **kwargs):
+#         super().__init__(**kwargs)
+#         Window.bind(on_keyboard=self.events)
+
+
 
 
 class MusicodeDrawArea(BoxLayout):
@@ -485,9 +662,10 @@ class MusicodeDrawArea(BoxLayout):
         #musicodedraw_Area
     def __init__(self,**kwargs):
         super(MusicodeDrawArea, self).__init__(**kwargs)
-        print("self.ids", self.ids)
-        print("ids_Type", type(self.ids))
+        #print("self.ids", self.ids)
+        #print("ids_Type", type(self.ids))
         #print("parent.Ids", self.pareids) #.box_Split.ids.drawarea_Splitter
+
 
     def change_image(self, image=MIDAS_Settings.welcome_default):
         print("Changing image.")
@@ -518,10 +696,13 @@ class ImageDrawArea(BoxLayout):
     image_source = ObjectProperty(splash)  #StringProperty?
     #musicode_source = ObjectProperty()
     #print("self.ids", ids)
+
+
     def __init__(self,**kwargs):
         super(ImageDrawArea, self).__init__(**kwargs)
-        print("self.ids", self.ids)
-        print("ids_Type", type(self.ids))
+        #print("self.ids", self.ids)
+        #print("ids_Type", type(self.ids))
+
 
     def change_image(self, image=MIDAS_Settings.default_image):
         print("Changing image.")
@@ -540,7 +721,6 @@ class ImageDrawArea(BoxLayout):
         print("self.ids.image_View.source2", self.ids.image_View.source)
         print("Rock On!")
         self.parent.refresh_counter = 0
-
 
 
     def join_with_piano(self, image, piano=MIDAS_Settings.phatpiano):
@@ -572,10 +752,19 @@ class MainUI(GridLayout):
         super(MainUI, self).__init__(**kwargs)
         self.images_list = list()
         self.refresh_counter = 0
+        self.coffee_marker = False
+        self.imageView_marker = False
+        #print("ROOT", self.ids)
+
+
 
 
     def refresh(self):
         if self.refresh_counter == 0:
+            if self.coffee_marker is False:
+                pass
+            else:
+                self.restore_imageView()
             self.welcome_screen()
             #self.ids.imagedraw_Area.ids.image_View.keep_ratio = True
             self.refresh_counter += 1
@@ -585,8 +774,15 @@ class MainUI(GridLayout):
         elif self.refresh_counter == 2:
             self.midiart_help_screen()
             self.refresh_counter += 1
-        else:
+
+        elif self.refresh_counter == 3:
+            #self.midiart_help_screen()
             self.credits_screen()
+            self.refresh_counter += 1
+
+        else:
+            self.coffee_screen()
+            #self.credits_screen()
             #self.refresh_counter += 1
 
 
@@ -632,6 +828,34 @@ class MainUI(GridLayout):
             if i is False:
                 return i
 
+    def replace_imageView_with_coffeeButton(self):
+        def open_kofi_link(event):
+            webbrowser.open(r"https://ko-fi.com/themagichammer")
+
+        self.coffee_button = Button(text="  ♫Sounds Good!♫\n\n\n\n\n\n\n\n\n Here's some Ko-Fi!", font_size=25)
+        self.coffee_button.font_name = MIDAS_Settings.font_name
+        self.coffee_button.background_normal = MIDAS_Settings.button_normal
+        self.coffee_button.background_down = MIDAS_Settings.button_down
+        self.coffee_button.bind(on_press=open_kofi_link)
+
+        # Creates the id for the button IN the imagedraw_Area dictionary of ids.
+        self.ids.imagedraw_Area.ids['coffee_Button'] = self.coffee_button
+        self.image_View = self.ids.imagedraw_Area.ids.image_View
+        self.ids.imagedraw_Area.remove_widget(self.ids.imagedraw_Area.ids.image_View)
+        self.imageView_marker = False
+        self.ids.imagedraw_Area.add_widget(self.coffee_button)
+
+
+        self.coffee_marker = True
+
+    def restore_imageView(self):
+        self.ids.imagedraw_Area.remove_widget(self.ids.imagedraw_Area.ids.coffee_Button)
+        #self.ids.imagedraw_Area.add_widget(self.ids.imagedraw_Area.ids.image_View)
+        if self.imageView_marker is True:
+            pass
+        else:
+            self.ids.imagedraw_Area.add_widget(self.image_View)
+        self.imageView_marker = True
 
     def welcome_screen(self):
         print("Welcome Screen")
@@ -645,6 +869,10 @@ class MainUI(GridLayout):
 
         self.ids.imagedraw_Area.change_image()
         self.ids.imagedraw_Area.ids.image_View.reload()
+
+        self.ids.help_Area.ids.helptext_Label.text = "Turn text and images into MIDI files!                                                                                      \n" \
+                                                     "Navigate to the export folder. ---------------------->>>                                                                          \n" \
+                                                     "Drag and drop your created midi file into any Digital Audio Workstation, and HAVE A BLAST producing Visual Music!"
 
         #self.ids.imagedraw_Area.ids.image_View.keep_ratio = False
 
@@ -666,6 +894,8 @@ class MainUI(GridLayout):
         self.ids.imagedraw_Area.ids.image_View.keep_ratio = False
         self.ids.imagedraw_Area.change_image(MIDAS_Settings.musicodes_visual)
         self.ids.imagedraw_Area.ids.image_View.reload()
+        Latin_Script = '''AaBbCcDdEeFfGgHhIiJjKkLlMmNnOoPpQqRrSsTtUuVvWwXxYyZz     ?,;\':-.!\"()[]/     0123456789                 '''
+        self.ids.help_Area.ids.helptext_Label.text = '''Translate text of any of the following characters into music as different "musicodes" such as braille or morse code!   \n %s''' % Latin_Script
 
 
     def midiart_help_screen(self):
@@ -680,6 +910,8 @@ class MainUI(GridLayout):
         self.ids.imagedraw_Area.change_image(MIDAS_Settings.midiart_visual)
         self.ids.imagedraw_Area.ids.image_View.reload()
 
+        self.ids.help_Area.ids.helptext_Label.text = '''Transform images into music via edges, black and white, or color methods!'''
+
 
     def credits_screen(self):
         print("Credits Screen")
@@ -692,23 +924,48 @@ class MainUI(GridLayout):
 
         self.ids.imagedraw_Area.change_image(MIDAS_Settings.credits_visual)
         self.ids.imagedraw_Area.ids.image_View.reload()
-        self.refresh_counter = 0
+        #self.refresh_counter = 0
         #self.ids.imagedraw_Area.ids.image_View.keep_ratio = True
+
+        self.ids.help_Area.ids.helptext_Label.text = '''A special thank you to my older brother for teaching me python and for the original layout.'''
+
+
+    def coffee_screen(self):
+        print("Ko-fi Screen")
+        if self.assert_for_inputs() is False:
+            self.reset_inputs()
+            print("Inputs Reset")
+
+        self.ids.musicodedraw_Area.change_image(MIDAS_Settings.support_banner)
+        self.ids.musicodedraw_Area.ids.musicode_View.reload()
+        #print("CHILDREN", self.children)
+
+        self.replace_imageView_with_coffeeButton()
+
+
+        self.refresh_counter = 0
+
+        self.ids.help_Area.ids.helptext_Label.text = '''A coffee for 5 makes me feel alive! Your support is most appreciated. Thank you.'''
+
+
+
+
+
 
 
 class MIDASApp(App):
     def __init__(self,**kwargs):
         super(MIDASApp, self).__init__(**kwargs)
-        self.title = "MIDAS Mobile"
-
-
     def build(self):
+        self.title = "MIDAS Mobile"
+        self.icon = r".\resources\MidasHand.png"
         return MainUI()
 
 
 
 Factory.register('LoadDialog', cls=LoadDialog)
 Factory.register('SaveDialog', cls=SaveDialog)
+Factory.register('SaveDialog', cls=OutputDialog)
 
 
 if __name__ == '__main__':

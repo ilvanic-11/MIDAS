@@ -175,8 +175,6 @@ class MainWindow(wx.Frame):
         self.mainpanel.SetSizerAndFit(sizer)
 
         #Icon
-        ass = r".\resources"
-        print("RESOURCES", ass)
         self.icon = wx.Icon()
         self.icon.LoadFile(r".\resources\TrebleClefIcon.bmp", type=wx.BITMAP_TYPE_ANY)     #, desiredHeight=10, desiredWidth=10)
         #self.icon.SetHeight(25)
@@ -809,7 +807,7 @@ class MainWindow(wx.Frame):
         # Set focus on mbp for fast use of "F" hotkeys.
         self.mainbuttonspanel.SetFocus()
         self.pianorollpanel.actorsctrlpanel.actorsListBox.Activate_Actor(
-            self.cur_ActorIndex)  # TODO Watch for cpqn bugs here. 04/17/2021
+            self.mayavi_view.cur_ActorIndex)  # TODO Watch for cpqn bugs here. 04/17/2021
 
 
     def _delete_mayavi_views(self):

@@ -314,7 +314,7 @@ class CustomMenuBar(wx.MenuBar):
             if "Clrs%s" % str(self.m_v.colors_call) == self.m_v.actors[i].colors_instance:
                 #Make _stream from _points,
                 self.m_v.actors[i]._stream = midiart3D.extract_xyz_coordinates_to_stream(self.m_v.actors[i]._points,
-                                                                                         part=True, durations=True)
+                                                                                         part=True, durations=True) #True? #Todo Work through again. 05/03/2022
                 # name it's part correctly,
                 self.m_v.actors[i]._stream.partsName = self.m_v.actors[i].part_num
                 # set it's music21 sort priority,
