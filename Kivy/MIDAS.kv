@@ -5,13 +5,12 @@
 
 
 <AlignedTextInput@TextInput>
-    font_name: "terminat"
+    font_name: S.font_name
 
 
 <MidasButton@Button>
-    font_name: "terminat"
+    font_name: S.font_name
     font_size: 16
-
 
 
 <HeightPopup@Popup>:
@@ -33,23 +32,24 @@
         Button:
             id: slider_Done
             text: 'Done'
-            on_press: root.HeightPopupDone()
+            on_press: root.height_popup_done()
 
 
 
 <MainUI>:
-
+    id: main_UI
     size_hint: 1,1
-    rows: 2
+    rows: 3
     columns: 2
 
     MidasButton:
         id: midas_Button
         size_hint: 0.2,0.1
         text: "MIDAS"
+        font_size: 16
         background_normal: ''
         background_down: S.button_down
-        background_color: 0.25607843137254902, 0.7031372549019608, 0.867843137254902, 1
+        background_color: 0, 0.7725490196078431, 1, 1
         on_press: root.refresh()
 
     MusicodeArea:
@@ -63,15 +63,13 @@
     BoxLayout:
         id: box_Split
         orientation: 'vertical'
-
-
         Splitter:
             id: drawarea_Splitter
             sizable_from: 'bottom'
             #add_widget: image_View
             #add_widget(layout_or_widget_instance)
-            min_size: 75
-            max_size: 765
+            min_size: 60
+            max_size: 775
             strip_size: '5pt'
             size_hint: 1, 0.23
 
@@ -87,7 +85,18 @@
             size: 8,8
             #size_hint: 0.65, 0.65
 
-
+            #Button:
+            #    id: midas_Coffee
+            #    text: 'Sounds Good!'
+            #    on_press: print("ouch! More gently please")
+            #    on_release: print("ahhh")
+            #    on_state:
+            #        print("my current state is {}".format(self.state))
+        HelpArea:
+            id: help_Area
+            #orientation: 'horizontal'
+            size_hint: 1., 0.22
+            background_color: 0.25607843137254902, 0.7031372549019608, 0.867843137254902, 1
 
 <MusicodeArea>
     txt_Input: txt_Input
@@ -100,19 +109,23 @@
     TextInput:
         id: txt_Input
         text: ""
+        font_size: 11
     Spinner:
         id: musicode_Choice
         text: '  Select \n\nA Musicode'
-        font_name: "terminat"
-        #font_size: 17
+        font_name: S.font_name
+        font_size: 14
         values: [m for m in root.musicodes_sh]
+        on_text: root.update_musicode()
     MidasButton:
         id: translate_Btn
+        size_hint: 0.7623952095808383, 1
         text: 'Translate'
+        font_size: 16
         on_press: root.translate_txt()
         background_normal: ''
         background_down: S.button_down
-        background_color: 0.25607843137254902, 0.7031372549019608, 0.867843137254902, 1
+        background_color: 0, 0.7725490196078431, 1, 1
 
 
 <MidiArtButtons>
@@ -133,6 +146,7 @@
             id: note_Height
             size_hint: 0.3, 1
             text: str(root.note_Height)
+
     BoxLayout:
         orientation: 'horizontal'
         padding_vertical: 0.05, 0.05
@@ -192,7 +206,7 @@
         text: 'Select Color'
         #font_size: 13
         sync_height: True
-        #font_name: "terminat"
+        #font_name: S.font_name
         values: [clrs for clrs in S.clr_dict_list]
         on_text: root.updateColor()
         #background_normal: ''
@@ -202,17 +216,20 @@
     MidasButton:
         id: load_Image
         text: "Load Image"
+        font_size: 14
         on_release: root.show_load()
+
     Spinner:
         id: midiart_Choice
         text: 'Midiart'
-        font_name: "terminat"
+        font_name: S.font_name
+        font_size: 16
         values: ["Edges", "Color", "Monochrome"]
         #on_release:
         on_text: root.transform_image(S.image)
         background_normal: ''
         background_down: S.button_down
-        background_color: 0.19607843137254902, 0.6431372549019608, 0.807843137254902, 1
+        background_color: 0, 0.7725490196078431, 1, 1
 
 
 <MusicodeDrawArea>
@@ -228,9 +245,11 @@
 
 
 <ImageDrawArea>
+    imageview: image_View.__self__   #Has to do with weak reference stuff. Since this widget is 'removed' by user use,
+                                     #and we want to reinstantiate it, we need this call here to preserve 'image_View'**
     AsyncImage:
         #source: '<random_name>.jpg'
-        id: image_View
+        id: image_View               #** found here.
         #size: root.width, root.height
         size_hint: 1,1
         #nocache: True
@@ -238,6 +257,28 @@
         allow_stretch: True
         keep_ratio: True #False
 
+<HelpArea>
+    Label:
+        id: helptext_Label
+        #size_hint: 1, 1
+        text: 'To begin, cycle the MIDAS button 5 times.'
+        font_size: 10
+        halign: 'right'
+        color: 0.19607843137254902, 0.6431372549019608, 0.807843137254902, 1
+    Button:
+        id: output_Button
+        size_hint: 0.2534, 1
+        text: "Output Folder"
+        halign: 'right'
+        background_color: 0, 0.7725490196078431, 1, 1
+        background_normal: '' ##S.button_default
+        background_down: S.button_down
+        on_press: root.open_output_folder()
+
+    #TextInput:
+    #    id: txt_Input
+    #    text: ""
+    #    font_size: 10
 
 
 
@@ -260,8 +301,7 @@
             Button:
                 text: "Load"
                 on_release: root.load(filechooser.path, filechooser.selection)
-              
-                
+
 
 <SaveDialog>:
     text_input: text_input
@@ -289,3 +329,38 @@
             Button:
                 text: "Save"
                 on_release: root.save(filechooser.path, text_input.text)
+
+
+<OutputDialog>:
+    BoxLayout:
+        size: root.size
+        pos: root.pos
+        orientation: "vertical"
+        FileChooserIconView:
+            id: filechooser_View
+            path: S.filepath
+
+        BoxLayout:
+            size_hint_y: None
+            height: 30
+
+
+#<ExampleFileManager@BoxLayout>
+#   orientation: 'vertical'
+#   spacing: dp(5)
+
+#   MDToolbar:
+#       id: toolbar
+#       title: app.title
+#       left_action_items: [['menu', lambda x: None]]
+#       elevation: 10
+#       md_bg_color: app.theme_cls.primary_color
+
+
+#   FloatLayout:
+
+#       MDRoundFlatIconButton:
+#           text: "Open manager"
+#           icon: "folder"
+#           pos_hint: {'center_x': .5, 'center_y': .6}
+#           on_release: app.file_manager_open()

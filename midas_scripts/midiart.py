@@ -380,7 +380,7 @@ def set_parts_to_midi_channels(in_stream, output_file):  # TODO Should be a musi
     # sparky.tracks
     # for i in range(1, len(sparky.tracks)):
     for j in clrs_list:
-        if len(sparky.tracks) < 17:
+        if len(sparky.tracks) < 18:   #Todo Better way to write this.
             sparky.tracks[j - 1].setChannel(j)
         elif len(sparky.tracks) > 16:
             print("Check your .mid file data. There may be an extra track at the beginning or another problem.")
