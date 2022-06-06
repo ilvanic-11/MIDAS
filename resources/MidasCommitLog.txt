@@ -675,30 +675,70 @@ In Kivy
 
 
 --IP Commit April 25th, 2022--
-PYCON commit to pull for laptop.
+****PYCON commit to pull for laptop.****
+TO BE AMMENDED!
+
 In PianoRoll
 --> In function StreamToGrid(), change n.offset to c.offset, fixing a bug.
-
 In Mayavi3DWindow
---> In function get_points_with_all_data(), 
-
+--> In function get_points_with_all_data(), ..................
 In MainButtons
---> In MusicodeDialog(), changed the style parameter of the self.inputTxt wx.TextCtrl to wx.TextCtrl(.... style=wx.TE_MULTILINE) so that we can have multiple lines translated in musicode translations!!
---> Added new function
---> Added new function
---> Added new function
---> Added new function
---> Added new function
+	In MusicodeDialog()
+	--> Changed the style parameter of the self.inputTxt wx.TextCtrl to wx.TextCtrl(.... style=wx.TE_MULTILINE) so that we can have multiple lines translated in musicode translations!!
+	--> Added new function OnLoadTextFile(self, event)
+	In MidiartDialogClosed()
+	--> Added new function transform_images(), a focused version of my tranformation functions written for MIDAS_Mobile.
+	--> Added new function join_with_piano(), used in transform_image()
+In MidiartDialog
 --> Implemented ability to select multiple images in with "Load Image" button in Midiart Main Button dialog.
+--> Implemented Left and Right arrows to cycle through multiple loaded images.
+
+
+--IP Commit June 6th, 2022--
+****Post PyCon ammendments included in this commit. ****
+
+General Commit Focus: 
+1. Developed help messaging\status bar for Midas mobile and changed some layout for more friendly user interface.
+2. Followed up PyCon with dedicated commit ammendments and review. 
+
+In PyCon Bugfixes
+In midas_scripts/midiart.py
+-->Fixed bug in the midi filewriting method. Changed an int 17 to an 18. Considering rewriting the logic of this output function.
+
+In MainButtons.py
+	-->Change Spacer sizer settings to correct display overlap in the dialog popup's layout and appearance (discovered on laptop that this was bug caused by different resolution settings. Settings should be 1920 X1080 at %100)
+		
+In Project
+--> New file Midas_Requirements.txt
+	In MidasCommitLog
+	-->Appended quick git adds at bottom of file.
+
+
+In Kivy
+--> Added HELP message to every button's functions and events. Aligned them centered at a set font in their Label widget.
+--> Added a button to demonstrate how to navigate to the Output Folder where all midifiles are written.
+--> Some colors adjustment for uniformity. All light blue should be consistent now.
+--> Some layout numbers tweaks for uniformity.
+	IN Midas_Settings:
+		-->Created variable pointer   font_name = r".\resources\terminat.ttf"   below filepath variable
+	IN MIDAS.kv:
+		-->Replaced all "terminat" with S.font_name
+	
+	IN Kivy/midas_scripts/midiart
+	--> Change that 17 to an 18 OR write the conditional statement better.
+	In MidasCommitLog
+	-->Appended Kivy quick git adds at bottom of file.
+##MIDAS_Mobile ready for packaging\deployment testing using DigitalOcean.com droplet of linux.
+
 
 
 ++++++++++++
 #############################################
 ##Git adds. Update as needed. (Git can adds a LOT at once, if separated without commas.) Highlight this line below, copy, and paste into git to git add all quickly.
-git add MIDAS_wx.py gui/ActorsControlPanel.py gui/MainButtons.py  gui/MenuButtons.py gui/PianoRoll.py gui/PianoRollPanel.py gui/Preferences.py gui/ZPlanesControlPanel.py mayavi3D/Mayavi3DWindow.py mayavi3D/Mayavi3idiArtAnimation.py midas_scripts/midiart3D.py midas_scripts/music21funcs.py midas_scripts/musicode.py midas_scripts/midiart.py resources/Midas-Mayavi_Pip_Batch_Install.bat resources/MidasCommitLog.txt resources/Midas_Startup_Configs.py resources/HotkeyAssignments.txt gui/Playback.py gui/Musical_Matrix_Rain.py mayavi3D/MusicObjects.py resources/MIDAS_splash.png resources/color_palettes/
+git add MIDAS_wx.py gui/ActorsControlPanel.py gui/MainButtons.py  gui/MenuButtons.py gui/PianoRoll.py gui/PianoRollPanel.py gui/Preferences.py gui/ZPlanesControlPanel.py mayavi3D/Mayavi3DWindow.py mayavi3D/Mayavi3idiArtAnimation.py midas_scripts/midiart3D.py midas_scripts/music21funcs.py midas_scripts/musicode.py midas_scripts/midiart.py resources/Midas-Mayavi_Pip_Batch_Install.bat resources/MidasCommitLog.txt resources/Midas_Startup_Configs.py resources/HotkeyAssignments.txt gui/Playback.py gui/Musical_Matrix_Rain.py mayavi3D/MusicObjects.py resources/MIDAS_splash.png resources/color_palettes/ resources/Midas_Requirements.txt resources/Midas_Install_Instructions.txt resources/empty_box.png resources/empty_box_compensation.png resources/unicode_rapid_tables/ resources/pickles/ resources/ThePhatPiano16.png
 ##
 ##
-git add Kivy/MIDAS.kv Kivy/MIDAS_Settings.py Kivy/MIDAS_kivy.py
+git add Kivy/MIDAS.kv Kivy/MIDAS_Settings.py Kivy/MIDAS_kivy.py Kivy/midas_scripts/midiart.py Kivy/midas_scripts/midiart.py Kivy/midas_scripts/midiart3D.py Kivy/midas_scripts/music21funcs.py Kivy/resources/button_pressed_default.png Kivy/resources/support_banner.png Kivy/resources/coffee_button_background.png Kivy/resources/MIDAS_Mobile_splash.png Kivy/resources/MidasHand.png Kivy/resources/credits_visual.png Kivy/resources/intermediary_path/musicode_write.mid Kivy/resources/intermediary_path/pixels_from_midi_with_piano.png
 ##
 
 #############################################
