@@ -61,6 +61,7 @@ import mayavi     #TODO Why hashing this out break Midas? Then, also, why is thi
 from mayavi import mlab
 from collections import OrderedDict
 import os
+import shutil
 
 
 ##Color Pallettes
@@ -298,7 +299,8 @@ def make_midi_from_grayscale_pixels(pixels, granularity, connect=False, note_pxl
 def set_to_nn_colors(im_array, clrs=None):
     """
         This function takes a 3D numpy color array(i.e an image), and reduces\\converts all of the color tuples of that
-    image to 16 different colors. This allows for display in FL studio with those 16 colors.
+    image to 16 possible different colors. For Visual Music purposes, this allows for display in FL studio with those
+    16 colors.
 
     :param im_array:    A 3D numpy image array.
     :param clrs:        A user defined dictionary of colors, allowing for greater possibility of colors for future
@@ -1183,6 +1185,69 @@ def get_color_palettes(mypath=None, ncp=False):
     else:
         pass
     return dict_list
+
+
+def get_color_pngs(mypath=None, as_path=True, enlarged=False):
+    """
+        This function creates a dictionary of either images read in by cv2.imread OR the fullpathtofile of those images
+    as VALUES and their respective name as KEYS.
+    :param mypath:          The path to the color palettes folder. If not None, must be user-specified.
+    :param as_path:         If as_path, The values of the dictionary keys will be paths instead of cv2.imread(paths)
+    :return:                A dictionary of color palette paths or images.
+    """
+    if mypath is None:
+        mypath = r".\resources\color_palettes\\"
+
+    files = [os.path.join(mypath, f) for f in os.listdir(mypath) if os.path.isfile(os.path.join(mypath, f))]
+    dict_list = {}
+    if os.path.exists(r".\resources\color_palettes\enlarged_color_palettes\\") is True:  # Catch for fileexists error. Remove and rewrite, since will be commonly called.
+        shutil.rmtree(r".\resources\color_palettes\enlarged_color_palettes\\", ignore_errors=True)  # Caution with this?
+    os.mkdir(r".\resources\color_palettes\enlarged_color_palettes\\")
+    for j in files:
+        name = os.path.splitext(os.path.basename(j))[0]
+        if enlarged is False:
+            if as_path is True:
+                output = j
+            else:
+                output = cv2.imread(j)
+        else:
+            l = cv2.imread(j)
+            pixel_46_list = []
+            for i, x in enumerate(l[0]):
+                pixel_46 = np.full((46,46, 3), x)
+                pixel_46_list.append(pixel_46)
+                # print("Tuple_X", tuple(x))
+                #dict[i + 1] = tuple([x[0], x[1], x[2]])
+            k = np.column_stack(pixel_46_list)
+            cv2.imwrite(r".\resources\color_palettes\enlarged_color_palettes\\" + name + ".png", k)
+            if as_path is True:
+                output = r".\resources\color_palettes\enlarged_color_palettes\\" + name + ".png"
+            else:
+                output = k
+        dict_list[name] = output
+    return dict_list
+
+
+
+def get_color_attributions(mypath=None):
+    """
+        This function returns a dict of color palette names as KEYS and the respective attributions text string as the
+    values.
+    :param mypath:      The path to the color palettes folder. If not None, must be user-specified.
+    :return:            A dictionary of names\\strings as keys\\values respectively.
+    """
+    if mypath is None:
+        mypath = r".\resources\color_palettes\\"
+
+    files = [os.path.join(mypath, f) for f in os.listdir(mypath) if os.path.isfile(os.path.join(mypath, f))]
+    file = open(r".\resources\ColorPaletteAttributions.txt", 'r', encoding="utf8")
+    lines = file.readlines()
+    file.close()
+    names = [os.path.splitext(os.path.basename(j))[0] for j in files]
+    attributions_dictionary = dict(zip(names, lines))
+    # for j in files:
+    #     name = os.path.splitext(os.path.basename(j))[0]
+    return attributions_dictionary
 
 
 # MA-19.

@@ -265,7 +265,7 @@ class ActorsControlPanel(wx.Panel):
             self.popupID9 = wx.NewIdRef()
 
             self.Bind(wx.EVT_MENU, self.OnPopup_Properties, id=self.popupID1)
-            self.Bind(wx.EVT_MENU, self.OnPopupTwo, id=self.popupID2)
+            self.Bind(wx.EVT_MENU, self.OnUpdateStream, id=self.popupID2)
             self.Bind(wx.EVT_MENU, self.OnPopupThree, id=self.popupID3)
             self.Bind(wx.EVT_MENU, self.OnPopupFour, id=self.popupID4)
             self.Bind(wx.EVT_MENU, self.OnPopupFive, id=self.popupID5)
@@ -282,7 +282,7 @@ class ActorsControlPanel(wx.Panel):
         # item.SetBitmap(bmp)
         menu.Append(item)
         # add some other items
-        menu.Append(self.popupID2, "Two")
+        menu.Append(self.popupID2, "Update Stream")
         menu.Append(self.popupID3, "Three")
         menu.Append(self.popupID4, "Four")
         menu.Append(self.popupID5, "Five")
@@ -299,12 +299,19 @@ class ActorsControlPanel(wx.Panel):
         menu.Destroy()
 
 
+    # def OnUpdateStream(self, evt):
+    #     pass
+
+
     def OnPopup_Properties(self, event):
         pass
 
 
-    def OnPopupTwo(self, event):
-        pass
+    def OnUpdateStream(self, event):
+        alb = self.GetTopLevelParent().pianorollpanel.actorsctrlpanel.actorsListBox
+        for i in range(0, alb.GetItemCount()):
+            if alb.IsSelected(i):
+                self.GetTopLevelParent().pianorollpanel.pianoroll.UpdateStream(update_actor=True, actor_num=i, z_plane=None)
 
 
     def OnPopupThree(self, event):

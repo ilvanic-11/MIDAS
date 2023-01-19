@@ -37,6 +37,8 @@ class CustomMenuBar(wx.MenuBar):
         #mayavi_view reference
         self.m_v = self.parent.mayavi_view
 
+        self.coffee_closing_app = False
+
         #TODO Do this?
         #self.preferences = Preferences.PreferencesDialog()
 
@@ -45,17 +47,19 @@ class CustomMenuBar(wx.MenuBar):
         # File
         self.filemenu = wx.Menu()
         self.filemenu.Append(101, "&New Session\tCtrl+Shift+N", "This the text in the Statusbar")  # TODO Saved Midas States
+        #self.new_sessionTooltip = wx.ToolTip("This is a the button for a serialized session.")
+        self.filemenu.FindItemById(101).SetHelp("This is the button for a serialized session.")
         self.filemenu.Append(102, "&Open Session\tCtrl+O", "Open Slutsame")
         self.filemenu.Append(103, "&Save Session\tCtrl+S", "You may select Earth too")
         self.filemenu.Append(104, "&Save Session As\tCtrl+Shift+S")
-        self.filemenu.Append(105, "&Import...\tCtrl+I")
-        self.filemenu.Append(106, "&Import Directory\tCtrl+Shift+I")
+        #self.filemenu.Append(105, "&Import...\tCtrl+I")
+        #self.filemenu.Append(106, "&Import Directory\tCtrl+Shift+I")
         self.export = wx.Menu()
         self.export.Append(1500, "&Current Actor\tCtrl+1")  #TODO BUG!!!!! Mixes up with the other accelerator table. Fix?
         self.export.Append(1501, "&All Actors\tCtrl+2")
         self.export.Append(1502, "&Current Actor's Current Zplane\tCtrl+3")
         #TODO self..export.Append(1502, "&Current Actor's Current Zplane IN TRACK MODE\tCtrl+3")  #TODO If there is a switch for track mode, set this to export accordingly from there.
-        self.export.Append(1503, "&All Actors' Zplanes\tCtrl+4")
+        self.export.Append(1503, "&All Current Actor's Zplanes\tCtrl+4")  #Todo Double check functionality.
         self.export.Append(1504, "&Selection\tCtrl+5")
         self.colors = wx.Menu()
         self.export.Append(1505, "&Colors", self.colors)
@@ -182,8 +186,27 @@ class CustomMenuBar(wx.MenuBar):
         self.helpmenu.Append(508, "Google Search")
         self.helpmenu.Append(509, "Check for Updates...")
         self.helpmenu.Append(510, "Credits.")
+        self.helpmenu.Append(511, "Buy this guy a coffee.")
         self.Append(self.helpmenu, "&Help")
 
+
+        ####THIS overwrites the normal statusbar text help updating!!!!
+        self.Bind(wx.EVT_MENU_HIGHLIGHT_ALL, self.OnMenuHighlight)
+
+    def OnMenuHighlight(self, event):
+        # Show how to get menu item info from this event handler
+        id = event.GetMenuId()
+        item = self.GetTopLevelParent().menuBar.FindItemById(id)
+        if item:
+            # text = item.GetText()
+            help = item.GetHelp()
+
+        # but in this case just call Skip so the default is done
+            self.GetTopLevelParent().statusbar.status_text.SetLabel(help)
+        else:
+            self.GetTopLevelParent().statusbar.status_text.SetLabel("The Midas Status Bar.")
+
+        #event.Skip()
 
 
     # #File Buttons Defined
@@ -203,12 +226,12 @@ class CustomMenuBar(wx.MenuBar):
         pass
 
 
-    def OnImport(self, event):
-        pass
+    # def OnImport(self, event):
+    #     pass
 
 
-    def OnImportDirectory(self, event):
-        pass
+    # def OnImportDirectory(self, event):
+    #     pass
 
 
     #Now Submenu
@@ -555,6 +578,7 @@ class CustomMenuBar(wx.MenuBar):
 
 
     def OnExit(self, event):
+        wx.CallAfter(self.GetTopLevelParent().Close)
         pass
 
         # #Edit Buttons Defined
@@ -875,6 +899,10 @@ class CustomMenuBar(wx.MenuBar):
     def OnCredits(self, event):
         pass
 
+
+    def OnCoffee(self, event):
+        self.GetTopLevelParent().OpenCoffeeWindow()
+        self.coffee_closing_app = False
 
     # Documentation Submenu
     def OnPython(self, event):

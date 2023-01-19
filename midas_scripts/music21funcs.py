@@ -309,6 +309,25 @@ def stretch_by_measure( in_stream, range_l, range_h, ratio, stretchDurations=Tru
     return in_stream
 
 
+def restretch_by_factor(in_stream, factor, in_place=True):
+    """
+        This function restretches (it can also compress) the musical(midi) data in a stream by refactoring all the
+    notes' offsets and durations by a user specified amount.
+    :param in_stream:           Operand stream.
+    :param factor:              Multiplication refactoring value.
+    :param in_place:            Bool determing whether to return in_stream or a deep copy.
+    :return:
+    """
+    # starting_point * (target_highestTime / current_highestTime)
+    s = in_stream if in_place else copy.deepcopy(in_stream)
+
+    for i in list(s.recurse()):
+        i.duration.quarterLength = i.duration.quarterLength * factor
+        i.offset = i.offset * factor
+
+    return s
+
+
 #M-4.
 def arpeggiate_chords_in_stream( in_stream, stepsize=1, ascending=True):
     """
@@ -643,16 +662,16 @@ def fibonacci_range_mm(l, h):
 # ----------------------------------------------------------------------------------------------------------------------
 
 #M21-1.
-#TODO Needs fixing.
+#TODO Needs WAY fixing.
 def delete_redundant_notes( in_stream, greatest_dur=False):
     """
         This function takes all the notes of a music21 stream and deletes redundant notes of the same pitch at the
-    same offset while allowing the user to chose which duplicate note to keep based on duration.quarterLength. The
+    same offset while allowing the user to choose which duplicate note to keep based on duration.quarterLength. The
     method here uses in_stream.getElementsByOffset, python's min() and max() functions, the "set" feature of an ordered
     dict, and some nested setting and getting that loops over music21 streams.
 
     :param in_stream:       Stream with notes.
-    :param greatest_dur:    Boolean determing whether to choose the duplicate note(s) with longest duration or the
+    :param greatest_dur:    Boolean determining whether to choose the duplicate note(s) with longest duration or the
                             shortest.
     :return: new_stream.    Returns a new music21 stream with just notes.
     """
@@ -912,7 +931,7 @@ def change_midi_channels_to_one_channel(midi_file, channel=1):
 def split_midi_channels(midi_file, directory, name, to_file=False):
     """
         This function uses music21 and takes a midi file on input and separates* all the "channels" of the midi file
-    into either parts in a stream, or a directory of written mid files, one midi file for each said "channel." The
+    into either parts in a stream, or a directory of written .mid files, one midi file for each said "channel." The
     files\\parts are also conveniently named by the channel.
 
     *Note-- When loading a midi_file created from midiart.make_midi_from_pixels, a midi image, this can be a slow process.

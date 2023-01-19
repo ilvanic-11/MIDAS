@@ -38,12 +38,12 @@ class MidiartTestCases(TestMIDAS):
         s.insert(music21.chord.Chord(["A5","B5","B#5","C5","C#5","D5","D#5"]))
 
         expected_str = self.get_file_text(r"test\teststrings\output_filter_notes_by_key_01.txt")
-        filtered = midiart.filter_notes_by_key(s,"C", in_place=False)
+        filtered = midiart.filter_notes(s, "C", in_place=False)
         actual_str = self.stream_string(filtered)
         self.assertEqual(actual_str, expected_str)
 
         #test it in_place
-        midiart.filter_notes_by_key(s,"C", in_place=True)
+        midiart.filter_notes(s, "C", in_place=True)
         inplace_str = self.stream_string(s)
         self.assertEqual(actual_str, inplace_str)
 
