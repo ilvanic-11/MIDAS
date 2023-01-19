@@ -1155,7 +1155,7 @@ class PianoRollPanel(wx.Panel):
     ###------------------------------------------------------------------
     def OnMouseLeftUp(self, evt):
         """
-        On mouse left up, in draw mode, flags the change of array3d.  #Todo Do as trait events.
+        On mouse left up, in draw mode, flags the change of array4d.  #Todo Do as trait events.
         In selectmode, ...
         :param evt:
         :return:

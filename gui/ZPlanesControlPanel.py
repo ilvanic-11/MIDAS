@@ -103,7 +103,7 @@ class ZPlanesControlPanel(wx.Panel):
 
 			self.Bind(wx.EVT_MENU, self.OnPopup_Properties, id=self.popupID1)
 			self.Bind(wx.EVT_MENU, self.OnPlayback_Zplane, id=self.popupID2)
-			self.Bind(wx.EVT_MENU, self.OnPopupThree, id=self.popupID3)
+			self.Bind(wx.EVT_MENU, self.OnUpdateStream, id=self.popupID3)
 			self.Bind(wx.EVT_MENU, self.OnPopupFour, id=self.popupID4)
 			self.Bind(wx.EVT_MENU, self.OnPopupFive, id=self.popupID5)
 			self.Bind(wx.EVT_MENU, self.OnClearSelection, id=self.popupID6)
@@ -120,7 +120,7 @@ class ZPlanesControlPanel(wx.Panel):
 		menu.Append(item)
 		# add some other items
 		menu.Append(self.popupID2, "Playback Zplane")
-		menu.Append(self.popupID3, "Three")
+		menu.Append(self.popupID3, "Update Stream")
 		menu.Append(self.popupID4, "Four")
 		menu.Append(self.popupID5, "Five")
 		menu.Append(self.popupID6, "Clear Selection")
@@ -239,9 +239,11 @@ class ZPlanesControlPanel(wx.Panel):
 
 			pass
 
-
-	def OnPopupThree(self, event):
-		pass
+	def OnUpdateStream(self, event):
+		zlb = self.GetTopLevelParent().pianorollpanel.zplanesctrlpanel.ZPlanesListBox
+		for i in range(0, zlb.GetItemCount(0)):    #This '0' int here in GetItemCount(0) is strange......
+			if zlb.IsSelected(i):
+				self.GetTopLevelParent().pianorollpanel.pianoroll.UpdateStream(update_actor=True, z_plane=i)
 
 
 	def OnPopupFour(self, event):

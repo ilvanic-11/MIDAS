@@ -151,20 +151,24 @@ FLStudioMayaviColors = {
 # ----------------------------------------------------------------------------------------------------------------------
 
 
-def filter_notes_by_key(stream, key, in_place=True):
+def filter_notes(stream, key="", chord=None, offset_range=None, in_place=True):
+    #TODO Rename card.
     """
-        Removes notes from a stream if they are not pitches that are part of the given key.
+        Removes notes from a stream if they are not pitches that are part of the given key or chord form.
 
-    :param stream:      the input stream to operate on
-    :param key:         music21.key.Key object for the chosen key
-    :param in_place:    boolean for to either operate directly on the input stream or return a deepcopy
+    :param stream:      The operand stream.
+    :param key:         String indicating a music21.key.Key object for the chosen key.
+    :param chord:       String indicating a music21.chord.Chord() object for the chosen chord. (i.e "CEG", "BDF").
+    :param in_place:    A boolean for to either operate directly on the input stream or return a deepcopy.
     :return
     """
 
-    if in_place:
-        s = stream
-    else:
-        s = copy.deepcopy(stream)
+    s = stream if in_place is True else copy.deepcopy(stream)
+    # if in_place:
+    #     s = stream
+    # else:
+    #     s = copy.deepcopy(stream)
+
 
     print(f"Key is: {key}")
     if key == "":
@@ -173,32 +177,207 @@ def filter_notes_by_key(stream, key, in_place=True):
     else:
         keysig = music21.key.Key(key)
 
+
+
     # Create the list of allowed pitches.
     allowedPitches = list()
-    if key == None:
+    if key == None and chord is None:
         allowedPitches = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
+
+    # Because a chord is a finer selection then an entire key, this parameter overrides 'key'
+    # with that fineness and modifies the allowedPitches list accordingly.
+    elif chord:
+        allowedPitches = [i.pitchClass for i in chord.pitches]
+
     elif (type(keysig) is music21.key.Key):
         for p in music21.scale.Scale.extractPitchList(keysig.getScale()):
             allowedPitches.append(p.pitchClass)
     # print(f"AllowedPitches: {allowedPitches}")
 
     # remove notes that aren't in allowed pitches
+    if offset_range is None:
+        for n in list(s.recurse()):
+            if type(n) is music21.chord.Chord:
+                for p in n.pitches:
+                    if (p.pitchClass not in allowedPitches):
+                        print(f"removed_pitch:{p}")
+                        n.remove(p)
+            elif type(n) is music21.note.Note:
+                # print(f"n.pitch.pitchClass: {n.pitch.pitchClass}")
+                if (n.pitch.pitchClass not in allowedPitches):
+                    s.remove(n, recurse=True)
+                    print(f"removed_note:{n}")
+    else:
+        for n in list(s.recurse()):
+            if offset_range[0] <= n.offset < offset_range[1]:
+                if type(n) is music21.chord.Chord:
+                    for p in n.pitches:
+                        if (p.pitchClass not in allowedPitches):
+                            print(f"removed_pitch_within_range:{p}")
+                            n.remove(p)
+            elif type(n) is music21.note.Note:
+                if offset_range[0] <= n.offset < offset_range[1]:
+                    # print(f"n.pitch.pitchClass: {n.pitch.pitchClass}")
+                    if (n.pitch.pitchClass not in allowedPitches):
+                        s.remove(n, recurse=True)
+                        print(f"removed_note_within_range:{n}")
+
+        # s.show('txt')
+
+    print("HERE1")
+    #Some cleanup so that s.write works properly because of a 'divide by zero' error that happens if we don't.
+    s = delete_nonpitch_chords(s)
+    print("HERE2")
+
+    return s
+
+    # if in_place:
+    #     stream = s
+    # else:
+    #     return s
+
+def delete_nonpitch_chords(in_stream, in_place=True):
+    """
+        The purpose of this function is to remove the actual music21.chord.Chord() objects from the stream if\when
+    their "pitch" values are negated ass is the case in the use of filter_notes. This function then will allow for
+    said stream's stream.write() method to execute.
+    :param in_stream:       Operand stream.
+    :param in_place:        Bool determining whether to return in_stream or a deep copy.
+    :return:
+    """
+    s = in_stream if in_place else copy.deepcopy(in_stream)
+
+    for i in s.flat.notes:
+        if len(i.pitches) == 0:
+            s.remove(i, recurse=True)
+
+    return s
+
+#######
+def get_progressify_visual_music_tuple(vm_stream, progression_stream, progression=None):
+    """
+        The purpose of this function is the first step in making a piece of visual music midi have the
+    same musical progression as a user-specified selection of chords or the same progression as one taken directly from
+    a piece of music parsed via the music21 chordify() method. The output of of this function is a tuple containing all
+    the necessary data to do exactly that. Our output has chords, offsets, durations, our offset ranges, and finally
+    our chopping template; this template is a an instance of midi notes condensed to "C5" on the piano, that give us
+    our chop\slicing offsets.
+    "(ps_chords, ps_offsets, ps_durations, offset_ranges_list, progression_stream2)
+
+
+    --
+    :param vm_in_stream:            Our original visual music image that we wish to be filtered for more musicality.
+    :param progression_stream:      A user-selected instance of music21.converter.parsed() music.
+    :param progression:             A user-selected list of music21.chord.Chord() objects.
+    :return:                        pvm_tuple; A tuple of lists.
+    """
+
+    #1. Make lengths the same by stretching vm_stream to match progression_stream.
+    stretch_factor = progression_stream.highestTime / vm_stream.highestTime
+    music21funcs.restretch_by_factor(vm_stream, stretch_factor)  #In_place is True here.
+
+
+    #2. Chordify progression_stream.
+    #This gets us several things: groups of chords and their respective offsets and durations. These will be established
+    #as variables for later use, below for technical reasons.
+    #Todo Is makeMeasures necessary?
+    progression_stream.makeMeasures()
+    progression_stream2 = progression_stream.chordify()
+
+    # MASSIVE CHORDIFY BUG (According to stream.show('txt') that requires fixing by writing to file and THEN re-parsing
+    # back into a stream via converter.parse. I don't know if it's chordify() or write, but the midi output is correct,
+    # while stream.show('txt') is wrong. Once written and then reparsed, show('txt') AND the midi match.
+    progression_stream2.write("mid", r"C:\Users\Isaac's\Midas\Kivy\resources\intermediary_path\Chop_Template_Score.mid")
+    progression_stream2 = music21.converter.parse(
+        r"C:\Users\Isaac's\Midas\Kivy\resources\intermediary_path\Chop_Template_Score.mid")
+
+    #print("PS_CHORDS")
+    ps_chords = [j for j in progression_stream2.flat.notes]# Had notes only, previously, giving us WAY too many offsets.
+    ps_durations = [j.duration.quarterLength for j in progression_stream2.flat.notes]
+    ps_offsets = [i.offset for i in progression_stream2.flat.notes]  # list(progression_stream.recurse())?
+    ps_offsets_and_ht = [i.offset for i in progression_stream2.flat.notes]
+    ps_offsets_and_ht.append(progression_stream2.highestTime)
+
+    #We need an offsets range list because we need to be able to select all notes within ranges between one offset
+    #and the next. If we select based only on starting offset, instead of a range-end too, it is possible to miss
+    #desired notes for our core operation.
+    offset_ranges_list = [[ps_offsets_and_ht[i], ps_offsets_and_ht[i + 1]] for i in range(0, len(ps_offsets_and_ht) - 1)]
+
+    #3.5
+    #We consense our progression stream to notes at "C5" with progression_stream's new chordified offsets. This gives us
+    #our slicing stencil!
+    #If in place were TRUE here, it would retroactively change our ps_chords list.
+    condense_to_c5(progression_stream2, in_place=False)
+
+    #And then we write it.
+    progression_stream2.write("mid", r"C:\Users\Isaac's\Midas\Kivy\resources\intermediary_path\Chop_Template_Score.mid")
+
+    #3. Slice vm_stream for core filter operation.
+    # We USE the data from this function to get a TEMPLATE for slicing that happens in FL STUDIO using FL's CHOP tool.
+    #NOTE:
+    #sliceAtOffsets isn't accurate enough. So we will be doing a workaround.
+    # sliceAtOffsets gets us our operand data, the midi out of which we will be filtering notes we don't need,
+    # based on our progression from progression_stream.
+    #Once sliceAtOffsets becomes %100 accurate, FL Studio's chop tool won't be needed.
+
+    return (ps_chords, ps_offsets, ps_durations, offset_ranges_list, progression_stream2)
+
+def condense_to_c5(progression_stream, in_place=True):  #pvm_tuple=None,
+    s = progression_stream if in_place is True else copy.deepcopy(progression_stream)
+    #for n in progression_stream.flat.getElementsByClass(["Chord"]):
     for n in list(s.recurse()):
         if type(n) is music21.chord.Chord:
             for p in n.pitches:
-                if (p.pitchClass not in allowedPitches):
-                    print(f"removed_pitch:{p}")
-                    n.remove(p)
-        elif type(n) is music21.note.Note:
-            # print(f"n.pitch.pitchClass: {n.pitch.pitchClass}")
-            if (n.pitch.pitchClass not in allowedPitches):
-                s.remove(n, recurse=True)
-                print(f"removed_note:{n}")
-    # s.show('txt')
-    if in_place:
-        stream = s
+                n.remove(p)
+            n.add(music21.pitch.Pitch("C4"))
+        if type(n) is music21.note.Note:
+            p = music21.pitch.Pitch("C4")
+            n.pitch = p
+
+
+    return s
+
+
+## #4. Core
+def filter_ranges(vm_stream, pvm_tuple = None, progression = None):
+    """
+        Upon acquiring the correctly FL Studio-chopped vm_stream, we filter our 'ranges' of notes in order to create
+    our 'progression image,' essentially. In actuality, our workaround method creates our correct filtered progression
+    image, but we use it in conjunction with FL tools once again ("Select Overlapping Notes" and "Invert Selection") and
+    our ORIGINAL colored to do the final filter inside of FL Studio.
+
+    And thus we create an image of music with a progression that makes it sound good!
+
+    our note subraction.
+    :param vm_stream:
+    :param pvm_tuple:       A tuple of lists of specific music21 information involving, chords, offsets, and ranges.
+                            "(ps_chords, ps_offsets, ps_durations, offset_ranges_list, progression_stream2)"
+    :return:                Returns our vm_music stream, filtered. It basically acts as a stencil.
+                            This stencil method will be refined if music21's sliceAtOffsets becomes perfect.
+    """
+
+    if progression is not None:
+    #Our progression choice, indeed our list of chords must length-match our range slices.
+        assert len(progression) == len(pvm_tuple[3])
     else:
-        return s
+        pass
+
+    # #This loop will operate on the stream multiple times, just on a different range of notes in the stream.
+    for i in range(0, len(pvm_tuple[3])):
+        filter_notes(vm_stream, chord=pvm_tuple[0][i], offset_range=pvm_tuple[3][i], in_place=True)
+    return vm_stream
+#######
+
+
+
+# #TODO This function.
+# def filter_notes_by_chord():
+#     """
+#
+#     :return:
+#     """
+#     pass
+
 
 
 # MA-2.
@@ -214,7 +393,7 @@ def make_midi_from_colored_pixels(pixels, granularity, connect=False, colors=Non
 
     if len(pixels) > 128:
         raise ValueError("The .png file size is too large.")
-        return None
+        #return None  Is return None necessary here?
 
     # Establish variables.
     #part_stream = music21.stream.Stream()
@@ -298,7 +477,8 @@ def make_midi_from_grayscale_pixels(pixels, granularity, connect=False, note_pxl
 def set_to_nn_colors(im_array, clrs=None):
     """
         This function takes a 3D numpy color array(i.e an image), and reduces\\converts all of the color tuples of that
-    image to 16 different colors. This allows for display in FL studio with those 16 colors.
+    image to 16 possible different colors. For Visual Music purposes, this allows for display in FL studio with those
+    16 colors.
 
     :param im_array:    A 3D numpy image array.
     :param clrs:        A user defined dictionary of colors, allowing for greater possibility of colors for future
@@ -626,7 +806,7 @@ def transcribe_colored_image_to_midiart(img, granularity=1, connect=False, keych
     s = make_midi_from_colored_pixels(img_nn, granularity, connect, colors)
     print("Stream Created.", s)
     s.show('txt')
-    filter_notes_by_key(s, keychoice, in_place=True)
+    filter_notes(s, keychoice, in_place=True)
     if output_path is not None:
         set_parts_to_midi_channels(s, output_path)
 
@@ -666,7 +846,7 @@ def transcribe_grayscale_image_to_midiart(img, granularity, connect, keychoice=N
 
     s = make_midi_from_grayscale_pixels(img, granularity, connect, note_pxl_value)
     print("Stream Created.")
-    filter_notes_by_key(s, keychoice, in_place=True)
+    filter_notes(s, keychoice, in_place=True)
 
     if output_path is not None:
         s.write('mid', output_path)
@@ -705,7 +885,7 @@ def transcribe_image_edges_to_midiart(image_path, height, granularity, midi_path
 
     s = make_midi_from_grayscale_pixels(edges, granularity, connect, note_pxl_value)
 
-    filter_notes_by_key(s, keychoice, in_place=True)
+    filter_notes(s, keychoice, in_place=True)
 
     s.write('mid', midi_path)
     return s
@@ -1038,8 +1218,8 @@ def array_to_lists_of(coords_array, tupl=True):
 def separate_pixels_to_coords_by_color(image, z_value, nn=False, dimensionalize=None, display=False, clrs=None,
                                        num_dict=False): ###, stream=False):
     """
-        Created for testing purposes, this function takes an input image and returns an Ordered Dictionary of coordinate
-    arrays separated by color value. It has the added options of displaying a mayavi mlab visualization and
+        Created originally for testing purposes, this function takes an input image and returns an Ordered Dictionary of
+    coordinate arrays separated by color value. It has the added options of displaying a mayavi mlab visualization and
     dimensionalizing it along the z axis from the starting point of z_value, a value between 0-127. Use of nearest
     neighbor functionality vastly expedites this process; see midiart.set_to_nn_colors().
     Note: this function has a builtin conversion for the color palette. It is meant to be supplied with palettes of
@@ -1166,9 +1346,10 @@ def get_color_palettes(mypath=None, ncp=False):
     files = [os.path.join(mypath, f) for f in os.listdir(mypath) if os.path.isfile(os.path.join(mypath, f))]
     dict_list = {}
     for j in files:
+        #print("Color_palette_file:", j)
         name = os.path.splitext(os.path.basename(j))[0]
         dict = {}
-        k = cv2.imread(j)
+        k = cv2.imread(j)   #cv2.imread reads in colors as BGR instead of RGB. Hence all these bug comments....
         #11/30/2021--
         #https: // note.nkmk.me / en / python - opencv - bgr - rgb - cvtcolor /
         #k = cv2.cvtColor(k, cv2.COLOR_BGR2RGB) #This line is special. Does the same thing as swapping 0 and 2 below.
@@ -1183,6 +1364,52 @@ def get_color_palettes(mypath=None, ncp=False):
     else:
         pass
     return dict_list
+
+
+def get_color_pngs(mypath=None, as_path=True):
+    """
+        This function creates a dictionary of either images read in by cv2.imread OR the fullpathtofile of those images
+    as VALUES and their respective name as KEYS.
+    :param mypath:          The path to the color palettes folder. If not None, must be user-specified.
+    :param as_path:         If as_path, The values of the dictionary keys will be paths instead of cv2.imread(paths)
+    :return:                A dictionary of color palette paths or images.
+    """
+    if mypath is None:
+        mypath = r".\resources\color_palettes\\"
+
+    files = [os.path.join(mypath, f) for f in os.listdir(mypath) if os.path.isfile(os.path.join(mypath, f))]
+    dict_list = {}
+    for j in files:
+        name = os.path.splitext(os.path.basename(j))[0]
+        if as_path is True:
+            k = j
+        else:
+            k = cv2.imread(j)
+        dict_list[name] = k
+    return dict_list
+
+
+
+def get_color_attributions(mypath=None):
+    """
+        This function returns a dict of color palette names as KEYS and the respective attributions text string as the
+    values.
+    :param mypath:      The path to the color palettes folder. If not None, must be user-specified.
+    :return:            A dictionary of names\\strings as keys\\values respectively.
+    """
+    if mypath is None:
+        mypath = r".\resources\color_palettes\\"
+
+    files = [os.path.join(mypath, f) for f in os.listdir(mypath) if os.path.isfile(os.path.join(mypath, f))]
+    file = open(r".\resources\ColorPaletteAttributions.txt", 'r', encoding="utf8")
+    lines = file.readlines()
+    file.close()
+    names = [os.path.splitext(os.path.basename(j))[0] for j in files]
+    attributions_dictionary = dict(zip(names, lines))
+    # for j in files:
+    #     name = os.path.splitext(os.path.basename(j))[0]
+    return attributions_dictionary
+
 
 
 # MA-19.

@@ -973,7 +973,7 @@ class PianoRoll(wx.grid.Grid, glr.GridWithLabelRenderersMixin):
 
 
 
-    def UpdateStream(self):
+    def UpdateStream(self, update_actor, actor_num=None, z_plane=None):
         # matrix = np.zeros((self.GetNumberCols(), self.GetNumberRows()), dtype=np.int8)
         # # matrix = [ [None] * self.GetNumberRows() for _ in range(self.GetNumberCols())]
         # for x in range(self.GetNumberCols()):
@@ -983,7 +983,7 @@ class PianoRoll(wx.grid.Grid, glr.GridWithLabelRenderersMixin):
         #         if self.GetCellValue(self.GetNumberRows() - 1 - y, x) >= "1":
         #             matrix[x, y] = 1
         # self.stream = music21funcs.matrix_to_stream(matrix, False, self._cells_per_qrtrnote)
-        self.GridToStream()
+        self.GridToStream(update_actor=update_actor, actor_num=actor_num, z_plane=z_plane)
 
     # def OnCellChanged(self):
     #     self.log.info"OnCellChanged:")
@@ -1347,7 +1347,7 @@ class PianoRoll(wx.grid.Grid, glr.GridWithLabelRenderersMixin):
         self.m_v.CurrentActor().stream = in_stream
         print("Stream To Grid Successful!")
 
-    def GridToStream(self, update_actor=True):
+    def GridToStream(self, update_actor=True, actor_num=None, z_plane=None):
         """
         Converts a wxGrid of shape (x,128) into a music21 stream.
         x-axis is note offsets and durations
@@ -1383,8 +1383,17 @@ class PianoRoll(wx.grid.Grid, glr.GridWithLabelRenderersMixin):
         #TODO 08/18/2021
         #This works -- > ...array4D[:, :, self.m_v.cur_z, 0]
         #But this doesn't --> ...array4D[:, :, self.m_v.cur_z][0] Why? 08/18/2021
+        if actor_num is None:
+            if z_plane is not None:
+                on_points = self.m_v.CurrentActor().get_points_with_all_data(z=z_plane)
+            else:
+                on_points = self.m_v.CurrentActor().get_points_with_all_data()
+        else:
+            if z_plane is not None:
+                on_points = self.m_v.actors[actor_num].get_points_with_all_data(z=z_plane)
+            else:
+                on_points = self.m_v.actors[actor_num].get_points_with_all_data()
 
-        on_points = self.m_v.CurrentActor().get_points_with_all_data(z=self.m_v.cur_z)
         #on_points = np.argwhere(self.m_v.CurrentActor()._array4D[:, :, self.m_v.cur_z, 0] >= 1.0)
 
         print("On_Points", on_points)
@@ -1408,7 +1417,10 @@ class PianoRoll(wx.grid.Grid, glr.GridWithLabelRenderersMixin):
         print("5")
         self.stream = s
         if update_actor:
-            self.m_v.CurrentActor()._stream = s
+            if actor_num is None:
+                self.m_v.CurrentActor()._stream = s
+            else:
+                self.m_v.actors[actor_num]._stream = s
         else:
             pass
         s.show('txt')
@@ -1531,7 +1543,7 @@ class PianoRoll(wx.grid.Grid, glr.GridWithLabelRenderersMixin):
     #########--------------------------------------------
     def AccelerateHotkeys(self):
 
-        entries = [wx.AcceleratorEntry() for i in range(0, 10)]
+        entries = [wx.AcceleratorEntry() for i in range(0, 12)]
 
 
         new_id1 = wx.NewIdRef()
@@ -1545,6 +1557,9 @@ class PianoRoll(wx.grid.Grid, glr.GridWithLabelRenderersMixin):
         new_id9 = wx.NewIdRef()
         new_id10 = wx.NewIdRef()
 
+        new_id11 = wx.NewIdRef()
+        new_id12 = wx.NewIdRef()
+
         self.Bind(wx.EVT_MENU, self.GetTopLevelParent().mainbuttonspanel.OnMusic21ConverterParseDialog, id=new_id1)
         self.Bind(wx.EVT_MENU, self.GetTopLevelParent().mainbuttonspanel.OnMusicodeDialog, id=new_id2)
         self.Bind(wx.EVT_MENU, self.GetTopLevelParent().mainbuttonspanel.OnMIDIArtDialog, id=new_id3)
@@ -1557,12 +1572,16 @@ class PianoRoll(wx.grid.Grid, glr.GridWithLabelRenderersMixin):
         self.Bind(wx.EVT_MENU, self.GetTopLevelParent().mainbuttonspanel.focus_on_mayavi_view, id=new_id9)
         self.Bind(wx.EVT_MENU, self.GetTopLevelParent().mainbuttonspanel.focus_on_mainbuttonspanel, id=new_id10)
 
+        self.Bind(wx.EVT_MENU, self.GetTopLevelParent().ManualPointsChange, id=new_id11)
+        self.Bind(wx.EVT_MENU, self.GetTopLevelParent().ToggleDrawOrErase, id=new_id12)
+
+
         # Shift into which gear.
         entries[0].Set(wx.ACCEL_NORMAL, wx.WXK_F1, new_id1)
         entries[1].Set(wx.ACCEL_NORMAL, wx.WXK_F2, new_id2)
         entries[2].Set(wx.ACCEL_NORMAL, wx.WXK_F3, new_id3)
         entries[3].Set(wx.ACCEL_NORMAL, wx.WXK_F4, new_id4)
-        # TODO THESE aren't working as desired...
+        # TODO THESE aren't working as desired... Double check this. 06/30/2022
         entries[4].Set(wx.ACCEL_NORMAL, wx.WXK_F5, new_id5)
         entries[5].Set(wx.ACCEL_NORMAL, wx.WXK_F6, new_id6)
         entries[6].Set(wx.ACCEL_NORMAL, wx.WXK_F7, new_id7)
@@ -1570,6 +1589,11 @@ class PianoRoll(wx.grid.Grid, glr.GridWithLabelRenderersMixin):
         entries[8].Set(wx.ACCEL_NORMAL, wx.WXK_F9, new_id9)
 
         entries[9].Set(wx.ACCEL_NORMAL, wx.WXK_F11, new_id10)
+
+        entries[10].Set(wx.ACCEL_CTRL, wx.WXK_RETURN, new_id11)
+        entries[11].Set(wx.ACCEL_ALT, wx.WXK_RETURN, new_id12)
+
+
 
         accel = wx.AcceleratorTable(entries)
         self.SetAcceleratorTable(accel)
