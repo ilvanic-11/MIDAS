@@ -178,51 +178,86 @@ class Musicode():
 
 	#TODO Rename this?
 	def SetupDefaultMidiDictionaries(self, wx_progress_updater=None):
-		
-		i = 0
-		self._setup_am_dict()
-		wx_progress_updater.Update(i)
-		i += 1
-		
-		self._setup_asciiX_dict()
-		wx_progress_updater.Update(i)
-		i += 1
-		
-		self._setup_asciiY_dict()
-		wx_progress_updater.Update(i)
-		i += 1
-		
-		self._setup_bp_dict()
-		wx_progress_updater.Update(i)
-		i += 1
-		
-		self._setup_mm_dict()
-		wx_progress_updater.Update(i)
-		i += 1
-		
-		self._setup_ptX_dict()
-		wx_progress_updater.Update(i)
-		i += 1
-		
-		self._setup_ptY_dict()
-		wx_progress_updater.Update(i)
-		i += 1
-		
-		self._setup_splyce_dict()
-		wx_progress_updater.Update(i)
-		i += 1
-		
-		self._setup_se_dict()
-		wx_progress_updater.Update(i)
-		i += 1
-		
-		self._setup_boX_dict()
-		wx_progress_updater.Update(i)
-		i += 1
-		
-		self._setup_boY_dict()
-		wx_progress_updater.Update(i)
-		i += 1
+
+		from time import sleep #TODO #Consider revising
+		methods_list = [self._setup_am_dict,
+						self._setup_asciiX_dict,
+						self._setup_asciiY_dict,
+						self._setup_bp_dict,
+						self._setup_mm_dict,
+						self._setup_ptX_dict,
+						self._setup_ptY_dict,
+						self._setup_splyce_dict,
+						self._setup_se_dict,
+						self._setup_boX_dict,
+						self._setup_boY_dict]
+
+		i = 1
+		for j in range(0, 11, 1):
+			methods_list[j]()
+			try:
+				#Original ProgressDialog
+				#wx_progress_updater.Update(i)   #[i, 0], 50)
+
+				#PyGauge
+				#wx_progress_updater.Update(i, 1)   #[i, 0], 50)
+				wx_progress_updater.SetValue(i-.5)   #[i, 0], 50)
+				#wx_progress_updater.Refresh()
+				sleep(.05)
+				wx_progress_updater.SetValue(i)
+				#print("VALUE", i)
+			except Exception as e:
+				#print("Musicode setup error; trying gauge....", e)
+
+				#wx.Gauge
+				wx_progress_updater.SetValue(i)
+
+				#print("VALUE", i)
+			i+=1
+		# self._setup_am_dict()
+		#
+		# wx_progress_updater.Update(i)
+		# i += 1
+		#
+		# self._setup_asciiX_dict()
+		# wx_progress_updater.Update(i)
+		# i += 1
+		#
+		# self._setup_asciiY_dict()
+		# wx_progress_updater.Update(i)
+		# i += 1
+		#
+		# self._setup_bp_dict()
+		# wx_progress_updater.Update(i)
+		# i += 1
+		#
+		# self._setup_mm_dict()
+		# wx_progress_updater.Update(i)
+		# i += 1
+		#
+		# self._setup_ptX_dict()
+		# wx_progress_updater.Update(i)
+		# i += 1
+		#
+		# self._setup_ptY_dict()
+		# wx_progress_updater.Update(i)
+		# i += 1
+		#
+		# self._setup_splyce_dict()
+		# wx_progress_updater.Update(i)
+		# i += 1
+		#
+		# self._setup_se_dict()
+		# wx_progress_updater.Update(i)
+		# i += 1
+		#
+		# self._setup_boX_dict()
+		# wx_progress_updater.Update(i)
+		# i += 1
+		#
+		# self._setup_boY_dict()
+		# wx_progress_updater.Update(i)
+		# i += 1
 		
 
 	def _setup_letters_and_numbers(self, musicode):
@@ -543,7 +578,10 @@ class Musicode():
 				if from_text_file:
 					name = os.path.splitext(os.path.basename(file_name))[0]
 				else:
-					name = os.path.splitext(os.path.basename(write_name))[0]
+					if os.path.isfile(write_name):
+						name = os.path.splitext(os.path.basename(write_name))[0]
+					else:
+						name = write_name
 				intermediary_path = os.getcwd() + os.sep + "resources" + os.sep + "intermediary_path" + os.sep
 				i.write("mid", intermediary_path + "Ln-%s" % i.partName + "_" + name + ".mid" )
 			print("Write successful!")

@@ -322,7 +322,7 @@ class Animator(HasTraits):
 
     ######################################################################
     # Initialize object
-    def __init__(self, millisec, callable, window, player, *args, **kwargs):  # timer_delay,
+    def __init__(self, millisec, callable, window,  *args, **kwargs):  # timer_delay,   player,
         r"""Constructor.
 
         **Parameters**
@@ -341,7 +341,7 @@ class Animator(HasTraits):
         HasTraits.__init__(self)
         self.delay = millisec
         self.ui = None
-        self.timer = InfiniteTimer(millisec, callable, window, player)  #wx mp timer_delay
+        self.timer = InfiniteTimer(millisec, callable, window)  ##, #player)  #wx mp timer_delay
 
     ######################################################################
     # `Animator` protocol.

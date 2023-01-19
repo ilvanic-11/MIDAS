@@ -34,6 +34,55 @@ import logging
 # from midas_scripts import musicode   ###, midiart3D
 
 
+class CoffeeFrame(wx.Frame):
+    def __init__(self):
+        wx.Frame.__init__(self, None, -1, 'Coffee button!', size=(985, 840)
+                          )
+        self.panel = CoffeePanel(self)
+        self.Fit()
+        self.Centre()
+        #self.Show()
+
+
+class CoffeePanel(wx.Panel):
+    def __init__(self, frame):
+        wx.Panel.__init__(self, frame, size=(935, 810))
+        #wx.Font.AddPrivateFont(r".\resources\terminat.ttf")
+
+        self.coffee_colour = wx.Colour(0, 222, 70)
+        self.coffee_font = wx.Font(wx.FontInfo(42).FaceName("Terminator Two"))
+        self.SetFont(self.coffee_font)
+        self.SetForegroundColour(self.coffee_colour)
+
+        # Button
+        button_sizer = self._button_sizer(frame)
+        # Main sizer
+        main_sizer = wx.BoxSizer(wx.VERTICAL)
+        #main_sizer.Add((980, 980))
+        main_sizer.Add(button_sizer)
+        self.SetSizer(main_sizer)
+        self.Fit()
+
+    def _button_sizer(self, frame):
+        bmp = wx.Bitmap(r".\resources\coffee_button_background.png", wx.BITMAP_TYPE_ANY)
+        prompt1 = wx.StaticText(self, -1,"Love MIDAS?")
+        prompt2 = wx.StaticText(self, -1,"Spot me some Brew!")
+        btn_donate = wx.BitmapButton(self, -1,  size=(900, 700), bitmap = bmp, name = "Buy this guy some fly!",)
+        self.Bind(wx.EVT_BUTTON, self.OnCoffee, btn_donate)
+        #cmd_cancel = wx.Button(self, wx.ID_CANCEL)
+        button_sizer = wx.BoxSizer(wx.VERTICAL)
+        button_sizer.Add(prompt1, 0, wx.ALL | wx.ALIGN_CENTER, 0)
+        button_sizer.Add(btn_donate, 0, wx.ALL | wx.ALIGN_CENTER, 20)
+        button_sizer.Add(prompt2, 0, wx.ALL | wx.ALIGN_CENTER, 0)
+        #button_sizer.Add(cmd_cancel, flag=wx.ALIGN_CENTER)
+        return button_sizer
+
+    def OnCoffee(self, event):
+        wx.LaunchDefaultBrowser(r"https://ko-fi.com/themagichammer", 0)
+
+# if __name__ == '__main__':
+
+
 
 logFormatter = '%(asctime)s - %(levelname)s - %(name)s - %(message)s'
 logging.basicConfig(format=logFormatter, level=logging.DEBUG, filename=r"./log.txt")
@@ -142,6 +191,21 @@ class MainWindow(wx.Frame):
                  size=wx.DefaultSize, style=wx.DEFAULT_FRAME_STYLE):
         wx.Frame.__init__(self, parent, id, title, pos, size, style)
 
+        wx.Font.AddPrivateFont(r".\resources\terminat.ttf")
+
+        self.statusbar_font = wx.Font(wx.FontInfo(11).FaceName("Terminator Two"))
+        self.text_colour = wx.Colour(0, 222, 70)
+        #success = self.statusbar_font.AddPrivateFont(r".\resources\terminat.ttf")
+        #success2 = self.statusbar_font.CanUsePrivateFont()
+        #print("Font successful.", success)
+        #print("Font successful2.", success2)
+        #self.statusbar_font.SetFaceName('terminat')
+        #print(self.statusbar_font.GetFaceName())
+
+        #self.SetTitle()
+
+        #self.SetFont(self.statusbar_font)
+
         self.mainpanel = wx.Panel(self,-1)
        
         self.SetSize((1400, 900))  #TODO Optimize for users screen resolution.
@@ -186,15 +250,24 @@ class MainWindow(wx.Frame):
         #Status Bar
         self.statusbar = StatusBar.CustomStatusBar(self)
         self.SetStatusBar(self.statusbar)
-
+        #self.statusbar.
         #This was messing up size stuff.
         #tc = wx.TextCtrl(self, -1, "", style=wx.TE_READONLY | wx.TE_MULTILINE)
 
         self.SetSize((640, 480))
-        self.Bind(wx.EVT_CLOSE, self.OnCloseWindow)
 
         # Prepare the menu bar
         self.menuBar = MenuButtons.CustomMenuBar(self)
+
+        # Donate button on close
+        self.coffee_frame = CoffeeFrame()
+
+
+        #Close evt bindings
+        self.Bind(wx.EVT_CLOSE, self.OnCloseWindow)
+
+        #self.Bind(wx.EVT_CLOSE, self.OnCloseWindow)
+
 
 
         # TODO Use a search bar with help(), inspect.getdoc, and for j in inspect.getmembers: print(j[0], j[1])
@@ -215,8 +288,8 @@ class MainWindow(wx.Frame):
         self.Bind(wx.EVT_MENU, self.menuBar.OnOpenSession, id=102)
         self.Bind(wx.EVT_MENU, self.menuBar.OnSaveSession, id=103)
         self.Bind(wx.EVT_MENU, self.menuBar.OnSaveSessionAs, id=104)
-        self.Bind(wx.EVT_MENU, self.menuBar.OnImport, id=105)
-        self.Bind(wx.EVT_MENU, self.menuBar.OnImportDirectory, id=106)
+        #self.Bind(wx.EVT_MENU, self.menuBar.OnImport, id=105)
+        #self.Bind(wx.EVT_MENU, self.menuBar.OnImportDirectory, id=106)
 
 
         #self.Bind(wx.EVT_MENU, self.menuBar.OnExport, id=107)  #TODO Free id available; 107
@@ -300,6 +373,8 @@ class MainWindow(wx.Frame):
         self.Bind(wx.EVT_MENU, self.menuBar.OnGoogleSearch, id=508)
         self.Bind(wx.EVT_MENU, self.menuBar.OnCheckForUpdates, id=509)
         self.Bind(wx.EVT_MENU, self.menuBar.OnCredits, id=510)
+        self.Bind(wx.EVT_MENU, self.menuBar.OnCoffee, id=511)
+
 
         # Documentation Submenu
         self.Bind(wx.EVT_MENU, self.menuBar.OnPython, id=600)
@@ -388,11 +463,38 @@ class MainWindow(wx.Frame):
             binding += 1
 
 
+    def OpenCoffeeWindow(self):
+        self.coffee_frame = CoffeeFrame()
+
+        self.coffee_frame.Bind(wx.EVT_CLOSE, self.double_destroy)
+
+        coffee_screen_app = wx.App()
+        self.coffee_frame.Show()
+        coffee_screen_app.MainLoop()
+
+
     #StatusBarClose
     def OnCloseWindow(self, event):
-        self.statusbar.timer.Stop()
-        del self.statusbar.timer
-        self.Destroy()
+        #self.statusbar.timer.Stop()
+        #del self.statusbar.timer
+        #self.coffee_frame = CoffeeFrame()
+        self.menuBar.coffee_closing_app = True
+        self.OpenCoffeeWindow()
+
+
+    def double_destroy(self, event):
+        if self.menuBar.coffee_closing_app is False:
+
+            self.coffee_frame.Destroy()#Close()
+            print("Closing coffee frame.")
+        else:
+            print("Closing entire program.")
+            self.coffee_frame.Destroy()
+            self.Destroy()
+            #TODO App not fully closing?
+            #self.Close()
+            #Close()
+
 
     #Sash Hotkey
     def OnSashKeyDown(self, event):
@@ -627,6 +729,14 @@ class MainWindow(wx.Frame):
 
         event.Skip()
 
+    def ToggleDrawOrErase(self, event):
+        self.pianorollpanel.pianoroll.drawing = int(not self.pianorollpanel.pianoroll.drawing)
+
+    def ManualPointsChange(self, event):
+        #if event.GetKeyCode() == wx.WXK_CONTROL and event.GetKeyCode() == wx.WXK_NUMPAD_ENTER:
+        self.mayavi_view.CurrentActor().array4Dchangedflag = not self.mayavi_view.CurrentActor().array4Dchangedflag
+        #pass
+
 
     def PrintOurCell(self, event):
 
@@ -830,6 +940,21 @@ class MainWindow(wx.Frame):
         # self.scene = self.engine.scenes[0]
         # self.figure = self.scene3d.mayavi_scene
         self.mayavi_view.create_3dmidiart_display()
+        #self.pianorollpanel.actorsctrlpanel.OnBtnDelAllActors(evt=None)
+
+        for i in range(0, len(self.mayavi_view.actors)):
+            #self.m_v.sources[self.index].mlab_source.trait_set(points=update_points)
+            #TODO In order for this to be complete, ALL attributes of an actor have to be re-passed through 'insert_array_data.' But wait....maybe nvm.
+
+
+            #self.pianorollpanel.actorsctrlpanel.actorsListBox.DeleteItem(i)
+           #self.pianorollpanel.actorsctrlpanel.actorsListBox.new_actor(i, name=self.mayavi_view.actors[i].name)
+            self.mayavi_view.sources[i] = self.mayavi_view.insert_array_data(self.mayavi_view.actors[i]._points, color=self.mayavi_view.actors[i].color, mode="cube", name=self.mayavi_view.actors[i].name, scale_factor=1.0)
+            self.mayavi_view.sources[self.mayavi_view.cur_ActorIndex].actor.property.sync_trait('color', self.mayavi_view.actors[i], mutual=True)
+            self.mayavi_view.sources[self.mayavi_view.cur_ActorIndex].actor.actor.sync_trait('position', self.mayavi_view.actors[i], mutual=True)
+
+            #self.mayavi_view.actors[i].pointschangedflag = not self.mayavi_view.actors[i].pointschangedflag
+
         self.mayavi_view.scene3d.disable_render = False
         # Set focus on mbp for fast use of "F" hotkeys.
         self.mainbuttonspanel.SetFocus()
@@ -842,9 +967,9 @@ class MainWindow(wx.Frame):
 
         """
         Warning: Executing this function will require a restart of Midas in order to continue using Midas.
-        . Use only if you know what you are doing.
+        Use only if you know what you are doing.
 
-        This function DELETES all POINTERS\INSTAANCES of the Mayavi3idiView() class instantiated as  m_v throughout
+        This function DELETES all POINTERS\INSTANCES of the Mayavi3idiView() class instantiated as  m_v throughout
         MIDAS. It was intended to solve a memory problem. The ONLY instance it doesn't delete is the main one here in
         our MainWindow class, self.mayavi_view; this is for confirmation purposes.
 

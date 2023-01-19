@@ -32,9 +32,6 @@ image = r".\resources\MIDAS_Mobile_splash.png"
 last_image = ""
 default_image = r".\resources\MIDAS_Mobile_splash.png"
 
-button_normal = r".\resources\coffee_button_background.png"
-button_down = r".\resources\button_pressed_modified.png"
-button_default = r".\resources\button_pressed_default.png"
 
 piano = r".\resources\ThePiano16.png"
 phatpiano = r".\resources\ThePhatPiano16.png"
@@ -51,11 +48,17 @@ credits_visual = r".\resources\credits_visual.png"
 
 support_banner = r".\resources\support_banner.png"
 
+button_normal = r".\resources\coffee_button_background.png"
+button_down = r".\resources\button_pressed_modified.png"
+button_default = r".\resources\button_pressed_default.png"
+#compensation_banner = r".\resources\image_view_button_placeholder.png"
+
 
 clr_dict_list = midiart.get_color_palettes(r".\resources\color_palettes")
-clr_dict_list.update([("FLStudioColors", midiart.FLStudioColors)])
-current_color_palette = clr_dict_list["FLStudioColors"]
-current_mayavi_palette = midiart.convert_dict_colors(current_color_palette, both=True)
+#clr_dict_list.update([("FLStudioColors", midiart.FLStudioColors)])
+#current_color_palette = clr_dict_list["FLStudioColors"]
+current_color_palette = clr_dict_list['000_flstudio-16-1x']
+#urrent_mayavi_palette = midiart.convert_dict_colors(current_color_palette, both=True)
 
 
 

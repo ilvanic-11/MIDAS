@@ -192,7 +192,7 @@ class Actor(HasTraits):
         print("points_shape", points.shape)
         pr = self.m_v.parent.pianorollpanel.pianoroll
 
-        duration_ratio = pr.GetMusic21DurationRatio()
+        duration_ratio = pr.GetMusic21DurationRatio() #TODO Make global. 06/20/2022
 
         #If we don't have durations data, (say, from a point cloud or picture), supply it anyway.
         if points.shape[1] < 4:
@@ -243,10 +243,11 @@ class Actor(HasTraits):
 
         points = np.argwhere(_array4D[:, :, :, 0] == 1.0) if z is None else np.argwhere(_array4D[:, :, z, 0] == 1.0)
         print("Z", z)
-        #This if statement isn't working....
+        #This if statement isn't working....???
         if z:
             _z = np.full((len(points), 1), z, dtype=np.int8) #int, because floats cannot be indices.
             points = np.column_stack([points, _z])
+            print("Baziznitch!!!!!!")
         else:
             pass
         print("BOOM!")
@@ -574,9 +575,9 @@ class Mayavi3idiView(HasTraits):
         self.clr_dict_list = midiart.get_color_palettes(r".\resources\color_palettes")
         #print("B palm.")
         #Append FLStudioColors to clr_dict_list
-        self.clr_dict_list.update([("FLStudioColors", midiart.FLStudioColors)])
+        ###self.clr_dict_list.update([("FLStudioColors", midiart.FLStudioColors)])
         #Set FL colors default variable here.
-        self.current_color_palette = self.clr_dict_list["FLStudioColors"]
+        self.current_color_palette = self.clr_dict_list["000_flstudio-16-1x"]
         #Division to float colors here.
         self.current_mayavi_palette = midiart.convert_dict_colors(self.current_color_palette, both=True) #invert=False)#
         #NOTE: These two attributes are modified by the MidiartDialog() function --> OnChangeColor().
@@ -753,6 +754,7 @@ class Mayavi3idiView(HasTraits):
         if len(self.actors) <= 0:
             return None
         else:
+            #print("Current Actor Index:", self.actors[self.cur_ActorIndex])
             return self.actors[self.cur_ActorIndex]
 
     def append_actor(self, name, color):
@@ -771,7 +773,8 @@ class Mayavi3idiView(HasTraits):
         # self.sources.append(None)
 
         self.actors.append(a)
-        appending_data = self.insert_array_data(a._array4D, color=color, mode="cube", name=name, scale_factor=1.0)
+        print("Appending Data!")
+        appending_data = self.insert_array_data(a._array4D, color=color, mode="cube", name=name, scale_factor=1.0) #_array4D
         self.sources.append(appending_data)
         self.mlab_calls.append(appending_data)
 

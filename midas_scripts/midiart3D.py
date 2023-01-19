@@ -545,6 +545,26 @@ def transform_points_by_axis(coords_array, offset=0, axis='y', center_axis=False
     return coords_array
 
 
+def mirror_points_on_axis(coords_array, axis='y'):
+    """
+
+    :param coords_array:
+    :param axis:
+    :return:                    A new numpy array of points.
+    """
+    if axis == 'x':
+        new2 = np.r_['1,2,0', (coords_array[:, 0]*-1)-(((coords_array[:, 0]*-1).min())-coords_array[:,0].min()), coords_array[:, 1], coords_array[:, 2]]
+        return new2
+    elif axis == 'y':
+        new2 = np.r_['1,2,0', coords_array[:, 0], (coords_array[:, 1]*-1)-(((coords_array[:, 1]*-1).min())-coords_array[:,1].min()), coords_array[:, 2]]
+        return new2
+    elif axis == 'z':
+        new2 = np.r_['1,2,0',  coords_array[:, 0], coords_array[:, 1],(coords_array[:, 2]*-1)-(((coords_array[:, 2]*-1).min())-coords_array[:,2].min())]
+        return new2
+
+
+
+
 #Position, orientation, and #TODO origin functions.
 #TODO This is a numpy function. Allocate accordingly?
 #3D-14.

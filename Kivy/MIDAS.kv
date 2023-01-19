@@ -133,6 +133,11 @@
     granularity_Choice: granularity_Choice
     #txt_Key: txt_Key
 
+    MidasButton:
+        id: load_Image
+        text: "Load Image"
+        font_size: 14
+        on_release: root.show_load()
 
     BoxLayout:
         orientation: 'horizontal'
@@ -204,20 +209,17 @@
         id: colors_Choice
         size_hint_y: 0.4
         text: 'Select Color'
-        #font_size: 13
-        sync_height: True
+        font_size: 15 
+        #sync_height: True
         #font_name: S.font_name
         values: [clrs for clrs in S.clr_dict_list]
         on_text: root.updateColor()
+        on_press: root.showColorsHelpText()
+        on_release: root.restoreHelpTextFontSize()
         #background_normal: ''
         #background_down: S.button_down
         #background_color: 0.19607843137254902, 0.6431372549019608, 0.807843137254902, 1
 
-    MidasButton:
-        id: load_Image
-        text: "Load Image"
-        font_size: 14
-        on_release: root.show_load()
 
     Spinner:
         id: midiart_Choice
@@ -262,18 +264,52 @@
         id: helptext_Label
         #size_hint: 1, 1
         text: 'To begin, cycle the MIDAS button 5 times.'
+
+        #text_size: (574, 51)
+        #size_hint_y: None
+        #text_size: self.width, None
+        #height: self.texture_size[1]
+
         font_size: 10
         halign: 'right'
         color: 0.19607843137254902, 0.6431372549019608, 0.807843137254902, 1
-    Button:
-        id: output_Button
+
+    Spinner:
+
+        id: help_Menu
         size_hint: 0.2534, 1
-        text: "Output Folder"
-        halign: 'right'
+        text: 'Help'
+        #font_size: 13
+        sync_height: True
+        font_name: S.font_name
+        values: ["User Manual", "FAQS", "Output\nFolder"]   ##"Full Credits",
+        on_text: root.help_menu_select()
         background_color: 0, 0.7725490196078431, 1, 1
         background_normal: '' ##S.button_default
         background_down: S.button_down
-        on_press: root.open_output_folder()
+
+        #on_press: root.showColorsHelpText()
+        #on_release: root.restoreHelpTextFontSize()
+
+
+        #background_normal: ''
+        #background_down: S.button_down
+        #background_color: 0.19607843137254902, 0.6431372549019608, 0.807843137254902, 1
+
+
+    #Button:
+    #    id: output_Button
+    #    size_hint: 0.2534, 1
+    #    text: "Output Folder"
+    #    halign: 'right'
+    #    background_color: 0, 0.7725490196078431, 1, 1
+    #    background_normal: '' ##S.button_default
+    #    background_down: S.button_down
+    #    on_press: root.open_output_folder()
+
+
+
+
 
     #TextInput:
     #    id: txt_Input

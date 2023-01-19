@@ -94,15 +94,15 @@ class MusicodeArea(BoxLayout):
     for i in musicode_info_dict.keys():
         if i == 'Animuse':
             musicode_info_dict[i] = \
-        "Animuse is the 'print' musicode. A letter is uniformly constructed in a diatonic scale in a single octave with midi notes."
+        "Animuse is the 'print' musicode. A letter is uniformly constructed in a diatonic scale within a single octave with midi notes."
         if i == 'Asciipher_X':
             musicode_info_dict[i] = \
         "Asciipher_X, a pitch-oriented musicode, is based on the American Standard Code for Information Interchange." \
-                                    "\n Its rests and notes correspond to 0s and 1s.                                                                  "
+                                    "\n Its rests and notes correspond to 0s and 1s respectively.                                                      "
         if i == 'Asciipher_Y':
             musicode_info_dict[i] = \
         "Asciipher_Y, a rhythm-oriented musicode, is based on the American Standard Code for Information Interchange." \
-                                    "\n Its pitches in a scale, missing and not, correspond to 0s and 1s.                                                  "
+                                    "\n Its pitches in a scale, missing and not, correspond to 0s and 1s respectively.                                      "
         if i == 'Baud-Onkadonk_X':
             musicode_info_dict[i] = \
         "Baud-Onkadonk_X, another pitch-oriented musicode, is based on the Baud-Murray code." \
@@ -148,6 +148,8 @@ class MusicodeArea(BoxLayout):
             MIDAS_Settings.musicode_name = self.musicode_Choice.text
             print(MIDAS_Settings.musicode_name)
 
+        self.parent.ids.help_Area.ids.helptext_Label.font_size = 10
+        print("Font_size", self.parent.ids.help_Area.ids.helptext_Label.font_size)
         self.parent.ids.help_Area.ids.helptext_Label.text = self.musicode_info_dict[MIDAS_Settings.musicode_name]
 
 
@@ -224,8 +226,26 @@ class MusicodeArea(BoxLayout):
             self.parent.ids.musicodedraw_Area.ids.musicode_View.reload()
 
             print(self.txt_Input.text)
+
             print("Musicode translation completed.")
+
+            self.parent.ids.help_Area.ids.helptext_Label.font_size = 10
+            print("Help Label Font Size", self.parent.ids.help_Area.ids.helptext_Label.font_size)
             self.parent.ids.help_Area.ids.helptext_Label.text = "Musicode translation completed."
+
+            self.parent.refresh_marker = "Coffee_Screen5"
+
+            # This block prevents 'page 5' from 'doubling' up after doing a TRANSLATION whilst already ON 'page 5'.
+            # It would normally do so because the proper "image_View" is removed when 'page 5' is loaded, which has a
+            # different widget instance, a button
+            print("COFFEE_MARKER", self.parent.coffee_marker)
+            if self.parent.coffee_marker is True:
+                self.parent.restore_imageView()
+                self.parent.ids.imagedraw_Area.ids.image_View.source = MIDAS_Settings.button_normal
+            else:
+                pass
+
+            print("R_Counter:", self.parent.refresh_marker)
 
 
 class MidiArtButtons(BoxLayout):
@@ -235,7 +255,8 @@ class MidiArtButtons(BoxLayout):
     granularities_num = [.125, .25, .5, 1, 2, 4]
     granularities_dict = dict(zip(granularities, granularities_num))
     current_color_palette = MIDAS_Settings.current_color_palette
-
+    attributions_dict = midiart.get_color_attributions()
+    pngs_dict = midiart.get_color_pngs(enlarged=True)
 
     loadfile = ObjectProperty(None)
     savefile = ObjectProperty(None)
@@ -254,12 +275,16 @@ class MidiArtButtons(BoxLayout):
     def updateHeightLabel(self,instance):
         self.note_Height = str(MIDAS_Settings.noteHeight)
         print("Note height changed to: ", str(MIDAS_Settings.noteHeight))
+        self.parent.ids.help_Area.ids.helptext_Label.font_size = 10
+        print("Help Label Font Size", self.parent.ids.help_Area.ids.helptext_Label.font_size)
         self.parent.ids.help_Area.ids.helptext_Label.text = '''Image height (in pixels) set to  %s.''' % MIDAS_Settings.noteHeight
 
     def updateGranularity(self):
         MIDAS_Settings.granularity = self.granularity_Choice.text
 
         print("Granularity changed to: ", str(MIDAS_Settings.granularity))
+        self.parent.ids.help_Area.ids.helptext_Label.font_size = 10
+        print("Help Label Font Size", self.parent.ids.help_Area.ids.helptext_Label.font_size)
         self.parent.ids.help_Area.ids.helptext_Label.text = '''Note durations set to  %s(s).''' % MIDAS_Settings.granularity
 
 
@@ -267,17 +292,23 @@ class MidiArtButtons(BoxLayout):
         if (self.ids.tb_Y.state == "down"):
             MIDAS_Settings.connectNotes = True
             print("ConnectNotes changed to: True")
+            self.parent.ids.help_Area.ids.helptext_Label.font_size = 10
+            print("Help Label Font Size", self.parent.ids.help_Area.ids.helptext_Label.font_size)
             self.parent.ids.help_Area.ids.helptext_Label.text = '''Contiguous notes of same color will be connected on output.                        \n(Note: this is faster; moreover, in FL studio there is a "chop" function to individualize notes.'''
 
         elif(self.ids.tb_N.state == "down"):
             MIDAS_Settings.connectNotes = False
             print("ConnectNotes changed to: False")
+            self.parent.ids.help_Area.ids.helptext_Label.font_size = 10
+            print("Help Label Font Size", self.parent.ids.help_Area.ids.helptext_Label.font_size)
             self.parent.ids.help_Area.ids.helptext_Label.text = '''Notes will match the pixels of the image note-to-pixel. (Note: this is a bit slower, but has finer detail.)'''
 
     def updateKey(self):
         MIDAS_Settings.key = self.ids.txt_Key.text
         #"A A#m Ab Abm Am B Bb Bbm Bm C C# C#m Cb Cm D D#m Db Dm E Eb Ebm Em F F# F#m Fm G G#m Gb Gm"
         print("Key updated to:", MIDAS_Settings.key)
+        self.parent.ids.help_Area.ids.helptext_Label.font_size = 10
+        print("Help Label Font Size", self.parent.ids.help_Area.ids.helptext_Label.font_size)
         self.parent.ids.help_Area.ids.helptext_Label.text = "Your Key is set to:   %s." %MIDAS_Settings.key
 
     def updateColor(self):
@@ -286,8 +317,61 @@ class MidiArtButtons(BoxLayout):
             pass
         else:
             MIDAS_Settings.current_color_palette = MIDAS_Settings.clr_dict_list[MIDAS_Settings.color]
+            #self.parent.ids.musicodedraw_Area.ids.musicode_View.allow_stretch = False
+            #self.parent.ids.musicodedraw_Area.ids.musicode_View.keep_ratio = True
+            self.parent.ids.musicodedraw_Area.ids.musicode_View.source = self.pngs_dict[MIDAS_Settings.color]
+            #self.parent.ids.musicodedraw_Area.ids.musicode_View.allow_stretch = True
+            choice_string_length = len(self.ids.colors_Choice.text)
+            print("colors_Choice", self.ids.colors_Choice.text)
+            print("LENcolors_Choice", len(self.ids.colors_Choice.text))
+            compensator_fl = 15 if not self.ids.colors_Choice.text == '000_flstudio-16-1x' else -15
+            string_difference = choice_string_length - 25 - compensator_fl
+            space_string_list = []
+            for i in range(25 - string_difference):
+                space_string_list.append(" ")
+
+            space_string = ""
+            for i in space_string_list:
+                space_string += i
+            print("Length_space_string:", len(space_string))
+            sub_string = "\Submitted to Lospec.com "  if not self.ids.colors_Choice.text == '000_flstudio-16-1x' else ""
+
+            self.parent.ids.help_Area.ids.helptext_Label.text = "Your Color Palette is set to:   %s.   " %MIDAS_Settings.color + space_string +\
+                                                                "\n\n" + \
+                                                                "ATTRIBUTION:  Created" + sub_string + "by -> %s" \
+                                                                %str(self.attributions_dict[MIDAS_Settings.color])
+
         print("Color updated to:", MIDAS_Settings.color)
-        self.parent.ids.help_Area.ids.helptext_Label.text = "Your Color Palette is set to:   %s." %MIDAS_Settings.color
+
+        self.parent.ids.midiart_Buttons.ids.colors_Choice.font_size = 10
+
+        self.parent.ids.help_Area.ids.helptext_Label.font_size = 10
+        print("Help Label Font Size", self.parent.ids.help_Area.ids.helptext_Label.font_size)
+
+    def showColorsHelpText(self):
+        pass
+        #self.parent.ids.help_Area.ids.helptext_Label.font_size = 9
+        #self.ids.colors_Choice.is_open = True
+        #self.ids.colors_Choice.always_release = True
+
+        # if self.ids.colors_Choice.is_open is True and self.parent.ids.help_Area.ids.helptext_Label.font_size == 9:
+        #     pass
+        # # while self.ids.colors_Choice.is_open is True:
+        # #     #print("Colors dropdown is open!")
+        # #     pass
+        # elprint("Font size restored!")
+
+    def restoreHelpTextFontSize(self):
+        # if self.ids.colors_Choice.is_open is False and self.parent.ids.help_Area.ids.helptext_Label.font_size == 9:
+        #     self.parent.ids.help_Area.ids.helptext_Label.font_size = 10
+        # elif self.ids.colors_Choice.is_open is True and self.parent.ids.help_Area.ids.helptext_Label.font_size == 9:
+        self.parent.ids.help_Area.ids.helptext_Label.font_size = 9
+        self.parent.ids.help_Area.ids.helptext_Label.text = "The color palette you select is used to sort image pixels for output to a midifile. It will also be used in FL Studio >=20.                 \n " \
+                                                            "Usage. Navigate: Output Folder-->Go up one level-->Color Palettes Folder-->NCP palettes folder.                                 \n" \
+                                                            "Copy all of the ncp files into the following FL Studio folder installed on a Windows >=10 PC:                                   \n" \
+                                                            "C:\\Users\\youtheuser\\Documents\\Image-Line\\Data\\FL Studio\\Settings\\Note color presets                                       \n" \
+                                                            "Then, in FL Studio, Navigate: Press F7(Piano Roll)-->Topleft dropdown menu-->View-->Note colors-->Select your chosen color  VOILA!!   "
+        print("Help Label Font Size", self.parent.ids.help_Area.ids.helptext_Label.font_size)
 
     def show_load(self):
         content = LoadDialog(load=self.load, cancel=self.cancel)
@@ -295,13 +379,11 @@ class MidiArtButtons(BoxLayout):
                             size_hint=(0.9, 0.9))
         self._popup.open()
 
-
     def show_save(self):
         content = SaveDialog(save=self.save, cancel=self.dismiss_popup)
         self._popup = Popup(title="Save file", content=content,
                             size_hint=(0.9, 0.9))
         self._popup.open()
-
 
     def load(self, path, filename):
         try:
@@ -321,6 +403,8 @@ class MidiArtButtons(BoxLayout):
             pass
         self.dismiss_popup()
         print("Loaded: -->", MIDAS_Settings.image)
+        self.parent.ids.help_Area.ids.helptext_Label.font_size = 10
+        print("Help Label Font Size", self.parent.ids.help_Area.ids.helptext_Label.font_size)
         self.parent.ids.help_Area.ids.helptext_Label.text = "Loaded image --> %s." %MIDAS_Settings.image
 
     def cancel(self):
@@ -370,8 +454,9 @@ class MidiArtButtons(BoxLayout):
                 self.parent.ids.imagedraw_Area.change_image(MIDAS_Settings.last_image)
 
 
-        self.parent.refresh_counter = 0
-        if self.parent.refresh_counter == 0:
+        self.parent.refresh_marker = "Welcome_Screen1"
+        print("R_counter0-pdismiss", self.parent.refresh_marker)
+        if self.parent.refresh_marker == "Welcome_Screen1":
             self.parent.ids.imagedraw_Area.ids.image_View.keep_ratio = True
         else:
             pass
@@ -453,6 +538,8 @@ class MidiArtButtons(BoxLayout):
 
                 #name = str(len(m_v.actors)) + "_" + "Edges" + "_" + dialog.img_name
                 print("Edges load completed.")
+                self.parent.ids.help_Area.ids.helptext_Label.font_size = 10
+                print("Help Label Font Size", self.parent.ids.help_Area.ids.helptext_Label.font_size)
                 self.parent.ids.help_Area.ids.helptext_Label.text = "Edges load completed."
 
             if self.ids.midiart_Choice.text == "Color":
@@ -484,6 +571,8 @@ class MidiArtButtons(BoxLayout):
                 print("ColorsStream:", self.stream)
                 self.stream.show('txt')
                 print("Colors load completed.")
+                self.parent.ids.help_Area.ids.helptext_Label.font_size = 10
+                print("Help Label Font Size", self.parent.ids.help_Area.ids.helptext_Label.font_size)
                 self.parent.ids.help_Area.ids.helptext_Label.text = "Colors load completed."
 
             if self.ids.midiart_Choice.text == "Monochrome":
@@ -512,6 +601,8 @@ class MidiArtButtons(BoxLayout):
                 print("MonochromeStream:", self.stream)
                 self.stream.show('txt')
                 print("Monochrome load completed.")
+                self.parent.ids.help_Area.ids.helptext_Label.font_size = 10
+                print("Help Label Font Size", self.parent.ids.help_Area.ids.helptext_Label.font_size)
                 self.parent.ids.help_Area.ids.helptext_Label.text = "Monochrome load completed."
 
                 # Strings
@@ -554,16 +645,23 @@ class MidiArtButtons(BoxLayout):
             self.parent.ids.imagedraw_Area.ids.image_View.source = file_path_img_with_piano
             #self.parent.ids.imagedraw_Area.ids.image_View.reload()
 
+
+            self.parent.refresh_marker = "Coffee_Screen5"
+            print("R_Counter:", self.parent.refresh_marker)
+            #self.ids.midiart_Choice.text = self.ids.midiart_Choice.text.lower().capitalize()
+
         else:
             pass
 
         #KIVY BUG - this clears out an event in my workflow be forcing a change to a str while keeping it the same str.
         #This also forced having to put this entire function in a bool code block so that it doesn't execute multiple
         #times. This entire function will be called when self.ids.midiart_Choice.text is changed. Changing it to itself
-        #doesn't actually change trigger, so I used upper. In code block, if str.isupper(), don't execute. ***Here.
+        #doesn't actually trigger the bug, so I used string.upper(). In code block, if str.isupper(), don't execute. ***Here.
+        ####This could have cause other weird bugs, but this the easiest to work  with\around since the button event options
+        #are limited to "on_press", "on_release" and "on_text." I chose "on_text."
         self.ids.midiart_Choice.text = self.ids.midiart_Choice.text.upper()
 
-        #self.ids.midiart_Choice.text = self.ids.midiart_Choice.text.lower().capitalize()
+
 
 
 class HelpArea(BoxLayout):
@@ -573,12 +671,23 @@ class HelpArea(BoxLayout):
             super(HelpArea, self).__init__(**kwargs)
 
 
-        def open_output_folder(self):
-            content = OutputDialog(load=None, cancel=self.dismiss)
-            self._popup = Popup(title="Output Folder -- intermediary_path", content=content,
-                                size_hint=(0.9, 0.9))
-            self._popup.open()
-            self.ids.helptext_Label.text = "<The output folder is %s>" %os.path.abspath(MIDAS_Settings.filepath)
+        def help_menu_select(self):
+
+            if self.ids.help_Menu.text =="User Manual":
+                pass
+            elif self.ids.help_Menu.text == "FAQS":
+                pass
+            elif self.ids.help_Menu.text == "Full Credits":
+                pass
+            elif self.ids.help_Menu.text == "Output\nFolder":
+                content = OutputDialog(load=None, cancel=self.dismiss)
+                self._popup = Popup(title="Output Folder -- intermediary_path", content=content,
+                                    size_hint=(0.9, 0.9))
+                self._popup.open()
+
+                self.ids.helptext_Label.font_size = 10
+                print("Help Label Font Size", self.ids.helptext_Label.font_size)
+                self.ids.helptext_Label.text = "<The output folder is %s>" %os.path.abspath(MIDAS_Settings.filepath)
 
         def load(self):
             pass
@@ -676,8 +785,9 @@ class MusicodeDrawArea(BoxLayout):
         print("image", image)
         print("self.ids.musicode_View.source2", self.ids.musicode_View.source)
         print("Rock On!")
-        self.parent.refresh_counter = 0
 
+        #self.parent.refresh_marker = "Welcome_Screen1"
+        #print("R_counter", self.refresh_marker)
 
     def join_with_piano(self, image, piano=MIDAS_Settings.phatpiano2):
         image = image
@@ -720,8 +830,9 @@ class ImageDrawArea(BoxLayout):
         print("image", image)
         print("self.ids.image_View.source2", self.ids.image_View.source)
         print("Rock On!")
-        self.parent.refresh_counter = 0
 
+        #self.parent.refresh_marker = "Welcome_Screen1"
+        #print("R_counter", self.refresh_marker)
 
     def join_with_piano(self, image, piano=MIDAS_Settings.phatpiano):
         image = image
@@ -751,7 +862,7 @@ class MainUI(GridLayout):
     def __init__(self,**kwargs):
         super(MainUI, self).__init__(**kwargs)
         self.images_list = list()
-        self.refresh_counter = 0
+        self.refresh_marker = "Welcome_Screen1"
         self.coffee_marker = False
         self.imageView_marker = False
         #print("ROOT", self.ids)
@@ -760,33 +871,40 @@ class MainUI(GridLayout):
 
 
     def refresh(self):
-        if self.refresh_counter == 0:
-            if self.coffee_marker is False:
-                pass
-            else:
+        if self.refresh_marker == "Welcome_Screen1":
+            if self.coffee_marker is True:
                 self.restore_imageView()
+            else:
+                pass
             self.welcome_screen()
+            print("Here1")
             #self.ids.imagedraw_Area.ids.image_View.keep_ratio = True
-            self.refresh_counter += 1
-        elif self.refresh_counter == 1:
+            self.refresh_marker = "Musicode_Screen2"
+            print("R_counter0", self.refresh_marker)
+        elif self.refresh_marker == "Musicode_Screen2":
             self.musicode_help_screen()
-            self.refresh_counter += 1
-        elif self.refresh_counter == 2:
+            self.refresh_marker = "Midiart_Screen3"
+            print("R_counter1", self.refresh_marker)
+        elif self.refresh_marker == "Midiart_Screen3":
             self.midiart_help_screen()
-            self.refresh_counter += 1
+            self.refresh_marker = "Credits_Screen4"
+            print("R_counter2", self.refresh_marker)
 
-        elif self.refresh_counter == 3:
+        elif self.refresh_marker == "Credits_Screen4":
             #self.midiart_help_screen()
             self.credits_screen()
-            self.refresh_counter += 1
+            self.refresh_marker = "Coffee_Screen5"
+            print("R_counter3", self.refresh_marker)
 
-        else:
+        elif self.refresh_marker == "Coffee_Screen5":
             self.coffee_screen()
-            #self.credits_screen()
-            #self.refresh_counter += 1
 
+        print("Help Label Font Size", self.ids.help_Area.ids.helptext_Label.font_size)
 
     def reset_inputs(self):
+        print("Help Label Font Size", self.ids.help_Area.ids.helptext_Label.font_size)
+        self.ids.help_Area.ids.help_Menu.text = "Help"
+
         self.ids.midiart_Buttons.ids.colors_Choice.text = "Select Color"
         self.ids.midiart_Buttons.ids.midiart_Choice.text = "Midiart"
         self.ids.midiart_Buttons.ids.tb_N.state = "normal"
@@ -794,9 +912,11 @@ class MainUI(GridLayout):
         self.ids.midiart_Buttons.ids.txt_Key.text = "Key"
         self.ids.midiart_Buttons.ids.granularity_Choice.text = "Note Durations"
         self.ids.midiart_Buttons.ids.note_Height.text = str(127)
-
         self.ids.musicode_Area.ids.musicode_Choice.text = '  Select \n\nA Musicode'
         self.ids.musicode_Area.ids.txt_Input.text = ""
+
+        self.ids.help_Area.ids.helptext_Label.font_size = 10
+        self.ids.midiart_Buttons.ids.colors_Choice.font_size = 15
 
         reload(MIDAS_Settings)
 
@@ -810,7 +930,8 @@ class MainUI(GridLayout):
         self.ids.midiart_Buttons.ids.granularity_Choice.text == "Note Durations",
         self.ids.midiart_Buttons.ids.note_Height.text == '127',
         self.ids.musicode_Area.ids.musicode_Choice.text == '  Select \n\nA Musicode',
-        self.ids.musicode_Area.ids.txt_Input.text is ""]
+        self.ids.musicode_Area.ids.txt_Input.text is "",
+        self.ids.help_Area.ids.help_Menu.text is "Help"]
 
         assertion_list2 = [self.ids.midiart_Buttons.ids.colors_Choice.text,
         self.ids.midiart_Buttons.ids.midiart_Choice.text,
@@ -820,7 +941,10 @@ class MainUI(GridLayout):
         self.ids.midiart_Buttons.ids.granularity_Choice.text,
         self.ids.midiart_Buttons.ids.note_Height.text,
         self.ids.musicode_Area.ids.musicode_Choice.text,
-        self.ids.musicode_Area.ids.txt_Input.text]
+        self.ids.musicode_Area.ids.txt_Input.text,
+        self.ids.help_Area.ids.help_Menu.text]
+
+        #TODO help_Area.ids.helptext_Label???? HERE?
 
         print("Assertion_List: -->", assertion_list)
         print("Assertion_List2: -->", assertion_list2)
@@ -831,6 +955,7 @@ class MainUI(GridLayout):
     def replace_imageView_with_coffeeButton(self):
         def open_kofi_link(event):
             webbrowser.open(r"https://ko-fi.com/themagichammer")
+        #if self.coffee_marker is False:
 
         self.coffee_button = Button(text="  ♫Sounds Good!♫\n\n\n\n\n\n\n\n\n Here's some Ko-Fi!", font_size=25)
         self.coffee_button.font_name = MIDAS_Settings.font_name
@@ -843,19 +968,24 @@ class MainUI(GridLayout):
         self.image_View = self.ids.imagedraw_Area.ids.image_View
         self.ids.imagedraw_Area.remove_widget(self.ids.imagedraw_Area.ids.image_View)
         self.imageView_marker = False
+
         self.ids.imagedraw_Area.add_widget(self.coffee_button)
-
-
         self.coffee_marker = True
+        # else:
+        #     pass
+
 
     def restore_imageView(self):
         self.ids.imagedraw_Area.remove_widget(self.ids.imagedraw_Area.ids.coffee_Button)
+        self.coffee_marker = False
         #self.ids.imagedraw_Area.add_widget(self.ids.imagedraw_Area.ids.image_View)
+
         if self.imageView_marker is True:
             pass
         else:
             self.ids.imagedraw_Area.add_widget(self.image_View)
         self.imageView_marker = True
+
 
     def welcome_screen(self):
         print("Welcome Screen")
@@ -870,6 +1000,8 @@ class MainUI(GridLayout):
         self.ids.imagedraw_Area.change_image()
         self.ids.imagedraw_Area.ids.image_View.reload()
 
+        self.ids.help_Area.ids.helptext_Label.font_size = 10
+        print("Help Label Font Size", self.ids.help_Area.ids.helptext_Label.font_size)
         self.ids.help_Area.ids.helptext_Label.text = "Turn text and images into MIDI files!                                                                                      \n" \
                                                      "Navigate to the export folder. ---------------------->>>                                                                          \n" \
                                                      "Drag and drop your created midi file into any Digital Audio Workstation, and HAVE A BLAST producing Visual Music!"
@@ -895,6 +1027,9 @@ class MainUI(GridLayout):
         self.ids.imagedraw_Area.change_image(MIDAS_Settings.musicodes_visual)
         self.ids.imagedraw_Area.ids.image_View.reload()
         Latin_Script = '''AaBbCcDdEeFfGgHhIiJjKkLlMmNnOoPpQqRrSsTtUuVvWwXxYyZz     ?,;\':-.!\"()[]/     0123456789                 '''
+
+        self.ids.help_Area.ids.helptext_Label.font_size = 10
+        print("Help Label Font Size", self.ids.help_Area.ids.helptext_Label.font_size)
         self.ids.help_Area.ids.helptext_Label.text = '''Translate text of any of the following characters into music as different "musicodes" such as braille or morse code!   \n %s''' % Latin_Script
 
 
@@ -910,6 +1045,8 @@ class MainUI(GridLayout):
         self.ids.imagedraw_Area.change_image(MIDAS_Settings.midiart_visual)
         self.ids.imagedraw_Area.ids.image_View.reload()
 
+        self.ids.help_Area.ids.helptext_Label.font_size = 10
+        print("Help Label Font Size", self.ids.help_Area.ids.helptext_Label.font_size)
         self.ids.help_Area.ids.helptext_Label.text = '''Transform images into music via edges, black and white, or color methods!'''
 
 
@@ -924,9 +1061,14 @@ class MainUI(GridLayout):
 
         self.ids.imagedraw_Area.change_image(MIDAS_Settings.credits_visual)
         self.ids.imagedraw_Area.ids.image_View.reload()
-        #self.refresh_counter = 0
+
+        #self.refresh_marker = "Welcome_Screen1"
+        #print("R_counter", self.refresh_marker)
+
         #self.ids.imagedraw_Area.ids.image_View.keep_ratio = True
 
+        self.ids.help_Area.ids.helptext_Label.font_size = 10
+        print("Help Label Font Size", self.ids.help_Area.ids.helptext_Label.font_size)
         self.ids.help_Area.ids.helptext_Label.text = '''A special thank you to my older brother for teaching me python and for the original layout.'''
 
 
@@ -936,6 +1078,7 @@ class MainUI(GridLayout):
             self.reset_inputs()
             print("Inputs Reset")
 
+
         self.ids.musicodedraw_Area.change_image(MIDAS_Settings.support_banner)
         self.ids.musicodedraw_Area.ids.musicode_View.reload()
         #print("CHILDREN", self.children)
@@ -943,8 +1086,11 @@ class MainUI(GridLayout):
         self.replace_imageView_with_coffeeButton()
 
 
-        self.refresh_counter = 0
+        self.refresh_marker = "Welcome_Screen1"
+        print("R_counter0", self.refresh_marker)
 
+        self.ids.help_Area.ids.helptext_Label.font_size = 10
+        print("Help Label Font Size", self.ids.help_Area.ids.helptext_Label.font_size)
         self.ids.help_Area.ids.helptext_Label.text = '''A coffee for 5 makes me feel alive! Your support is most appreciated. Thank you.'''
 
 
