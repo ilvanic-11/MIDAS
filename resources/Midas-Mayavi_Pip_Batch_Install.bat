@@ -11,6 +11,7 @@ python -m pip install --upgrade numpy --user
 python -m pip install --upgrade numpy_indexed --user	
 :: NUMPY_INDEXED LICENSE: Freely Distributable
 python -m pip install --upgrade music21 --user
+::python -m pip install music21==5.7.0
 :: MUSIC21 LICENSE: BSD License
 
 ::python -m pip install --upgrade matlab --user

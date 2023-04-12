@@ -2,7 +2,7 @@ numpy
 
 numpy_indexed 	
 
-music21 
+music21==5.7.0
 
 matlab 
 

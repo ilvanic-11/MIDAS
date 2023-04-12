@@ -9,12 +9,12 @@ Instructions from top to bottom for a fresh Midas_wx\Midas_kv installation of Mi
 1. 
 	Download and Install Pycharm, Notepad++, Anaconda (if you wish), Microsoft Visual C++ Redistributable 
 	-Google:
-		-pycharm download
-		-notepad++ download
-		-Run this in web browser url bar -->  https://aka.ms/vs/17/release/vc_redist.x64.exe --This will immediately download what is needed.
-		--https://docs.microsoft.com/en-US/cpp/windows/latest-supported-vc-redist?view=msvc-170
-		(for demonstration purposes, it is advised to install FL Studio20+, any version(Fruity, Producer, etc.) that uses the Piano Roll)
-		-anaconda download(if you wish
+		-->pycharm download
+		-->notepad++ download
+		-->Run this in web browser url bar -->  https://aka.ms/vs/17/release/vc_redist.x64.exe --This will immediately download what is needed.
+		-->https://docs.microsoft.com/en-US/cpp/windows/latest-supported-vc-redist?view=msvc-170
+		-->(for demonstration purposes, it is advised to install FL Studio20+, any version(Fruity, Producer, etc.) that uses the Piano Roll)
+		-->anaconda download(if you wish
 		-
 	
 	
@@ -36,7 +36,7 @@ Instructions from top to bottom for a fresh Midas_wx\Midas_kv installation of Mi
 	In terminal window toolbar, click the dropdown arrow at the far right and select Command Prompt.
 	The terminal should display the following:
 	(venv) C:\Users\user\MyProject>
-	From here, execute the following command: pip install -r C:\Users\unkno\Midas\resources\Midas_Requirements.txt
+	From here, execute the following command: pip install -r C:\Users\youtheuser\Midas\resources\Midas_Requirements.txt (adjust this command as necessary depending on where it is installed)
 	
 	Run MIDAS_wx.
 	Run MIDAS_kivy.

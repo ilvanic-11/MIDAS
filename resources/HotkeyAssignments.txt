@@ -69,8 +69,8 @@ Midas Key Bindings
 
 "Ctrl+Alt+I"	-- Opens a File Dialog with the 'intemediary_path' as its directory.
 
-#--Edit Menu--#
 
+#--Edit Menu--#
 #Undefined, currently.
 "Ctrl Z"
 "Ctrl Y"
@@ -94,6 +94,9 @@ Midas Key Bindings
 
 "Alt+Shift + Curser(arrows or mouse)" --Multiple cursors
 
+
+#--Piano Roll--#
+"Ctrl+Enter" 			 -- Trigger update of actor_array4D_changed (After using arrows to draw in the piano roll, this updates the mayavi display with what's arrow-drawn in the piano roll)
 
 
 Primary Interface Bindings.

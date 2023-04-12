@@ -3,7 +3,14 @@ import time
 from importlib import reload
 print("Imported function", reload)
 from traits.etsconfig.api import ETSConfig
-#ETSConfig.toolkit = 'wx'
+ETSConfig.toolkit = 'wx'
+#from pyface.ui.wx.init import toolkit_object
+#import pyface.ui.null
+
+import pyface
+#from pyface.wx import *
+print("Imported", pyface)
+
 import mayavi
 print("Imported", mayavi)
 from mayavi import mlab
@@ -12,17 +19,21 @@ import numpy
 import numpy as np
 print("Imported (and as 'np')", numpy)
 import sympy
-import numpy_indexed as npi
-print("Imported (and as 'npi'", npi)
 print("Imported", sympy)
+import numpy_indexed as npi
+print("Imported (and as 'npi')", npi)
 import music21
 print("Imported", music21)
 import pyo
 print("Imported", pyo)
 import mido
 print("Imported", mido)
+
+# This setlocale stuff had to do with an open3D error I encountered at the time, hence why it's place right before that
+# import here.
 import locale
 locale.setlocale(locale.LC_ALL, 'en_US')
+
 import open3d
 print("Imported", open3d)
 import cv2

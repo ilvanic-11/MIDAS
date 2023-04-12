@@ -203,7 +203,7 @@ class Musicode():
 				#wx_progress_updater.Update(i, 1)   #[i, 0], 50)
 				wx_progress_updater.SetValue(i-.5)   #[i, 0], 50)
 				#wx_progress_updater.Refresh()
-				sleep(.05)
+				sleep(.5) #0.05
 				wx_progress_updater.SetValue(i)
 				#print("VALUE", i)
 			except Exception as e:
