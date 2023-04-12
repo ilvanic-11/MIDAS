@@ -1,0 +1,200 @@
+2023-04-05 19:03:17,799 - DEBUG - mayavi.core.registry - Engine [<mayavi.core.engine.Engine object at 0x000001699D5D5228>] named Engine1 registered
+2023-04-05 19:03:17,800 - DEBUG - mayavi.core.registry - Engine [<mayavi.core.engine.Engine object at 0x000001699D5D5228>] named Engine2 registered
+2023-04-05 19:03:22,572 - ERROR - traits - Exception occurred in traits notification handler for object: <mayavi.tools.mlab_scene_model.MlabSceneModel object at 0x000001699D54EE28>, trait: activated, old value: <undefined>, new value: True
+Traceback (most recent call last):
+  File "traits\trait_notifiers.py", line 522, in _dispatch_change_event
+  File "traits\trait_notifiers.py", line 484, in dispatch
+  File "mayavi3D\Mayavi3DWindow.py", line 631, in create_3dmidiart_display
+  File "mayavi3D\Mayavi3DWindow.py", line 1062, in establish_highlighter_plane
+AttributeError: 'MainWindow' object has no attribute 'pianorollpanel'
+2023-04-05 19:03:23,365 - INFO - __main__ - PianoRollPanel.__init__()
+2023-04-05 19:03:23,573 - ERROR - traits - Exception occurred in traits notification handler for object: <mayavi3D.Mayavi3DWindow.Mayavi3idiView object at 0x000001699D130888>, trait: cur_z, old value: 0, new value: 90
+Traceback (most recent call last):
+  File "traits\trait_notifiers.py", line 522, in _dispatch_change_event
+  File "traits\trait_notifiers.py", line 484, in dispatch
+  File "mayavi3D\Mayavi3DWindow.py", line 1656, in highlighter_plane_chase
+  File "mayavi3D\Mayavi3DWindow.py", line 1917, in highlighter_transformation
+IndexError: list index out of range
+2023-04-05 19:03:23,625 - INFO - __main__ - new_actor() 0_Actor 0
+2023-04-05 19:03:24,291 - INFO - __main__ - UpdateFilter():
+2023-04-05 19:03:24,292 - INFO - __main__ - UpdateFilter():
+2023-04-05 19:06:02,352 - DEBUG - mayavi.core.registry - Engine [<mayavi.core.engine.Engine object at 0x000001EBA1825288>] named Engine1 registered
+2023-04-05 19:06:02,353 - DEBUG - mayavi.core.registry - Engine [<mayavi.core.engine.Engine object at 0x000001EBA1825288>] named Engine2 registered
+2023-04-05 19:06:07,211 - ERROR - traits - Exception occurred in traits notification handler for object: <mayavi.tools.mlab_scene_model.MlabSceneModel object at 0x000001EBA180DFA8>, trait: activated, old value: <undefined>, new value: True
+Traceback (most recent call last):
+  File "traits\trait_notifiers.py", line 522, in _dispatch_change_event
+  File "traits\trait_notifiers.py", line 484, in dispatch
+  File "mayavi3D\Mayavi3DWindow.py", line 631, in create_3dmidiart_display
+  File "mayavi3D\Mayavi3DWindow.py", line 1062, in establish_highlighter_plane
+AttributeError: 'MainWindow' object has no attribute 'pianorollpanel'
+2023-04-05 19:06:07,856 - INFO - __main__ - PianoRollPanel.__init__()
+2023-04-05 19:06:08,023 - ERROR - traits - Exception occurred in traits notification handler for object: <mayavi3D.Mayavi3DWindow.Mayavi3idiView object at 0x000001EB9FC001C8>, trait: cur_z, old value: 0, new value: 90
+Traceback (most recent call last):
+  File "traits\trait_notifiers.py", line 522, in _dispatch_change_event
+  File "traits\trait_notifiers.py", line 484, in dispatch
+  File "mayavi3D\Mayavi3DWindow.py", line 1656, in highlighter_plane_chase
+  File "mayavi3D\Mayavi3DWindow.py", line 1917, in highlighter_transformation
+IndexError: list index out of range
+2023-04-05 19:06:08,062 - INFO - __main__ - new_actor() 0_Actor 0
+2023-04-05 19:06:08,682 - INFO - __main__ - UpdateFilter():
+2023-04-05 19:06:08,683 - INFO - __main__ - UpdateFilter():
+2023-04-06 01:14:52,899 - DEBUG - mayavi.core.registry - Engine [<mayavi.core.engine.Engine object at 0x000002E2527CFDC8>] named Engine1 registered
+2023-04-06 01:14:52,900 - DEBUG - mayavi.core.registry - Engine [<mayavi.core.engine.Engine object at 0x000002E2527CFDC8>] named Engine2 registered
+2023-04-06 01:14:57,401 - ERROR - traits - Exception occurred in traits notification handler for object: <mayavi.tools.mlab_scene_model.MlabSceneModel object at 0x000002E2508A9B88>, trait: activated, old value: <undefined>, new value: True
+Traceback (most recent call last):
+  File "traits\trait_notifiers.py", line 522, in _dispatch_change_event
+  File "traits\trait_notifiers.py", line 484, in dispatch
+  File "mayavi3D\Mayavi3DWindow.py", line 631, in create_3dmidiart_display
+  File "mayavi3D\Mayavi3DWindow.py", line 1062, in establish_highlighter_plane
+AttributeError: 'MainWindow' object has no attribute 'pianorollpanel'
+2023-04-06 01:14:58,212 - INFO - __main__ - PianoRollPanel.__init__()
+2023-04-06 01:14:58,376 - ERROR - traits - Exception occurred in traits notification handler for object: <mayavi3D.Mayavi3DWindow.Mayavi3idiView object at 0x000002E2505110A8>, trait: cur_z, old value: 0, new value: 90
+Traceback (most recent call last):
+  File "traits\trait_notifiers.py", line 522, in _dispatch_change_event
+  File "traits\trait_notifiers.py", line 484, in dispatch
+  File "mayavi3D\Mayavi3DWindow.py", line 1656, in highlighter_plane_chase
+  File "mayavi3D\Mayavi3DWindow.py", line 1917, in highlighter_transformation
+IndexError: list index out of range
+2023-04-06 01:14:58,415 - INFO - __main__ - new_actor() 0_Actor 0
+2023-04-06 01:14:59,060 - INFO - __main__ - UpdateFilter():
+2023-04-06 01:14:59,061 - INFO - __main__ - UpdateFilter():
+2023-04-06 18:13:17,515 - DEBUG - mayavi.core.registry - Engine [<mayavi.core.engine.Engine object at 0x00000239D39022E8>] named Engine1 registered
+2023-04-06 18:13:17,516 - DEBUG - mayavi.core.registry - Engine [<mayavi.core.engine.Engine object at 0x00000239D39022E8>] named Engine2 registered
+2023-04-06 18:13:26,310 - ERROR - traits - Exception occurred in traits notification handler for object: <mayavi.tools.mlab_scene_model.MlabSceneModel object at 0x00000239D382E0A8>, trait: activated, old value: <undefined>, new value: True
+Traceback (most recent call last):
+  File "traits\trait_notifiers.py", line 522, in _dispatch_change_event
+  File "traits\trait_notifiers.py", line 484, in dispatch
+  File "mayavi3D\Mayavi3DWindow.py", line 631, in create_3dmidiart_display
+  File "mayavi3D\Mayavi3DWindow.py", line 1062, in establish_highlighter_plane
+AttributeError: 'MainWindow' object has no attribute 'pianorollpanel'
+2023-04-06 18:13:28,050 - INFO - __main__ - PianoRollPanel.__init__()
+2023-04-06 18:13:28,387 - ERROR - traits - Exception occurred in traits notification handler for object: <mayavi3D.Mayavi3DWindow.Mayavi3idiView object at 0x00000239D3803228>, trait: cur_z, old value: 0, new value: 90
+Traceback (most recent call last):
+  File "traits\trait_notifiers.py", line 522, in _dispatch_change_event
+  File "traits\trait_notifiers.py", line 484, in dispatch
+  File "mayavi3D\Mayavi3DWindow.py", line 1656, in highlighter_plane_chase
+  File "mayavi3D\Mayavi3DWindow.py", line 1917, in highlighter_transformation
+IndexError: list index out of range
+2023-04-06 18:13:28,461 - INFO - __main__ - new_actor() 0_Actor 0
+2023-04-06 18:13:29,387 - INFO - __main__ - UpdateFilter():
+2023-04-06 18:13:29,388 - INFO - __main__ - UpdateFilter():
+2023-04-06 21:33:13,915 - DEBUG - mayavi.core.registry - Engine [<mayavi.core.engine.Engine object at 0x0000024D4D83F528>] named Engine1 registered
+2023-04-06 21:33:13,916 - DEBUG - mayavi.core.registry - Engine [<mayavi.core.engine.Engine object at 0x0000024D4D83F528>] named Engine2 registered
+2023-04-06 21:33:18,931 - ERROR - traits - Exception occurred in traits notification handler for object: <mayavi.tools.mlab_scene_model.MlabSceneModel object at 0x0000024D4D9BD708>, trait: activated, old value: <undefined>, new value: True
+Traceback (most recent call last):
+  File "traits\trait_notifiers.py", line 522, in _dispatch_change_event
+  File "traits\trait_notifiers.py", line 484, in dispatch
+  File "mayavi3D\Mayavi3DWindow.py", line 631, in create_3dmidiart_display
+  File "mayavi3D\Mayavi3DWindow.py", line 1062, in establish_highlighter_plane
+AttributeError: 'MainWindow' object has no attribute 'pianorollpanel'
+2023-04-06 21:33:19,854 - INFO - __main__ - PianoRollPanel.__init__()
+2023-04-06 21:33:20,054 - ERROR - traits - Exception occurred in traits notification handler for object: <mayavi3D.Mayavi3DWindow.Mayavi3idiView object at 0x0000024D4D6ADF48>, trait: cur_z, old value: 0, new value: 90
+Traceback (most recent call last):
+  File "traits\trait_notifiers.py", line 522, in _dispatch_change_event
+  File "traits\trait_notifiers.py", line 484, in dispatch
+  File "mayavi3D\Mayavi3DWindow.py", line 1656, in highlighter_plane_chase
+  File "mayavi3D\Mayavi3DWindow.py", line 1917, in highlighter_transformation
+IndexError: list index out of range
+2023-04-06 21:33:20,107 - INFO - __main__ - new_actor() 0_Actor 0
+2023-04-06 21:33:20,734 - INFO - __main__ - UpdateFilter():
+2023-04-06 21:33:20,735 - INFO - __main__ - UpdateFilter():
+2023-04-06 21:38:15,384 - INFO - __main__ - OnListItemActivated():
+2023-04-07 18:38:03,915 - DEBUG - mayavi.core.registry - Engine [<mayavi.core.engine.Engine object at 0x000001772A2AFC48>] named Engine1 registered
+2023-04-07 18:38:03,917 - DEBUG - mayavi.core.registry - Engine [<mayavi.core.engine.Engine object at 0x000001772A2AFC48>] named Engine2 registered
+2023-04-07 18:38:08,745 - ERROR - traits - Exception occurred in traits notification handler for object: <mayavi.tools.mlab_scene_model.MlabSceneModel object at 0x000001772808B288>, trait: activated, old value: <undefined>, new value: True
+Traceback (most recent call last):
+  File "traits\trait_notifiers.py", line 522, in _dispatch_change_event
+  File "traits\trait_notifiers.py", line 484, in dispatch
+  File "mayavi3D\Mayavi3DWindow.py", line 631, in create_3dmidiart_display
+  File "mayavi3D\Mayavi3DWindow.py", line 1062, in establish_highlighter_plane
+AttributeError: 'MainWindow' object has no attribute 'pianorollpanel'
+2023-04-07 18:38:09,653 - INFO - __main__ - PianoRollPanel.__init__()
+2023-04-07 18:38:09,882 - ERROR - traits - Exception occurred in traits notification handler for object: <mayavi3D.Mayavi3DWindow.Mayavi3idiView object at 0x000001772A0A45E8>, trait: cur_z, old value: 0, new value: 90
+Traceback (most recent call last):
+  File "traits\trait_notifiers.py", line 522, in _dispatch_change_event
+  File "traits\trait_notifiers.py", line 484, in dispatch
+  File "mayavi3D\Mayavi3DWindow.py", line 1656, in highlighter_plane_chase
+  File "mayavi3D\Mayavi3DWindow.py", line 1917, in highlighter_transformation
+IndexError: list index out of range
+2023-04-07 18:38:09,930 - INFO - __main__ - new_actor() 0_Actor 0
+2023-04-07 18:38:10,612 - INFO - __main__ - UpdateFilter():
+2023-04-07 18:38:10,613 - INFO - __main__ - UpdateFilter():
+2023-04-07 18:39:38,390 - INFO - __main__ - OnListItemActivated():
+2023-04-08 17:26:08,213 - DEBUG - mayavi.core.registry - Engine [<mayavi.core.engine.Engine object at 0x00000227EEB60768>] named Engine1 registered
+2023-04-08 17:26:08,215 - DEBUG - mayavi.core.registry - Engine [<mayavi.core.engine.Engine object at 0x00000227EEB60768>] named Engine2 registered
+2023-04-08 17:26:13,028 - ERROR - traits - Exception occurred in traits notification handler for object: <mayavi.tools.mlab_scene_model.MlabSceneModel object at 0x00000227F0BDDEE8>, trait: activated, old value: <undefined>, new value: True
+Traceback (most recent call last):
+  File "traits\trait_notifiers.py", line 522, in _dispatch_change_event
+  File "traits\trait_notifiers.py", line 484, in dispatch
+  File "mayavi3D\Mayavi3DWindow.py", line 631, in create_3dmidiart_display
+  File "mayavi3D\Mayavi3DWindow.py", line 1062, in establish_highlighter_plane
+AttributeError: 'MainWindow' object has no attribute 'pianorollpanel'
+2023-04-08 17:26:14,026 - INFO - __main__ - PianoRollPanel.__init__()
+2023-04-08 17:26:14,315 - ERROR - traits - Exception occurred in traits notification handler for object: <mayavi3D.Mayavi3DWindow.Mayavi3idiView object at 0x00000227ED255408>, trait: cur_z, old value: 0, new value: 90
+Traceback (most recent call last):
+  File "traits\trait_notifiers.py", line 522, in _dispatch_change_event
+  File "traits\trait_notifiers.py", line 484, in dispatch
+  File "mayavi3D\Mayavi3DWindow.py", line 1656, in highlighter_plane_chase
+  File "mayavi3D\Mayavi3DWindow.py", line 1917, in highlighter_transformation
+IndexError: list index out of range
+2023-04-08 17:26:14,381 - INFO - __main__ - new_actor() 0_Actor 0
+2023-04-08 17:26:15,045 - INFO - __main__ - UpdateFilter():
+2023-04-08 17:26:15,047 - INFO - __main__ - UpdateFilter():
+2023-04-08 17:31:58,426 - DEBUG - mayavi.core.registry - Engine [<mayavi.core.engine.Engine object at 0x0000011A16677E88>] named Engine1 registered
+2023-04-08 17:31:58,431 - DEBUG - mayavi.core.registry - Engine [<mayavi.core.engine.Engine object at 0x0000011A16677E88>] named Engine2 registered
+2023-04-08 17:32:16,082 - ERROR - traits - Exception occurred in traits notification handler for object: <mayavi.tools.mlab_scene_model.MlabSceneModel object at 0x0000011A149D4B88>, trait: activated, old value: <undefined>, new value: True
+Traceback (most recent call last):
+  File "traits\trait_notifiers.py", line 522, in _dispatch_change_event
+  File "traits\trait_notifiers.py", line 484, in dispatch
+  File "mayavi3D\Mayavi3DWindow.py", line 631, in create_3dmidiart_display
+  File "mayavi3D\Mayavi3DWindow.py", line 1062, in establish_highlighter_plane
+AttributeError: 'MainWindow' object has no attribute 'pianorollpanel'
+2023-04-08 17:32:18,315 - INFO - __main__ - PianoRollPanel.__init__()
+2023-04-08 17:32:18,950 - ERROR - traits - Exception occurred in traits notification handler for object: <mayavi3D.Mayavi3DWindow.Mayavi3idiView object at 0x0000011A136AF2E8>, trait: cur_z, old value: 0, new value: 90
+Traceback (most recent call last):
+  File "traits\trait_notifiers.py", line 522, in _dispatch_change_event
+  File "traits\trait_notifiers.py", line 484, in dispatch
+  File "mayavi3D\Mayavi3DWindow.py", line 1656, in highlighter_plane_chase
+  File "mayavi3D\Mayavi3DWindow.py", line 1917, in highlighter_transformation
+IndexError: list index out of range
+2023-04-08 17:32:19,094 - INFO - __main__ - new_actor() 0_Actor 0
+2023-04-08 17:32:20,999 - INFO - __main__ - UpdateFilter():
+2023-04-08 17:32:21,001 - INFO - __main__ - UpdateFilter():
+2023-04-08 17:35:53,808 - INFO - __main__ - OnDrawMode():
+2023-04-08 17:38:04,742 - INFO - __main__ - OnSelectMode():
+2023-04-08 20:27:47,134 - INFO - __main__ - new_actor() Clrs1_1_Pikachu.png 1
+2023-04-08 20:27:47,916 - INFO - __main__ - new_actor() Clrs1_2_Pikachu.png 2
+2023-04-08 20:27:48,563 - INFO - __main__ - new_actor() Clrs1_3_Pikachu.png 3
+2023-04-08 20:27:49,219 - INFO - __main__ - new_actor() Clrs1_4_Pikachu.png 4
+2023-04-08 20:27:49,856 - INFO - __main__ - new_actor() Clrs1_5_Pikachu.png 5
+2023-04-08 20:27:50,527 - INFO - __main__ - new_actor() Clrs1_6_Pikachu.png 6
+2023-04-08 20:27:51,212 - INFO - __main__ - new_actor() Clrs1_7_Pikachu.png 7
+2023-04-08 20:27:51,885 - INFO - __main__ - new_actor() Clrs1_8_Pikachu.png 8
+2023-04-08 20:27:52,510 - INFO - __main__ - new_actor() Clrs1_9_Pikachu.png 9
+2023-04-08 20:27:53,567 - INFO - __main__ - new_actor() Clrs1_10_Pikachu.png 10
+2023-04-08 20:27:54,215 - INFO - __main__ - new_actor() Clrs1_11_Pikachu.png 11
+2023-04-08 20:27:55,268 - INFO - __main__ - new_actor() Clrs1_12_Pikachu.png 12
+2023-04-08 20:27:55,969 - INFO - __main__ - new_actor() Clrs1_13_Pikachu.png 13
+2023-04-08 20:27:56,640 - INFO - __main__ - new_actor() Clrs1_14_Pikachu.png 14
+2023-04-08 20:27:57,663 - INFO - __main__ - new_actor() Clrs1_15_Pikachu.png 15
+2023-04-08 20:28:00,931 - INFO - __main__ - new_actor() Clrs1_16_Pikachu.png 16
+2023-04-11 18:38:12,936 - DEBUG - mayavi.core.registry - Engine [<mayavi.core.engine.Engine object at 0x0000017541093828>] named Engine1 registered
+2023-04-11 18:38:12,937 - DEBUG - mayavi.core.registry - Engine [<mayavi.core.engine.Engine object at 0x0000017541093828>] named Engine2 registered
+2023-04-11 18:38:17,954 - ERROR - traits - Exception occurred in traits notification handler for object: <mayavi.tools.mlab_scene_model.MlabSceneModel object at 0x000001753F23BEE8>, trait: activated, old value: <undefined>, new value: True
+Traceback (most recent call last):
+  File "traits\trait_notifiers.py", line 522, in _dispatch_change_event
+  File "traits\trait_notifiers.py", line 484, in dispatch
+  File "mayavi3D\Mayavi3DWindow.py", line 631, in create_3dmidiart_display
+  File "mayavi3D\Mayavi3DWindow.py", line 1062, in establish_highlighter_plane
+AttributeError: 'MainWindow' object has no attribute 'pianorollpanel'
+2023-04-11 18:38:19,000 - INFO - __main__ - PianoRollPanel.__init__()
+2023-04-11 18:38:19,211 - ERROR - traits - Exception occurred in traits notification handler for object: <mayavi3D.Mayavi3DWindow.Mayavi3idiView object at 0x000001753F1491C8>, trait: cur_z, old value: 0, new value: 90
+Traceback (most recent call last):
+  File "traits\trait_notifiers.py", line 522, in _dispatch_change_event
+  File "traits\trait_notifiers.py", line 484, in dispatch
+  File "mayavi3D\Mayavi3DWindow.py", line 1656, in highlighter_plane_chase
+  File "mayavi3D\Mayavi3DWindow.py", line 1917, in highlighter_transformation
+IndexError: list index out of range
+2023-04-11 18:38:19,253 - INFO - __main__ - new_actor() 0_Actor 0
+2023-04-11 18:38:19,919 - INFO - __main__ - UpdateFilter():
+2023-04-11 18:38:19,920 - INFO - __main__ - UpdateFilter():

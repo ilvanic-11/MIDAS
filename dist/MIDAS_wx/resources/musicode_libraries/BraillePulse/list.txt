@@ -1,0 +1,5 @@
+bp_Lowercase
+bp_Numbers
+bp_Punctuation
+bp_Uppercase
+list.txt

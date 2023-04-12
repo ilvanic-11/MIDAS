@@ -292,34 +292,41 @@ class ZPlanesControlPanel(wx.Panel):
 		zero_list = list(zero_list)
 		zero_list.sort()
 		print("Zero_list", zero_list)
-
+		#TODO WTF is this? Relearn. 3/30/23
 		if zero_list[0] == self.m_v.cur_z:
 			pass
 		else:
 			self.ZPlanesListBox.Activate_Zplane(zero_list[0])
 			self.GetTopLevelParent().zplane_scrolled = zero_list[0]
 
-	def OnGoToNearestEmptyZplane(self, event):
-		assert self.m_v.CurrentActor()._points.size != 0, \
-			print("Your actor has no points, so your zplane won't either.")
-		z_dict = midiart3D.get_planes_on_axis(self.m_v.CurrentActor()._points, ordered=True, array=True)
-		list_1 = [i for i in z_dict.keys() if i.size != 0]
-		list_1.sort()
-		set_1 = set(list_1)
-		list_2 = [i for i in range(0, 128, 1)]
-		set_2 = set(list_2)
-		zero_list = set_2.difference(set_1)
-		zero_list = list(zero_list)
-		zero_list.sort()
-		print("Zero_list", zero_list)
-		a = min(zero_list, key=lambda x: abs(x - self.m_v.cur_z))
-		print("Nearest_0", a)
 
-		if a == self.m_v.cur_z:
-			pass
+	def OnGoToNearestEmptyZplane(self, event):
+		if self.m_v.CurrentActor()._points.size == 0:
+			print("Your actor has no points, so your zplane won't either. As such, "
+				  "all zplanes are empty and therefore all zplanes are 'nearest'...."
+				  "initiating workaround----> Going to Zplane_90")
+
+			self.ZPlanesListBox.Activate_Zplane(90)
+			self.GetTopLevelParent().zplane_scrolled = 90
 		else:
-			self.ZPlanesListBox.Activate_Zplane(a)
-			self.GetTopLevelParent().zplane_scrolled = a
+			z_dict = midiart3D.get_planes_on_axis(self.m_v.CurrentActor()._points, ordered=True, array=True)
+			list_1 = [i for i in z_dict.keys() if i.size != 0]
+			list_1.sort()
+			set_1 = set(list_1)
+			list_2 = [i for i in range(0, 128, 1)]
+			set_2 = set(list_2)
+			zero_list = set_2.difference(set_1)
+			zero_list = list(zero_list)
+			zero_list.sort()
+			print("Zero_list", zero_list)
+			a = min(zero_list, key=lambda x: abs(x - self.m_v.cur_z))
+			print("Nearest_0", a)
+
+			if a == self.m_v.cur_z:
+				pass
+			else:
+				self.ZPlanesListBox.Activate_Zplane(a)
+				self.GetTopLevelParent().zplane_scrolled = a
 
 
 class CustomZPlanesListBox(wx.ListCtrl, CheckListCtrlMixin):

@@ -1,0 +1,13 @@
+list.txt
+musicode_bp_apostrophe-singlequotationmark.mid
+musicode_bp_backslash.mid
+musicode_bp_closequotationmark.mid
+musicode_bp_colon.mid
+musicode_bp_comma.mid
+musicode_bp_decimalpoint.mid
+musicode_bp_exclamationmark.mid
+musicode_bp_hyphen-dash-minus.mid
+musicode_bp_openclosebracketparenthesis.mid
+musicode_bp_openquotationmark.mid
+musicode_bp_periodfullstop.mid
+musicode_bp_semicolon.mid
