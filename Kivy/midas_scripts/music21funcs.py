@@ -77,6 +77,38 @@ import fractions
 #from midas_scripts import musicode
 from collections import OrderedDict
 
+chord_strings = ["Augmented", "Diminished", "Fifth", "Fifth 9th", "Fifth Octave", "Major", "Major 7th", "Minor",
+                 "Minor 7th", "Minor 9th", "Octave", "Suspended 2", "Suspended 4"]
+advanced_strings = ["6", "6add9", "6sus4", "7", "7#5", "7#5#9", "7#5b9", "7#9", "7#11", "7add11", "7add13", "7b5", "7b5b9",
+                    "7b9", "7sus4", "9", "9#5", "9#11", "9b5", "9b13", "9sus4", "11", "11b9", "13", "13#9", "13b5b9",
+                    "13b9", "add9", "aug", "augsus4", "m6", "m6add9", "m7", "m7add11", "m7add13", "m7b5", "m7b9", "m9",
+                    "m9b5", "m9-Maj7", "m11", "m13",  "madd9", "Maj7", "Maj7#5", "Maj7#11", "Maj7add13", "Maj7b5",
+                    "Maj9", "Maj9#5", "Maj9#11", "Maj9sus4", "Maj11", "Maj13", "MajB5", "Major", "mb5", "minor",
+                    "m-Maj7", "m-Maj7add11", "m-Maj7add13", "m-Maj11", "m-Maj13", "sus2", "sus4", "tri"]
+# chords_forms = [(0, 4, 4), (0, 3, 3), (0, 7), (0, 7, 7,), (0, 7, 5), (0, 4, 3), (0, 4, 3, 4), (0, 3, 4),  #subsequent steps
+#                     (0, 3, 4, 3), (0, 3, 4, 3, 4), (0, 12), (0, 2, 5), (0, 5, 2)]
+chords_forms = [(0, 4, 8), (0, 3, 6), (0, 7), (0, 7, 14), (0, 7, 12), (0, 4, 7), (0, 4, 7, 11), (0, 3, 7),    #Accumulative steps
+                    (0, 3, 7, 10), (0, 3, 7, 10, 14), (0, 12), (0, 2, 7), (0, 5, 7)]
+advanced_chords_forms = [[0, 4, 7, 9], [0, 4, 7, 9, 14], [0, 5, 7, 9], [0, 4, 7, 10], [0, 4, 8, 10], [0, 4, 8, 10, 15],
+                         [0, 4, 8, 10, 13], [0, 4, 7, 10, 15], [0, 4, 7, 10, 18], [0, 4, 7, 10, 17], [0, 4, 7, 10, 21],
+                         [0, 4, 6, 10], [0, 4, 6, 10, 13], [0, 4, 7, 10, 13], [0, 5, 7, 10], [0, 4, 7, 10, 14],
+                         [0, 4, 8, 10, 14], [0, 4, 7, 10, 14, 18], [0, 4, 6, 10, 14], [0, 4, 7, 10, 14, 20],
+                         [0, 5, 7, 10, 14], [0, 4, 7, 10, 14, 17], [0, 4, 7, 10, 13, 17], [0, 4, 7, 10, 14, 21],
+                         [0, 4, 7, 10, 15, 21], [0, 4, 6, 10, 13, 21], [0, 4, 7, 10, 13, 21], [0, 4, 7, 14], [0, 4, 8],
+                         [0, 5, 8], [0, 3, 7, 9], [0, 3, 7, 9, 14], [0, 3, 7, 10], [0, 3, 7, 10, 17], [0, 3, 7, 10, 21],
+                         [0, 3, 6, 10], [0, 3, 7, 10, 13], [0, 3, 7, 10, 14], [0, 3, 6, 10, 14], [0, 3, 7, 11, 14],
+                         [0, 3, 7, 10, 14, 17], [0, 3, 7, 10, 14, 21], [0, 3, 7, 14], [0, 4, 7, 11], [0, 4, 8, 11],
+                         [0, 4, 7, 11, 18], [0, 4, 7, 11, 21], [0, 4, 6, 11], [0, 4, 7, 11, 14], [0, 4, 8, 11, 14],
+                         [0, 4, 7, 11, 14, 18], [0, 5, 7, 11, 14], [0, 4, 7, 11, 14, 17], [0, 4, 7, 11, 14, 21],
+                         [0, 4, 6], [0, 4, 7], [0, 3, 6], [0, 3, 7], [0, 3, 7, 11], [0, 3, 7, 11, 17],
+                         [0, 3, 7, 11, 21], [0, 3, 7, 11, 14, 17], [0, 3, 7, 11, 14, 21], [0, 2, 7], [0, 5, 7],
+                         [0, 3, 6, 9]]
+chord_strings.extend([i for i in advanced_strings])
+chords_forms.extend([i for i in advanced_chords_forms])
+chord_dict = OrderedDict([i for i in zip(chord_strings, chords_forms)])
+
+
+
 ##TRANSPOSE_FUNCTIONS
 # --------------------------------------
 # -----------------------------------------------------------------------
@@ -268,14 +300,14 @@ def stretch_by_measure( in_stream, range_l, range_h, ratio, stretchDurations=Tru
     """
     print("Ratio=")
     print(ratio)
-    if in_stream.getElementsByClass(music21.stream.Measure) is None:
+    assert in_stream.getElementsByClass(music21.stream.Measure) is not None, \
         print("In function 'stretch_by_measure', in_stream has no measures. Cannot stretch.")
-        return None
+
     temp = music21.stream.Stream()
     m_num = 0
     l = list()
     for m in in_stream.getElementsByClass(music21.stream.Measure):
-        if (m.number >= range_l and m.number <= range_h):
+        if (m.number >= range_l and m.number <= range_h): #<
             for n in m.flat.notes:
                 l.append(m)
                 temp.insert(n.offset + (m_num * 4), n)
@@ -284,7 +316,7 @@ def stretch_by_measure( in_stream, range_l, range_h, ratio, stretchDurations=Tru
     print("in_stream")
     in_stream.show('txt')
 
-    in_stream.remove(l)
+    in_stream.remove(l)  #This is cool.
     print("after removing")
     in_stream.show('txt')
 
@@ -307,6 +339,25 @@ def stretch_by_measure( in_stream, range_l, range_h, ratio, stretchDurations=Tru
     in_stream.show('txt')
 
     return in_stream
+
+
+def restretch_by_factor(in_stream, factor, in_place=True):
+    """
+        This function restretches (it can also compress) the musical(midi) data in a stream by refactoring all the
+    notes' offsets and durations by a user specified amount.
+    :param in_stream:           Operand stream.
+    :param factor:              Multiplication refactoring value.
+    :param in_place:            Bool determing whether to return in_stream or a deep copy.
+    :return:
+    """
+    # starting_point * (target_highestTime / current_highestTime)
+    s = in_stream if in_place else copy.deepcopy(in_stream)
+
+    for i in list(s.recurse()):
+        i.duration.quarterLength = i.duration.quarterLength * factor
+        i.offset = i.offset * factor
+
+    return s
 
 
 #M-4.
@@ -383,7 +434,7 @@ def chop_up_notes(in_stream, offset_interval):
 
 
 # M-7.
-def merge_contiguous_notes(in_stream ):
+def merge_contiguous_notes(in_stream, part=False, skip=False, inPlace=False):
     """
         This function takes a stream of noticeably "chopped up notes" (see sister function) and reconnects or "glues"
     those notes (back) together in a contiguous manner.
@@ -393,13 +444,27 @@ def merge_contiguous_notes(in_stream ):
     :return:                new stream
     """
     import numpy as np
-    new_stream = music21.stream.Stream()
-    s = notafy(in_stream)
-    m = np.array(stream_to_matrix(s))
-    print(m)
-    new = matrix_to_stream(m, connect=True)
-    return new
-
+    new_stream = music21.stream.Stream() if part is False else music21.stream.Part()
+    if skip:
+        #Skip the notafy.
+        m = np.array(stream_to_matrix(in_stream))
+        print(m)
+        new = matrix_to_stream(m, connect=True)
+    else:
+        s = notafy(in_stream)
+        m = np.array(stream_to_matrix(s))
+        print(m)
+        new = matrix_to_stream(m, connect=True)
+    for i in in_stream.flat.notes:
+        in_stream.remove(i, recurse=True)
+    if inPlace:
+        for j in new.flat.notes:
+            in_stream.insert(j.offset, j)
+        return in_stream
+    else:
+        for j in new.flat.notes:
+            new_stream.insert(j.offset, j)
+        return new_stream
 
 
 ##SYNTHESIS_FUNCTIONS
@@ -450,7 +515,7 @@ def make_chords_from_notes(in_stream, in_chord, inv):
     in_stream.makeMeasures()
     for c in in_stream.flat.notes:
         if type(c) is music21.chord.Chord:
-            c.removeRedundantPitches()
+            c.removeRedundantPitches()  #TODO removeRedundantPitches causes .write problems. 02/21/2023
     return in_stream
 
 
@@ -483,8 +548,119 @@ def make_chords_from_notes_2(in_stream, in_chord, inv):
     return in_stream
 
 
+def make_chords_from_notes_3(in_stream, chord_form_list, inv_list=None):
+    """
+        This function is intended and designed to operate on a music21 stream sequence of already-existing,
+    non-overlapping notes only; no chords.
+    (for example: a music21.stream.Stream() object with notes 'appended' one by one.)
+
+    :param in_stream:           Our operand stream with sequential non-overlapping notes.
+    :param chord_form_list:     A list of strings denoting chord types (i.e "Fifth 9th", "Fifth Octave", "Major",
+                                                                        "Major 7th", "Minor", etc.)
+    :param inv_list:            A list of integers denoting which inversion of each chord to use. Since we are composing
+                                , and therefore deciding, our chords, we can also choose our chords' inversions.
+    :return:                    A new_stream full of our new chords that replaced our sequence of root notes.
+    """
+
+    error_string = "For proper use, the # of chords in your chord_form_list " \
+        "should match the # of notes you're turning into chords." \
+        "The same length should hold true for your inversion list."
+    if inv_list is not None:
+        assert len(in_stream.flat.notes) == len(chord_form_list) == len(inv_list), \
+        "%s" % error_string
+    else:
+        assert len(in_stream.flat.notes) == len(chord_form_list), \
+        "%s" % error_string
+    new_stream = music21.stream.Stream()
+    notes_from_stream = [i for i in in_stream.flat.notes]
+    for i in range(len(notes_from_stream)):
+        chord_from_note = note_to_chord(notes_from_stream[i], chord_form_list[i], inv=inv_list[i] if inv_list is not None else None)
+        new_stream.insert(chord_from_note.offset, chord_from_note)
+    return new_stream
+
+def note_to_chord(music21note, chord_form, inv=None):
+    """
+
+    :param music21note:
+    :param chord_form:
+    :param inv:
+    :return:
+    """
+    #TODO Finish chord_dict, #inv optionCHECK , and DOC!
+    chord_formula = chord_dict[chord_form]
+    chord_from_note = music21.chord.Chord([music21note.pitch.midi + i for i in chord_formula])
+    chord_from_note.duration = music21note.duration
+    chord_from_note.volume.velocity = music21note.volume.velocity if music21note.volume.velocity is not None else 90
+    chord_from_note.offset = music21note.offset
+
+    if inv is not None:
+        assert inv == len(chord_form),  "Your inversion selection does not match the size of your chord."
+        chord_from_note.inversion(inv)
+
+    return chord_from_note
+
+
 #Syn-4.
-def make_notes_from_string_of_numbers(in_string, keychoice=None, note_length = 1):
+def make_notes_from_numbers(input, note_length = 1, base=None):
+    """
+        This function takes a string or list of numbers on input and makes music21 notes from each of them individually where
+    the music.note.Note().pitch.midi value is set equal that digit.
+
+    #Example use:
+    >>>make_notes_from_numbers("123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ", base=36)
+    The keychoice=None was removed from the parameters inputs; keychoice can be done with the function
+    --> midiart.filter_notes_by_key()
+
+    #TODO NEEDS Finishing. The range of possible pitch values is only within a single octave at present. (i.e. The--
+    #TODO --handling of 10 = A, 11=B, 12=C for higher base numbers should equal a pitch higher than one octave)
+
+    :param in_string:
+    :param keychoice:
+    :param note_length:
+    :return:
+    """
+    # if keychoice == "":
+    #     keychoice = None
+    #     keysig = None
+    # else:
+    #     keysig = music21.key.Key(keychoice)
+    # allowedPitches = list()
+    # print("Key is: ")
+    # print(keysig)
+    # if keychoice == None:
+    #     allowedPitches = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
+    # elif (type(keysig) is music21.key.Key):
+    #     for p in music21.scale.Scale.extractPitchList(keysig.getScale()):
+    #         allowedPitches.append(p.pitchClass)
+    # allowedPitches[-1] = 12  #Dahfuq is this line?!
+    # print(allowedPitches)
+
+    if type(input) == list:
+        pass
+    elif type(input) == str:
+        input = [i for i in input]  #This won't deal with numbers that have multiple digits.
+
+    out_stream = music21.stream.Stream()
+    for k in input:
+        if k == " ":
+            r = music21.note.Rest()
+            r.duration.quarterLength = note_length
+            out_stream.append(r)
+
+        else:# k.isnumeric():   #This won't work if 'ABCDEF' count as numbers for higher bases.
+            k = int(k, base if base is not None else 10)
+            #if k >= len(allowedPitches):
+                #k = k % len(allowedPitches)
+            n = music21.note.Note()
+            n.pitch.ps = k #allowedPitches[int(k)]
+            n.duration.quarterLength = note_length
+            out_stream.append(n)
+
+    return out_stream
+
+
+#Syn-4-2.
+def make_notes_from_string_of_numbers_2(in_string, keychoice=None, note_length = 1):
     """
         This function takes a string of numbers on input and makes music21 notes from each of them individually where
     the music.note.Note().pitch.midi value is set equal that digit.
@@ -530,10 +706,11 @@ def make_notes_from_string_of_numbers(in_string, keychoice=None, note_length = 1
     return out_stream
 
 
+
 #Syn-5.
 def fibonacci_to_music(range_l, range_h, scale_mode, base, note_length = 1, spaces=False):   ### ###chords=True
     """
-        This function takes a range of fibonacci numbers(acquired from music21funcs.fibonacci_range_mm()) and provides
+        This function takes a range of fibonacci numbers(acquired from music21funcs.fibonacci_range_mm()  ) and provides
     an option to change the base of this range of fib numbers. Then, from this new range of new-base fib numbers, for
     every individual digit we create a music21.note.Note() with the digit itself as the note's pitch. (Executed in
     music21funcs.make_notes_from_string_of_numbers()).
@@ -556,7 +733,7 @@ def fibonacci_to_music(range_l, range_h, scale_mode, base, note_length = 1, spac
     else:
         new_fibonacci = "".join(new_fib_array)
     print("new_fibonacci", new_fibonacci)
-    fibonacci_stream = make_notes_from_string_of_numbers(new_fibonacci, keychoice=scale_mode, note_length=note_length)
+    fibonacci_stream = make_notes_from_numbers(new_fibonacci, note_length=note_length, base=base) #keychoice=scale_mode,
     return fibonacci_stream
 
 
@@ -590,7 +767,7 @@ def array_selection_to_music(list_array, scale_mode, base, note_length = 1, spac
     else:
         fin_list = "".join(new_array)
     print("fin_list", fin_list)
-    out_stream = make_notes_from_string_of_numbers(fin_list, keychoice=scale_mode, note_length=note_length)
+    out_stream = make_notes_from_numbers(fin_list, note_length=note_length, base=base) #keychoice=scale_mode,
     return out_stream
 
 
@@ -643,68 +820,192 @@ def fibonacci_range_mm(l, h):
 # ----------------------------------------------------------------------------------------------------------------------
 
 #M21-1.
-#TODO Needs fixing.
-def delete_redundant_notes( in_stream, greatest_dur=False):
+#TODO Needs WAY fixing.
+#TODO Needs a complete redo. But since music21's .write("mid") function has it's own quirks, it's not priority.
+def delete_redundant_notes(in_stream, greatest_dur=False):
     """
         This function takes all the notes of a music21 stream and deletes redundant notes of the same pitch at the
-    same offset while allowing the user to chose which duplicate note to keep based on duration.quarterLength. The
+    same offset while allowing the user to choose which duplicate note to keep based on duration.quarterLength. The
     method here uses in_stream.getElementsByOffset, python's min() and max() functions, the "set" feature of an ordered
     dict, and some nested setting and getting that loops over music21 streams.
 
     :param in_stream:       Stream with notes.
-    :param greatest_dur:    Boolean determing whether to choose the duplicate note(s) with longest duration or the
+    :param greatest_dur:    Boolean determining whether to choose the duplicate note(s) with longest duration or the
                             shortest.
     :return: new_stream.    Returns a new music21 stream with just notes.
     """
 
-    #notes_list is a list of lists of notes found at the offets of our iteration.
 
-    #First, we eliminate chord objects with notafy(), a function that basically flattens chords(all chord objects become
-    #respective note objects).
-    #This way, we are working with just notes in a stream.
+    #TODO FINISH!
+    # NOW REBUILD STREAM!!!
+    # new_stream = music21.stream.Stream()
+    # for x in range(0, len(offsets), 1):
+    #     for y in dict_list[x].values():
+    #         for z in y:			##The DURATION call happens here.
+    #             if greatest_dur is True:
+    #                 dur = max([z.quarterLength for z in y])
+    #                 if z.quarterLength == dur:
+    #                     new_stream.insert(offsets[x], copy.deepcopy(z))
+    #             elif greatest_dur is False:
+    #                 dur = min([z.quarterLength for z in y])
+    #                 if z.quarterLength == dur:
+    #                     new_stream.insert(offsets[x], copy.deepcopy(z))
+    # return new_stream
 
+
+def get_offsets_dictionary(in_stream):
+    #TODO Docs.
+    """
+
+    :param in_stream:
+    :return:
+    """
+    # notes_list is a list of lists of notes found at the offets of our iteration.
+
+    # First, we eliminate chord objects with notafy(), a function that basically flattens chords(all chord objects become
+    # respective note objects).
+    # This way, we are working with just notes in a stream.
     # A stream with just note objects, no chord objects.
-    notafied_stream = notafy(in_stream.flat.notes) ##TODO Do I need flat.notes here?
+    notafied_stream = notafy(in_stream.flat.notes)  ##TODO Do I need flat.notes here?
 
     # dicts_list is a list of Ordered Dictionaries of pitches(keys) and notes(values)
     # created for every offsets found in our iteration.
     dict_list = list()
+    offset_dict = OrderedDict()
 
-    #Our list of offsets. List(set([list])) eliminates duplicate offsets.
-    offsets = list(set([i[1] for i in notafied_stream.offsetMap()]))
+    # Our list of offsets. List(set([list])) eliminates duplicate offsets.
+    # offsets = list(set([i[1] for i in notafied_stream.offsetMap()]))
+    offsets = OrderedDict.fromkeys(i.offset for i in notafied_stream.offsetMap())
+
+    # for i in range(0, len(offsets)):
+    #     if type(notafied_stream.getElementsByOffset(i)) is music21.note.Note:
+    #         pitches_list.append(notafied_stream.getElementsByOffset(i).pitch.ps)
+    #         notes_list.append(notafied_stream.getElementsByOffset(i))
+    # matched_list.append([k for k in notes_list if k.pitch.ps == notafied_stream.getElementsByOffset(i).pitch.ps])
 
     for l in offsets:
         pitches_list = list()
         notes_list = list()
         matched_list = list()
-        ord_dict = OrderedDict()
+        pitch_dicts = OrderedDict()
         for i in notafied_stream.getElementsByOffset(l):
             if type(i) is music21.note.Note:
                 pitches_list.append(i.pitch.ps)
                 notes_list.append(i)
-            matched_list.append([k for k in notes_list if k.pitch.ps == i.pitch.ps])
-        for j in zip(pitches_list, matched_list):
-            ord_dict.update([j])  	#Pitches become the keys of the OrderedDict, and notes with matching pitches become the values of those keys for every offset "l".
-        dict_list.append(ord_dict)
+            # This line becomes operationally expensive the farther in the loop it goes.
+            # Upon further review, this line is actually clever. It gets us all of the notes that match our pitch, which
+            # is what we want
+            # unique_pitches_dict = OrderedDict.fromkeys([i for i in pitches_list])
 
-    # NOW REBUILD STREAM!!!
+            matched_list.append([k for k in notes_list if k.pitch.ps == i.pitch.ps])  # Clever because it matches "i";
+            # That's where we are in the current loop.
+        for j in zip(pitches_list, matched_list):
+            pitch_dicts.update([
+                                   j])  # Pitches become the keys of OrderedDicts, and notes with matching pitches become the values of those keys for every offset "l".
+
+        # TRY TURNING this dict_list into an OrderedDict instead of it being a list. 01/24/2023
+        dict_list.append(pitch_dicts)
+    for j in zip([o for o in offsets.keys()], dict_list):
+        offset_dict.update([j])
+    # print("DICT_LIST", dict_list)
+    print("OFFSET_DICT", offset_dict)
+    return offset_dict, offsets, dict_list
+    # s1 = music21.stream.Stream()
+    # s1._findLayering()
+    # s1.makeChords()
+
+
+def check_for_offset_duplicates(offset_dict):
+    for i in offset_dict:
+        # print(i)
+        for j in offset_dict[i]:
+            if len(offset_dict[i][j]) == 1:
+                #print(len(offset_dict[i][j]))
+                #print("This stream has NO duplicate notes, PASSING!")  # for k in j:
+                pass
+            else:
+                print("This stream has duplicate notes, DISCONTINUING!")  # for k in j:
+                return True# print(len(k))#0print(len(j))
+    print("This stream has NO duplicate notes, PASSING!")  # for k in j:
+    return False
+
+
+#TODO Finish!!! REDO.
+def delete_redundant_notes2(in_stream, greatest_dur=True):
+    """
+        A simple instance of deleting the notes that are overlapping, except for the a selected one.
+    :param in_stream:
+    :return:
+    """
+    #Make notes only, no chord objects.
+    notafied_stream = notafy(in_stream)
+
+    #Ending container stream
     new_stream = music21.stream.Stream()
-    for x in range(0, len(offsets), 1):
-        for y in dict_list[x].values():
-            for z in y:			##The DURATION call happens here.
-                if greatest_dur is True:
-                    dur = max([z.quarterLength for z in y])
-                    if z.quarterLength == dur:
-                        new_stream.insert(offsets[x], copy.deepcopy(z))
-                elif greatest_dur is False:
-                    dur = min([z.quarterLength for z in y])
-                    if z.quarterLength == dur:
-                        new_stream.insert(offsets[x], copy.deepcopy(z))
+
+    #Find our overlaps
+    overlaps = notafied_stream.getOverlaps()
+    print("Overlaps", overlaps)
+
+    ##Get a list of existing unique offsets; getOverlaps() does this for us.
+    unique_offset_list = [j for j in overlaps] #***revise   #in OrderedDict.fromkeys([i.offset for i in in_stream.flat.notes])]
+    print("UOL", unique_offset_list)
+
+    ##For every unique offset, get the unique, existing pitches.
+    note_list = []
+    for p in unique_offset_list:    #***revise
+        for r in notafied_stream.getElementsByOffset(p):
+            note_list.append(r)
+        #type(notafied_stream.getElementsByOffset(o)) == music21.note.Note]
+    print("Note_List", note_list)
+    note_list_ids = [i.id for i in note_list]
+    print("Note_ids", note_list_ids)
+
+
+    # unique_pitch_dict = OrderedDict.fromkeys([x.pitch.ps for x in note_list])
+    # print("UPD", unique_pitch_dict)
+
+    selection_list = []
+    # for h in unique_pitch_dict:
+    for i in overlaps:          #unique offsets
+        print("Set_Check", set([q.quarterLength for q in overlaps[i]]))
+        if len(set([q.quarterLength for q in overlaps[i]])) > 1: #If all the durations of the overlaps are NOT the same
+            if greatest_dur is True:
+                dur = max([note.quarterLength for note in overlaps[i]])
+                for j in overlaps[i]:   #overlaps at those offsets
+                    print("Dur", dur)
+                    if j.quarterLength == dur:
+                        selection_list.append(j)
+                            #new_stream.insert(i, copy.deepcopy(j))
+            elif greatest_dur is False:
+                dur = min([note.quarterLength for note in overlaps[i]])
+                for j in overlaps[i]:   #overlaps at those offsets
+                    if j.quarterLength == dur:
+                        selection_list.append(j)
+                        #new_stream.insert(i, copy.deepcopy(j))
+        else:
+            ## If all the durations of the overlaps ARE the same (same pitch, offset, AND duration...
+            ## Just pick the first one.
+            selection_list.append(overlaps[i][0])
+
+            #new_stream.insert(i, copy.deepcopy(overlaps[i][0]))
+    print("Selection_List", selection_list)
+    #print("Selection_List_ID1", selection_list[0].id)
+
+    #REINSERT all the notes that didn't have overlaps; i.e all our original, non-overlapping notes.
+    for i in note_list:
+        if i.offset not in overlaps:
+            new_stream.insert(i.offset, i)
+    #Insert the notes from our selection list.
+    for i in selection_list:
+        new_stream.insert(i.offset, i)
     return new_stream
 
 
+
+#TODO in_place = True\False
 #M21-2.
-def notafy(in_stream):
+def notafy(in_stream, part=False, inPlace=False, chordifyFirst=False, specialMerge=False):
     """
         Returns a copy of the in_stream but with all 'chord' objects replaced with
     separate individual 'note' objects for each note in the chord. Basically, it is a chord.flatten() function.
@@ -712,30 +1013,103 @@ def notafy(in_stream):
     :param in_stream:   Operand stream.
     :return:            new_stream
     """
-    new_stream = music21.stream.Stream()
-    for i in in_stream.flat.getElementsByClass(["Chord", "Note"]):
+    work_stream = in_stream.chordify(removeRedundantPitches=False) if chordifyFirst else in_stream
+
+    new_stream = music21.stream.Stream() if part is False else music21.stream.Part()
+    print("IN_STREAM_LENGTH1", len(work_stream.flat.notes))
+    for i in work_stream.flat.getElementsByClass(["Chord", "Note"]):
         notelist = list()
         if type(i) is music21.chord.Chord:
-            for p in i.pitches:
+            #i.removeRedundantPitches(inPlace=True)
+            pitches = i.pitches                     #All pitches
+            pitches = list(pitches)
+            pitches.sort()                          #All pitches sorted
+            pitches = OrderedDict.fromkeys(pitches) #All unique pitches, the set of
+            for p in pitches:                     #i.
                 newnote = music21.note.Note(p)
                 newnote.offset = i.offset
                 newnote.duration = i.duration
                 if i.volume.velocity:
                     newnote.volume.velocity = i.volume.velocity
                 else:
-                    print("No velocity info for chord. ")
-                    pass
+                    #print("No velocity info for chord. ")
+                    #pass
+                    i.volume.velocity = 90
                 notelist.append(newnote)
             for x in notelist:
                 new_stream.insert(i.offset, copy.deepcopy(x))
         elif type(i) is music21.note.Note:
             new_stream.insert(i.offset, copy.deepcopy(i))
-    # print("NEW_STREAM BITCH:", new_stream)
-    # new_stream.show('txt')
-    return new_stream
+        in_stream.remove(i) if inPlace else None
+    print("IN_STREAM_LENGTH2", len(in_stream.flat.notes))
+    if inPlace:
+        for j in new_stream.flat.notes:
+            in_stream.insert(j.offset, j)
+        print("IN_STREAM_LENGTH3", len(in_stream.flat.notes))
+        if specialMerge:
+        # A specific use-case requiring an inPlace operation of chordify, notafy, AND merge_contiguous notes.
+            #in_stream = \
+            merge_contiguous_notes(in_stream, part=True, skip=True, inPlace=True)
+        return in_stream
+    else:
+        # print("NEW_STREAM BITCH:", new_stream)
+        # new_stream.show('txt')
+        return new_stream
+
+#music21.stream.Stream().chordify()
+# def slice_at_offsets(in_stream, offsetList, in_place=True):
+# # list of start, start+dur, element, all in abs offset time
+#
+#     returnObj = copy.deepcopy(in_stream) if not in_place else in_stream
+# # make a copy
+#
+#
+#     offsetMap = in_stream.offsetMap(returnObj)
+#     print("offsetMap", offsetMap)
+#
+#     offsetList = [music21.common.numberTools.opFrac(o) for o in offsetList]
+#     print("offsetList", offsetList)
+#
+#     for ob in offsetMap:
+#         # if target is defined, only modify that object
+#         e, oStart, oEnd, unused_voiceCount  = ob
+#         # if target is not None and id(e) != id(target):
+#         #     continue
+#
+#         cutPoints = []
+#         oStart = music21.common.numberTools.opFrac(oStart)
+#         oEnd = music21.common.numberTools.opFrac(oEnd)
+#
+#         for o in offsetList:
+#             if o > oStart and o < oEnd:
+#                 cutPoints.append(o)
+#         # environLocal.printDebug(['cutPoints', cutPoints, 'oStart', oStart, 'oEnd', oEnd])
+#         if cutPoints:
+#             # remove old
+#             #eProc = returnObj.remove(e)
+#             eNext = e
+#             oStartNext = oStart
+#             for o in cutPoints:
+#                 oCut = o - oStartNext
+#                 unused_eComplete, eNext = eNext.splitAtQuarterLength(oCut,
+#                     retainOrigin=True)
+#                     #addTies=addTies,
+#                     #displayTiedAccidentals=displayTiedAccidentals)
+#                 # only need to insert eNext, as eComplete was modified
+#                 # in place due to retainOrigin option
+#                 # insert at o, not oCut (duration into element)
+#                 returnObj.coreInsert(o, eNext)
+#                 oStartNext = o
+#     returnObj.coreElementsChanged()
+#     if in_place is False:
+#         return returnObj
+
+
 
 
 #M21-3.
+
+
 def separate_notes_to_parts_by_velocity(in_stream, part=False):
     """
         This function is required for extract_XYZ_coordinates_to_stream. It separates all the notes of a stream into
@@ -908,14 +1282,33 @@ def change_midi_channels_to_one_channel(midi_file, channel=1):
     a_file.close()
 
 
+def get_highest_time_from_directory(directory):
+    """
+        This function takes all the midifiles from a directory, parses them using music21.converter.parse, acquires each
+    of their highestTime properties in a list, and finally returns the max([highestTimes..,..,..]) of that list.
+    :param directory:       Operand directory.
+    :return:                Int max value of a list.
+    """
+    for subdir, dirs, files in os.walk(directory):
+        highTime = 0
+        # for file in files:
+        parsons = ([music21.converter.parse(subdir + os.sep + file).highestTime for file in files])
+        print("Parse", parsons)
+        highTime += max(parsons)
+        print("Highest Time is...", highTime)
+        print("Subdir", subdir, type(subdir))
+        stretch = highTime
+        return stretch
+
+
 #M21-8.
 def split_midi_channels(midi_file, directory, name, to_file=False):
     """
         This function uses music21 and takes a midi file on input and separates* all the "channels" of the midi file
-    into either parts in a stream, or a directory of written mid files, one midi file for each said "channel." The
+    into either parts in a stream, or a directory of written .mid files, one midi file for each said "channel." The
     files\\parts are also conveniently named by the channel.
 
-    *Note-- When loading a midi_file created from midiart.make_midi_from_pixels, a midi image, this can be a slow process.
+    *Note-- Loading a midi_file created from midiart.make_midi_from_pixels, a midi image, can be a slow process.
 
     :param midi_file:   Midi .mid file to be split.
     :param directory:   Folder to which new output midi files will be saved.
@@ -965,14 +1358,15 @@ def split_midi_channels(midi_file, directory, name, to_file=False):
         print("Changed partname:", p.partName)
     if to_file:
         for part in parse_stream:
+            zero_holder = "_00" if int(part.partName) < 10 else "_0"
             final_midis = music21.midi.MidiFile()
             print("Changed partname:", part.partName)
-            part.write("mid", directory + "\\" + name + "_" + "%s" % part.partName + ".mid")
-            final_midis.open(directory + "\\" + name + "_" + "%s" % part.partName + ".mid", attrib='rb')
+            part.write("mid", directory + "\\" + name + zero_holder + "%s" % part.partName + ".mid")
+            final_midis.open(directory + "\\" + name + zero_holder + "%s" % part.partName + ".mid", attrib='rb')
             final_midis.read()
             final_midis.tracks[0].setChannel(part.partName)
             final_midis.close()
-            final_midis.open(directory + "\\" + name + "_" + "%s" % part.partName + ".mid", attrib='wb')
+            final_midis.open(directory + "\\" + name + zero_holder + "%s" % part.partName + ".mid", attrib='wb')
             final_midis.write()
             final_midis.close()
     else:
@@ -1069,7 +1463,7 @@ def fill_measure_end_gaps(measure, timeSig=None, inPlace=True):
     time_list = []
     for i in measure.flat.getElementsByClass(music21.meter.TimeSignature):
         time_list.append(i)
-    if len(time_list) == 1:
+    if len(time_list) != 1: #Todo is this a good check?  ==?
         print("You have zero or more than one time signature object in this measure."
               "/n If zero, input timeSig will be used.")
 
@@ -1120,7 +1514,7 @@ def fill_measure_end_gaps(measure, timeSig=None, inPlace=True):
             return new_measure
 
 
-def empty_measure(timeSig):
+def empty_measure(timeSig="4/4"):
     """
         This simple call creates an empty measure whose entire duration is filled with a rest object and which possesses
     a music21.ElementWrapper(obj =" ") with string " " as its object. Used for musicode purposes when calling for a

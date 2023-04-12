@@ -741,13 +741,31 @@ In KIVY
 --> Did some cleanup and attribution logs in preparation for packaging to Android phone.
 --> Review required.
 
+
+--IP Commit April 12, 2023--
+In music21funcs
+--> New function: note_to_chord(note, chord_form, inv))
+--> New function: make_chords_from_notes_3(in_stream, chord_form_list, inv_list=None))
+--> New function: snap_to_key()
+Doing
+-->Testing progression in proggessify_visual_music()
+In midiart
+--> Fixed the "extra white notes bug" in make_midi_from_colored_pixels
+--> New function: progressify() COMPLETE
+In MainButtons
+In musicode main button
+	-->Made it so the CPQN resets to 4 cells per quarter on the use of the musicode button. This ensures that the majority of musicodes will work and appear correctly, until ALL durations bugs are worked out.
+In kivy
+--> Resized all the layout and fonts with respect to a google Pixel 6 Pro screen size. (NOTE: Previous commit had original screen size, which wasn't physically matched to a phone yet.)
+--> Ready for Packaging
+ 
 ++++++++++++
 #############################################
 ##Git adds. Update as needed. (Git can adds a LOT at once, if separated without commas.) Highlight this line below, copy, and paste into git to git add all quickly.
-git add MIDAS_wx.py gui/ActorsControlPanel.py gui/MainButtons.py  gui/MenuButtons.py gui/PianoRoll.py gui/PianoRollPanel.py gui/Preferences.py gui/StatusBar.py gui/ZPlanesControlPanel.py mayavi3D/Mayavi3DWindow.py mayavi3D/Mayavi3idiArtAnimation.py midas_scripts/midiart3D.py midas_scripts/music21funcs.py midas_scripts/musicode.py midas_scripts/midiart.py resources/ColorPaletteAttributions.txt resources/Midas-Mayavi_Pip_Batch_Install.bat resources/MidasCommitLog.txt resources/Midas_Startup_Configs.py resources/HotkeyAssignments.txt gui/Playback.py gui/Musical_Matrix_Rain.py mayavi3D/MusicObjects.py resources/MIDAS_splash.png resources/color_palettes/ resources/Midas_Requirements.txt resources/Midas_Install_Instructions.txt resources/empty_box.png resources/empty_box_compensation.png resources/unicode_rapid_tables/ resources/pickles/ resources/ThePhatPiano16.png test/MIDAS_UnitTests.py
+git add MIDAS_wx.py MIDAS_wx.spec dist/ build/ substitution_packages.7z TrebleClefIcon.bmp resources/pyinstaller_bug.png resources/pyinstaller_correct.png resources/coffee_button_background.png gui/ActorsControlPanel.py gui/MainButtons.py  gui/MenuButtons.py gui/PianoRoll.py gui/PianoRollPanel.py gui/Patch.py gui/Preferences.py gui/StatusBar.py gui/ZPlanesControlPanel.py mayavi3D/Mayavi3DWindow.py mayavi3D/Mayavi3idiArtAnimation.py midas_scripts/midiart3D.py midas_scripts/music21funcs.py midas_scripts/musicode.py midas_scripts/midiart.py resources/ColorPaletteAttributions.txt resources/Midas-Mayavi_Pip_Batch_Install.bat resources/MidasCommitLog.txt resources/Midas_Startup_Configs.py resources/HotkeyAssignments.txt gui/Playback.py gui/Musical_Matrix_Rain.py mayavi3D/MusicObjects.py resources/MIDAS_splash.png resources/color_palettes/ resources/Midas_Requirements.txt resources/Midas_Install_Instructions.txt resources/Pyinstaller_Instructions.txt resources/empty_box.png resources/empty_box_compensation.png resources/unicode_rapid_tables/ resources/pickles/ resources/ThePhatPiano16.png test/MIDAS_UnitTests.py
 ##
 ##
-git add Kivy/MIDAS.kv Kivy/MIDAS_Settings.py Kivy/MIDAS_kivy.py Kivy/midas_scripts/midiart.py Kivy/midas_scripts/midiart.py Kivy/midas_scripts/midiart3D.py Kivy/midas_scripts/music21funcs.py Kivy/resources/ColorPaletteAttributions.txt Kivy/resources/coffee_button_background.png Kivy/resources/button_pressed_default.png Kivy/resources/support_banner.png Kivy/resources/coffee_button_background.png Kivy/resources/MIDAS_Mobile_splash.png Kivy/resources/MidasHand.png Kivy/resources/credits_visual.png Kivy/resources/intermediary_path/musicode_write.mid Kivy/resources/intermediary_path/pixels_from_midi_with_piano.png
+git add Kivy/MIDAS.kv Kivy/MIDAS_Settings.py Kivy/MIDAS_kivy.py Kivy/midas_scripts/midiart.py Kivy/midas_scripts/midiart.py Kivy/midas_scripts/midiart3D.py Kivy/midas_scripts/music21funcs.py Kivy/resources/color_palettes Kivy/resources/ColorPaletteAttributions.txt Kivy/resources/coffee_button_background.png Kivy/resources/button_pressed_default.png Kivy/resources/support_banner.png Kivy/resources/coffee_button_background.png Kivy/resources/MIDAS_Mobile_splash.png Kivy/resources/MidasHand.png Kivy/resources/credits_visual.png Kivy/resources/intermediary_path/musicode_write.mid Kivy/resources/intermediary_path/pixels_from_midi_with_piano.png
 ##
 
 #############################################

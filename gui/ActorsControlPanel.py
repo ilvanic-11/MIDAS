@@ -1,14 +1,14 @@
-import matlab
+#import matlab
 import wx
 import wx.lib.plot
-import music21
+# import music21
 import numpy as np
 from wx.lib.mixins.listctrl import CheckListCtrlMixin
-import math
-from midas_scripts import music21funcs
-from gui import PianoRoll
-from traits.api import HasTraits, on_trait_change
-from traits.trait_numeric import AbstractArray
+#import math
+#from midas_scripts import music21funcs
+#from gui import PianoRoll
+#from traits.api import HasTraits, on_trait_change
+#from traits.trait_numeric import AbstractArray
 
 
 
@@ -360,8 +360,8 @@ class ActorsControlPanel(wx.Panel):
             self.GetTopLevelParent().actor_scrolled = zero_list[0]
 
 
-    def mattty(self):
-        assray = matlab.array([1,2,3])
+    # def mattty(self):
+    #     assray = matlab.array([1,2,3])
 
 
 

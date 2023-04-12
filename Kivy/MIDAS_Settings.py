@@ -66,6 +66,6 @@ current_color_palette = clr_dict_list['000_flstudio-16-1x']
 
 #Use this with ncp=True to refresh color_palettes AND FL ncp files:
 #PLACE the ncp files INSIDE this:
-#-->  C:\Users\<your_home_folder_name>\Documents\Image-Line\Data\FL Studio\Settings\Note color presets    folder.
+#-->  C:\Users\<your_home_folder_name>\Documents\Image-Line\Data\FL Studio\Settings\Note color pr/esets    folder.
 #This functionality is not intended for FL Studio Mobile; it is intended instead for FL Studio >= 20
 #midiart.get_color_palettes(r".\resources\color_palettes", ncp=True)

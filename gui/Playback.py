@@ -7,14 +7,16 @@ import asyncio
 import itertools
 
 import music21
+
 # sparklead1 = r"resources\OneSpark.mid"
 # spark21 = music21.converter.parse(sparklead1, quantizePost=True, quarterLengthDivisors=(8,6), makeNotation=True)
 
 #import pygame
 #import mido
 #import pyo
-import gui.Preferences
-from midas_scripts import midiart
+#import gui.Preferences
+
+#from midas_scripts import midiart
 import pyo
 import pyo.lib.server
 from pyo.lib import _wxwidgets
@@ -28,10 +30,12 @@ import sys
 #from pyo.lib.server import Server
 from traits.api import Any, HasTraits, Button, Range  ##Instance,
 from traitsui.api import View, Group, Item
-from gui.Preferences import InfiniteTimer  #uses threading.Timer
-from gui.Preferences import mpInfiniteTimer   #uses a multiprocessing-derived Timer
-from gui.Preferences import wxInfiniteTimer   #uses a wx.Timer()
-from gui.Preferences import on_quit, on_quit1
+
+#from gui import Patch
+from gui.Patch import InfiniteTimer  #uses threading.Timer
+from gui.Patch import mpInfiniteTimer   #uses a multiprocessing-derived Timer
+from gui.Patch import wxInfiniteTimer   #uses a wx.Timer()
+from gui.Patch import on_quit, on_quit1
 
 #####################################################
 ####METHOD 1----Complete Working Method.

@@ -1,6 +1,26 @@
 import wx
 from traits.etsconfig.api import ETSConfig
 ETSConfig.toolkit = 'wx'
+
+
+#import MIDAS_wx_toolkit
+
+import pyface
+#from pyface import *
+#from pyface import toolkit
+
+# from traits.etsconfig.api import ETSConfig
+# ETSConfig.toolkit = 'wx'
+#from pyface.ui.wx.init import toolkit_object
+#toolkit = toolkit_object
+
+#pyface.toolkit = MIDAS_wx_toolkit
+
+# from pyface.ui.wx.init import toolkit_object
+# import pyface.ui.wx
+# from pyface import base_toolkit
+
+#from gui import Patch
 from gui import MenuButtons, MainButtons, PianoRollPanel, Musical_Matrix_Rain #Preferences
 from wx.adv import SplashScreen as SplashScreen
 #from mayavi3D import Mayavi3idiArtAnimation
@@ -15,7 +35,8 @@ import wx._adv, wx._html, wx._xml, wx.py, time
 import threading
 import multiprocessing
 import logging
-
+import music21
+from music21 import *
 #from logging import log
 # import mayavi
 # from mayavi import mlab
@@ -257,6 +278,8 @@ class MainWindow(wx.Frame):
 
         # Prepare the menu bar
         self.menuBar = MenuButtons.CustomMenuBar(self)
+
+        self.connect = False
 
         # Donate button on close
         self.coffee_frame = CoffeeFrame()
@@ -882,7 +905,7 @@ class MainWindow(wx.Frame):
 
 
 
-    def clear_all_and_redraw(self):
+    def _clear_all_and_redraw(self):
         # TODO CLEAR ALL ACTOR"S AND ZPLANES AS WELL ---> 04/17/2021
         self.mayavi_view.scene3d.disable_render = True
         self.mayavi_view.scene3d.close()
@@ -1158,9 +1181,10 @@ if __name__ == '__main__':
     time.sleep(.2)
 
     #threading.Thread(target=Musical_Matrix_Rain.rain_execute).start()
-    #Musical_Matrix_Rain.rain_execute()
-    rain = multiprocessing.Process(target=Musical_Matrix_Rain.rain_execute)
-    rain.start()
+    Musical_Matrix_Rain.rain_execute()
+    #TODO CHECK Figure out if this is why Patch and Pygame both execute twice at runtime. Yes it does.
+    ##rain = multiprocessing.Process(target=Musical_Matrix_Rain.rain_execute)
+    ##rain.start()
     time.sleep(4) #.3
 
     Midas = MainWindow(None, -1, "MIDAS")
@@ -1174,5 +1198,4 @@ if __name__ == '__main__':
 
     #threading.Thread(target=app.MainLoop).start()
     #multiprocessing.Process(target=app.MainLoop).start()
-
     app.MainLoop()

@@ -10,7 +10,7 @@
 
 <MidasButton@Button>
     font_name: S.font_name
-    font_size: 16
+    font_size: 14
 
 
 <HeightPopup@Popup>:
@@ -46,7 +46,7 @@
         id: midas_Button
         size_hint: 0.2,0.1
         text: "MIDAS"
-        font_size: 16
+        font_size: 14
         background_normal: ''
         background_down: S.button_down
         background_color: 0, 0.7725490196078431, 1, 1
@@ -68,7 +68,7 @@
             sizable_from: 'bottom'
             #add_widget: image_View
             #add_widget(layout_or_widget_instance)
-            min_size: 60
+            min_size: 45
             max_size: 775
             strip_size: '5pt'
             size_hint: 1, 0.23
@@ -95,7 +95,7 @@
         HelpArea:
             id: help_Area
             #orientation: 'horizontal'
-            size_hint: 1., 0.22
+            size_hint: 1., 0.25 #.22
             background_color: 0.25607843137254902, 0.7031372549019608, 0.867843137254902, 1
 
 <MusicodeArea>
@@ -114,14 +114,14 @@
         id: musicode_Choice
         text: '  Select \n\nA Musicode'
         font_name: S.font_name
-        font_size: 14
+        font_size: 10
         values: [m for m in root.musicodes_sh]
         on_text: root.update_musicode()
     MidasButton:
         id: translate_Btn
         size_hint: 0.7623952095808383, 1
         text: 'Translate'
-        font_size: 16
+        font_size: 14
         on_press: root.translate_txt()
         background_normal: ''
         background_down: S.button_down
@@ -136,7 +136,7 @@
     MidasButton:
         id: load_Image
         text: "Load Image"
-        font_size: 14
+        font_size: 11
         on_release: root.show_load()
 
     BoxLayout:
@@ -168,6 +168,7 @@
         Label:
             size_hint: 0.7, 1
             text: 'Connect\nNotes?'
+            font_size: 14
         BoxLayout:
             orientation: 'vertical'
             size_hint: 0.3, 1
@@ -184,16 +185,17 @@
                 on_release: root.updateConnectNotes()
     BoxLayout:
         orientation: 'horizontal'
-        size_hint_y: 0.25
+        size_hint_y: 0.5
         Label:
             size_hint_x: .7
             text: 'Key'
+            font_size: 14
             valign: 'middle'
         Spinner
             id: txt_Key
             text: "Key"
             font_name: "times"
-            font_size: 14
+            font_size: 10
             size_hint_x: 0.3
             values: S.key_list
             on_text: root.updateKey()
@@ -225,7 +227,7 @@
         id: midiart_Choice
         text: 'Midiart'
         font_name: S.font_name
-        font_size: 16
+        font_size: 14
         values: ["Edges", "Color", "Monochrome"]
         #on_release:
         on_text: root.transform_image(S.image)
@@ -270,19 +272,19 @@
         #text_size: self.width, None
         #height: self.texture_size[1]
 
-        font_size: 10
+        font_size: 7
         halign: 'right'
         color: 0.19607843137254902, 0.6431372549019608, 0.807843137254902, 1
 
     Spinner:
 
         id: help_Menu
-        size_hint: 0.2534, 1
+        size_hint: 0.2534, 1.
         text: 'Help'
-        #font_size: 13
+        font_size: 14
         sync_height: True
         font_name: S.font_name
-        values: ["User Manual", "FAQS", "Output\nFolder"]   ##"Full Credits",
+        values: ["Help", "The Magic\n Hammer", "Output\nFolder"]   ##"Full Credits", "FAQS","User\nManual"
         on_text: root.help_menu_select()
         background_color: 0, 0.7725490196078431, 1, 1
         background_normal: '' ##S.button_default

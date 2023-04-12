@@ -170,7 +170,7 @@ class PianoRollDataTable(wx.grid.GridTableBase):
         if importing == True:
             print("Importing", importing)
             print("Value_type", type(values))
-            assert type(values) == str, "You values type is incorrect."
+            assert type(values) == str, "Your values type is incorrect."
 
             #ARRAY4D
             print("Index", ([int(col)], [127 - row], [z]))
@@ -756,7 +756,8 @@ class PianoRoll(wx.grid.Grid, glr.GridWithLabelRenderersMixin):
         """
         This function operates on the selected zplane (our current working zplane) and changes all the cells in that
         selected grid by factoring in newvcpqnalue. Newcpqnvalue will always be a new cellsperqrtrnote value.
-        (i.e. If cpqn was 1, and we're changing it to 4, all cells in the wx.Grid will be multiplied by a factor of 4).
+        (i.e. If cpqn was 1, and we're changing it to 4, all cells in the wx.Grid will be multiplied by a factor of 4.
+        The same happens with the reciprocal inverse; 4 going to 1 will have all cells in the wx.Grid divided by 4.).
 
         NOTE: This function is deliberately NOT intended to trigger an array4Dchangedflag update.
 
@@ -843,6 +844,8 @@ class PianoRoll(wx.grid.Grid, glr.GridWithLabelRenderersMixin):
 
             #self.SetCellValue(q[1], q[0], '1')
             #SET CELL SIZE BASED ON NOTE DURATION(contained in _array4D
+
+            #TODO Reset all cell sizes here before doing SetCellSize()?
 
             self.SetCellSize(data_cell[1], data_cell[0], 1,
                              ((data_cell[2 + 2] if data_cell[2 + 2] != 0. else 1) # self.m_v.CurrentActor()._array4D[q[0], 127-q[1], self.m_v.cur_z]

@@ -331,13 +331,17 @@ class CustomMenuBar(wx.MenuBar):
             int(self.GetTopLevelParent().menuBar.colors.FindItemById(event.GetId()).GetItemLabelText())
             ##.Name in wx(4.0.7)
 
-        #In the mv.actors list, get all actor that are part of a colors import instance.
+        #In the mv.actors list, get all actors that are part of a colors import instance.
         for i in range(0, len(self.m_v.actors)):
             #  (if is colors_instance  is "Clrs1"...)
             if "Clrs%s" % str(self.m_v.colors_call) == self.m_v.actors[i].colors_instance:
                 #Make _stream from _points,
                 self.m_v.actors[i]._stream = midiart3D.extract_xyz_coordinates_to_stream(self.m_v.actors[i]._points,
                                                                                          part=True, durations=True) #True? #Todo Work through again. 05/03/2022
+                #merge contiguous notes if the "Connect?" boxe was true in the main buttons dialog.
+                if self.GetTopLevelParent().connect == True:
+                    print("Connect is True on Export")
+                    music21funcs.merge_contiguous_notes(self.m_v.actors[i]._stream, part=True, inPlace=True)
                 # name it's part correctly,
                 self.m_v.actors[i]._stream.partsName = self.m_v.actors[i].part_num
                 # set it's music21 sort priority,

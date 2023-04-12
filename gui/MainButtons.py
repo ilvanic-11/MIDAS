@@ -290,6 +290,12 @@ class MainButtonsPanel(wx.Panel):
 
 
     def OnMusicodeDialog(self, evt):
+
+        #THIS IS TEMPORARY; Once Durations are perfect, we can remove these two calls.
+        self.toplevel.pianorollpanel.zplanesctrlpanel.OnGoToNearestEmptyZplane(event=None)
+        self.toplevel.pianorollpanel.cbCellsPerQrtrNote.SetValue("(4, '16th', .25)")
+        self.toplevel.pianorollpanel.OnCellsPerQrtrNoteChanged(event=None)
+
         dlg = MusicodeDialog(self, -1, "Musicode")
         dlg.ShowWindowModal()
 
@@ -440,6 +446,8 @@ class MainButtonsPanel(wx.Panel):
                 pixels = dialog.resizedImg     #2D array (2D of only on\off values.)
                 pixels2 = dialog.resizedImg2   #3D array (2D of color tuples)
 
+                super().GetParent().GetTopLevelParent().connect = dialog.chbxConnect.GetValue()
+                print("Connect at Top Level?", super().GetParent().GetTopLevelParent().connect)
                 #Test -This was the magical one that found our bug. 11/30/2021
                 #pixels2 = cv2.cvtColor(pixels2, cv2.COLOR_BGR2RGB)
 

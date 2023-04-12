@@ -4,10 +4,12 @@
 #"https://www.dreamincode.net/forums/topic/
 #400712-matrix-rain-a-walk-through-with-focus-on-class-objects/"
 
+#"Modified for use as the opening for Midas."
+
 import os
 os.environ['PYGAME_FREETYPE'] = '1'
 import pygame, random     ##sys,
-import pygame.freetype
+from pygame import freetype
 os.environ['SDL_VIDEO_CENTERED'] = '1'
 #import time
 
