@@ -14,6 +14,8 @@ from wx._core import PaintDC
 import math
 #from midas_scripts import musicode, music21funcs
 
+from collections import OrderedDict
+
 import time
 
 """ 
@@ -86,6 +88,22 @@ class PianoRollColLabelRenderer(glr.GridLabelRenderer):
 
         #self.DrawText(grid, dc, rect, text, hAlign, vAlign)
 
+
+class PianoRollCornerLabelRenderer(glr.GridLabelRenderer):
+    def __init__(self, color):
+        self.color = color
+        self.text = "►Measures►\n▼Piano▼"
+
+    def Draw(self, grid, dc, rect, row):
+        dc.SetBrush(wx.Brush(wx.Colour(self.color)))
+        dc.SetPen(wx.TRANSPARENT_PEN)
+        dc.DrawRectangle(rect)
+        hAlign, vAlign = grid.GetRowLabelAlignment()
+        text = self.text
+        self.DrawBorder(grid, dc, rect)
+        self.DrawText(grid, dc, rect, text, hAlign, vAlign)
+
+
 class PianoRollDataTable(wx.grid.GridTableBase):
     """ A grid data table that connects to the traited 4D array in the mayavi_view
     """
@@ -94,7 +112,7 @@ class PianoRollDataTable(wx.grid.GridTableBase):
     def __init__(self, pianorollpanel):
         wx.grid.GridTableBase.__init__(self)
         self.pianorollpanel = pianorollpanel
-        self._cur_actor = None #store ref to this locally to optimize (maybe?)
+        self._cur_actor = None    #store ref to this locally to optimize (maybe?)
 
     # need to store a reference to the piano roll panel.  GridTableBase does not store gui parents.
 
@@ -348,12 +366,81 @@ class PianoRollDataTable(wx.grid.GridTableBase):
 
     #self.pianorollpanel.pianoroll.GetRowSize()
 
+    def SetRowLabelValue(self, row, value):
+        """
+        SetRowLabelValue(row, value)
+
+        Sets the value for the given row label.
+        """
+        #self.pianorollpanel.pianoroll.SetRowLabelValue(row, value)
+        print("Setting Row Label Value...")
+        print("Row:", row, "Value", value)
+        self.pianorollpanel.rowLabels[row] = value
+
+        #wx.grid.GridTableBase.SetRowLabelValue(self, row, value)
+        #return str(value)
+        #self.PianoRollDataTable.SetRowLabelValue(row, value)
+        #pass
+        #return 0
+
+    def GetRowLabelValue(self, row):
+        """
+
+        :param row:
+        :return:
+        """
+        print("Getting Row Label Value...")
+        print("Row:", row)
+        return self.pianorollpanel.rowLabels[row]
+        #return wx.grid.GridTableBase.GetRowLabelValue(self, row)
+
+
+    def SetCornerLabelValue(self, value):  #disregard the 'signature' misalignment, I don't care.
+        """
+
+        :return:
+        """
+        #self.pianorollpanel.cornerLabel = value
+        self.pianorollpanel.pianoroll.pianoroll_cornerlabelrenderer.text = value
+        #pass
+
+    #def set_CornerLabelValue(self, value):
+
+
+        #self.SetCornerLabelValue()
+
+    def GetCornerLabelValue(self):
+        """
+
+        :return:
+        """
+        #return self.pianorollpanel.cornerLabel
+        return self.pianorollpanel.pianoroll.pianoroll_cornerlabelrenderer.text
+        #pass
+
+    # def SetRowLabelSize(self):
+    #     """
+    #
+    #     :return:
+    #     """
+    #     pass
+    #
+    # def GetRowLabelSize(self):
+    #     """
+    #
+    #     :return:
+    #     """
+    #     pass
 
 
 
 
 # Main Class for the PianoRoll, based orn wx.Grid
 class PianoRoll(wx.grid.Grid, glr.GridWithLabelRenderersMixin):
+    # @property
+    # def NumberRows(self):
+    #     return self._NumberRows
+
     log = logging.getLogger("PianoRoll")
     
     def __init__(self, parent, z, id, pos, size, style, name, log):
@@ -375,7 +462,15 @@ class PianoRoll(wx.grid.Grid, glr.GridWithLabelRenderersMixin):
         #current array_3d
         self.cur_array4d = None
 
+        # self.parent = parent  #this is a splitterwindow, not used
+        # print("PRP_PARENT", parent)
+
+        self.prp = self.GetParent().GetParent()
+
+        self.rowLabels = self.prp.rowLabels
+
         self.SetTable(self._table, True)
+
 
         glr.GridWithLabelRenderersMixin.__init__(self)
 
@@ -414,7 +509,12 @@ class PianoRoll(wx.grid.Grid, glr.GridWithLabelRenderersMixin):
 
         self.SetColMinimalAcceptableWidth(3)
         self.SetRowMinimalAcceptableHeight(3)
+
         self.RowLabelSize = 60  #was 40
+                                    # #(new yellow says "RowLabelSize cannot be set"...
+                                    # but if I change this number it actually changes what is seen in the grid.)
+                                    # This bug occured 06/02/2023 when I was trying overload\override SetRowLabelValue
+                                    # And I added 4 other overrides below it.
         self.ColLabelSize = 20
 
 
@@ -424,18 +524,35 @@ class PianoRoll(wx.grid.Grid, glr.GridWithLabelRenderersMixin):
 
         self.DrawColumnLabels()
 
+        #DrawRowLabels
         #TODO Why isn't this a function? 9/23/20
         # Set up the "piano" with note labels
-        for i in reversed(range(self.NumberRows)):
+        print("NUMBER_OF_ROWS", self.NumberRows)
+        self.reversedRows = [i for i in reversed(self.rowLabels.keys())]
+        print("REVERSED_NUM_ROWS", self.reversedRows)
+        #https://docs.wxpython.org/wx.grid.Grid.html?highlight=wx%20grid#wx.grid.Grid.SetRowLabelValue
+        for i in reversed(range(self.NumberRows)):   #reversed?
             self.SetRowSize(i, 10)
             #crazy whack math I'll never remember to label the piano roll notes and octaves
-            self.SetRowLabelValue(i, SEMITONE_NOTES[(NUM_TONES - 1 - i) % 12] + str(10 - int((i+4)/12)))
+            self.SetRowLabelValue(i, SEMITONE_NOTES[(NUM_TONES - 1 - i) % 12] + str(10 - int((i+4)/12)))  #\-1
+
+            #Octave Discrepancy OBOE --- music21.streams read midi data at below. The same thing is noticable when
+            #importing a stream.write("mid") file into a daw---there will be an octave discrepancy that comes from
+            #file-writing disagreements. 06/02/2023
 
             if SEMITONE_PIANO[NUM_TONES - 1 - i]:
                 self.SetRowLabelRenderer(i, PianoRollRowLabelRenderer("WHITE"))
             else:
                 self.SetRowLabelRenderer(i, PianoRollRowLabelRenderer("BLACK"))
             #self.DisableRowResize(i)
+
+        #DrawCornerLabel
+
+        self.SetCornerLabelRenderer(self.EstablishCornerRenderer(color="GREEN"))
+
+        #self._table.set_CornerLabelValue(self.GetParent().GetParent().cornerLabel)
+
+        #self._table.SetCornerLabelValue(value=self.GetParent().GetParent().cornerLabel)
 
         self.DisableDragColMove()
         self.DisableDragColSize()
@@ -478,6 +595,11 @@ class PianoRoll(wx.grid.Grid, glr.GridWithLabelRenderersMixin):
 
         self.Bind(wx.EVT_PAINT, self.OnPaint)
 
+
+    def EstablishCornerRenderer(self, color):
+        self.renderer_color = color
+        self.pianoroll_cornerlabelrenderer = PianoRollCornerLabelRenderer(self.renderer_color)
+        return self.pianoroll_cornerlabelrenderer
 
     #Functions--------------------
     def OnThumbDragging(self, event):
@@ -1634,6 +1756,7 @@ class PianoRoll(wx.grid.Grid, glr.GridWithLabelRenderersMixin):
 
         accel = wx.AcceleratorTable(entries)
         self.SetAcceleratorTable(accel)
+
 
 
 class PianoRollCellRenderer(wx.grid.GridCellRenderer):

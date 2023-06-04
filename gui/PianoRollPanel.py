@@ -46,7 +46,6 @@ class PianoRollPanel(wx.Panel):
 
         self.currentZplane = 90  # #Todo Rewrite this, I don't like separate stored variables if we can avoid it.
 
-
         self.draw_mode = 1
         self.select_mode = 0
 
@@ -62,6 +61,15 @@ class PianoRollPanel(wx.Panel):
         self.zplanesctrlpanel = ZPlanesControlPanel.ZPlanesControlPanel(self.ctrlpanelSplit, self.log)
         self.actorsctrlpanel = ActorsControlPanel.ActorsControlPanel(self.ctrlpanelSplit, self.log)
 
+        #These needed to be established\stored here, even though they are primarily used by the self.pianoroll below.
+        #It's fitting, as these are still more of layout properties anyway. 06/02/2023
+        self.NumberRows = 128
+        self.cornerLabel = "Measures → → → →\n↓↓Piano↓↓"
+        self.rowLabels = OrderedDict().fromkeys(
+            [j for j in range(self.NumberRows)])  # Yes it can, although I don't know why....
+
+        print("ROW_LABELS_DICT", self.rowLabels)
+
         self.pianoroll = PianoRoll.PianoRoll(self.pianorollSplit,
                                              self.currentZplane,
                                              -1,
@@ -71,6 +79,9 @@ class PianoRollPanel(wx.Panel):
                                              "Piano Roll",
                                              self.log
                                              )
+
+        assert self.NumberRows == self.pianoroll.NumberRows   #dynamically reset
+
 
         mainSizer = wx.BoxSizer(wx.VERTICAL)
         mainSizer.Add(self.tb, 1, wx.EXPAND)

@@ -1,27 +1,4 @@
-<!doctype html>
-<html lang="en">
-<head>
-  <meta charset="utf-8">
-  <title>JupyterLab</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-    <script id="jupyter-config-data" type="application/json">{
-    {% for key, value in page_config.items() -%}
-    "{{ key }}": "{{ value }}",
-    {% endfor -%}
-    "baseUrl": "{{ base_url }}",
-    "wsUrl": "{{ ws_url }}"
-  }</script>
-
-  {% block favicon %}
-  <link rel="icon" type="image/x-icon" href="{{ base_url }}static/base/images/favicon.ico" class="idle favicon">
-  <link rel="" type="image/x-icon" href="{{ base_url }}static/base/images/favicon-busy-1.ico" class="busy favicon">
-  {% endblock %}
-
-</head>
-<body>
-
-<script type="text/javascript">
-  /* Remove token from URL. */
+<!doctype html><html lang="en"><head><meta charset="utf-8"><title>JupyterLab</title><meta name="viewport" content="width=device-width,initial-scale=1">{# Copy so we do not modify the page_config with updates. #} {% set page_config_full = page_config.copy() %} {# Set a dummy variable - we just want the side effect of the update. #} {% set _ = page_config_full.update(baseUrl=base_url, wsUrl=ws_url) %}<script id="jupyter-config-data" type="application/json">{{ page_config_full | tojson }}</script>{% block favicon %}<link rel="icon" type="image/x-icon" href="{{ base_url | escape }}static/favicons/favicon.ico" class="idle favicon"><link rel="" type="image/x-icon" href="{{ base_url | escape }}static/favicons/favicon-busy-1.ico" class="busy favicon">{% endblock %}<script defer="defer" src="{{page_config.fullStaticUrl}}/main.c474366c927dbb3da565.js?v=c474366c927dbb3da565"></script></head><body><script>/* Remove token from URL. */
   (function () {
     var location = window.location;
     var search = location.search;
@@ -40,9 +17,9 @@
     var url = location.origin + location.pathname +
       (query !== '?' ? query : '') + location.hash;
 
-    window.history.replaceState({ }, '', url);
-  })();
-</script>
+    if (url === location.href) {
+      return;
+    }
 
-<script type="text/javascript" src="{{base_url}}lab/static/vendors~main.08c9b524cc1315b30dbe.js"></script><script type="text/javascript" src="{{base_url}}lab/static/main.1811ac3fa320e6814fbd.js"></script></body>
-</html>
+    window.history.replaceState({ }, '', url);
+  })();</script></body></html>
