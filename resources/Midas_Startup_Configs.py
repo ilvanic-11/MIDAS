@@ -1,15 +1,21 @@
-import time
+#import time
+import _multiprocessing
+_multiprocessing.sem_unlink = None
 
 from importlib import reload
-print("Imported function", reload)
+print("Imported function", reload)  #This print doesn't work....strangest thing.
+print("Imported function", reload)  #But this one does.
+
 from traits.etsconfig.api import ETSConfig
 ETSConfig.toolkit = 'wx'
+
 #from pyface.ui.wx.init import toolkit_object
 #import pyface.ui.null
 
-import pyface
+#import pyface
 #from pyface.wx import *
-print("Imported", pyface)
+#print("Imported", pyface)
+
 
 import mayavi
 print("Imported", mayavi)
@@ -63,6 +69,7 @@ print("Imported", inspect)
 import pydoc
 print("Imported", pydoc)\
 
+#
 
 ###Main path.
 script = "Midas_Startup_Configs.py"
@@ -90,21 +97,21 @@ print('\n')
 music21funcs.about_midas()
 
 
-midas_test = music21.stream.Stream()
-n1 = music21.note.Note("C")
-n2 = music21.note.Note("E")
-n3 = music21.note.Note("A")
-chord1 = music21.chord.Chord("D F A")
-chord2 = music21.chord.Chord("G B D")
-dur1 = music21.duration.Duration()
-dur2 = music21.duration.Duration()
-dur1.quarterLength = 3
-dur2.quarterLength = 4
-midas_test.append(n1)
-midas_test.append(n2)
-midas_test.append(n3)
-midas_test.append(chord1)
-midas_test.append(chord2)
+# midas_test = music21.stream.Stream()
+# n1 = music21.note.Note("C")
+# n2 = music21.note.Note("E")
+# n3 = music21.note.Note("A")
+# chord1 = music21.chord.Chord("D F A")
+# chord2 = music21.chord.Chord("G B D")
+# dur1 = music21.duration.Duration()
+# dur2 = music21.duration.Duration()
+# dur1.quarterLength = 3
+# dur2.quarterLength = 4
+# midas_test.append(n1)
+# midas_test.append(n2)
+# midas_test.append(n3)
+# midas_test.append(chord1)
+# midas_test.append(chord2)
 
 
 
