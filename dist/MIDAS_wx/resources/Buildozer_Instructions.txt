@@ -1,0 +1,323 @@
+Fresh Droplet:
+midas-mobile-v1.0
+Music14LOce@n
+Midas-Mobile
+My_14L_M!D@s
+wget -qO- https://repos-droplet.digitalocean.com/install.sh | sudo bash
+Follow droplet insantiation instructions.
+
+STEP 1
+1---------------------------
+Phone plugged in, developer mode. (Tap build multiple times to enable developer mode.)
+Step 3) Make sure your phone is in Developer mode by going to Settings -- About Phone -- Software -- tap on 'Build Number' 7 times quickly. 
+		Now go to Settings -- Developer Options and enable Stay Awake and USB Debugging.
+Step 4) Connect your phone to your computer and make sure to Always Allow USB Debugging when your phone connects.
+TAP FOR MORE OPTIONS --> Enable File transfer/ Android Auto
+
+apt-get update
+apt-get upgrade
+-->Keel local version.
+-->Press enter again, restart 'already selected' services.
+apt-get install git  --already installed
+sudo apt install git --already installed
+1---------------------------
+
+STEP 2
+2---------------------------
+sudo apt update
+sudo apt install openjdk-11-jdk  (JAVA)
+sudo apt install openjdk-8-jdk  (JAVA)
+java -version
+2---------------------------
+
+
+SKIP (for droplet)
+###GRADLE   (I'm pretty sure this wasn't necessary; expanding the memory of the droplet was what fixed what this didn't fix.] Do it anyway, doesn't hurt anything either.)
+###GRADLE   (Gradle 7.0 and up requires Java 11. So downgrade as necessary.)
+VERSION=6.5.1
+#VERSION=8.1
+wget https://services.gradle.org/distributions/gradle-${VERSION}-bin.zip -P /tmp
+sudo unzip -d /opt/gradle /tmp/gradle-${VERSION}-bin.zip
+sudo ln -s /opt/gradle/gradle-${VERSION} /opt/gradle/latest   (symlink stuff)
+sudo nano /etc/profile.d/gradle.sh   (text editor)
+--> export GRADLE_HOME=/opt/gradle/latest  (add )
+--> export PATH=${GRADLE_HOME}/bin:${PATH} (these lines))
+ctrl+O (write) Enter (wrote 2 lines)
+ctrl+X (exit)
+sudo chmod +x /etc/profile.d/gradle.sh (Make the script executable)
+source /etc/profile.d/gradle.sh  (load env variables in current session using source command)
+gradle -v   (IT IS SO VERIFIED)
+#This works for navigating -V-
+cd /opt/gradle/gradle-8.1/bin/
+
+
+SKIP (for droplet)
+#./gradlew cleanBuildCache
+#rm -r $HOME/.gradle/caches/
+#JAVA_HOME change
+#readlink -f 'which javac'
+#which javac
+#ls -la /usr/bin/javac
+#ls -la /etc/alternatives/javac   (this command should return something like --> /usr/lib/jvm/java-11-openjdk-amd64/bin/javac    This is what we want.)
+#echo "export JAVA_HOME=/usr/lib/jvm/java-11-openjdk-amd64" >> ~/.bashrc
+#echo "export PATH=$PATH:$JAVA_HOME/bin" >> ~/.bashrc
+##reload console terminal
+
+#chmod a+x android/gradlew					(https://github.com/codelv/enaml-native-cli/issues/21)
+
+STEP 3
+3---------------------------
+sudo apt-get install libffi-dev  (fixes _ctypes failure)
+Press enter.
+
+sudo apt install linux-headers-$(uname -r) build-essential dkms   (compiler)
+
+#sudo apt install -y zlib1g-dev ###zlibc
+sudo apt install -y zlib1g-dev zlibc  (this works on linux ubuntu)
+sudo apt install -y libssl-dev  (zlib)
+3---------------------------
+
+
+STEP 4
+4---------------------------
+git clone https://github.com/kivy/buildozer.git
+cd buildozer
+4---------------------------
+
+SKIP (experimental)
+SKIP---------------------------
+<buildozer>
+cd buildozer
+<<  Substitute Here  >>
+sudo apt-get install python3.6   <<Sub in 3.7.4>>
+<<Python Build 3.7.4>>
+
+<OPENSSL>
+sudo apt install curl
+curl https://www.openssl.org/source/openssl-1.1.1b.tar.gz | tar xz
+curl https://www.openssl.org/source/openssl-1.1.1b.tar.gz | tar xz
+cd openssl-1.1.1b
+cd openssl-1.1.1b
+./config shared --prefix=/usr/local/   (what the fuck is this?)
+sudo make
+sudo make altinstall
+mkdir lib
+cp ./*.{so,so.1.1,a,pc} ./lib
+cp ./*.{so,so.1.1,a,pc} ./lib
+<OPENSSL>
+
+
+cd buildozer   (cd ..)
+wget https://www.python.org/ftp/python/3.7.4/Python-3.7.4.tgz
+tar xzvf Python-3.7.4.tgz
+
+
+cd Python-3.7.4
+
+###./configure --with-openssl=/usr/src/openssl-1.0.2o --enable-optimizations
+./configure --with-openssl=/usr/src/openssl-1.1.1b --enable-optimizations
+
+#SKIP sudo make     (_ctypes failed to install)  #TEST FAILED on test_faulthandler    -->>>https://stackoverflow.com/questions/74602151/stuck-on-131-416-test-faulthandler-when-installing-python-3-7-on-raspberry-pi
+sudo make altinstall     WARNING: sudo make INSTALL will overwrite the core system version of python. MAKE SURE to use sudo make ALTINSTALL.
+<<                  >>
+<<                   >>
+
+
+##reinstall 3.8 (if f**ked up)
+sudo apt-get install --reinstall python(3)
+
+sudo apt install python3-pip
+sudo pip3 install --upgrade pip
+curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py
+pip install --trusted-host pypi.org --trusted-host pypi.python.org --trusted-host files.pythonhosted.org pip setuptools
+
+python3 get-pip.py --force-reinstall
+
+
+
+##cd buildozer
+##cd Python-3.7.4
+##sudo make distclean
+##vim /Python-3.7.4/Modules/Setup
+##pip3 install uwsgi
+cd ..  (up one level to buildozer folder)
+SKIP---------------------------
+
+STEP 5
+5---------------------------
+sudo apt-get install -y python3-setuptools
+sudo python3 setup.py install     THIS INSTALLS WITH RESPECT TO PYTHON 3.8.10, (or 3.10, whatever the default python3 is) so a lot of the above stuff was good, just not necessary.
+git clone https://github.com/ilvanic-11/MIDAS_kivy
+cd MIDAS_kivy
+sudo apt install vim
+5---------------------------
+
+SKIP
+SKIP---------------------------
+#(FINAL FIX)
+sudo apt install vim
+touch gradle.properties
+vim gradle.properties
+--> org.gradle.jvmargs=-Xmx2048m -XX:MaxPermSize=512m -XX:+HeapDumpOnOutOfMemoryError -Dfile.encoding=UTF-8
+:wq
+SKIP---------------------------
+
+STEP 6
+6---------------------------
+buildozer init  (or copy saved .spec file)
+
+vim buildozer.spec  ###EDIT .spec file with vim
+##EDIT DETAILS:
+#title = Midas
+#package.name = MIDAS_kivy
+#package.domain = org.midas
+#source.dir = .    (change?)
+#source.include_exts == blank   (leave empty to make sure EVERYTHING gets included)
+#requirements = python3,kivy,kivymd,numpy,opencv==4.5.1,open3d=0.15.2,music21==5.7.2,certifi   (music21==5.7.0 failed)   (open3d requires a custom recipe)
+#presplash.filename = %(source.dir)s/resources/MIDAS_Mobile_splash.png
+#icon.filename = %(source.dir)s/resources/MidasHand.png   (Looks right, let's test.) 
+#orientation = landscape
+#osx.python_version = 3.8.10   (this 'packaged' version of python must match the "packagING" version (i.e. the system\venv version) 3.7.4  )
+#osx.kivy_version = 2.0.0    #1.9.1   (2.0.0 else)
+#fullscreen = 1
+##Java
+#android.api = 31
+#android.sdk = 29  (was 20)
+#android.sdk_path = /home/user/buildozer  (replace user with whatever it really its)
+#android.add_compile_options = "sourceCompatibility = 11", "targetCompatibility = 11"
+#android.add_compile_options = "sourceCompatibility = 1.8", "targetCompatibility = 1.8"    (keep as default on ubuntu that isn't a Digital Ocean server)
+#android.add_compile_options = "sourceCompatibility = 1.8", "targetCompatibility = 11"    (keep as default on ubuntu that isn't a Digital Ocean server)
+#android.permissions = android.permission.INTERNET,android.permission.WRITE_EXTERNAL_STORAGE,android.permission.READ_EXTERNAL_STORAGE
+#android.archs = arm64-v8a, armeabi-v7a, x86, x86_64
+
+
+
+
+NOTE: make sure your app.py file (the one that has __main__ to execute it) is named 'main.py'
+mv MIDAS_kivy.py main.py
+6---------------------------
+
+STEP 7
+7---------------------------
+sudo apt update   (give it the necessary time to run :) )
+sudo apt install -y git zip unzip openjdk-8-jdk python3-pip autoconf libtool pkg-config zlib1g-dev libncurses5-dev libncursesw5-dev libtinfo5 cmake libffi-dev
+Ignore Kernel upgrade?
+Press enter (for restart thing....again.)
+(also give it the necessary time)
+pip3 install --user --upgrade cython virtualenv   (if this fails, use 3)
+#pip3 install --user --upgrade cython3 virtualenv
+sudo apt-get install cython
+7---------------------------
+
+SKIP
+SKIP---------------------------
+********Attempting
+#Uninstall old docker
+sudo apt-get remove docker docker-engine docker.io containerd runc
+#new docker
+sudo apt-get update
+sudo apt-get install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+sudo docker run hello-world
+
+
+
+#Softlink method  (didn't work)
+#sudo ln -s /usr/bin/cython3 /usr/local/bin/cython 
+
+#Call overwrite method?
+cd /bin/ && sudo gedit cython
+cd /bin/ && sudo vim cython
+##--Text EDIT -V-
+-->cython3 $@
+:wq
+sudo chmod 755 cython
+
+#Do it again.
+sudo apt-get update   (give it the necessary time to run :) )
+sudo apt-get upgrade -y
+
+sudo apt-get install cython
+sudo apt-get install cython3
+Ignore Kernel upgrade?
+Press enter (for restart thing....again.)
+(also give it the necessary time)
+
+python3 -m pip install --upgrade certifi
+pip install pyOpenSSL --upgrade
+apt-get install --reinstall python3-certifi
+pip install --upgrade certifi --force
+apt install --reinstall openssl
+apt install ca-certificates
+update-ca-certificates --fresh
+export SSL_CERT_DIR=/etc/ssl/certs    (This line worked.)  SSL Certification Error 
+SKIP---------------------------
+
+STEP 8
+8---------------------------
+cd .. (to buildozer folder again)
+#wget https://dl.google.com/android/repository/sdk-tools-linux-3859397.zip 
+ wget https://dl.google.com/android/repository/commandlinetools-linux-9477386_latest.zip   USE THIS!
+#$ unzip sdk-tools-linux-3859397.zip
+unzip commandlinetools-linux-9477386_latest.zip  										   AND THIS!!
+mv cmdline-tools tools     RENAME cmdline-tools to tools
+pwd
+cd MIDAS_kivy (or whatever package)
+vim buildozer.spec
+-->andriod.sdk_path = (Your tools file path) eg /home/freezy/buildozer/   home/user/buildozer
+8---------------------------
+
+STEP 9
+DOCKER and open3d
+https://docs.docker.com/engine/install/ubuntu/
+
+sudo apt-get update
+sudo apt-get install ca-certificates curl gnupg
+
+sudo install -m 0755 -d /etc/apt/keyrings
+curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+sudo chmod a+r /etc/apt/keyrings/docker.gpg
+**This ^ is all one command.
+
+echo \
+  "deb [arch="$(dpkg --print-architecture)" signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu \
+  "$(. /etc/os-release && echo "$VERSION_CODENAME")" stable" | \
+  sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+  
+sudo apt-get update
+
+sudo apt-get install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+
+sudo docker run hello-world   (Test to see if it's working.)
+
+git clone https://github.com/isl-org/Open3D
+cd Open3D
+cd docker
+uname -m  (if this is x86-64, then run the command in the next line*)
+*sudo apt-get --yes install qemu binfmt-support qemu-user-static
+./docker_build.sh openblas-arm64-py38
+
+9---------------------------
+8---------------------------
+
+
+???
+
+#unset JAVA_OPTS
+
+STEP 9
+8---------------------------
+cd MIDAS_kivy 
+buildozer android debug deploy run   #release?
+buildozer -v android deploy run logcat | grep python 
+8---------------------------
+
+
+Note: Remember to compile kivy each time you change cython files.
+
+#Copied directory for notes....( didn't need it)
+/root/buildozer/MIDAS_kivy/.buildozer/android/platform/build-arm64-v8a_armeabi-v7a/build/bootstrap_builds/sdl2/jni/SDL2_image/external
+
+Disable Hibernate (unmask to renable)
+sudo systemctl mask sleep.target suspend.target hibernate.target hybrid-sleep.target
+
+rm -rf .buildozer ~/.buildozer

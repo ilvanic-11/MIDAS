@@ -69,8 +69,8 @@ import numpy
 from mayavi import mlab
 from collections import OrderedDict
 import os
-import shutil
-
+#import shutil
+from scipy import spatial
 
 ##Color Pallettes
 #------------------------
@@ -246,6 +246,7 @@ def filter_notes(stream, key="", chord=None, offset_range=None, in_place=True):
     # else:
     #     return s
 
+
 def delete_nonpitch_chords(in_stream, in_place=True):
     """
         The purpose of this function is to remove the actual music21.chord.Chord() objects from the stream if\when
@@ -263,9 +264,58 @@ def delete_nonpitch_chords(in_stream, in_place=True):
 
     return s
 
+def filter_directory_to_key(directory, key="C", file_path=None):
+    """
+        Per the single-responsibility principle, it was easier to make this function than to modify
+    progressify_directory to be able to do keys. This function takes all the midifiles in a directory of only
+    midifiles and filters the notes in them to a designated key by removing all non-key notes. (The other snap_to_key()
+    MOVES notes, but it does not REmove them.)
+
+    Keys can be:
+    key_list = ["A", "A#m", "Ab", "Abm", "Am", "B", "Bb", "Bbm", "Bm", "C", "C#", "C#m", "Cb", "Cm", "D", "D#m", "Db",
+    "Dm", "E", "Eb", "Ebm", "Em", "F", "F#", "F#m", "Fm", "G", "G#m" ,"Gb", "Gm"]
+    :param directory:
+    :param key:
+    :return:
+    """
+    subdir = ""
+    parsed = []
+    filepaths = []
+
+    #Walk directory for files.
+    for subd, dirs, files in os.walk(directory):
+        #This loop loops once.
+        subdir += subd
+        parsed += [music21.converter.parse(subd + os.sep + file) for file in files]
+        filepaths += [subd + os.sep + file for file in files]
+    range_increment = 1
+    paths = []
+
+    print("PARSED", parsed)
+
+    #Filter notes not in key.
+    for file in range(len(parsed)):
+        zero_holder = "_00" if int(range_increment) < 10 else "_0"
+        path = subdir + os.sep + os.path.basename(filepaths[file]).partition('.mid')[0] + "_KEY-OF-%s_" % key \
+                + zero_holder + str(range_increment) + ".mid"  if file_path is None else \
+        file_path + os.sep + os.path.basename(filepaths[file]).partition('.mid')[0]  + "_KEY-OF-%s_" % key \
+                + zero_holder + str(range_increment) + ".mid"
+        print("PATH", path)
+        paths.append(path)
+        filter_notes(stream=parsed[file],
+                     key=key,
+                     #chord,
+                     #offset_range,
+                     #in_place
+                     )
+        range_increment += 1
+
+    #Write to file.
+    for streams in range(len(parsed)):
+        parsed[streams].write('mid', paths[streams])
 
 
-def progressify_directory(directory, progression_stream=None, progression=None, stretch=True, write=True, file_path=None):
+def progressify_directory(directory, progression_stream=None, progression=None, stretch=True, write=True, file_path=None):    #TODO progression=None untested. 04/17/2023
     """
 
     :param directory:
@@ -274,14 +324,18 @@ def progressify_directory(directory, progression_stream=None, progression=None, 
     :param write:
     :param file_path:
     :return:
+
+    #NOTE: Don't forgot the 'r' before your directory string. :)
     """
     subdir = ""
     parsed = []
     filepaths = []
     for subd, dirs, files in os.walk(directory):
+        #This loop loops once.
         subdir += subd
         parsed += [music21.converter.parse(subd + os.sep + file) for file in files]
         filepaths += [subd + os.sep + file for file in files]
+
 
     if stretch is True:
         print("Finding highest time...")
@@ -652,6 +706,7 @@ def make_midi_from_colored_pixels(pixels, granularity, connect=False, colors=Non
         part.partsName = q
         #part.partName = q
         #part.offset = 0
+        #part.color = colors[q]   #Created attribute here.
 
         for y in range(0, len(pixels)):
             for x in range(0, len(pixels[y])):
@@ -729,6 +784,59 @@ def make_midi_from_grayscale_pixels(pixels, granularity, connect=False, note_pxl
 
 
 ###TODO Figure out threshold ranges. K-D Trees stuff. (by threshold ranges, at the time, I was processing the how-to of this function in a different way then it ended up 09/25/20)
+# def set_to_nn_colors(im_array, clrs=None):
+#     """
+#         This function takes a 3D numpy color array(i.e an image), and reduces\\converts all of the color tuples of that
+#     image to 16 possible different colors. For Visual Music purposes, this allows for display in FL studio with those
+#     16 colors.
+#
+#     :param im_array:    A 3D numpy image array.
+#     :param clrs:        A user defined dictionary of colors, allowing for greater possibility of colors for future
+#                         applications. If clrs=None, will default to using the FLStudio Piano Roll colors
+#
+#     :return:
+#     """
+#     if clrs == None:
+#         clrs = FLStudioColors
+#     elif type(clrs) == dict:
+#         clrs = clrs
+#     else:   #If not a dict, but a list of 16 color tuples generated randomly
+#         l_clrs = array_to_lists_of(clrs)
+#         clrs = dict.fromkeys(b for b in range(len(l_clrs)))
+#         for cr in range(0, len(l_clrs)):
+#             for qv in l_clrs:
+#                 clrs[cr] = qv
+#
+#     # REMOVE redundant points. (otherwise, the kd search will be a disaster.)
+#     # shift_cloud = im_array.reshape((-1, 3))
+#     # clean_cloud = musicode.mc.delete_redundant_points(shift_cloud)
+#
+#     # Place operand coords_array into open3d point cloud.
+#     pcloud = open3d.geometry.PointCloud()
+#     p_lizt = list()
+#     for ix in range(1, len(clrs)):
+#         p_lizt.append(clrs[ix])
+#     p_array = np.array(p_lizt)
+#     pcloud.points = open3d.utility.Vector3dVector(p_array)
+#     #Note -- ".utility" doesn't work on laptop --> It's possible the open3d on laptop hasn't been updated.
+#     kd_tree = open3d.geometry.KDTreeFlann(pcloud)
+#
+#     # work_cloud = musicode.mc.array_to_lists_of(clean_cloud)
+#     # for x in range(1, len(work_cloud)):
+#     im_list = list()
+#     for x in range(len(im_array)):
+#         for y in range(len(im_array[x])):
+#             im_dex = np.array(im_array[x][y], dtype=np.float16)
+#             # im_list.append(im_dex)
+#             # for i in im_list:
+#             k_idx_list = kd_tree.search_knn_vector_3d(im_dex, 1)
+#             index = k_idx_list[1][0] + 1
+#             im_array[x][y] = clrs[index]
+#     # work_array = np.array(work_cloud)
+#     # final_array = work_array.reshape(im_array.shape)
+#     # return final_array
+#     return im_array
+
 def set_to_nn_colors(im_array, clrs=None):
     """
         This function takes a 3D numpy color array(i.e an image), and reduces\\converts all of the color tuples of that
@@ -745,7 +853,7 @@ def set_to_nn_colors(im_array, clrs=None):
         clrs = FLStudioColors
     elif type(clrs) == dict:
         clrs = clrs
-    else:   #If not a dict, but a list of 16 color tuples generated randomly
+    else:  # If not a dict, but a list of 16 color tuples generated randomly
         l_clrs = array_to_lists_of(clrs)
         clrs = dict.fromkeys(b for b in range(len(l_clrs)))
         for cr in range(0, len(l_clrs)):
@@ -756,15 +864,18 @@ def set_to_nn_colors(im_array, clrs=None):
     # shift_cloud = im_array.reshape((-1, 3))
     # clean_cloud = musicode.mc.delete_redundant_points(shift_cloud)
 
-    # Place operand coords_array into open3d point cloud.
-    pcloud = open3d.geometry.PointCloud()
-    p_lizt = list()
-    for ix in range(1, len(clrs)):
-        p_lizt.append(clrs[ix])
-    p_array = np.array(p_lizt)
-    pcloud.points = open3d.utility.Vector3dVector(p_array)
-    #Note -- ".utility" doesn't work on laptop --> It's possible the open3d on laptop hasn't been updated.
-    kd_tree = open3d.geometry.KDTreeFlann(pcloud)
+    colors_points = [clrs[ix] for ix in range(1, len(clrs))]
+    kd_tree = spatial.KDTree(colors_points)
+    #print("SCIPY_kd_tree", kd_tree)
+
+    # ##Place operand coords_array into open3d point cloud.
+    # pcloud = geometry.PointCloud()
+    # p_lizt = [clrs[ix] for ix in range(1, len(clrs))]
+    # p_array = np.array(p_lizt)
+    # pcloud.points = utility.Vector3dVector(p_array)
+    # print("MY pcloud POINTS", pcloud.points)
+    # ##Note -- ".utility" doesn't work on laptop --> It's possible the open3d on laptop hasn't been updated.
+    # kd_tree = geometry.KDTreeFlann(pcloud) #A KDTree of made from 16 color tuples.
 
     # work_cloud = musicode.mc.array_to_lists_of(clean_cloud)
     # for x in range(1, len(work_cloud)):
@@ -774,8 +885,12 @@ def set_to_nn_colors(im_array, clrs=None):
             im_dex = np.array(im_array[x][y], dtype=np.float16)
             # im_list.append(im_dex)
             # for i in im_list:
-            k_idx_list = kd_tree.search_knn_vector_3d(im_dex, 1)
-            index = k_idx_list[1][0] + 1
+            # color_result_idx = kd_tree.search_knn_vector_3d(im_dex, 1)
+
+            color_result_idx = kd_tree.query(x=im_dex)
+            #print("color_result_idx", color_result_idx)
+
+            index = color_result_idx[1] + 1
             im_array[x][y] = clrs[index]
     # work_array = np.array(work_cloud)
     # final_array = work_array.reshape(im_array.shape)

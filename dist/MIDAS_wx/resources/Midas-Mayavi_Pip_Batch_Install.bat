@@ -47,6 +47,7 @@ python -m pip install --upgrade mlab --user
 :: MAYAVI LICENSE: BSD License
 ::python -m pip install mayavi=4.7.1 --user
 python -m pip install --upgrade open3d-python --user
+:: python -m pip install --user open3d==0.14.1 --ignore-installed PyYAML
 :: OPEN3D LICENSE: MIT License (MIT)
 python -m pip install --upgrade pillow --user
 :: PILLOW LICENSE: OSI Approved :: Historical Permission Notice and Disclaimer (HPND)

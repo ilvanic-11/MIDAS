@@ -261,9 +261,12 @@ class MainWindow(wx.Frame):
 
         #Icon
         self.icon = wx.Icon()
-        self.icon.LoadFile(r".\resources\TrebleClefIcon.bmp", type=wx.BITMAP_TYPE_ANY)     #, desiredHeight=10, desiredWidth=10)
-        #self.icon.SetHeight(25)
-        #self.icon.SetWidth(25)
+        print("IconLoad", self.icon.LoadFile(r".\resources\MidasHand_32x40.bmp", type=wx.BITMAP_TYPE_ANY))
+        #, TrebleClefIcon desiredHeight=10, desiredWidth=10)
+
+        #Todo I don't think these do anything.....but I left them anyway.
+        self.icon.SetHeight(80)
+        self.icon.SetWidth(64)
 
         self.SetIcon(self.icon)
 

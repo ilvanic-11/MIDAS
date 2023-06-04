@@ -1311,7 +1311,7 @@ def split_midi_channels(midi_file, directory, name, to_file=False):
 
     *Note-- Loading a midi_file created from midiart.make_midi_from_pixels, a midi image, can be a slow process.
 
-    :param midi_file:   Midi .mid file to be split.
+    :param midi_file:   Midi .mid file to be split, denoted by a string filepath.
     :param directory:   Folder to which new output midi files will be saved.
     :param name:        Name of all the files with addends "_1", "_2"....etc. appended to each.
                         (i.e. midi_file_1.mid, midi_file_2.mid....)
