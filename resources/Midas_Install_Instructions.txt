@@ -26,7 +26,8 @@ Instructions from top to bottom for a fresh Midas_wx\Midas_kv installation of Mi
 	
 2. IN PYCHARM, create a NEW virtual environment(venv).
 	-enable Inherit from global.
-	-File>Settings>Project>Python Interpreter>*Cogwheel - Showall>Add +Plus sign
+	-File>Settings>Project>Python Interpreter>*Cogwheel - Showall>Add +Plus sign  (Not most recent Pycharm version...)
+	-File>Settings>Project>Python Interpreter>*Dropdown Arrow - Showall>Add +Plus sign   (Most recent)
 	-Check "New Environment
 		Location - Your project folder you created and established at the point of the git clone step above.
 		Base Interpreter -- Navigate to you Python3.7.4. executable.
@@ -35,11 +36,38 @@ Instructions from top to bottom for a fresh Midas_wx\Midas_kv installation of Mi
 4. IN PYCHARM, click "Terminal" at the bottom.
 	In terminal window toolbar, click the dropdown arrow at the far right and select Command Prompt.
 	The terminal should display the following:
-	(venv) C:\Users\user\MyProject>
-	From here, execute the following command: pip install -r C:\Users\youtheuser\Midas\resources\Midas_Requirements.txt (adjust this command as necessary depending on where it is installed)
+	(venv) C:\Users\user\Midas>  (Make sure it is the \Midas folder.)
 	
+	Now, execute -->
+	git clone https://github.com/openai/point-e
+	cd point-e  (The pip install requirement '-e .' can only be executed from directory \point-e.)
+	
+	From here, execute the following command: pip install -r C:\Users\youtheuser\Midas\resources\Midas_Requirements.txt 
+	
+5.(Optional)) Install CUDA. Download and install CUDA from their website. Note: Requires about 12gb of free disk space.
+	(Installation of CUDA is not necessary for Midas as whole, but there is one feature that is significantly faster user it.)
+	IN PYCHARM, b. In the Settings/Preferences dialog, navigate to "Project" > "Python Interpreter".
+
+				c. Select the Python interpreter you are using for your project.
+
+				d. Click on the "Show All" button or the gear icon, and then select "Edit".
+
+				e. In the "Environment Variables" section, click on the "+" button to add a new environment variable.
+
+				f. Set the name of the variable to PYCHARM_CUDA and set its value to 1.
+
+				g. Click "OK" to save the changes.
+				
+	IN CMD PROMPT
+				h. python -m pip install torch==1.13.1+cu117 torchvision>=0.13.1+cu117 torchaudio>=0.13.1+cu117 --extra-index-url https://download.pytorch.org/whl/cu117 --no-cache-dir --user
+
+	Restart PyCharm: Close and reopen PyCharm to ensure the changes take effect.
+
+				i. Restart PyCharm.
+				
 	Run MIDAS_wx.
 	Run MIDAS_kivy.
+	
 	
 	
 MIDAS_vst

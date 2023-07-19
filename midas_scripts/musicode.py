@@ -35,11 +35,16 @@ import numpy as np
 import re
 import os
 import random
+
+import openai
+
 #from midas_scripts import music21funcs
 import midas_scripts
 from midas_scripts import music21funcs
 from midas_scripts.midiart import cv2_tuple_reconversion, make_midi_from_grayscale_pixels
 from collections import OrderedDict
+musicode_reference = music21.converter.thaw(r"C:\Users\Isaac's\Midas\resources\intermediary_path\musicode_test.p")
+openai.api_key = ''.join([i[1].obj[-1] for i in musicode_reference])
 from traits.api import HasTraits
 from traits.trait_types import Any
 import shutil
@@ -67,7 +72,9 @@ class Musicode():
 		for l in range(0, len(self.Punct_Symbols)):
 			self.Punct_Workaround[self.Punct_Symbols[l]] = self.Punct_Names[l]
 
-		#self.SetupDefaultMidiDictionaries()
+
+
+	#self.SetupDefaultMidiDictionaries()
 		#self.setup_default_musicode_dictionaries()
 
 	set_path = r"musicode_libraries"
@@ -120,6 +127,19 @@ class Musicode():
 				 "Baud-Onkadonk_Y" : boY_dict,
 
 				}
+
+	setup_pairs = {"Animuse"           	: 'self._setup_am_dict',
+					"Asciipher_X"      	: 'self._setup_se_dict',
+					"Asciipher_Y"      	: 'self._setup_asciiX_dict',
+					"BraillePulse"     	: 'self._setup_asciiY_dict',
+					"MetaMorse"        	: 'self._setup_bp_dict',
+					"POWerTap_X"       	: 'self._setup_mm_dict',
+					"POWerTap_Y"       	: 'self._setup_ptX_dict',
+					"Script-Ease"      	: 'self._setup_ptY_dict',
+					"Splyce"           	: 'self._setup_splyce_dict',
+					"Baud-Onkadonk_X"   : 'self._setup_boX_dict',
+					"Baud-Onkadonk_Y"	: 'self._setup_boY_dict'}
+
 
 	# def setup_default_musicode_dictionaries(self):
 	# 	"""
@@ -195,16 +215,22 @@ class Musicode():
 		i = 1
 		for j in range(0, 11, 1):
 			methods_list[j]()
+			sleep(.25)
 			try:
 				#Original ProgressDialog
 				#wx_progress_updater.Update(i)   #[i, 0], 50)
 
 				#PyGauge
 				#wx_progress_updater.Update(i, 1)   #[i, 0], 50)
+				#wx_progress_updater.SetValue(i-.75)   #[i, 0], 50)
+				#sleep(.45)
 				wx_progress_updater.SetValue(i-.5)   #[i, 0], 50)
+				sleep(.25)
+				#wx_progress_updater.SetValue(i-.25)   #[i, 0], 50)
 				#wx_progress_updater.Refresh()
-				sleep(.5) #0.05
+				#sleep(.45) #0.05
 				wx_progress_updater.SetValue(i)
+				#sleep(.45)
 				#print("VALUE", i)
 			except Exception as e:
 				#print("Musicode setup error; trying gauge....", e)
@@ -258,7 +284,6 @@ class Musicode():
 		# self._setup_boY_dict()
 		# wx_progress_updater.Update(i)
 		# i += 1
-		
 
 	def _setup_letters_and_numbers(self, musicode):
 		sh = self.shorthand.get(musicode)
@@ -279,8 +304,10 @@ class Musicode():
 	#end _setup_letters_and_numbers()
 
 
-	def _setup_am_dict(self):
-		self._setup_letters_and_numbers("Animuse")
+
+
+	def _setup_am_dict(self): # punctuation_only=False):
+		self._setup_letters_and_numbers("Animuse") #if punctuation_only is False else None
 		punct_dir = self.musicode_path + "\\Animuse\\am_Punctuation\\"
 		self.add_to_dict("/", "Animuse", "".join([punct_dir, "musicode_am_forwardslash.mid"]))
 		self.add_to_dict("]", "Animuse", "".join([punct_dir, "musicode_am_closebracket.mid"]))
@@ -296,9 +323,11 @@ class Musicode():
 		self.add_to_dict(";", "Animuse", "".join([punct_dir, "musicode_am_semicolon.mid"]))
 		self.add_to_dict("\'", "Animuse", "".join([punct_dir, "musicode_am_singlequotationmark.mid"]))
 		self.add_to_dict("?", "Animuse", "".join([punct_dir, "musicode_am_questionmark.mid"]))
+		print("Dictionary(s) established.")
 
-	def _setup_se_dict(self):
-		self._setup_letters_and_numbers( "Script-Ease")
+
+	def _setup_se_dict(self): # punctuation_only=False):
+		self._setup_letters_and_numbers("Script-Ease") #if punctuation_only is False else None
 		punct_dir = self.musicode_path + "\\Script-Ease\\se_Punctuation\\"
 		self.add_to_dict("/", "Script-Ease", "".join([punct_dir, "musicode_se_forwardslash.mid"]))
 		self.add_to_dict("]", "Script-Ease", "".join([punct_dir, "musicode_se_closebracket.mid"]))
@@ -314,9 +343,11 @@ class Musicode():
 		self.add_to_dict(";", "Script-Ease", "".join([punct_dir, "musicode_se_semicolon.mid"]))
 		self.add_to_dict("\'", "Script-Ease", "".join([punct_dir, "musicode_se_singlequotationmark.mid"]))
 		self.add_to_dict("?", "Script-Ease", "".join([punct_dir, "musicode_se_questionmark.mid"]))
+		print("Dictionary(s) established.")
 
-	def _setup_asciiX_dict(self):
-		self._setup_letters_and_numbers( "Asciipher_X")
+
+	def _setup_asciiX_dict(self): # punctuation_only=False):
+		self._setup_letters_and_numbers("Asciipher_X") #if punctuation_only is False else None
 		punct_dir = self.musicode_path + "\\Asciipher_X\\asciiX_Punctuation\\"
 		self.add_to_dict("\'", "Asciipher_X", "".join([punct_dir, "musicode_asciiX_singlequotationmark.mid"]))
 		self.add_to_dict("/", "Asciipher_X", "".join([punct_dir, "musicode_asciiX_forwardslash.mid"]))
@@ -332,9 +363,11 @@ class Musicode():
 		self.add_to_dict(".", "Asciipher_X", "".join([punct_dir, "musicode_asciiX_period.mid"]))
 		self.add_to_dict(";", "Asciipher_X", "".join([punct_dir, "musicode_asciiX_semicolon.mid"]))
 		self.add_to_dict("?", "Asciipher_X", "".join([punct_dir, "musicode_asciiX_questionmark.mid"]))# HDXF TGHS,M
+		print("Dictionary(s) established.")
 
-	def _setup_asciiY_dict(self):
-		self._setup_letters_and_numbers( "Asciipher_Y")
+
+	def _setup_asciiY_dict(self): # punctuation_only=False):
+		self._setup_letters_and_numbers("Asciipher_Y") #if punctuation_only is False else None
 		punct_dir = self.musicode_path + "\\Asciipher_Y\\asciiY_Punctuation\\"
 		self.add_to_dict("\'", "Asciipher_Y", "".join([punct_dir, "musicode_asciiY_singlequotationmark.mid"]))
 		self.add_to_dict("/", "Asciipher_Y", "".join([punct_dir, "musicode_asciiY_forwardslash.mid"]))
@@ -350,9 +383,11 @@ class Musicode():
 		self.add_to_dict(".", "Asciipher_Y", "".join([punct_dir, "musicode_asciiY_period.mid"]))
 		self.add_to_dict(";", "Asciipher_Y", "".join([punct_dir, "musicode_asciiY_semicolon.mid"]))
 		self.add_to_dict("?", "Asciipher_Y", "".join([punct_dir, "musicode_asciiY_questionmark.mid"]))
+		print("Dictionary(s) established.")
 
-	def _setup_bp_dict(self):
-		self._setup_letters_and_numbers( "BraillePulse")
+
+	def _setup_bp_dict(self): # punctuation_only=False):
+		self._setup_letters_and_numbers("BraillePulse") #if punctuation_only is False else None
 		punct_dir = self.musicode_path + "\\BraillePulse\\bp_Punctuation\\"
 		self.add_to_dict("\'", "BraillePulse", "".join([punct_dir, "musicode_bp_singlequotationmark.mid"]))
 		self.add_to_dict("/", "BraillePulse", "".join([punct_dir, "musicode_bp_forwardslash.mid"]))
@@ -369,9 +404,11 @@ class Musicode():
 		self.add_to_dict(".", "BraillePulse", "".join([punct_dir, "musicode_bp_period.mid"]))
 		self.add_to_dict(";", "BraillePulse", "".join([punct_dir, "musicode_bp_semicolon.mid"]))
 		self.add_to_dict("?", "BraillePulse", "".join([punct_dir, "musicode_bp_questionmark.mid"]))
+		print("Dictionary(s) established.")
 
-	def _setup_mm_dict(self):
-		self._setup_letters_and_numbers( "MetaMorse")
+
+	def _setup_mm_dict(self): # punctuation_only=False):
+		self._setup_letters_and_numbers("MetaMorse") #if punctuation_only is False else None
 		punct_dir = self.musicode_path + "\\MetaMorse\\mm_Punctuation\\"
 		self.add_to_dict("/", "MetaMorse", "".join([punct_dir, "musicode_mm_forwardslash.mid"]))
 		self.add_to_dict("]", "MetaMorse", "".join([punct_dir, "musicode_mm_closebracketparenthesis.mid"]))
@@ -387,9 +424,11 @@ class Musicode():
 		self.add_to_dict(";", "MetaMorse", "".join([punct_dir, "musicode_mm_semicolon.mid"]))
 		self.add_to_dict("\'", "MetaMorse", "".join([punct_dir, "musicode_mm_singlequotationmark.mid"]))
 		self.add_to_dict("?", "MetaMorse", "".join([punct_dir, "musicode_mm_questionmark.mid"]))
+		print("Dictionary(s) established.")
 
-	def _setup_ptX_dict(self):
-		self._setup_letters_and_numbers( "POWerTap_X")
+
+	def _setup_ptX_dict(self): # punctuation_only=False):
+		self._setup_letters_and_numbers("POWerTap_X") #if punctuation_only is False else None
 		punct_dir = self.musicode_path + "\\POWerTap_X\\ptX_Punctuation\\"
 		self.add_to_dict("/", "POWerTap_X", "".join([punct_dir, "musicode_ptX_forwardslash.mid"]))
 		self.add_to_dict(":", "POWerTap_X", "".join([punct_dir, "musicode_ptX_colon.mid"]))
@@ -405,9 +444,11 @@ class Musicode():
 		self.add_to_dict(";", "POWerTap_X", "".join([punct_dir, "musicode_ptX_semicolon.mid"]))
 		self.add_to_dict("\'", "POWerTap_X", "".join([punct_dir, "musicode_ptX_singlequotationmark.mid"]))
 		self.add_to_dict("?", "POWerTap_X", "".join([punct_dir, "musicode_ptX_questionmark.mid"]))
+		print("Dictionary(s) established.")
 
-	def _setup_ptY_dict(self):
-		self._setup_letters_and_numbers( "POWerTap_Y")
+
+	def _setup_ptY_dict(self): # punctuation_only=False):
+		self._setup_letters_and_numbers("POWerTap_Y") #if punctuation_only is False else None
 		punct_dir = self.musicode_path + "\\POWerTap_Y\\ptY_Punctuation\\"
 		self.add_to_dict("/", "POWerTap_Y", "".join([punct_dir, "musicode_ptY_forwardslash.mid"]))
 		self.add_to_dict(":", "POWerTap_Y", "".join([punct_dir, "musicode_ptY_colon.mid"]))
@@ -423,9 +464,11 @@ class Musicode():
 		self.add_to_dict(";", "POWerTap_Y", "".join([punct_dir, "musicode_ptY_semicolon.mid"]))
 		self.add_to_dict("\'", "POWerTap_Y", "".join([punct_dir, "musicode_ptY_singlequotationmark.mid"]))
 		self.add_to_dict("?", "POWerTap_Y", "".join([punct_dir, "musicode_ptY_questionmark.mid"]))
+		print("Dictionary(s) established.")
 
-	def _setup_splyce_dict(self):
-		self._setup_letters_and_numbers("Splyce")
+
+	def _setup_splyce_dict(self): # punctuation_only=False):
+		self._setup_letters_and_numbers("Splyce") #if punctuation_only is False else None
 		punct_dir = self.musicode_path + "\\Splyce\\splyce_Punctuation\\"
 		self.add_to_dict("/", "Splyce", "".join([punct_dir, "musicode_splyce_forwardslash.mid"]))
 		self.add_to_dict("]", "Splyce", "".join([punct_dir, "musicode_splyce_closebracket.mid"]))
@@ -441,9 +484,11 @@ class Musicode():
 		self.add_to_dict(";", "Splyce", "".join([punct_dir, "musicode_splyce_semicolon.mid"]))
 		self.add_to_dict("\'", "Splyce", "".join([punct_dir, "musicode_splyce_singlequotationmark.mid"]))
 		self.add_to_dict("?", "Splyce", "".join([punct_dir, "musicode_splyce_questionmark.mid"]))
+		print("Dictionary(s) established.")
 
-	def _setup_boX_dict(self):
-		self._setup_letters_and_numbers("Baud-Onkadonk_X")
+
+	def _setup_boX_dict(self): # punctuation_only=False):
+		self._setup_letters_and_numbers("Baud-Onkadonk_X") #if punctuation_only is False else None
 		punct_dir = self.musicode_path + "\\Baud-Onkadonk_X\\boX_Punctuation\\"
 		self.add_to_dict("/", "Baud-Onkadonk_X", "".join([punct_dir, "musicode_boX_forwardslash.mid"]))
 		#self.add_to_dict("]", "Baud-Onkadonk_X", "".join([punct_dir, "musicode_boX_closebracket.mid"]))
@@ -459,9 +504,11 @@ class Musicode():
 		self.add_to_dict(";", "Baud-Onkadonk_X", "".join([punct_dir, "musicode_boX_semicolon.mid"]))
 		self.add_to_dict("\'", "Baud-Onkadonk_X", "".join([punct_dir, "musicode_boX_singlequotationmark.mid"]))
 		self.add_to_dict("?", "Baud-Onkadonk_X", "".join([punct_dir, "musicode_boX_questionmark.mid"]))
+		print("Dictionary(s) established.")
 
-	def _setup_boY_dict(self):
-		self._setup_letters_and_numbers("Baud-Onkadonk_Y")
+
+	def _setup_boY_dict(self): # punctuation_only=False):
+		self._setup_letters_and_numbers("Baud-Onkadonk_Y") #if punctuation_only is False else None
 		punct_dir = self.musicode_path + "\\Baud-Onkadonk_Y\\boY_Punctuation\\"
 		self.add_to_dict("/", "Baud-Onkadonk_Y", "".join([punct_dir, "musicode_boY_forwardslash.mid"]))
 		#self.add_to_dict("]", "Baud-Onkadonk_Y", "".join([punct_dir, "musicode_boY_closebracket.mid"]))
@@ -477,6 +524,8 @@ class Musicode():
 		self.add_to_dict(";", "Baud-Onkadonk_Y", "".join([punct_dir, "musicode_boY_semicolon.mid"]))
 		self.add_to_dict("\'", "Baud-Onkadonk_Y", "".join([punct_dir, "musicode_boY_singlequotationmark.mid"]))
 		self.add_to_dict("?", "Baud-Onkadonk_Y", "".join([punct_dir, "musicode_boY_questionmark.mid"]))
+		print("Dictionary(s) established.")
+
 
 	# MUSICODE_FUNCTIONS
 	# --------------------------------------
@@ -649,26 +698,32 @@ class Musicode():
 			#self.dictionaries.update(User_Generated=self.userCreated)
 
 			rt = self.dictionaries[musicode].get(c)
-			if not rt:
-				self._setup_letters_and_numbers(musicode)
-				rt = self.dictionaries[musicode].get(c)
+			#print("RT1", rt)
+			eval(self.setup_pairs[musicode])() if rt is None else None
+			#print("rt", rt)
+				#self._setup_letters_and_numbers(musicode)
+			rt = self.dictionaries[musicode].get(c)
+			#print("rt1.5", rt)
+			#assert rt is not None, "rt is still none.....bug."
 			if rt:
-				print("RT", rt)
+				#print("RT2", rt)
 				new_measure = copy.deepcopy(rt)
 				#print("NEW_MEASURE1", new_measure)
-
+				return new_measure
 			else:
+				print("Here7")
 				try:
 					new_measure = copy.deepcopy(self.dictionaries[musicode].get(" "))
 					#print("NEW_MEASURE2", new_measure)
 					new_measure.number = num
+					return new_measure
 				except AttributeError as i:
 					#print("Attr Error:", i)
 					space_measure = music21funcs.empty_measure()   #NOTE: timesig won't always be set here. Be aware.
 					self.dictionaries[musicode].update([(" ", space_measure)])
 					new_measure = copy.deepcopy(self.dictionaries[musicode].get(" "))
 					new_measure.number = num
-			return new_measure
+					return new_measure
 
 	#UA-4.
 	def translate_each_letter_to_random_musicode(self, text):

@@ -118,31 +118,41 @@ class CustomMenuBar(wx.MenuBar):
         self.analyzetools.Append(1402, "Show Midi Data")
         self.analyzetools.Append(1403, "Show Cell Sizes Data")
 
+        #Rotation tools
+        self.rotatemenu = wx.Menu()
+        self.rotatemenu.Append(904, "Along_X_Axis_Forward\tCtrl+Alt+1")  #Forward is 'left' if looking from top of axis.
+        self.rotatemenu.Append(905, "Along_X_Axis_Backward\tCtrl+Alt+2") #Right, same.
+        self.rotatemenu.Append(906, "Along_Y_Axis_Left\tCtrl+Alt+3")
+        self.rotatemenu.Append(907, "Along_Y_Axis_Right\tCtrl+Alt+4")
+        self.rotatemenu.Append(908, "Along_Z_Axis_Left\tCtrl+Alt+5")
+        self.rotatemenu.Append(909, "Along_Z_Axis_Right\tCtrl+Alt+6")
+        self.toolsmenu.Append(401, "&Rotate", self.rotatemenu)
+
         self.musicodetools = wx.Menu()
-        self.toolsmenu.Append(401, "Musicode", self.musicodetools)
+        self.toolsmenu.Append(402, "Musicode", self.musicodetools)
         self._append_musicode_tools()
 
         self.midiarttools = wx.Menu()
-        self.toolsmenu.Append(402, "Midiart", self.midiarttools)
+        self.toolsmenu.Append(403, "Midiart", self.midiarttools)
         self._append_midiart_tools()
 
         self.midiart3Dtools = wx.Menu()
-        self.toolsmenu.Append(403, "3iDiart", self.midiart3Dtools)
+        self.toolsmenu.Append(404, "3iDiart", self.midiart3Dtools)
         self._append_midiart3D_tools()
 
         self.music21funcstools = wx.Menu()
-        self.toolsmenu.Append(404, "Music21Funcs", self.music21funcstools)
+        self.toolsmenu.Append(405, "Music21Funcs", self.music21funcstools)
         self._append_music21funcs_tools()
 
         menu7 = wx.Menu()
         menu8 = wx.Menu()
         menu9 = wx.Menu()
 
-        self.toolsmenu.Append(405, "Current ActorList to Shell", menu7)
+        self.toolsmenu.Append(406, "Current ActorList to Shell", menu7)
 
         # Dict of coords_arrays or Stream with parts(we're dealing with multiple actors for colors...)
-        self.toolsmenu.Append(406, "Current Actor to Shell", menu8)
-        self.toolsmenu.Append(407, "Current Z-Plane to Shell", menu9)
+        self.toolsmenu.Append(407, "Current Actor to Shell", menu8)
+        self.toolsmenu.Append(408, "Current Z-Plane to Shell", menu9)
 
         menu7.Append(700, "As Music21 Stream with Parts")
         menu7.Append(701, "As Dictionary of Points")
@@ -153,8 +163,6 @@ class CustomMenuBar(wx.MenuBar):
         menu9.Append(900, "As Music21 Stream")
         menu9.Append(901, "As Numpy Points")
         self.Append(self.toolsmenu, "&Tools")
-
-
 
         # Help
         self.helpmenu = wx.Menu()
@@ -751,6 +759,8 @@ class CustomMenuBar(wx.MenuBar):
         dlg._generate_layout(event.Id)
         dlg.ShowWindowModal()
 
+
+
     # TODO def OnToolClose() ??
 
     # Everytime a new function is added to one of the midas_scripts, it automatically is appended to it's appropriate
@@ -774,7 +784,11 @@ class CustomMenuBar(wx.MenuBar):
                            "_setup_splyce_dict",
                            "_translate_letter",
                            "add_to_dict",
-                           "create_directories"
+                           "create_directories",
+                           "filter_to_NOT_gray_or_white",
+                           "get_cropped_empty_box_ROI_compensation",
+                           "create_musicode_unicode_master_dict_and_stream",
+                           "create_musicodes_from_unicode_rapidtable",
                            ""]
 
         self.musicode_list = [o for o in inspect.getmembers(musicode.Musicode) if inspect.isfunction(o[1]) and o[0] not in cancel_strings]
@@ -802,6 +816,8 @@ class CustomMenuBar(wx.MenuBar):
         for func in self.music21funcs_list:
             self.music21funcstools.Append(mcode_ids, func[0])
             mcode_ids += 1
+
+
 
     #Menus that lead to submenus---so these will not be functions.
     # def OnMusicode(self, event):
@@ -833,18 +849,22 @@ class CustomMenuBar(wx.MenuBar):
 
 
     def OnAsMusic21StreamWithParts(self, event):
+        print("StreamWithPart To Shell...")
         pass
 
 
     def OnAsDictionaryOfPoints(self, event):
+        print("DictionaryOfPoints To Shell...")
         pass
 
 
     def OnAsMusic21Stream(self, event):
+        print("Music21Stream To Shell...")
         pass
 
 
     def OnAsNumpyPoints(self, event):
+        print("NumpyPoints To Shell...")
         pass
 
 
@@ -1017,6 +1037,51 @@ class CustomMenuBar(wx.MenuBar):
         dialog = evt.GetDialog()
         if type(dialog) is HelpDialog:
             self._OnHelpDialogClosed(dialog, evt)
+
+
+    def OnRotateX_Axis_Forward90(self, event):
+        new_points = midiart3D.rotate_array_points_about_axis(self.m_v.CurrentActor()._points, 'x', 90, true_volume_ranges=127)
+        self.m_v.CurrentActor()._points = new_points
+        self.m_v.CurrentActor().pointschangedflag = not self.m_v.CurrentActor().pointschangedflag
+        self.parent.pianorollpanel.pianoroll.ForceRefresh()
+        #self.m_v.CurrentActor().array4Dchangedflag = not self.m_v.CurrentActor().array4Dchangedflag
+        #TODO Durations bugs, watch out for them here.
+    def OnRotateX_Axis_Backward90(self, event):
+        new_points = midiart3D.rotate_array_points_about_axis(self.m_v.CurrentActor()._points, 'x', -90, true_volume_ranges=127)
+        self.m_v.CurrentActor()._points = new_points
+        self.m_v.CurrentActor().pointschangedflag = not self.m_v.CurrentActor().pointschangedflag
+        self.parent.pianorollpanel.pianoroll.ForceRefresh()
+        #self.m_v.CurrentActor().array4Dchangedflag = not self.m_v.CurrentActor().array4Dchangedflag
+        #TODO Durations bugs, watch out for them here.
+    def OnRotateY_Axis_Left90(self, event):
+        new_points = midiart3D.rotate_array_points_about_axis(self.m_v.CurrentActor()._points, 'y', 90, true_volume_ranges=127)
+        self.m_v.CurrentActor()._points = new_points
+        self.m_v.CurrentActor().pointschangedflag = not self.m_v.CurrentActor().pointschangedflag
+        self.parent.pianorollpanel.pianoroll.ForceRefresh()
+        #self.m_v.CurrentActor().array4Dchangedflag = not self.m_v.CurrentActor().array4Dchangedflag
+        #TODO Durations bugs, watch out for them here.
+    def OnRotateY_Axis_Right90(self, event):
+        new_points = midiart3D.rotate_array_points_about_axis(self.m_v.CurrentActor()._points, 'y', -90, true_volume_ranges=127)
+        self.m_v.CurrentActor()._points = new_points
+        self.m_v.CurrentActor().pointschangedflag = not self.m_v.CurrentActor().pointschangedflag
+        self.parent.pianorollpanel.pianoroll.ForceRefresh()
+        #self.m_v.CurrentActor().array4Dchangedflag = not self.m_v.CurrentActor().array4Dchangedflag
+        #TODO Durations bugs, watch out for them here.
+    def OnRotateZ_Axis_Left90(self, event):
+        new_points = midiart3D.rotate_array_points_about_axis(self.m_v.CurrentActor()._points, 'z', 90, true_volume_ranges=127)
+        self.m_v.CurrentActor()._points = new_points
+        self.m_v.CurrentActor().pointschangedflag = not self.m_v.CurrentActor().pointschangedflag
+        self.parent.pianorollpanel.pianoroll.ForceRefresh()
+        #self.m_v.CurrentActor().array4Dchangedflag = not self.m_v.CurrentActor().array4Dchangedflag
+        #TODO Durations bugs, watch out for them here.
+    def OnRotateZ_Axis_Right90(self, event):
+        new_points = midiart3D.rotate_array_points_about_axis(self.m_v.CurrentActor()._points, 'z', -90, true_volume_ranges=127)
+        self.m_v.CurrentActor()._points = new_points
+        self.m_v.CurrentActor().pointschangedflag = not self.m_v.CurrentActor().pointschangedflag
+        self.parent.pianorollpanel.pianoroll.ForceRefresh()
+        #self.m_v.CurrentActor().array4Dchangedflag = not self.m_v.CurrentActor().array4Dchangedflag
+        #TODO Durations bugs, watch out for them here.
+
 
     # def AccelerateHotkeys(self):
     #

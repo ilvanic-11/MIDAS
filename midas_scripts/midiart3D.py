@@ -67,8 +67,8 @@ import statistics
 def extract_xyz_coordinates_to_array( in_stream, velocities=90.0):
     #TODO rename this function?
     """
-         This functions extracts the int values of the offsets, pitches, and velocities of a music21 stream's notes and
-    puts them into a common 2d numpy coords_array as floats.
+         This functions extracts the int values of the offsets, pitches, velocities AND durations of a music21 stream's
+    notes and puts them into a common 2d numpy coords_array as floats.
     :param in_stream:               Music21 input stream. (for 3d purposes the stream must contain stream.Parts)
     :return: note_coordinates:      A numpy array comprising x=note.offset, y=note.pitch.ps, and z=note.volume.velocity
                                     data, as well as a=note.duration data.
@@ -96,8 +96,14 @@ def extract_xyz_coordinates_to_array( in_stream, velocities=90.0):
         offset_list.append(float(XYZ.offset))
         pitch_list.append(float(XYZ.pitch.ps))  #midi
         #TODO Condition check here?
-        duration_list_1.append(XYZ.duration.quarterLength.as_integer_ratio()[0])
-        duration_list_2.append(XYZ.duration.quarterLength.as_integer_ratio()[1])
+        #TODO NOTE: Keep in mind, it is possible some duration sizes might not be compatible with certain CPQN values..
+        try:
+            duration_list_1.append(XYZ.duration.quarterLength.as_integer_ratio()[0])
+            duration_list_2.append(XYZ.duration.quarterLength.as_integer_ratio()[1])
+        except AttributeError:
+            #NOTE: It is probable that Fraction() objects are always going to be odd ratios. #TODO Workaround?
+            duration_list_1.append(XYZ.duration.quarterLength.numerator)
+            duration_list_2.append(XYZ.duration.quarterLength.denominator)
         if XYZ.volume.velocity is not None:
             volume_list.append(float(XYZ.volume.velocity))
         else:
@@ -255,20 +261,37 @@ def rotate_point_about_axis( x, y, z, axis, degrees):
     return (new_x, new_y, new_z)
 
 #3D-6.
-def rotate_array_points_about_axis( points, axis, degrees):
+def rotate_array_points_about_axis( points, axis, degrees, true_volume_ranges=None):
     """
         This function uses rotate_point_about_axis on a large scale of points.
-    :param points:      Coords_array of points.
-    :param axis:        Axis of rotation.
-    :param degrees:     Degrees (0-360) of rotation.
-    :return:            A new numpy coords_array.
+    :param points:          Coords_array of points.
+    :param axis:            Axis of rotation.
+    :param degrees:         Degrees (0-360) of rotation.
+    :param true_volume:     An axis of rotation is determined by the average of the sum of the maxes and mins of each
+                            axis. These maxes and mins, in turn, are determined by the points within our data.
+                            If true_volume_ranges is not None and is set, (i.e. 127), then our axes of rotation for each
+                            will always be at the difference between (127 and 0)/2, regardless of our points.
+                            Example: if a volume o points has two points, (0x, 60y, 80z) and (30x, 70y, and 10z),
+                            then our mins and maxes for each axis will be
+                            [xmin -> 0, ymin -> 60, zmin -> 10] AND [xmax -> 30, ymax -> 70, zmax ->80).
+                            True_volume_ranges explicitly set and not None changes that average and makes it the same
+                            for each axis.
+    :return:                A new numpy coords_array.
     """
     # new_points = np.array(points)
     # Centers all points around origin before rotating.
     print("Here1")
-    t_x = (max(points[:, 0]) + min(points[:, 0])) / 2
-    t_y = (max(points[:, 1]) + min(points[:, 1])) / 2
-    t_z = (max(points[:, 2]) + min(points[:, 2])) / 2
+    if true_volume_ranges is None:
+        t_x = (max(points[:, 0]) + min(points[:, 0])) / 2
+        t_y = (max(points[:, 1]) + min(points[:, 1])) / 2
+        t_z = (max(points[:, 2]) + min(points[:, 2])) / 2
+    else:
+        #t_x = our max 127 - our min 0 for each axis;  true_volume_range difference for each.
+        #t_y = 127-0
+        #t_z = 127-0
+        t_x = t_y = t_z = true_volume_ranges/2#Pythonically, it's easier to just use this one liner to set them all=127.
+        #THIS makes our axis of rotation, for grid sculpting purposes, the SAME for each axis. It makes it easier to
+        #draw in 3 dimensions when rapidly switching between zplanes.
     print("Here2")
     points[:, 0] -= t_x
     points[:, 1] -= t_y
@@ -309,9 +332,14 @@ def get_points_from_ply( file_path, height=127):
 
     ply = open3d.io.read_point_cloud(file_path)
     Data = numpy.asarray(ply.points)
+    Data = process_3d_points_for_Midas(Data=Data, height=height)
+    return Data
+
+
+def process_3d_points_for_Midas(Data, height=127):
     Data = Data + (0 - Data.min())
-    Data = Data * (height/Data.max())
-    Data = np.asarray(Data,  int)
+    Data = Data * (height / Data.max())
+    Data = np.asarray(Data, int)
     Data = np.asarray(Data, float)
     return Data
 
@@ -344,9 +372,17 @@ def write_ply_from_points( coords_array, file_path):
     Plywriter.SetFileName(file_path)
     Plywriter.Write()
 
-    # Big_Cloud = open3d.PointCloud(coords_array)
-    # Big_Cloud.points = open3d.Vector3dVector(coords_array)
-    # open3d.write_point_cloud(file_path, Big_Cloud)
+
+def write_open3d_point_cloud(coords_array, file_path):
+    """
+
+    :param coords_array:
+    :param file_path:
+    :return:
+    """
+    pcd = open3d.geometry.PointCloud()
+    pcd.points = open3d.utility.Vector3dVector(coords_array)
+    open3d.io.write_point_cloud(file_path, pcd)
 
 
 

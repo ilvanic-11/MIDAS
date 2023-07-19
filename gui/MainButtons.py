@@ -1,11 +1,13 @@
 import wx
 from midas_scripts import midiart, midiart3D, musicode # music21funcs,
+from gui import Generate
 import music21
 import cv2, numpy
 import os
 import shutil
 from collections import OrderedDict
 from mayavi3D.Mayavi3DWindow import Mayavi3idiView, MayaviMiniView
+from time import sleep
 import gc
 # from gui import Preferences
 # from mayavi import mlab
@@ -291,10 +293,19 @@ class MainButtonsPanel(wx.Panel):
 
     def OnMusicodeDialog(self, evt):
 
-        #THIS IS TEMPORARY; Once Durations are perfect, we can remove these two calls.
-        self.toplevel.pianorollpanel.zplanesctrlpanel.OnGoToNearestEmptyZplane(event=None)
-        self.toplevel.pianorollpanel.cbCellsPerQrtrNote.SetValue("(4, '16th', .25)")
-        self.toplevel.pianorollpanel.OnCellsPerQrtrNoteChanged(event=None)
+
+        #TODO 06/28/2023 TEST THIS
+        # print("CB_GETVALUE()", self.toplevel.pianorollpanel.cbCellsPerQrtrNote.GetValue())
+        # if self.toplevel.pianorollpanel.cbCellsPerQrtrNote.GetValue() != "(4, '16th', .25)": #can't use 'is not' here...
+        #     #THIS IS TEMPORARY; Once Durations are perfect, we can remove these two calls.
+        #     self.toplevel.pianorollpanel.zplanesctrlpanel.OnGoToNearestEmptyZplane(event=None)
+        #     sleep(.35)
+        #     self.toplevel.pianorollpanel.cbCellsPerQrtrNote.SetValue("(4, '16th', .25)")
+        #     sleep(.35)
+        #     self.toplevel.pianorollpanel.OnCellsPerQrtrNoteChanged(event=None)
+        #     sleep(.35)
+        # else:
+        #     pass
 
         dlg = MusicodeDialog(self, -1, "Musicode")
         dlg.ShowWindowModal()
@@ -325,6 +336,46 @@ class MainButtonsPanel(wx.Panel):
         dialog.Destroy()
 
 
+
+    def _OnM21ConverterParseDialogClosed(self, dialog, evt):
+        print("OnM21ConverterParseDialogClosed():")
+        val = evt.GetReturnCode()
+        print("Val %d: " % val)
+        try:
+            btn = {wx.ID_OK: "OK",
+                   wx.ID_CANCEL: "Cancel"}[val]
+        except KeyError:
+            btn = '<unknown>'
+
+        if btn == "OK":
+
+            #New Actor Checkbox
+            self.GetTopLevelParent().pianorollpanel.actorsctrlpanel.actorsListBox.new_actor() \
+                if dialog.chbxNewActor.IsChecked() is True else None
+
+            m_v = self.GetTopLevelParent().mayavi_view
+            color_palette = m_v.current_color_palette
+
+            stream = music21.converter.parse(dialog.midi)
+            stream.show('txt')
+            #TODO CORE DATA UPDATE Here
+            points = midiart3D.extract_xyz_coordinates_to_array(stream)
+            index = len(m_v.actors)
+            name = str(len(m_v.actors)) + "_" + "Midi" + "_" + dialog.midi_name
+            # clr = color_palette[random.randint(1, 16)]  #TODO Random color of 16 possible for now.
+            m_v.disable_render = True
+            actor = self.GetTopLevelParent().pianorollpanel.actorsctrlpanel.actorsListBox.new_actor(index, name)
+            # self.GetTopLevelParent().pianorollpanel.pianoroll.StreamToGrid(stream)
+            for j in m_v.actors:
+                if j.name == name:
+                    print("Points here?")
+                    j.change_points(points)
+            m_v.disable_render = False
+            #self.GetTopLevelParent().pianorollpanel.pianoroll.StreamToGrid(stream)
+            m_v.new_reticle_box()
+
+
+
     def _OnMusicodeDialogClosed(self, dialog, evt):
         val = evt.GetReturnCode()
         try:
@@ -333,6 +384,9 @@ class MainButtonsPanel(wx.Panel):
         except KeyError:
             btn = '<unknown>'
 
+        # New Actor Checkbox
+        self.GetTopLevelParent().pianorollpanel.actorsctrlpanel.actorsListBox.new_actor(len(self.m_v.actors)) \
+            if dialog.chbxNewActor.IsChecked() is True else None
 
         musicode_name = dialog.input_mcname.GetLineText(0)
 
@@ -351,7 +405,6 @@ class MainButtonsPanel(wx.Panel):
                                         selection=str(dialog.inputTxt.GetLineText(0)), write=False, timeSig=None)
             self.GetTopLevelParent().pianorollpanel.ClearZPlane(self.m_v.cur_z)
 
-
         elif dialog.create_musicode.GetValue() is False and btn == "OK":
             if dialog.translate_multiline_musicode.GetValue() is False:
                 print("DialogCheck:", dialog.create_musicode.GetValue())
@@ -360,8 +413,10 @@ class MainButtonsPanel(wx.Panel):
                     dialog.inputTxt.GetLineText(0))
                 print("LINETEXT:", dialog.inputTxt.GetLineText(0))
                 self.m_v.z_flag = True
+                #Stream to Grid method
                 self.GetTopLevelParent().pianorollpanel.pianoroll.StreamToGrid(stream)
                 self.m_v.z_flag = False
+                self.m_v.CurrentActor().array4Dchangedflag = not self.m_v.CurrentActor().array4Dchangedflag
 
             else:
                 print("Modified?:", dialog.inputTxt.IsModified())
@@ -371,6 +426,7 @@ class MainButtonsPanel(wx.Panel):
                     write_name = dialog.pathname
                 string = dialog.inputTxt.GetValue()
                 print("LINETEXT:", string)
+                #Immediately write to file for all lines.
                 self.musicode.translate_multiline(
                     dialog.rdbtnMusicodeChoice.GetString(dialog.rdbtnMusicodeChoice.GetSelection()),
                     string,
@@ -383,6 +439,8 @@ class MainButtonsPanel(wx.Panel):
         dlg = super().GetParent().GetTopLevelParent().statusbar.gauge
         dlg.SetValue(0)
 
+
+
     def _OnMIDIArtDialogClosed(self, dialog, evt):
         val = evt.GetReturnCode()
         print("Val %d: " % val)
@@ -393,6 +451,13 @@ class MainButtonsPanel(wx.Panel):
             btn = '<unknown>'
 
         if btn == "OK":
+
+            #New Actor Checkbox
+            #TODO Finish! 07/10/2023
+            # self.GetTopLevelParent().pianorollpanel.actorsctrlpanel.actorsListBox.new_actor(len(self.m_v.actors)) \
+            #     if dialog.chbxNewActor.IsChecked() is True else None
+            # NOTE: With monochrome and edges, new_actor is doable. With colors, the new_actor chbx needs to Disabl()
+
             #En Mass Export Directly to File.
             if dialog.MultipleCheck == True and dialog.AllCheck == True:
                 #pathname = dialog.pathname
@@ -805,46 +870,9 @@ class MainButtonsPanel(wx.Panel):
         #Update Gui View
         ##self.parent.ids.imagedraw_Area.ids.image_View.source = file_path_img_with_piano
         #self.parent.ids.imagedraw_Area.ids.image_View.reload()
-
-
-
-
     #################
 
 
-
-
-    def _OnM21ConverterParseDialogClosed(self, dialog, evt):
-        print("OnM21ConverterParseDialogClosed():")
-        val = evt.GetReturnCode()
-        print("Val %d: " % val)
-        try:
-            btn = {wx.ID_OK: "OK",
-                   wx.ID_CANCEL: "Cancel"}[val]
-        except KeyError:
-            btn = '<unknown>'
-
-        if btn == "OK":
-            m_v = self.GetTopLevelParent().mayavi_view
-            color_palette = m_v.current_color_palette
-
-            stream = music21.converter.parse(dialog.midi)
-            stream.show('txt')
-            #TODO CORE DATA UPDATE Here
-            points = midiart3D.extract_xyz_coordinates_to_array(stream)
-            index = len(m_v.actors)
-            name = str(len(m_v.actors)) + "_" + "Midi" + "_" + dialog.midi_name
-            # clr = color_palette[random.randint(1, 16)]  #TODO Random color of 16 possible for now.
-            m_v.disable_render = True
-            actor = self.GetTopLevelParent().pianorollpanel.actorsctrlpanel.actorsListBox.new_actor(index, name)
-            # self.GetTopLevelParent().pianorollpanel.pianoroll.StreamToGrid(stream)
-            for j in m_v.actors:
-                if j.name == name:
-                    print("Points here?")
-                    j.change_points(points)
-            m_v.disable_render = False
-            #self.GetTopLevelParent().pianorollpanel.pianoroll.StreamToGrid(stream)
-            m_v.new_reticle_box()
 
     def _OnMIDIArt3DDialogClosed(self, dialog, evt):
         m_v = self.GetTopLevelParent().mayavi_view
@@ -867,6 +895,9 @@ class MainButtonsPanel(wx.Panel):
                 ##ply = None
                 points = None
                 return
+
+
+
             if dialog.chbxCurrentActor.IsChecked() is True:
                 m_v.scene3d.disable_render = True
                 for j in dialog.m_v.actors:
@@ -874,8 +905,6 @@ class MainButtonsPanel(wx.Panel):
                         j.change_points(dialog.pointclouds[i])
                 #dialog.m_v.CurrentActor().change_points(dialog.pointclouds[dialog.point_cloud_counter])
                 m_v.scene3d.disable_render = False
-
-
 
             else:
                 if dialog.chbxMultiple.IsChecked():
@@ -928,6 +957,11 @@ class MainButtonsPanel(wx.Panel):
                         name = str(i) + "_" + "PointCloud" + "_" + dialog.ply_names[dialog.point_cloud_counter]
                         m_v.scene3d.disable_render = True
                         actor = self.GetTopLevelParent().pianorollpanel.actorsctrlpanel.actorsListBox.new_actor(i, name)
+                        # New Actor Checkbox
+                        # self.GetTopLevelParent().pianorollpanel.actorsctrlpanel.actorsListBox.new_actor(
+                        #     len(self.m_v.actors)) \
+                        #     if dialog.chbxNewActor.IsChecked() is True else None
+
 
                         for j in m_v.actors:
                             if j.name == name:
@@ -968,8 +1002,26 @@ class Music21ConverterParseDialog(wx.Dialog):
         self.help_static = wx.StaticText(self, -1, "Import a midi file or a score file.", style=wx.ALIGN_CENTER)
 
         self.btnLoadMidi = wx.Button(self, -1, "Load Midi\\Score")
-        self.Bind(wx.EVT_BUTTON, self.OnLoadMidi, self.btnLoadMidi)
 
+        # Input text box
+        self.inputTxt = wx.TextCtrl(self, -1, "              Input MuseNet Prompt Here", size=(250, -1),
+                                    style=wx.TE_MULTILINE, name="Generative Prompter Input")
+        self.inputTxt.Disable()
+        self.btnGenerate_MuseNet = wx.Button(self, -1, "MuseNet Midi\nGenerate")
+        self.btnGenerate_MuseNet.Disable()
+
+        # New Actor Checkbox
+        self.chbxNewActor = wx.CheckBox(self, -1, "New Actor?")    #ctrlsPanel
+        self.chbxNewActor.SetValue(not self.chbxNewActor.IsChecked())
+
+        #############
+        #OpenAI Class
+        #self.muse_net = Generate.Muse_Net()
+
+
+        #Binds
+        self.Bind(wx.EVT_BUTTON, self.OnLoadMidi, self.btnLoadMidi)
+        self.Bind(wx.EVT_BUTTON, self.OnGenerate_MuseNet_Midi, self.btnGenerate_MuseNet)
 
 
         btnsizer = wx.StdDialogButtonSizer()
@@ -980,13 +1032,21 @@ class Music21ConverterParseDialog(wx.Dialog):
         btnsizer.AddButton(btn)
         btnsizer.Realize()
 
+        self.sizer5 = wx.BoxSizer(wx.VERTICAL)
+        self.sizer5.Add(self.inputTxt, 0, wx.ALL | wx.ALIGN_CENTER, 0)
+        self.sizer5.Add(self.btnGenerate_MuseNet, 0, wx.ALL | wx.ALIGN_CENTER, 0)
+
         sizerMain = wx.BoxSizer(wx.VERTICAL)
         #sizerMain.Add(sizerHor, 30)
-        sizerMain.Add(self.help_static, 0, wx.ALL | wx.ALIGN_CENTER, 20)
+        sizerMain.Add(self.help_static, 0, wx.ALL | wx.ALIGN_CENTER, 10)
         sizerMain.Add(self.btnLoadMidi, 0, wx.ALL | wx.ALIGN_CENTER, 10)
+        sizerMain.Add(self.sizer5, 0, wx.ALIGN_CENTER | wx.ALL, 30)
+
+        sizerMain.Add(self.chbxNewActor, 0, wx.ALL | wx.ALIGN_CENTER, 5)
         sizerMain.Add(btnsizer, 0, wx.ALIGN_CENTER | wx.ALL, 10)
 
         sizerCtrls = wx.BoxSizer(wx.VERTICAL)
+
 
         self.SetSizerAndFit(sizerMain)
 
@@ -1007,14 +1067,17 @@ class Music21ConverterParseDialog(wx.Dialog):
             except IOError:
                 wx.LogError("Cannot open file '%s'." % pathname)
 
+    def OnGenerate_MuseNet_Midi(self, event):
+        #self.midi = self.muse_net.Generate(prompt="user midi selection\plane\midi_file\etc....")
+        print("Generating MuseNet Midi....not implemented yet though!")
+        pass
+
 
 class MusicodeDialog(wx.Dialog):
     def __init__(self, parent, id, title, size=wx.DefaultSize,
                  pos=wx.DefaultPosition, style=wx.DEFAULT_DIALOG_STYLE, name='Musicode'):
         
         wx.Dialog.__init__(self)
-
-        from time import sleep
 
         self.Create(parent, id, title, pos, size, style, name)
         self.parent = parent
@@ -1047,7 +1110,8 @@ class MusicodeDialog(wx.Dialog):
 
         #Supported Characters
         self.supported_static = wx.StaticText(self, -1, ('''Supported Musicode Characters: \n <<<< AaBbCcDdEeFfGgHhIiJjKkLlMmNnOoPpQqRrSsTtUuVvWwXxYyZz       ?,;\':-.!\"()[]/       0123456789 >>>>'''), style=wx.ALIGN_CENTER)
-
+        self.generate_musicode_text = wx.CheckBox(self, -1, "Generate Musicode Text")
+        #self.generate_musicode_text.SetValue(not self.generate_musicode_text.IsChecked())
         #Input text box
         self.inputTxt = wx.TextCtrl(self.textinputPanel, -1, "♫♪♪♪♪♪♪♪♪♪Musicode Text Here♪♪♪♪♪♪♪♪♫", size=(250, -1), style=wx.TE_MULTILINE, name="Translate\\Create")
         # self.inpTxt_Tooltip = wx.ToolTip('''Supported Musicode Characters: \n <<<< AaBbCcDdEeFfGgHhIiJjKkLlMmNnOoPpQqRrSsTtUuVvWwXxYyZz  ?,;\':-.!\"()[]/  0123456789 >>>>''')
@@ -1074,14 +1138,14 @@ class MusicodeDialog(wx.Dialog):
             pass
         #*#dlg.Destroy()
         dlg.SetValue(11)
-        sleep(.45)
+        sleep(.53)
         dlg.SetValue(11.25)
-        sleep(.45)
+        sleep(.53)
         dlg.SetValue(11.5)
-        sleep(.45)
+        sleep(.53)
         dlg.SetValue(11.75)
         dlg.SetValue(12)
-        sleep(.45)
+        sleep(.53)
         # sleep(.55)
         # dlg.SetValue(12.5)
         # sleep(.55)
@@ -1108,17 +1172,43 @@ class MusicodeDialog(wx.Dialog):
                                                self.musicodesList,
                                                2, wx.RA_SPECIFY_COLS)
 
+        self.btnGenerate_ChatGPT = wx.Button(self, -1, "ChatGPT Response\nGenerate")
+        self.btnGenerate_ChatGPT.Disable()
+
         self.rdbtnMusicodeChoice.Enable(enable=False)
 
-        
+        #self.newactor_static =  wx.StaticText(self, -1, ('''New Actor?'''), style=wx.ALIGN_CENTER)
+        self.chbxNewActor = wx.CheckBox(self, -1, "New Actor?")  #ctrlsPanel
+        self.chbxNewActor.SetValue(not self.chbxNewActor.IsChecked())
+
+
+        # Input text box
+        # self.inputTxt = wx.TextCtrl(self, -1, "              Input MuseNet Prompt Here", size=(250, -1),
+        #                             style=wx.TE_MULTILINE, name="Generative Prompter Input")
+        # self.inputTxt.Disable()
+
+        ##############
+        # OpenAI Class
+        self.chat_gpt = Generate.Chat_GPT()
+
+
+        #"♫♪♪♪♪♪♪♪Generative Prompt Here♪♪♪♪♪♪♫"
+
         #Bindings.
         self.Bind(wx.EVT_CHECKBOX, self.OnPolarizeCheckboxes)
+        self.Bind(wx.EVT_CHECKBOX, self.OnCheckBoxes2, self.generate_musicode_text)
+        self.Bind(wx.EVT_BUTTON, self.OnGenerate_ChatGPT_Response, self.btnGenerate_ChatGPT) #, self.generate_musicode_text)
+
+
 
         #Sizers
         self.sizer = wx.BoxSizer(wx.VERTICAL)
         self.sizer2 = wx.BoxSizer(wx.HORIZONTAL)
         self.sizer3 = wx.BoxSizer(wx.HORIZONTAL)
         self.sizer4 = wx.BoxSizer(wx.HORIZONTAL)
+        #self.sizer5 = wx.BoxSizer(wx.VERTICAL)
+        # self.sizer5.Add(self.inputTxt, 0, wx.ALL | wx.ALIGN_CENTER, 0)
+        #self.sizer5.Add(self.btnGenerate_ChatGPT, 0, wx.ALL | wx.ALIGN_CENTER, 0)
 
         #Sizer adds.
         self.sizer2.Add(self.translate_musicode, 0, wx.ALL | wx.ALIGN_TOP, 20)
@@ -1147,9 +1237,13 @@ class MusicodeDialog(wx.Dialog):
         self.sizer.Add(self.sizer4, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL, 20)
         self.sizer.Add(self.loadTxt_Btn, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL, 20)
         self.sizer.Add(self.supported_static, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL, 0)
-        self.sizer.Add(self.textinputPanel, 0, wx.ALL|wx.ALIGN_CENTER_HORIZONTAL, 20)
-        self.sizer.Add(self.rdbtnMusicodeChoice, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL, 20)
-        self.sizer.Add(self.btnsizer, 0, wx.ALIGN_CENTER_HORIZONTAL | wx.ALL, 5)
+        self.sizer.Add(self.textinputPanel, 0, wx.ALL|wx.ALIGN_CENTER_HORIZONTAL, 10) #20
+        self.sizer.Add(self.generate_musicode_text, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL, 0)
+        self.sizer.Add(self.btnGenerate_ChatGPT, 0, wx.ALL|wx.ALIGN_CENTER_HORIZONTAL, 0)
+        self.sizer.Add(self.rdbtnMusicodeChoice, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL, 30)
+        self.sizer.Add(self.chbxNewActor, 0, wx.ALIGN_CENTER_HORIZONTAL | wx.ALL, -5)
+        self.sizer.Add(self.btnsizer, 0, wx.ALIGN_CENTER_HORIZONTAL | wx.ALL, 20)
+
         #print("Sizer Children", self.sizer.Children)
 
         self.SetSizerAndFit(self.sizer)
@@ -1173,6 +1267,11 @@ class MusicodeDialog(wx.Dialog):
                 wx.LogError("Cannot open file '%s'." % self.pathname)
                 text_read.close()
             text_read.close()
+
+    def OnGenerate_ChatGPT_Response(self, event):
+        self.inputTxt.SetValue(self.chat_gpt.Generate(prompt = self.inputTxt.GetLineText(0)))
+        print("Chat GPT Response generated.")
+        #pass
 
 
     #TODO Needs work.
@@ -1255,6 +1354,28 @@ class MusicodeDialog(wx.Dialog):
         # elif self.create_musicode.GetValue() is False:
         #     self.translate_musicode.SetValue(True)
 
+    def OnCheckBoxes2(self, evt):
+        if self.generate_musicode_text.IsChecked():
+            self.inputTxt.Destroy()
+            self.inputTxt = wx.TextCtrl(self.textinputPanel, -1, "Enter ChatGPT Text Prompt Here", size=(250, -1),
+                                        style=wx.TE_MULTILINE,
+                                        name="CHATGPT Prompt Trigger")
+            self.textinputPanel.SetSize(254, 162)
+            self.textinputPanel.Refresh()
+            self.Refresh()
+
+            self.btnGenerate_ChatGPT.Enable(enable=True)
+
+        else:
+            self.inputTxt.Destroy()
+            self.inputTxt = wx.TextCtrl(self.textinputPanel, -1, "Enter ChatGPT Text Prompt Here", size=(250, -1),
+                                        style=wx.TE_LEFT,
+                                        name="CHATGPT Prompt Trigger")
+            self.textinputPanel.SetSize(253, 27)
+            self.textinputPanel.Refresh()
+            self.Refresh()
+            self.btnGenerate_ChatGPT.Disable()
+        print("OnCheckBoxes2....")
 
 
 class CustomColorsListBox(wx.ListCtrl):
@@ -1295,7 +1416,7 @@ class MIDIArtDialog(wx.Dialog):
         # One more call for FL Colors:
         #self.popupCtrl.AddItem("FLStudioColors")
 
-        self.ctrlsPanel = wx.Panel(self, -1, wx.DefaultPosition, (236, 770), style=wx.BORDER_RAISED)
+        self.ctrlsPanel = wx.Panel(self, -1, wx.DefaultPosition, (236, 810), style=wx.BORDER_RAISED) #770
         self.imgPreviewPanel = wx.Panel(self, -1, wx.DefaultPosition, (515, 515), style=wx.BORDER_RAISED)
         self.displayImage = None
 
@@ -1305,22 +1426,27 @@ class MIDIArtDialog(wx.Dialog):
         for clrs in midiart.get_color_palettes():
             self.listCtrl.InsertItem(self.index, clrs)
             self.index += 1
-        print("LISTCTRL_LENGTH:", self.listCtrl.ItemCount)
-        print("ITEM_0", self.listCtrl.GetItemText(0))
 
+        print("LISTCTRL_LENGTH:", self.listCtrl.GetItemCount())
+        print("ITEM_0", self.listCtrl.GetItemText(0))
                                                                         #Spaces deliberate here.
-        self.static_color = self.name_static = wx.StaticText(self, -1, "              Select Color Palette")
+        self.static_color = self.name_static = wx.StaticText(self.ctrlsPanel, -1, "Select Color Palette") #self, bug?? size=(100,100),
+        #self.static_color = self.name_static = wx.StaticText(self.ctrlsPanel, -1, "              Select Color Palette") #self, bug?? size=(100,100),
 
         font = wx.Font(9, wx.FONTFAMILY_MODERN, 0, 90, underline=False,
                        faceName="")
         self.btnLoadImage = wx.Button(self.ctrlsPanel, -1, "Load Image(s)")
         self.btnPreviousImage = wx.Button(self.ctrlsPanel, -1, "◄---Prev", size=(83, 17))
         self.btnNextImage = wx.Button(self.ctrlsPanel, -1, "Next---►", size=(83, 17))
+        self.chbxShowTransformed = wx.CheckBox(self.ctrlsPanel, -1, "Show Transformed?")
+        self.chbxShowTransformed.SetValue(not self.chbxShowTransformed.IsChecked())
         self.btnPreviousImage.SetFont(font)
         self.btnNextImage.SetFont(font)
 
         #Spaces deliberate here.
-        self.exportStatic = self.name_static = wx.StaticText(self, -1, "              Multi-Export Options")
+        self.exportStatic = self.name_static = wx.StaticText(self.ctrlsPanel, -1, "Multi-Export Options") #self, bug? size=(100,100),
+        #self.exportStatic = self.name_static = wx.StaticText(self.ctrlsPanel, -1, "              Multi-Export Options") #self, bug? size=(100,100),
+
         self.chbxMultiple = wx.CheckBox(self.ctrlsPanel, -1, "Multiple")
 
         self.chbxEdges = wx.CheckBox(self.ctrlsPanel, -1, "Edges")
@@ -1330,7 +1456,7 @@ class MIDIArtDialog(wx.Dialog):
 
         self.chbxAllColors = wx.CheckBox(self.ctrlsPanel, -1, "All Colors?")
 
-
+        self.sldrStatic  = wx.StaticText(self.ctrlsPanel, -1, "Height")
         self.sldrHeight = wx.Slider(self.ctrlsPanel, -1, 127, 1, 127, wx.DefaultPosition, (190,40),
                                     wx.SL_HORIZONTAL | wx.SL_LABELS)
         self.txtKey = wx.StaticText(self.ctrlsPanel, -1, "Key", style= wx.ALIGN_RIGHT )
@@ -1357,10 +1483,28 @@ class MIDIArtDialog(wx.Dialog):
         #Should be disabled unless Multiple? is checked.
         self.chbxConnect = wx.CheckBox(self.ctrlsPanel, -1, "Connect?")
 
+        # New Actor Checkbox
+        self.chbxNewActor = wx.CheckBox(self.ctrlsPanel, -1, "New Actor?")
+        self.chbxNewActor.SetValue(not self.chbxNewActor.IsChecked())
+        #Todo Finish
+        self.chbxNewActor.Disable()
+
         #TODO Change default granularity checked box.
 
         #self.txtConnectNotes = wx.StaticText(self, -1, "Connect Notes?", style=wx.ALIGN_RIGHT)
-      
+
+        # Input text box
+        self.inputTxt = wx.TextCtrl(self, -1, "                                                         Input DALL-E Prompt Here",
+                                    size=(500, 70), #250, -1
+                                    style=wx.TE_MULTILINE, name="Generative Prompter Input")
+        #self.inputTxt.Disable()
+        self.btnGenerate_DALL_E = wx.Button(self, -1, "DALL-E Image\nGenerate")
+        #self.btnGenerate_DALL_E.Disable()
+
+        ##############
+        # OpenAI Class
+        self.dall_e = Generate.DALL_E()
+
 
         self.Bind(wx.EVT_BUTTON, self.OnLoadImage, self.btnLoadImage)
         self.Bind(wx.EVT_BUTTON, self.OnCyclePrevious, self.btnPreviousImage)
@@ -1368,6 +1512,10 @@ class MIDIArtDialog(wx.Dialog):
         self.Bind(wx.EVT_SLIDER, self.OnSliderChanged, self.sldrHeight)
         self.Bind(wx.EVT_RADIOBOX, self.OnRadioBoxChanged, self.rdbtnGranularity)
         self.Bind(wx.EVT_CHECKBOX, self.OnCheckBoxSelection)
+
+        self.Bind(wx.EVT_BUTTON, self.OnGenerate_Dall_E_Image, self.btnGenerate_DALL_E)
+
+
         #self.Bind(wx.EVT_COMBOBOX_CLOSEUP, self.OnChangeColor)
         self.listCtrl.Bind(wx.EVT_LIST_ITEM_FOCUSED, self.OnChangeColor)
 
@@ -1377,12 +1525,20 @@ class MIDIArtDialog(wx.Dialog):
         #colorSizer = wx.BoxSizer(wx.VERTICAL)
         cycleimagesSizer = wx.BoxSizer(wx.HORIZONTAL)
         exportSizer = wx.BoxSizer(wx.HORIZONTAL)
+        sizerVer = wx.BoxSizer(wx.VERTICAL)
 
-        topSizer.Add(self.static_color, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL, 25)
+        sizer5 = wx.BoxSizer(wx.VERTICAL)
+        sizer5.Add(self.inputTxt, 0, wx.ALL | wx.ALIGN_CENTER, 0)
+        sizer5.Add(self.btnGenerate_DALL_E, 0, wx.ALL | wx.ALIGN_CENTER, 0)
+
+
+
+        topSizer.Add(self.static_color, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL, 0)  #35 #25
         #sizerCtrls.Add(self.static_color, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL, 10)
         #sizerCtrls.Add(self.comboCtrl, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL, 1)
-        topSizer.Add(self.listCtrl, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL, -35)
-        topSizer.AddSpacer(50)
+        topSizer.Add(self.listCtrl, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL, 0) #-35
+        
+        topSizer.AddSpacer(25) #50
 
         #colorSizer.Add(self.chbxColorImage, 0, wx.ALL | wx.ALIGN_CENTER, 5)
         #colorSizer.Add(self.chbxAllColors, 0, wx.ALL | wx.ALIGN_CENTER, 5)
@@ -1393,13 +1549,15 @@ class MIDIArtDialog(wx.Dialog):
         exportSizer.Add(self.chbxMultiple, 0, wx.ALL | wx.ALIGN_CENTER, 3)
         exportSizer.Add(self.chbxAllColors, 0, wx.ALL | wx.ALIGN_CENTER, 3)
 
-        sizerCtrls.Add(topSizer, 0, wx.ALIGN_CENTER_HORIZONTAL, 35)
+        sizerCtrls.Add(topSizer, 0, wx.ALIGN_CENTER_HORIZONTAL, 0)  #35
         sizerCtrls.Add(self.chbxEdges, 0, wx.ALL | wx.ALIGN_LEFT, 11)
         sizerCtrls.Add(self.chbxColorImage, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL, 0) #colorSizer
-        sizerCtrls.Add(self.chbxMonochorome, 0, wx.ALL | wx.ALIGN_RIGHT, 11)
+        sizerCtrls.Add(self.chbxMonochorome, 0, wx.ALL | wx.ALIGN_RIGHT, 14)
         sizerCtrls.AddSpacer(25)
         sizerCtrls.Add(self.btnLoadImage, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL, 0)
         sizerCtrls.Add(cycleimagesSizer, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL, -10)
+        sizerCtrls.Add(self.chbxShowTransformed, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL, -10)
+
 
 
         ###NOTE: These space settings are affect by the resolution settings of Windows.
@@ -1407,13 +1565,17 @@ class MIDIArtDialog(wx.Dialog):
         sizerCtrls.AddSpacer(30)  ####* commented out if res settings changed
         sizerCtrls.AddSpacer(40)  ####* commented out if res settings changed
         #sizerCtrls.AddSpacer(65)
-        sizerCtrls.Add(self.exportStatic, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL, -15) #-25  swap these if res changed
+        sizerCtrls.Add(self.exportStatic, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL, -25) #-25  -15 swap these if res changed
 
         #sizerCtrls.AddSpacer(40)  ####insterted if resolutions settings are changed
 
         sizerCtrls.Add(exportSizer, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL, -35)
-        sizerCtrls.AddSpacer(25)
-        sizerCtrls.Add(self.sldrHeight, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL, 20)
+        sizerCtrls.AddSpacer(45)
+
+
+        sizerCtrls.Add(self.sldrStatic, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL, 0)
+        sizerCtrls.Add(self.sldrHeight, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL, 0)
+        sizerCtrls.AddSpacer(15)
 
 
         keysizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -1421,7 +1583,8 @@ class MIDIArtDialog(wx.Dialog):
         keysizer.Add(self.inputKey, 0, wx.ALL | wx.ALIGN_CENTER, 20)
         sizerCtrls.Add(keysizer, 0, wx.ALIGN_CENTER | wx.ALL, -10)
         sizerCtrls.Add(self.rdbtnGranularity, 0, wx.ALL | wx.ALIGN_CENTER, 20)
-        sizerCtrls.Add(self.chbxConnect, 0, wx.ALL | wx.ALIGN_CENTER, 10)
+        sizerCtrls.Add(self.chbxConnect, 0, wx.ALL | wx.ALIGN_CENTER, 0)
+        sizerCtrls.Add(self.chbxNewActor, 0, wx.ALL | wx.ALIGN_CENTER, 25)
 
 
         btnsizer = wx.StdDialogButtonSizer()
@@ -1437,9 +1600,15 @@ class MIDIArtDialog(wx.Dialog):
 
         self.ctrlsPanel.SetSizer(sizerCtrls)
 
+        #sizerVer.Add(sizer5, 0, wx.ALIGN_CENTER | wx.ALL, 30)
+        sizerVer.Add(self.imgPreviewPanel, 0, wx.ALIGN_CENTER | wx.ALL, 40)
+        sizerVer.AddSpacer(45)
+        sizerVer.Add(sizer5, 0, wx.ALIGN_CENTER | wx.ALL, 30)
+
         sizerHor = wx.BoxSizer(wx.HORIZONTAL)
         sizerHor.Add(self.ctrlsPanel, 0, wx.ALIGN_CENTER | wx.ALL, 20)
-        sizerHor.Add(self.imgPreviewPanel, 0, wx.ALIGN_CENTER | wx.ALL, 20)
+        sizerHor.Add(sizerVer, 0, wx.ALIGN_CENTER | wx.ALL, 20)
+
 
         sizerMain = wx.BoxSizer(wx.VERTICAL)
         sizerMain.Add(sizerHor, 30)
@@ -1461,7 +1630,7 @@ class MIDIArtDialog(wx.Dialog):
             if len(self.pathnames) > 1:
                 self.chbxMultiple.SetValue(True)
                 self.pathname = self.pathnames[0] #First image in the list, then we cycle through use (previous, next) btns.
-                self.image_list_counter = 0
+                self.image_list_counter = 0 #come back here 07/10/2023
             else:
                 self.chbxMultiple.SetValue(False)
                 self.pathname = self.pathnames[0] ##don't need fileDialog.GetPath() anymore
@@ -1474,6 +1643,29 @@ class MIDIArtDialog(wx.Dialog):
                 self.UpdatePreview()
             except IOError:
                 wx.LogError("Cannot open file '%s'." % self.pathname)
+
+
+    def OnGenerate_Dall_E_Image(self, event):
+        self.chbxMultiple.SetValue(False)
+        self.pathname = self.dall_e.Generate(prompt=self.inputTxt.GetLineText(0)) #self.pathnames[0]  ##don't need fileDialog.GetPath() anymore
+
+        print("DALL_E Image", self.pathname)
+        #if self.pathnames:
+        try:
+            self.pathnames.append(self.pathname)
+            #print("Pathnames:", self.pathnames)
+            self.image_list_counter = len(self.pathnames) - 1
+            self.UpdateImageData()
+            self.UpdatePreview()
+        except AttributeError as e:
+            #print("Attibute Error", e, "Skipping...")
+            self.pathnames = []
+            self.pathnames.append(self.pathname)
+            self.image_list_counter = 0
+            self.UpdateImageData()
+            self.UpdatePreview()
+        print("DALL_E image generated.")
+        #pass
 
 
     def OnSliderChanged(self,event):
@@ -1502,12 +1694,13 @@ class MIDIArtDialog(wx.Dialog):
                                cv2.IMREAD_COLOR)  # 3D array (2D of color tuples, which makes a 3D array.)
         # print(type(self.img))
         self.img_name = os.path.basename(self.pathname)
-
+        print("Image Data Updated.")
 
     def OnCycleNext(self, event):
         self.image_list_counter += 1
         if self.image_list_counter > len(self.pathnames) - 1:
             self.image_list_counter = 0
+        print("counter:", self.image_list_counter)
         self.pathname = self.pathnames[self.image_list_counter]
         self.UpdateImageData()
         self.UpdatePreview()
@@ -1517,6 +1710,7 @@ class MIDIArtDialog(wx.Dialog):
         self.image_list_counter -= 1
         if self.image_list_counter < 0:
             self.image_list_counter = len(self.pathnames) - 1
+        print("counter:", self.image_list_counter)
         self.pathname = self.pathnames[self.image_list_counter]
         self.UpdateImageData()
         self.UpdatePreview()
@@ -1552,89 +1746,105 @@ class MIDIArtDialog(wx.Dialog):
         #Preview stuff.
         preview = cv2.resize(self.img2, (self.width, self.height), cv2.INTER_AREA)
         #self.self.previewImg = cv2.resize(self.resizedImg, (self.pixScaler*width, height), cv2.INTER_AREA)
-        #rgb = cv2.cvtColor(self.previewImg, cv2.COLOR_GRAY2RGB)   ###cv2.COLOR_RGB2BGR)   ### ####cv2.COLOR_BGR2HSV)   ### #cv2.RG
+        #rgb = cv2.cvtColor(self.previewImg, cv2.COLOR_GRAY2RGB)   ###cv2.COLOR_RGB2BGR)   ### ####cv2.COLOR_BGR2HSV)   ### #cv2.COLOR_BGR2RGB
+
+        if self.chbxShowTransformed.IsChecked():
 
 
-        if self.ColorsCheck:
-            #TODO Swap both above---configuration must be the same for colors import as this.
-            preview = cv2.cvtColor(preview, cv2.COLOR_BGR2RGB)
-            ##preview = cv2.cvtColor(preview, cv2.COLOR_RGB2BGR)
+            if self.ColorsCheck:
+                #TODO Swap both above---configuration must be the same for colors import as this.
+                preview = cv2.cvtColor(preview, cv2.COLOR_BGR2RGB)
+                ##preview = cv2.cvtColor(preview, cv2.COLOR_RGB2BGR)
 
-            m_v = super().GetParent().m_v
+                m_v = super().GetParent().m_v
 
-            #preview = midiart.set_to_nn_colors(preview, m_v.clr_dict_list[m_v.current_palette_name])
+                #preview = midiart.set_to_nn_colors(preview, m_v.clr_dict_list[m_v.current_palette_name])
 
-            #SWAP HERE ------- See trello card: --> https://trello.com/c/O67MrqpT
-            #NOTE: Since this is the preview, this is the same "force-swap" as above in OnMidiartDialogCLosed() function.
-            #This lends evidence to the logic that our problem  may NOT be in mainbuttons.py.
-            #Original
-            ##print("Default_Color_Palette", m_v.default_color_palette)
-            #NOTE: This uses default_color_palette, which DOES NOT have floats for color values. Mayavi float colors
-            #do not work for this preview.
-            swaprnb = midiart.convert_dict_colors(m_v.current_color_palette, invert=True) #invert=True)
-            ##print("Default_Color_Palette_SWAPPED", swaprnb)
-            print("DEFAULT_COLOR_PALETTE_1--preview.", m_v.current_color_palette)
-            preview = midiart.set_to_nn_colors(preview, swaprnb)  #m_v.default_color_palette) #
+                #SWAP HERE ------- See trello card: --> https://trello.com/c/O67MrqpT
+                #NOTE: Since this is the preview, this is the same "force-swap" as above in OnMidiartDialogCLosed() function.
+                #This lends evidence to the logic that our problem  may NOT be in mainbuttons.py.
+                #Original
+                ##print("Default_Color_Palette", m_v.default_color_palette)
+                #NOTE: This uses default_color_palette, which DOES NOT have floats for color values. Mayavi float colors
+                #do not work for this preview.
+                swaprnb = midiart.convert_dict_colors(m_v.current_color_palette, invert=True) #invert=True)
+                ##print("Default_Color_Palette_SWAPPED", swaprnb)
+                print("DEFAULT_COLOR_PALETTE_1--preview.", m_v.current_color_palette)
+                preview = midiart.set_to_nn_colors(preview, swaprnb)  #m_v.default_color_palette) #
 
-            self.previewImg = cv2.resize(preview, (self.pixScaler * self.width * 4, self.height * 4),
+                self.previewImg = cv2.resize(preview, (self.pixScaler * self.width * 4, self.height * 4),
+                                             cv2.INTER_AREA)  # * 3 increases the size of the preview.
+
+                h, w = self.previewImg.shape[:2]
+
+                self.preview = wx.Image(w, h, self.previewImg) #ImageFromData -- deprecated
+
+                self.displayImage = wx.StaticBitmap(self.imgPreviewPanel, -1, wx.Bitmap(self.preview), wx.DefaultPosition,
+                                                    (w, h), wx.ALIGN_CENTER_HORIZONTAL)
+
+                #Changes the raised-panel size to fit the exact dimensions of the self.previewImg
+                #self.imgPreviewPanel.SetSize(self.pixScaler * width * 4, height * 4)
+
+
+
+            elif self.EdgesCheck:
+                #preview = cv2.Canny(preview, 100, 200)
+                #self.im2 = preview
+                preview = midiart.cv2_tuple_reconversion(preview, inPlace=False, conversion="Edges")
+                self.previewImg = cv2.resize(preview[1], (self.pixScaler * self.width * 4, self.height * 4),
+                                             cv2.INTER_AREA)  # * 3 increases the size of the preview.
+
+                h, w = self.previewImg.shape[:2]
+
+                self.preview = wx.ImageFromData(w, h, self.previewImg)
+
+                self.displayImage = wx.StaticBitmap(self.imgPreviewPanel, -1, wx.Bitmap(self.preview), wx.DefaultPosition,
+                                                    (w, h), wx.ALIGN_CENTER_HORIZONTAL)
+
+                #Changes the raised-panel size to fit the exact dimensions of the self.previewImg
+                #self.imgPreviewPanel.SetSize(self.pixScaler * width * 4, height * 4)
+
+
+            elif self.MonochromeCheck:
+                preview = midiart.cv2_tuple_reconversion(preview, inPlace=False, conversion="Monochrome")
+
+                #print("PREVIEW MC", preview[1])
+                #print("PREVIEW MC THRESH", thresh)
+
+                self.previewImg = cv2.resize(preview[1], (self.pixScaler * self.width * 4, self.height * 4),
+                                             cv2.INTER_AREA)  # * 3 increases the size of the preview.
+
+                h, w = self.previewImg.shape[:2]
+                print("Monochrome", self.previewImg)
+                print("Ndim", self.previewImg.ndim)
+                self.preview = wx.ImageFromData(w, h, self.previewImg)
+
+                self.displayImage = wx.StaticBitmap(self.imgPreviewPanel, -1, wx.Bitmap(self.preview), wx.DefaultPosition,
+                                                    (w, h), wx.ALIGN_CENTER_HORIZONTAL)
+
+                #Overwrite, so any image imported will be converted to black and white.
+                #Images that users sets to monochrome manually will still be more accurate.
+                self.resizedImg = preview[0]
+
+                #TODO Place this process of transformation in the OnMidiartDialogClosed(). 12/01/20
+                 # (This is preview stuff, so, even though things happen twice, it's neater to have the 'preview'
+                # and transformation stuff separate.
+
+                #Changes the raised-panel size to fit the exact dimensions of the self.previewImg
+                #self.imgPreviewPanel.SetSize(self.pixScaler * width * 4, height * 4)
+        else:
+            rgb = cv2.cvtColor(preview, cv2.COLOR_RGB2BGR)
+            self.preview = rgb
+            self.previewImg = cv2.resize(self.preview, (self.pixScaler * self.width * 4, self.height * 4),
                                          cv2.INTER_AREA)  # * 3 increases the size of the preview.
 
             h, w = self.previewImg.shape[:2]
-
-            self.preview = wx.Image(w, h, self.previewImg) #ImageFromData -- deprecated
-
-            self.displayImage = wx.StaticBitmap(self.imgPreviewPanel, -1, wx.Bitmap(self.preview), wx.DefaultPosition,
-                                                (w, h), wx.ALIGN_CENTER_HORIZONTAL)
-
-            #Changes the raised-panel size to fit the exact dimensions of the self.previewImg
-            #self.imgPreviewPanel.SetSize(self.pixScaler * width * 4, height * 4)
-
-
-
-        elif self.EdgesCheck:
-            #preview = cv2.Canny(preview, 100, 200)
-            #self.im2 = preview
-            preview = midiart.cv2_tuple_reconversion(preview, inPlace=False, conversion="Edges")
-            self.previewImg = cv2.resize(preview[1], (self.pixScaler * self.width * 4, self.height * 4),
-                                         cv2.INTER_AREA)  # * 3 increases the size of the preview.
-
-            h, w = self.previewImg.shape[:2]
-
+            print("H", h)
+            print("W", w)
             self.preview = wx.ImageFromData(w, h, self.previewImg)
-
             self.displayImage = wx.StaticBitmap(self.imgPreviewPanel, -1, wx.Bitmap(self.preview), wx.DefaultPosition,
-                                                (w, h), wx.ALIGN_CENTER_HORIZONTAL)
-
-            #Changes the raised-panel size to fit the exact dimensions of the self.previewImg
-            #self.imgPreviewPanel.SetSize(self.pixScaler * width * 4, height * 4)
-
-        
-        elif self.MonochromeCheck:
-            preview = midiart.cv2_tuple_reconversion(preview, inPlace=False, conversion="Monochrome")
-
-            #print("PREVIEW MC", preview[1])
-            #print("PREVIEW MC THRESH", thresh)
-
-            self.previewImg = cv2.resize(preview[1], (self.pixScaler * self.width * 4, self.height * 4),
-                                         cv2.INTER_AREA)  # * 3 increases the size of the preview.
-            
-            h, w = self.previewImg.shape[:2]
-            print("Monochrome", self.previewImg)
-            print("Ndim", self.previewImg.ndim)
-            self.preview = wx.ImageFromData(w, h, self.previewImg)
-
-            self.displayImage = wx.StaticBitmap(self.imgPreviewPanel, -1, wx.Bitmap(self.preview), wx.DefaultPosition,
-                                                (w, h), wx.ALIGN_CENTER_HORIZONTAL)
-
-            #Overwrite, so any image imported will be converted to black and white.
-            #Images that users sets to monochrome manually will still be more accurate.
-            self.resizedImg = preview[0]
-            #TODO Place this process of transformation in the OnMidiartDialogClosed(). 12/01/20
-             # (This is preview stuff, so, even though things happen twice, it's neater to have the 'preview'
-            # and transformation stuff separate.
-
-            #Changes the raised-panel size to fit the exact dimensions of the self.previewImg
-            #self.imgPreviewPanel.SetSize(self.pixScaler * width * 4, height * 4)
+                                                (self.width * 4, self.height * 4), wx.ALIGN_CENTER_HORIZONTAL)  #w, h
+        print("Preview Updated.")
 
 
     def OnCheckBoxSelection(self, event):
@@ -1734,7 +1944,7 @@ class MIDIArt3DDialog(wx.Dialog):
         self.pointclouds = []
 
         #Panels
-        self.ctrlsPanel = wx.Panel(self, -1, wx.DefaultPosition, size=(485,515), style=wx.BORDER_RAISED)
+        self.ctrlsPanel = wx.Panel(self, -1, wx.DefaultPosition, size=(485,565), style=wx.BORDER_RAISED) #515
         #self.imgPreviewPanel = wx.Panel(self, -1, wx.DefaultPosition, (500, 500), style=wx.BORDER_RAISED)
         self.imgPreviewPanel = wx.Panel(self, -1, wx.DefaultPosition, (450, 450), style=wx.BORDER_RAISED)
 
@@ -1758,7 +1968,7 @@ class MIDIArt3DDialog(wx.Dialog):
 
 
         #Help Text
-        self.helpStatic = wx.StaticText(self.ctrlsPanel, -1, "Load a point cloud and manipulate it 3-dimensionally "
+        self.helpStatic = wx.StaticText(self.ctrlsPanel, -1, "Load a point cloud and manipulate it in 3 dimensions "
                                                               "as music \n                      with a "
                                                              "specially designed processing "
                                                               "chain.")
@@ -1773,7 +1983,13 @@ class MIDIArt3DDialog(wx.Dialog):
 
         #LoadPly
         self.btnLoadPly = wx.Button(self.ctrlsPanel, -1, "Load Point Cloud(s)")
-        self.btnLoadPly.SetToolTip(tipString="Load Ply will only be enabled if an actor is empty.")
+
+        # Load Current
+        self.chbxCurrentActor = wx.CheckBox(self.ctrlsPanel, -1, "Import Current Actor(s)?")
+
+        #TODO Change this? 06/30/2023
+        self.btnLoadPly.SetToolTip(tipString="Load 3D Object(s) from file.")
+        #"Load Ply will only be enabled if an actor is empty."
 
         # Cycle
         font = wx.Font(9, wx.FONTFAMILY_MODERN, 0, 90, underline=False,
@@ -1786,7 +2002,8 @@ class MIDIArt3DDialog(wx.Dialog):
 
         # self.OnComboBoxSelection(evt=None)   #self.points is written in this function.
         # Spaces deliberate here.
-        self.exportStatic = self.name_static = wx.StaticText(self, -1, "        Multi-Export Options")
+        self.exportStatic = self.name_static = wx.StaticText(self.ctrlsPanel, -1, "Multi-Export Options") #self
+        #self.exportStatic = self.name_static = wx.StaticText(self, -1, "Multi-Export Options") #self
         self.chbxMultiple = wx.CheckBox(self.ctrlsPanel, -1, "Multiple")
         self.chbxPlanes = wx.CheckBox(self.ctrlsPanel, -1, "Planes")
         self.chbxPlanes.Disable()
@@ -1853,9 +2070,35 @@ class MIDIArt3DDialog(wx.Dialog):
         #### self.generate_axis_menus(self.axisMenuMir)
         #self.axisVar_Mir = wx.TextCtrl(self.ctrlsPanel, -1, "x", size=(70, -1), style=wx.TE_CENTER)
 
-        #Load Current
-        self.chbxCurrentActor = wx.CheckBox(self.ctrlsPanel, -1, "Current Actor(s)")
+        #New Actor Checkbox
+        self.chbxNewActor = wx.CheckBox(self.ctrlsPanel, -1, "New Actor?")
+        self.chbxNewActor.SetValue(not self.chbxNewActor.IsChecked())
+        #Todo Finish
+        self.chbxNewActor.Disable()
 
+        # Input text box
+        self.inputTxt = wx.TextCtrl(self, -1, "                                                Input Brief Point-E Prompt Here", size=(450, 35), #250, 1
+                                    style=wx.TE_MULTILINE, name="Generative Prompter Input")
+        #self.inputTxt.Disable()
+        self.btnGenerate_Point_E = wx.Button(self, -1, "Point_E PointCloud\nGenerate")
+
+
+
+        ##############
+        # OpenAI Class
+        try:
+            self.point_e = super().GetParent().GetTopLevelParent().point_e  #Generate.Point_E()
+        except AttributeError as e:
+            print("You computer does not have cuda installed\configured. Point_E generation components will be disabled.")
+            self.inputTxt.Disable()
+            self.btnGenerate_Point_E.Disable()
+
+        sizer5 = wx.BoxSizer(wx.VERTICAL)
+        sizer5.Add(self.inputTxt, 0, wx.ALL | wx.ALIGN_CENTER, 0)
+        sizer5.Add(self.btnGenerate_Point_E, 0, wx.ALL | wx.ALIGN_CENTER, 0)
+
+
+        #Bindings
         self.axisVar_Trim.Bind(wx.EVT_BUTTON, self.OnAxisButton1)
         self.axisVar_Rot.Bind(wx.EVT_BUTTON, self.OnAxisButton2)
         self.axisVar_Trans.Bind(wx.EVT_BUTTON, self.OnAxisButton3)
@@ -1871,9 +2114,13 @@ class MIDIArt3DDialog(wx.Dialog):
         self.Bind(wx.EVT_BUTTON, self.OnCyclePrevious, self.btnPreviousImage)
         self.Bind(wx.EVT_BUTTON, self.OnCycleNext, self.btnNextImage)
 
+        self.Bind(wx.EVT_BUTTON, self.OnGenerate_Point_E_PointCloud, self.btnGenerate_Point_E)
+
+
         self.Bind(wx.EVT_CHECKBOX, self.OnLoadChange)
 
         self.Bind(wx.EVT_CHECKBOX, self.OnMultipleChange)
+
 
         #self.Bind(wx.EVT_CHECKBOX, self.OnPolarizeCheckboxes)
 
@@ -1970,12 +2217,14 @@ class MIDIArt3DDialog(wx.Dialog):
         #sizerCtrls.Add(indexSizer, 0, wx.ALL | wx.ALIGN_CENTER, 18)
 
         sizerCtrls.Add(self.btnLoadPly, 0, wx.ALL | wx.ALIGN_CENTER, 0)
+        sizerCtrls.Add(self.chbxCurrentActor, 0, wx.ALL | wx.ALIGN_CENTER, 5)
         sizerCtrls.Add(cycleimagesSizer, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL, -15)
+
 
         sizerCtrls.AddSpacer(35)
 
         sizerCtrls.Add(self.exportStatic, 0, wx.ALL | wx.ALIGN_CENTER, 0)
-        sizerCtrls.Add(exportSizer, 0, wx.ALL | wx.ALIGN_CENTER, -25)
+        sizerCtrls.Add(exportSizer, 0, wx.ALL | wx.ALIGN_CENTER, 0) #-25
 
         sizerCtrls.AddSpacer(15)
         ##scale variable box for btnStandardReo taken out, so layout had to be adjusted as well, here.  *##
@@ -1990,7 +2239,9 @@ class MIDIArt3DDialog(wx.Dialog):
 
         sizerCtrls.AddSpacer(30)
 
-        sizerCtrls.Add(self.chbxCurrentActor, 0, wx.ALL | wx.ALIGN_CENTER, -10)
+        sizerCtrls.Add(self.chbxNewActor, 0, wx.ALL | wx.ALIGN_CENTER, -10)
+
+
 
         # self.ctrlsPanel.SetSizer(indexSizer)
         # self.ctrlsPanel.SetSizer(sizerStandardReo)
@@ -2000,10 +2251,14 @@ class MIDIArt3DDialog(wx.Dialog):
         #sizeCtrlsn.Add(self.btnRedrawMayaviView, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL, 20)
         #sizerMain.Add(btnsizer, 0, wx.ALIGN_CENTER_HORIZONTAL | wx.ALL, 1)
 
+        sizerVer = wx.BoxSizer(wx.VERTICAL)
+        sizerVer.Add(self.imgPreviewPanel, 0, wx.ALIGN_CENTER | wx.ALL, 10)
+        sizerVer.AddSpacer(20)
+        sizerVer.Add(sizer5, 0, wx.ALIGN_CENTER | wx.ALL, 10)
+
         sizerHor = wx.BoxSizer(wx.HORIZONTAL)
         sizerHor.Add(self.ctrlsPanel, 0, wx.ALIGN_CENTER | wx.ALL, 10)
-        sizerHor.Add(self.imgPreviewPanel, 0, wx.ALIGN_CENTER | wx.ALL, 10)
-
+        sizerHor.Add(sizerVer, 0, wx.ALIGN_CENTER | wx.ALL, 10)
         #self.mini.FitInside()
         #print("SIZE", self.mini.Size)
         #self.mini_mv.remove_highlighter_plane()
@@ -2050,7 +2305,7 @@ class MIDIArt3DDialog(wx.Dialog):
         ######1448, in _EvtHandler_Bind
              #assert source is None or hasattr(source, 'GetId')
              #AssertionError
-        ### ^^^THIS error is because of not use """id=""" when assigning your bind to a menu item.
+        ### ^^^THIS error is because of not using """id=""" when assigning your bind to a menu item.
 
 
     def OnAxisButton1(self, evt):
@@ -2133,7 +2388,7 @@ class MIDIArt3DDialog(wx.Dialog):
 
                 #self.ply = self.pathname
                 #self.ply_name = os.path.basename(self.pathname)
-                self.ply_names = [os.path.basename(i) for i in self.pathnames]
+                self.ply_names = [os.path.basename(i) for i in self.pathnames]  #TODO Not used, delete? 07/10/2023
                 self.pointclouds = [midiart3D.get_points_from_ply(i) for i in self.pathnames]
 
                 #print(self.pathnames)
@@ -2155,12 +2410,33 @@ class MIDIArt3DDialog(wx.Dialog):
                     wx.LogError("Cannot open file '%s'." % self.pathnames[0])
 
 
+    def OnGenerate_Point_E_PointCloud(self, event):
+        self.chbxMultiple.SetValue(False)
+        self.points = self.point_e.Generate(prompt=self.inputTxt.GetLineText(0)) #self.pathnames[0]  ##don't need fileDialog.GetPath() anymore
+        self.points = midiart3D.process_3d_points_for_Midas(self.points)
+
+        print("Point_E Image", self.points)
+        try:
+            self.pointclouds.append(self.points)
+            self.image_list_counter = len(self.pointclouds) - 1  #TODO TEST 07/14/2023
+            self.UpdateDisplay()
+        except AttributeError as e:
+            print("AttributeError", e, "Skipping...")
+            self.pointclouds = []
+            self.pointclouds.append(self.points)
+            self.image_list_counter = 0
+            self.UpdateDisplay()
+        #pass
+        print("Point_E Point Cloud generated.")
+
+
     def OnLoadChange(self, evt):
         if self.chbxCurrentActor.IsChecked():
             self.btnLoadPly.SetLabel("Load Current Actor(s)")
         else:
             #self.chbxCurrentActor.IsChecked()
             self.btnLoadPly.SetLabel("Load Point Cloud(s)")
+
 
     def OnMultipleChange(self, evt):
         if self.chbxMultiple.IsChecked():
@@ -2290,8 +2566,6 @@ class MIDIArt3DDialog(wx.Dialog):
 
     # def On3DDisplayRedraw(self, evt):
     #     super().GetParent().mv.redraw_mayaviview()
-
-
 
 
 

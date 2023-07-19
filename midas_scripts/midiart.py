@@ -577,7 +577,7 @@ def filter_ranges(chopped_stream, pvm_tuple = None, progression = None):
 def snap_to_key(in_stream, key, snap_up=True):
     """
         This function takes a music21 stream and snaps all the pitches in all of the notes and chords in the stream
-    to the pitches found in the input string 'key'.
+    to the pitches found in the input string 'key'. This function does not delete notes.
 
     :param in_stream:   Operand music21.stream.Stream() object.
     :param key:         A string denoting your musical key.
@@ -644,7 +644,7 @@ def snap_to_key(in_stream, key, snap_up=True):
                         snap = n.pitches[p].pitchClass + 1 if n.pitches[p].pitchClass + 1 <= 11 else 0
                         n[p].transpose(1, inPlace=True) if snap not in difference else None
                     else:
-                        snap = n.pitches[p].pitchClass - 1 if n.pitches[p].pitchClass - 1 <= 0 else 11
+                        snap = n.pitches[p].pitchClass - 1 if n.pitches[p].pitchClass - 1 >= 0 else 11   #<?
                         n[p].transpose(-1, inPlace=True) if snap not in difference else None
                         #= music21.pitch.Pitch(n.pitches[p].step)  #This is why we use the transform method. Need more checks? (The enharmonics are a problem for using .step())
                     #match_dict.update([(n.pitches[p].pitchClass, n[p])])
@@ -654,7 +654,7 @@ def snap_to_key(in_stream, key, snap_up=True):
                     snap = n.pitch.pitchClass + 1 if n.pitch.pitchClass + 1 <= 11 else 0
                     n.pitch.transpose(1, inPlace=True) if snap not in difference else None
                 else:
-                    snap = n.pitch.pitchClass - 1 if n.pitch.pitchClass - 1 <= 0 else 11
+                    snap = n.pitch.pitchClass - 1 if n.pitch.pitchClass - 1 >= 0 else 11   #<?
                     n.pitch.transpose(-1, inPlace=True) if snap not in difference else None
 
                 #= music21.pitch.Pitch(n.step)
@@ -675,6 +675,113 @@ def snap_to_key(in_stream, key, snap_up=True):
 
     #in_stream.makeAccidentals
     return in_stream
+
+
+def snap_enharmonics(in_stream, key):
+    """
+        This function takes a music21.stream.Stream() object and iterates over the notes inside. It is assumed
+    that those notes are key-accurate notes, but that have enharmonically incorrect names. (For example, having an E- in
+    the key of A# is key-accurate; the note is correct but it should be written as a D#.) This function makes all the
+    notes enharmonically correct for the key. (That E- would be changed to a D#)
+
+    #TODO Make sure it works on double#s/double-s or even triples.
+    :param in_stream:               Operand stream as input.
+    :param key:                     User string denoting the key input.
+    :return:                        Modified in_stream in place.
+
+    Test Case: (run commands individually)
+    *note_names, = "BABCDEFGGFEDCBAB"
+    notes =     [music21.note.Note(i) for i in note_names]
+    chord_forms_string_selections = [music21funcs.chord_strings[random.randint(0, len(music21funcs.chord_strings))]for i in notes]
+    chords = [music21funcs.note_to_chord(i[0], i[1]) for i in zip(notes, chord_forms_string_selections)]
+    a_stream = music21.stream.Stream(chords)
+    snap_stream = midiart.snap_to_key(a_stream, "A#", snap_up=True)
+    enharmonic_snapped_stream = midiart.snap_enharmonics(snap_stream, 'A#', simplifyEnharmonic=False)
+    """
+
+
+
+
+    #Research notes:
+    #KeySignature.alteredPitches
+    #n1 = music21.note.Note("C")
+    #n1.step
+    #n1.pitch.pitchClass
+    #key_concrete_scale.extractPitchList()
+
+
+    key = music21.key.Key(key)
+    correct_pitches = [pitch for pitch in key.pitches]
+    correct_pitchClasses = [i.pitchClass for i in correct_pitches]
+    pitch_dict = OrderedDict(zip(correct_pitchClasses, correct_pitches))
+    print("PITCH_DICT", pitch_dict)
+    # key_concrete_scale = music21.scale.ConcreteScale(pitches=[pitch for pitch in key.pitches])
+    # altered_pitches = key.alteredPitches
+    # altered_pitches_accidental_names = key.alteredPitches
+    # print("Altered_Pitches", altered_pitches)
+    # print("Altered_Pitches_i_a", [i.accidental for i in altered_pitches])
+    # print("Altered_Pitches_i_a_n", [i.accidental.name for i in altered_pitches])
+
+    for n in in_stream.flat.notes:
+        if type(n) is music21.chord.Chord:
+            print("CHORD_before", n)
+            new_pitches_list = []
+            for p in n.pitches:
+                if p.pitchClass in correct_pitchClasses:
+                    octave = p.octave
+                    new_pitch = pitch_dict[p.pitchClass]
+                    new_pitch.octave = octave
+                    print("p", p, type(p))
+                    new_pitches_list.append(new_pitch)
+                    #degree_and_pitch = key_concrete_scale.getScaleDegreeAndAccidentalFromPitch(n.pitches[p])
+                    #print("D_n_P", degree_and_pitch)
+                    # n.pitches[p] = music21.pitch.Pitch(key_concrete_scale.pitchFromDegree(degree_and_pitch[0]))
+                    # print("pitchFromDegree", p)
+                    # TODO finish and test
+                #If our pitch is\has an accidental, get it.
+                #if not n.pitches[p]._nameInKeySignature(key.alteredPitches):
+                    # print("condition1", n.pitches[p]._nameInKeySignature(key.alteredPitches))
+                    # #if n.pitches[p].accidental is not None:
+                    # print("P_A_N", n.pitches[p].accidental.name)
+                    # #If our accidental name is in our list of pitches that is altered by our key Signature, change it.
+                    # #if n.pitches[p].accidental.name in [i.accidental.name for i in key.alteredPitches]:
+                    # #if not p._nameInKeySignature(key.alteredPitches):
+                    # #if p.accidental.name in altered_pitches_accidental_names:
+                    # common_enharmonics = n.pitches[p].getAllCommonEnharmonics()
+                    # print("n.pitches[p]", n.pitches[p])
+                    # print("Common_Enharmonics", common_enharmonics)
+                    # correct_enharmonic = [i for i in common_enharmonics if i._nameInKeySignature(key.alteredPitches)]
+                    # n.pitches[p] = correct_enharmonic[0] #reduce
+            print("CHORD_after", n)
+            n.pitches = tuple(new_pitches_list)
+                # else:
+                #     pass
+        elif type(n) is music21.note.Note:
+            if n.pitch.pitchClass in correct_pitchClasses:
+                octave = n.pitch.octave
+                n.pitch = copy.deepcopy(pitch_dict[n.pitch.pitchClass])
+                n.pitch.octave = octave
+                print("n.pitch", n.pitch, type(n.pitch))
+
+                #degree_and_pitch = key_concrete_scale.getScaleDegreeAndAccidentalFromPitch(n.pitch)
+                #print("D_n_P", degree_and_pitch)
+                # n.pitch = music21.pitch.Pitch(key_concrete_scale.pitchFromDegree(degree_and_pitch[0]))
+                # print("pitchFromDegree", n.pitch)
+                #if not n.pitch._nameInKeySignature(key.alteredPitches):
+                # if n.pitch.accidental is not None:
+                #     if n.pitch.accidental.name in altered_pitches_accidental_names:
+                #         common_enharmonics = n.pitch.getAllCommonEnharmonics()
+                #         correct_enharmonic = [i for i in common_enharmonics if i._nameInKeySignature(key.alteredPitches)][0]
+                #         n.pitch = correct_enharmonic
+
+
+                #TODO finish and test
+                # p3.getEnharmonic()._nameInKeySignature(key.alteredPitches)
+                # p3.getAllCommonEnharmonics()
+    return in_stream
+
+    #pass
+
 
 
 # MA-2.
@@ -865,17 +972,21 @@ def set_to_nn_colors(im_array, clrs=None):
     # clean_cloud = musicode.mc.delete_redundant_points(shift_cloud)
 
     colors_points = [clrs[ix] for ix in range(1, len(clrs))]
-    kd_tree = spatial.KDTree(colors_points)
-    #print("SCIPY_kd_tree", kd_tree)
+    colors_points_array = np.array(colors_points)
+    print("CLRS_PNTS_ARRAY", colors_points_array, colors_points_array.ndim)
+    #kd_tree = kdtree.create([tuple(i) for i in colors_points_array], 3, axis=1)  ########kdtree
+    # kd_tree = spatial.KDTree(colors_points) ########scipy
 
-    # ##Place operand coords_array into open3d point cloud.
-    # pcloud = geometry.PointCloud()
-    # p_lizt = [clrs[ix] for ix in range(1, len(clrs))]
-    # p_array = np.array(p_lizt)
-    # pcloud.points = utility.Vector3dVector(p_array)
-    # print("MY pcloud POINTS", pcloud.points)
-    # ##Note -- ".utility" doesn't work on laptop --> It's possible the open3d on laptop hasn't been updated.
-    # kd_tree = geometry.KDTreeFlann(pcloud) #A KDTree of made from 16 color tuples.
+    # print("SCIPY_kd_tree", kd_tree)
+
+    ##Place operand coords_array into open3d point cloud.
+    pcloud =open3d.geometry.PointCloud()
+    p_lizt = [clrs[ix] for ix in range(1, len(clrs))]
+    p_array = np.array(p_lizt)
+    pcloud.points = open3d.utility.Vector3dVector(p_array)
+    print("MY pcloud POINTS", pcloud.points)
+    ##Note -- ".utility" doesn't work on laptop --> It's possible the open3d on laptop hasn't been updated.
+    kd_tree = open3d.geometry.KDTreeFlann(pcloud) #A KDTree of made from 16 color tuples.   #########open3d
 
     # work_cloud = musicode.mc.array_to_lists_of(clean_cloud)
     # for x in range(1, len(work_cloud)):
@@ -885,18 +996,29 @@ def set_to_nn_colors(im_array, clrs=None):
             im_dex = np.array(im_array[x][y], dtype=np.float16)
             # im_list.append(im_dex)
             # for i in im_list:
-            # color_result_idx = kd_tree.search_knn_vector_3d(im_dex, 1)
+            color_result_idx = kd_tree.search_knn_vector_3d(im_dex, 1) ########open3d
 
-            color_result_idx = kd_tree.query(x=im_dex)
-            #print("color_result_idx", color_result_idx)
+            # color_result_idx = kd_tree.query(x=im_dex)                  ########scipy
+            # print("IM_DEX", im_dex, im_dex.ndim)
+            # print("NDIM_utils_check", kdtrees._utils.check_dimensionality(np.array([im_dex])))
+            # color_result_idx = kd_tree.nearest_neighbor(tuple(im_dex))   ########kdtrees  -failed
+            ##color_result_idx = kd_tree.search_nn(tuple(im_dex))  ########kdtree
+            # print("color_result_idx", color_result_idx)
 
-            index = color_result_idx[1] + 1
-            im_array[x][y] = clrs[index]
+            #index = color_result_idx[0].data  ########kdtree
+            # im_array[x][y] = np.array(index)  ########kdtree
+            # print("sub_index", index)
+            # print("index_node", index, type(index))
+            # index = color_result_idx[1] + 1     ########kdtrees
+            # index = color_result_idx[1] + 1     ########scipy
+            index = color_result_idx[1][0] + 1  ########open3d
+            im_array[x][y] = clrs[index]         ######## all others
+
+
     # work_array = np.array(work_cloud)
     # final_array = work_array.reshape(im_array.shape)
     # return final_array
     return im_array
-
 
 def set_parts_to_midi_channels(in_stream, output_file):  # TODO Should be a music21funcs function?
     """

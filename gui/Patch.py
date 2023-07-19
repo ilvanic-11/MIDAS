@@ -50,6 +50,8 @@ import threading
 from traits.api import Any, HasTraits, Button, Instance, Range
 from traitsui.api import View, Group, Item
 
+from wx.py import shell
+
 from wx import Timer as wxTimer
 
 #from pyo.lib._widgets import createServerGUI
@@ -62,6 +64,54 @@ from multiprocessing import Process, Event
 #####PATCHES
 ###########################################
 #################################################################
+
+def Execute(self, text):
+    """Replace selection with text and run commands."""
+    ps1 = str(sys.ps1)
+    ps2 = str(sys.ps2)
+    endpos = self.GetTextLength()
+    self.SetCurrentPos(endpos)
+    startpos = self.promptPosEnd
+    self.SetSelection(startpos, endpos)
+    self.ReplaceSelection('')
+    text = text.lstrip()
+    text = self.fixLineEndings(text)
+    text = self.lstripPrompt(text)
+    text = text.replace(os.linesep + ps1, '\n')
+    text = text.replace(os.linesep + ps2, '\n')
+    text = text.replace(os.linesep, '\n')
+    lines = text.split('\n')
+    commands = []
+    command = ''
+    for line in lines:
+        if line.strip() == ps2.strip():
+            # If we are pasting from something like a
+            # web page that drops the trailing space
+            # from the ps2 prompt of a blank line.
+            line = ''
+        lstrip = line.lstrip()
+        if line.strip() != '' and lstrip == line and \
+                lstrip[:4] not in ['else', 'elif'] and \
+                lstrip[:6] != 'except' and \
+                lstrip[:7] != 'finally':
+            # New command.
+            if command:
+                # Add the previous command to the list.
+                commands.append(command)
+            # Start a new command, which may be multiline.
+            command = line
+        else:
+            # Multiline command. Add to the command.
+            command += '\n'
+            command += line
+    commands.append(command)
+    for command in commands:
+        command = command.replace('\n', os.linesep + ps2)
+        #self.write(command)
+        self.push(command)
+        print("New 'Execute' ran correctly.")
+
+
 #Attribute autocomplete function rewrite.
 def getAllAttributeNames(object):
     """Return dict of all attributes, including inherited, for an object.
@@ -536,13 +586,14 @@ class InfiniteTimer:
     https://stackoverflow.com/questions/12435211/python-threading-timer-repeat-function-every-n-seconds
     https: // stackoverflow.com / users / 7370877 / bill - schumacher"""
 
-    def __init__(self, seconds, target, window, player=True):
+    def __init__(self, seconds, target, window, player=False): #True?
         self._should_continue = False
         self.is_running = False
         self.seconds = seconds
         self.target = target
         self.thread = None
         self.lock = threading.Lock()
+        print("Player", player)
         self.m_v = window if player is False else window.mayavi_view
         # self.semaphore = threading.Semaphore()
 
@@ -839,6 +890,8 @@ async def some_callback(timer_name, context, timer):
 
 #####PATCHES######## (for wx(4.0.7)
 fix_introspect_bug.getAllAttributeNames = getAllAttributeNames
+
+#shell.Execute = Execute
 
 #Method bug.
 decorated_scene.DecoratedScene._background_changed = _background_changed

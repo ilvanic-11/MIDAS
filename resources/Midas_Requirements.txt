@@ -16,7 +16,7 @@ pyopengl
 
 pyface==7.0.1
 
-wxpython 
+wxpython==4.2.0 
 
 vtk==9.0.1   
  
@@ -39,7 +39,15 @@ scipy
 
 sympy 
 
+httplib2==0.22.0
+
+jinja2==3.0.3
+
+magenta
+
 mido 
+
+rtmidi
 
 pyo
 
@@ -56,6 +64,11 @@ docutils
 pygments 
 pypiwin32
 
+
+openai
+-e .
+
+
 kivy
 kivymd==0.104.2
 kivy.deps.sdl2 
@@ -63,3 +76,6 @@ kivy.deps.glew
 kivy.deps.gstreamer
 kivy.deps.angle
 kivy_examples
+
+
+

@@ -1,5 +1,0 @@
-{0.0} <music21.stream.Measure 1 offset=0.0>
-    {0.0} <music21.clef.Treble8vaClef>
-    {0.0} <music21.meter.TimeSignature 4/4>
-    {0.0} <music21.note.Note F#>
-    {1.0} <music21.bar.Barline type=final>

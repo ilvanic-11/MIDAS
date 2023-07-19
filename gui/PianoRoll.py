@@ -731,6 +731,32 @@ class PianoRoll(wx.grid.Grid, glr.GridWithLabelRenderersMixin):
         self.Scroll(0, 0)
         self.m_v.new_reticle_box()
 
+    def ScrollToMiddleC(self):
+        self.cur_scrollrate = self.GetScrollPixelsPerUnit()
+        print("self.cur_scrollrate", self.cur_scrollrate)
+        #self.SetScrollRate(10, 10)
+        #self.Refresh()
+        print("CurrentScrollRate1", self.GetScrollPixelsPerUnit())
+        #time.sleep(2)
+        #wx.CallAfter(self.ScrollToMiddleC_Core)
+
+        if self.GetScrollPixelsPerUnit() == (160, 120):
+            self.Scroll(0, 5)  # NOTE GetCellFromMouseStateReturns (Y,X), but this is (X,Y)
+        elif self.GetScrollPixelsPerUnit() == (10, 10):
+            self.Scroll(0, 55)  # NOTE GetCellFromMouseStateReturns (Y,X), but this is (X,Y)
+        elif self.GetScrollPixelsPerUnit() == (1, 1):
+            self.Scroll(0, 550)  # NOTE GetCellFromMouseStateReturns (Y,X), but this is (X,Y)
+        else:
+            pass
+
+            # self.GetScrollPixelsPerUnit() == (160, 120):
+       #self.SetScrollRate(*self.cur_scrollrate, )  #:Tuple unpack, neato. 07/03/2023
+        print("CurrentScrollRate2", self.GetScrollPixelsPerUnit())
+        self.m_v.new_reticle_box()
+
+    #def ScrollToMiddleC_Core(self):
+
+
 
     def SendToHere(self, selected_notes):
         #TODO Is this function somewhere else now?
@@ -1497,9 +1523,11 @@ class PianoRoll(wx.grid.Grid, glr.GridWithLabelRenderersMixin):
 
         # print(matrix)
 
-        #self.m_v.CurrentActor().array4Dchangedflag += 1
-        self.m_v.CurrentActor().array4Dchangedflag = not self.m_v.CurrentActor().array4Dchangedflag
-        #Midas.mayavi_view.CurrentActor().array4Dchangedflag = not Midas.mayavi_view.CurrentActor().array4Dchangedflag
+        #Update array4D???
+        #self.m_v.CurrentActor().array4Dchangedflag = not self.m_v.CurrentActor().array4Dchangedflag
+
+        ##self.m_v.CurrentActor().array4Dchangedflag += 1
+        ##Midas.mayavi_view.CurrentActor().array4Dchangedflag = not Midas.mayavi_view.CurrentActor().array4Dchangedflag
         self.stream = in_stream
 
         #Temporary
@@ -1619,16 +1647,18 @@ class PianoRoll(wx.grid.Grid, glr.GridWithLabelRenderersMixin):
             self.popupID7 = wx.NewIdRef()
             self.popupID8 = wx.NewIdRef()
             self.popupID9 = wx.NewIdRef()
+            self.popupID10 = wx.NewIdRef()
 
             self.Bind(wx.EVT_MENU, self.OnPopup_Properties, id=self.popupID1)
             self.Bind(wx.EVT_MENU, self.OnPopup_ScrollHere, id=self.popupID2)
             self.Bind(wx.EVT_MENU, self.OnPopup_ScrollHome, id=self.popupID3)
-            self.Bind(wx.EVT_MENU, self.OnPopupFour, id=self.popupID4)
+            self.Bind(wx.EVT_MENU, self.OnPopup_ScrollToMiddleC, id=self.popupID4)
             self.Bind(wx.EVT_MENU, self.OnPopupFive, id=self.popupID5)
             self.Bind(wx.EVT_MENU, self.OnPopupSix, id=self.popupID6)
             #self.Bind(wx.EVT_MENU, self.OnPopupSeven, id=self.popupID7)
             self.Bind(wx.EVT_MENU, self.OnPopupEight, id=self.popupID8)
             self.Bind(wx.EVT_MENU, self.OnPopupNine, id=self.popupID9)
+            self.Bind(wx.EVT_MENU, self.OnPopupTen, id=self.popupID10)
 
         # make a menu
         menu = wx.Menu()
@@ -1640,14 +1670,15 @@ class PianoRoll(wx.grid.Grid, glr.GridWithLabelRenderersMixin):
         # add some other items
         menu.Append(self.popupID2, "Scroll Here")
         menu.Append(self.popupID3, "Scroll Home")
-        menu.Append(self.popupID4, "Four")
+        menu.Append(self.popupID4, "Scroll To Middle C")
         menu.Append(self.popupID5, "Five")
         menu.Append(self.popupID6, "Six")
         # make a submenu
         sm = wx.Menu()
         menu.Append(self.popupID7, "Set Scroll Rate...", sm)
         sm.Append(self.popupID8, "...To (1,1)")
-        sm.Append(self.popupID9, "...To Default (160, 120)")
+        sm.Append(self.popupID9, "...To (10,10)")
+        sm.Append(self.popupID10, "...To Default (160, 120)")
 
         # Popup the menu.  If an item is selected then its handler
         # will be called before PopupMenu returns.
@@ -1665,9 +1696,13 @@ class PianoRoll(wx.grid.Grid, glr.GridWithLabelRenderersMixin):
 
     def OnPopup_ScrollHome(self, event):
         self.ScrollHome()
+        #event.Skip()
 
-    def OnPopupFour(self, event):
-        pass
+    def OnPopup_ScrollToMiddleC(self, event):
+        self.ScrollToMiddleC()
+        #event.StopPropagation()
+        #self.ScrollToMiddleC_Core()
+        #pass
 
     def OnPopupFive(self, event):
         pass
@@ -1684,15 +1719,20 @@ class PianoRoll(wx.grid.Grid, glr.GridWithLabelRenderersMixin):
         #         print("Seletion %s Deleted." % (j - 1))
         # self.GetTopLevelParent().pianorollpanel.pianoroll.ForceRefresh()
 
-    # def OnPopupSeven(self, event):
-    #     pass
-
     def OnPopupEight(self, event):
         self.SetScrollRate(1, 1)
+        #event.skip()
 
 
     def OnPopupNine(self, event):
-        self.SetScrollRate(160, 120)
+        self.SetScrollRate(10, 10)
+        #event.skip()
+
+    def OnPopupTen(self, event):
+        #This setting makes it scroll at a rate of one measure on the X axis and one octave on the Y axis.
+        self.SetScrollRate(160, 120)  #(X-Offset, Y-Pitch)
+        #event.skip()
+        pass
 
 # class MyGridCellAttributerProvider(wx.grid.GridCellAttrProvider)
 #     def __init__(self):

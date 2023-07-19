@@ -7,6 +7,9 @@
 #"Modified for use as the opening for Midas."
 
 import os
+
+import torch.cuda
+
 os.environ['PYGAME_FREETYPE'] = '1'
 import pygame, random     ##sys,
 from pygame import freetype
@@ -230,8 +233,17 @@ def rain_execute():
     for i in range(1, X // SIZE):
         col.append(Column(i * row_width, screen, font))
 
+    try:
+        if torch.cuda.is_available():
+            print("Setting delay to 43500")
+            delay = 36250
+        else:
+            delay = 7250
+    except Exception as e:
+        print('ERROR', e)
+        delay = 7250
     screen.fill(BLACK)
-    pygame.time.set_timer(pygame.QUIT, 7250) #19500
+    pygame.time.set_timer(pygame.QUIT, delay) #19500
 
     while True:
         for event in pygame.event.get():

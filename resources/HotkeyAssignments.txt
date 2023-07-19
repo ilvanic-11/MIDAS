@@ -98,6 +98,18 @@ Midas Key Bindings
 #--Piano Roll--#
 "Ctrl+Enter" 			 -- Trigger update of actor_array4D_changed (After using arrows to draw in the piano roll, this updates the mayavi display with what's arrow-drawn in the piano roll)
 
+#--Rotate Menu--#
+"Ctrl+Alt+1" 			 -- Rotate Current Actor Points on X_Axis_Left
+
+"Ctrl+Alt+2" 			 -- Rotate Current Actor Poitns on X_Axis_Right
+
+"Ctrl+Alt+3" 			 -- Rotate Current Actor Points on Y_Axis_Left
+
+"Ctrl+Alt+4" 			 -- Rotate Current Actor Points on Y_Axis_Right
+
+"Ctrl+Alt+5" 			 -- Rotate Current Actor Points on Z_Axis_Forward
+
+"Ctrl+Alt+6" 			 -- Rotate Current Actor Points on Z_Axis_Backward
 
 Primary Interface Bindings.
 #############################################
