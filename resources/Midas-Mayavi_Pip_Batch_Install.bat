@@ -33,6 +33,7 @@ python -m pip install install pyface==7.0.1
 :: PYFACE LICENSE: BSD License (BSD)
 ::python -m pip install --upgrade pyface --user
 python -m pip install --upgrade wxpython --user
+::python -m pip install wxpython==4.1.1
 :: WXPYTHON LICENSE: OSI Approved :: wxWindows Library Licence
 ::python -m pip install vtk==8.1.2 --user (LATEST Version is actually 9.0.3, but it's not tested\patched yet for MIDAS)
 python -m pip install vtk==9.0.1 --user  

@@ -184,11 +184,18 @@ class PianoRollPanel(wx.Panel):
         self.cbCellsPerQrtrNote = wx.ComboBox(self.toolbar, cbID2, "(1, 'Qrtr', 1)", wx.DefaultPosition, wx.DefaultSize,
                                               choices=["(1, 'Qrtr', 1)", "(2, '8th', .5)", "(4, '16th', .25)", "(8, '32nd', .125)", "(16, '64th', .0625)", "(32, '128th', .03125)"],
                                               style=wx.CB_DROPDOWN | wx.CB_READONLY)
+        print("WX_DEFAULT_POSITION", wx.DefaultPosition)
         self.toolbar.AddControl(self.cbCellsPerQrtrNote)
         self.Bind(wx.EVT_COMBOBOX, self.OnCellsPerQrtrNoteChanged, id=cbID2)
 
-        self.toolbar.AddSeparator()
-        self.toolbar.AddSeparator()
+        # for i in range(138):
+        #     self.toolbar.AddSeparator()
+        #
+        # cbID3 = 103
+        # lblID3 = 1031
+        # lbl3 = wx.StaticText(self.toolbar, lblID3, label="Rotate Points")
+        # self.rotatemenu = wx.Menu()
+        # self.toolbar.AddControl(self.rotatemenu, "&Rotate")
 
         #brushlbl = wx.StaticText(self.toolbar, lblID, label="Brush: ")
         #self.toolbar.AddControl(brushlbl, "")
@@ -1221,11 +1228,14 @@ class PianoRollPanel(wx.Panel):
                 pass
                 #MAKE SCRATCH ACTOR?
 
+            m_v.new_reticle_box()
 
 
 
 
         elif self.mode == self.select_mode:
+            m_v = self.m_v
+
 
             if evt.ShiftDown() and not evt.AltDown() and not evt.ControlDown():
                 #print("Shift-Selecting 3")
@@ -1279,6 +1289,7 @@ class PianoRollPanel(wx.Panel):
                 #print("Number of DRAWN cells in selection3:", len(self.selected_notes))
                 self.previously_selected_cells = self.selected_cells  #(self. previously_selected_cells already condensed here  with ordered dict)
 
+            m_v.new_reticle_box()
 
         #if self.first_selection:
 

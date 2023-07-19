@@ -92,9 +92,14 @@ else:
       pass
 
 
+# def set_scroll(pos=49):
+#       eval('shell.SetScrollPos(wx.VERTICAL, pos=pos)')
+
 print("Successfully imported all paths.")
 print('\n')
 music21funcs.about_midas()
+
+# eval('wx.CallLater(6, set_scroll)')
 
 
 # midas_test = music21.stream.Stream()

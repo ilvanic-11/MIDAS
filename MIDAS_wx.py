@@ -1,7 +1,9 @@
+import copy
+
 import wx
 from traits.etsconfig.api import ETSConfig
 ETSConfig.toolkit = 'wx'
-
+import torch
 
 #import MIDAS_wx_toolkit
 
@@ -26,17 +28,23 @@ from wx.adv import SplashScreen as SplashScreen
 #from mayavi3D import Mayavi3idiArtAnimation
 from mayavi3D import Mayavi3DWindow, MusicObjects
 from gui import StatusBar
+from gui.Generate import Point_E
 import numpy as np
 import pyo
 import os
 import gc
 import sys
+import signal
 import wx._adv, wx._html, wx._xml, wx.py, time
 import threading
 import multiprocessing
 import logging
 import music21
 from music21 import *
+
+mmr = Musical_Matrix_Rain
+mmr.torch = torch
+
 #from logging import log
 # import mayavi
 # from mayavi import mlab
@@ -253,7 +261,13 @@ class MainWindow(wx.Frame):
         self.mainbuttonspanel = MainButtons.MainButtonsPanel(self.pianoroll_mainbuttons_split, self.log)
         #self.statsdisplaypanel = StatsDisplayPanel.StatsDisplayPanel(self.mainbuttons_stats_split, self.log)
 
+        #Torch should come with the git pull installation of point e from the .bat file. #TODO Make the .bat file. 07/11/2023
+        self.torch = torch
+        if torch.cuda.is_available():
+            self.point_e = Point_E()
+
         ###
+        self.mmr = Musical_Matrix_Rain
 
         sizer = wx.BoxSizer(wx.VERTICAL)
         sizer.Add(self.top_mayaviview_split, 1, wx.EXPAND)
@@ -360,6 +374,14 @@ class MainWindow(wx.Frame):
         self.Bind(wx.EVT_MENU, self.menuBar.OnScene3d_1, id=307)
         self.Bind(wx.EVT_MENU, self.menuBar.OnProject2, id=308)
 
+        # Rotate
+        self.Bind(wx.EVT_MENU, self.menuBar.OnRotateX_Axis_Forward90, id=904)
+        self.Bind(wx.EVT_MENU, self.menuBar.OnRotateX_Axis_Backward90, id=905)
+        self.Bind(wx.EVT_MENU, self.menuBar.OnRotateY_Axis_Left90, id=906)
+        self.Bind(wx.EVT_MENU, self.menuBar.OnRotateY_Axis_Right90, id=907)
+        self.Bind(wx.EVT_MENU, self.menuBar.OnRotateZ_Axis_Left90, id=908)
+        self.Bind(wx.EVT_MENU, self.menuBar.OnRotateZ_Axis_Right90, id=909)
+
         # Tools
         #Analyze..
         self.Bind(wx.EVT_MENU, self.menuBar.OnDisplayChords, id=1400)
@@ -374,15 +396,15 @@ class MainWindow(wx.Frame):
         # self.Bind(wx.EVT_MENU, self.menuBar.OnMusic21Funcs, id=404)
 
         #Submenus...
-        # self.Bind(wx.EVT_MENUself.menuBar.f.OnCurrentActorListToShell, id=405)
-        # self.Bind(wx.EVT_MENUself.menuBar.f.OnCurrentActorToShell, id=406)
-        # self.Bind(wx.EVT_MENUself.menuBar.f.OnCurrentZplaneToShell, id=407)
+        #self.Bind(wx.EVT_MENU, self.menuBar.OnCurrentActorListToShell, id=415)
+        #self.Bind(wx.EVT_MENU, self.menuBar.OnCurrentActorToShell, id=416)
+        #self.Bind(wx.EVT_MENU, self.menuBar.OnCurrentZplaneToShell, id=417)
 
         # Submenu #TODO Might have to do additional work for different cases.....(i.e the multi-actor color image import)
         self.Bind(wx.EVT_MENU, self.menuBar.OnAsMusic21StreamWithParts, id=700)
         self.Bind(wx.EVT_MENU, self.menuBar.OnAsDictionaryOfPoints, id=701)
         self.Bind(wx.EVT_MENU, self.menuBar.OnAsMusic21Stream,
-                  id=800)  # Caself.menuBar. same function be bound to two different buttons?
+                  id=800)  # Can self.menuBar.--- same function be bound to two different buttons? Yes.
         self.Bind(wx.EVT_MENU, self.menuBar.OnAsNumpyPoints, id=801)
         self.Bind(wx.EVT_MENU, self.menuBar.OnAsMusic21Stream, id=900)
         self.Bind(wx.EVT_MENU, self.menuBar.OnAsNumpyPoints, id=901)
@@ -433,8 +455,12 @@ class MainWindow(wx.Frame):
         self._set_properties()
         self._do_layout()
 
-        
+        if torch.cuda.is_available(): #Needed a true condition here, this has nothing to do with Cuda....
+            # wx.CallLater(5, self.set_color)
+            wx.CallLater(4, self.set_pos)
 
+            # self.pyshellpanel.shell.Execute(eval('''Midas.clear'''))
+            print("PyShellPanel set.")
 
         # Pyshell Resplit on Init becasue pyshell defaults to SplitHorizontal()
         self.pyshellpanel.Unsplit(self.pyshellpanel.Window2)  #Actually, it can be read, because this works.
@@ -443,16 +469,13 @@ class MainWindow(wx.Frame):
         self.pyshellpanel.SetSashPosition(800)
         self.pyshellpanel.SetMinimumPaneSize(400)
 
-        # self.pyshellpanel.shell.SetScrollPos(wx.VERTICAL, 29)
-        # self.pyshellpanel.shell.SetEdgeColour("green")
-
 
         self.mainpanel.Bind(wx.EVT_CHAR_HOOK, self.OnSashKeyDown)
         #self.mainpanel.Bind(wx.EVT_MOUSEWHEEL, self.OnScrollZplanes)
         self.mainpanel.Bind(wx.EVT_MOUSEWHEEL, self.OnScrollActors_Zplanes)
 
-        self.mainpanel.Bind(wx.EVT_CHAR_HOOK, self.OnMiddleClickGrabNSend)
 
+        self.mainpanel.Bind(wx.EVT_CHAR_HOOK, self.OnMiddleClickGrabNSend)
         from wx import grid
         self.pianorollpanel.pianoroll.Bind(wx.grid.EVT_GRID_SELECT_CELL, self.PrintOurCell)
 
@@ -460,6 +483,23 @@ class MainWindow(wx.Frame):
 
         #TODO Return to this? (focus is set on mainbuttonspanel as part of the __main__ loop call at the bottom.
         #self.SetFocus()
+
+
+    def set_pos(self, pos=29):
+        try:
+            self.pyshellpanel.shell.push(Midas.pyshellpanel.shell.SetScrollPos(wx.VERTICAL, pos=29))   #,
+        #For whatever reason, this does what I want as is. I had a version where, 'silent=True' did it,
+        # then my cpu crashed, and it didn't work again even though I didn't change any code.
+                                         #silent=True) #Aaaahhh, silence is golden; this was the key here.
+        #self.pyshellpanel.SetScrollPos(wx.VERTICAL, pos=29)
+        #self.pyshellpanel.shell.Refresh()
+        # self.pyshellpanel.SetSashPosition(1370)
+
+        except AttributeError as e:
+            print("This is error was left deliberately--->   Attribute Error:", e, "Passing....")
+            pass
+        #self.pyshellpanel.shell.SetScrollPos(wx.VERTICAL, pos)
+        print("Pyshell Pos successfully set without unnecessary//visible user prompt in the pyshell.")
 
 
 
@@ -516,9 +556,22 @@ class MainWindow(wx.Frame):
         else:
             print("Closing entire program.")
             self.coffee_frame.Destroy()
-            self.Destroy()
-            #TODO App not fully closing?
             #self.Close()
+            #self.Close(force=True)
+            self.Destroy()
+            #self.DestroyLater()
+            #self.D
+            #wx.CallAfter((self.Destroy)) #.Destroy()
+
+            try:
+                os.kill(0, signal.CTRL_C_EVENT)
+            except AttributeError:
+                # Python 2.6 and below
+                import ctypes
+                ctypes.windll.kernel32.GenerateConsoleCtrlEvent(0, 0)
+            # Immediately throws KeyboardInterrupt from the simulated CTRL-C
+
+            #TODO App not fully closing?
             #Close()
 
 
@@ -1057,6 +1110,7 @@ class MainWindow(wx.Frame):
 
 
     def zoom_to_coordinates(self, picker):
+        picker = self.picker if picker is None else picker
         print("PICKER", picker)
         print("PICKER_TYPE", type(picker))
         print("Point", picker.point_id)
@@ -1065,6 +1119,8 @@ class MainWindow(wx.Frame):
         print("Picked", picked)
         #print(picker.trait_names())
         print("Selection Point:", picker.pick_position)
+
+        self.picker = copy.deepcopy(picker)
 
         mproll = self.pianorollpanel.pianoroll
 
@@ -1154,7 +1210,7 @@ class MainWindow(wx.Frame):
         #self.mainbuttons_stats_split.SetSashPosition(400)
         self.top_pyshell_split.SetSashPosition(306)  ## 2 Octaves are in view perfectly with this setting.
         self.top_mayaviview_split.SetSashPosition(600)  ###Affects 3D title insert
-        
+
         self.top_mayaviview_split.SetSashGravity(0.5)
         self.top_pyshell_split.SetSashGravity(0.5)
 
@@ -1162,6 +1218,7 @@ class MainWindow(wx.Frame):
 
         # Titles.
         self.mayavi_view.insert_titles()
+
 
         self.pianorollpanel.actorsctrlpanel.actorsListBox.filter = [0]
 
@@ -1211,10 +1268,13 @@ if __name__ == '__main__':
     time.sleep(.2)
 
     #threading.Thread(target=Musical_Matrix_Rain.rain_execute).start()
-    Musical_Matrix_Rain.rain_execute()
+    #mmr.rain_execute()
     #TODO CHECK Figure out if this is why Patch and Pygame both execute twice at runtime. Yes it does.
-    ##rain = multiprocessing.Process(target=Musical_Matrix_Rain.rain_execute)
-    ##rain.start()
+    #torch.
+    rain = torch.multiprocessing.Process(target=mmr.rain_execute)    #Musical_Matrix_Rain
+    #rain = multiprocessing.Process(target=mmr.rain_execute)    #Musical_Matrix_Rain
+    #multiprocessing.context
+    rain.start()
     time.sleep(4) #.3
 
     Midas = MainWindow(None, -1, "MIDAS")
@@ -1223,7 +1283,7 @@ if __name__ == '__main__':
 
 
     #Startup = Startup()
-    #Midas.pyshellpanel.shell.GotoPos(29)
+    #Midas
 
     #frm.Show()
     time.sleep(1.75)

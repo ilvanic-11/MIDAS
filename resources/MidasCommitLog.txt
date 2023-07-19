@@ -793,14 +793,88 @@ In dist
 --> Updated the icon for the package with the MidasHand_32x40.bmp
 
 In MidasCommitLog.txt
---Retconed April12 commit, added some other notes.
+--Retconed April 12 commit, added some other notes.
  
+
+
+--IP Commit ?????, 2023--
+In MidiArt
+--> In function snap_to_key(), fixed a bug that would have had breaks in the scenario where snap_up=False.
+--> New function: snap_enharmonics(in_stream, key) 
+--> Put the open3d methods back for set_to_nn_colors() (Included in the code now is the hash for all other working methods, i.e., kdtree, scipy.spatial)
+
+In musicode.py AND MainButtons.py
+--> Tweaked progress_updater timing
+
+In MIDAS_wx.py
+--> In the # Rotate section, added the bind calls for the Tools menu-->Rotate Current Actor... functions.
+--> Tweaked the order of the Rotation functions (in all places) in the code (x | Forward, Backward(CTRL-ALT 1 and 2) , y | Left, Right(CTRL-ALT 3 and 4) , z | Left Right (CTRL-ALT 5 and 6))
+--> Made it so the hotkeys operate by rotating the TOP of the object left or right when looking 
+--> Added --> os.kill(0, signal.CTRL_C_EVENT) within a try-catch-except block int he MIDAS_wx.py MainWindow class function double_destroy()
+
+In MenuButtons.Menubar
+--> Added the OnRotate_*90degree functions().  *There are 6 different functions. Can't assign a function call with variables to Bind, only a method. So, 6 uses of rotate_array_points_about_axis was necessary.
+
+In musicode.py
+--> Added  "filter_to_NOT_gray_or_white",
+		   "get_cropped_empty_box_ROI_compensation",
+		   "create_musicode_unicode_master_dict_and_stream",
+		   "create_musicodes_from_unicode_rapidtable",
+	to the cancel_strings list.
+--> Fixed a bug in musicode function _translate_letter() where 'punctuation' within dictionaries weren't being established correctly. (This bug wasn't happening in Midas because 'elif musicode != self.musicode_name:' made that impossible. It was only happening in console use.)
+	
+	
+In MainButtons.py
+-->Fixed bugs with the sizer layout for MIDIArt3DDialog() and MIDIArtDialog()  (These bugs were the result of updating from wx 4.1.1 to 4.2.0)
+-->Moved _OnMusic21ConverterParseDialogClosed() function up within the module for organization.
+-->In Each On_whichever_DialogClosed() function, added a New_Actor? checkbox code block. Allows the user to determine whether to make a new_actor or import data into the current one. #TODO Finish!
+-->Added a new inputTxt() box to every MainButton Dialog for Generate.py functions.
+-->Attached and tested Generate.py functions. (MuseNet is not available anymore. Figure out new generative midi method.)
+-->
+
+
+In MIDIArtDialog()
+-->In function UpdatePreview(), added the option to display the users ORIGINAL loaded image.
+
+
+In PianoRoll.py
+--> Modified Grid Right Click Menu functions OnPopup8, 9, and 10()
+--> Added a right click in OnPopup9() that Set(s)ScrollRate(10,10) to 10.
+
+In Mayavi3DWindow
+--> In reset_volume_slice(), added a try-catch-except block for a bug involving self.slice_edges
+--> Added a print() statement in function rebind_picker()
+--> Extracted the Actor() class and placed it within its own Actor.py module.
+
+In gui
+--> Created New Module Actor.py
+--> Created New Module Generate.py
+
+In Actor.py
+--> In the module, added the necessary and correct imports to the top.
+
+In PianoRollPanel.py
+--> Added new_reticle_box() to the end of the OnMouseLeftUp() functionality. Makes it so the red reticle in the Gui chases the drag-scroll-drawing effect that came with the new wx update. (4.2.0)
+--> 
+
+In PianoRoll.py
+-->New function: --> grid right click menu ScrollToMiddleC()
+
+In Generate.py
+--> Created the 3 Cardinal OpenAI classes using the openai python api
+--> New class Chat_GPT()
+--> New class DALL_E()
+--> New class Point_E()
+
+In midiart3D.py
+--> Added try-catch-except to function extract_xyz_coordinates_to_array() (This fixes\works around the duration.quarterLength(s) that are represented as music21.common.opFrac() Fraction() objects)
+	
 
 
 ++++++++++++
 #############################################
 ##Git adds. Update as needed. (Git can adds a LOT at once, if separated without commas.) Highlight this line below, copy, and paste into git to git add all quickly.
-git add MIDAS_wx.py MIDAS_wx.spec dist/ build/ substitution_packages.7z TrebleClefIcon.bmp resources/pyinstaller_bug.png resources/pyinstaller_correct.png resources/coffee_button_background.png gui/ActorsControlPanel.py gui/MainButtons.py  gui/MenuButtons.py gui/PianoRoll.py gui/PianoRollPanel.py gui/Patch.py gui/Preferences.py gui/StatusBar.py gui/ZPlanesControlPanel.py mayavi3D/Mayavi3DWindow.py mayavi3D/Mayavi3idiArtAnimation.py midas_scripts/midiart3D.py midas_scripts/music21funcs.py midas_scripts/musicode.py midas_scripts/midiart.py resources/ColorPaletteAttributions.txt resources/Midas-Mayavi_Pip_Batch_Install.bat resources/MidasCommitLog.txt resources/Midas_Startup_Configs.py resources/HotkeyAssignments.txt gui/Playback.py gui/Musical_Matrix_Rain.py mayavi3D/MusicObjects.py resources/MIDAS_splash.png resources/color_palettes/ resources/Midas_Requirements.txt resources/Midas_Install_Instructions.txt resources/Pyinstaller_Instructions.txt resources/empty_box.png resources/empty_box_compensation.png resources/unicode_rapid_tables/ resources/pickles/ resources/ThePhatPiano16.png test/MIDAS_UnitTests.py licenses/ MidasHand.bmp resources/MidasHand.bmp resources/MidasHand_32x40.bmp
+git add MIDAS_wx.py MIDAS_wx.spec dist/ build/ substitution_packages.7z TrebleClefIcon.bmp resources/pyinstaller_bug.png resources\intermediary_path\lo-ki.p resources/pyinstaller_correct.png resources/coffee_button_background.png gui/Actor.py gui/ActorsControlPanel.py gui/MainButtons.py gui/Generate.py gui/MenuButtons.py gui/PianoRoll.py gui/PianoRollPanel.py gui/Patch.py gui/Preferences.py gui/StatusBar.py gui/ZPlanesControlPanel.py mayavi3D/Mayavi3DWindow.py mayavi3D/Mayavi3idiArtAnimation.py midas_scripts/midiart3D.py midas_scripts/music21funcs.py midas_scripts/musicode.py midas_scripts/midiart.py resources/ColorPaletteAttributions.txt resources/Midas-Mayavi_Pip_Batch_Install.bat resources/MidasCommitLog.txt resources/Midas_Startup_Configs.py resources/HotkeyAssignments.txt gui/Playback.py gui/Musical_Matrix_Rain.py mayavi3D/MusicObjects.py resources/MIDAS_splash.png resources/color_palettes/ resources/Midas_Requirements.txt resources/Midas_Install_Instructions.txt resources/Pyinstaller_Instructions.txt resources/empty_box.png resources/empty_box_compensation.png resources/unicode_rapid_tables/ resources/pickles/ resources/ThePhatPiano16.png test/MIDAS_UnitTests.py licenses/ MidasHand.bmp resources/MidasHand.bmp resources/MidasHand_32x40.bmp README.md
 ##
 ##
 git add Kivy/MIDAS.kv Kivy/MIDAS_Settings.py Kivy/MIDAS_kivy.py Kivy/midas_scripts/midiart.py Kivy/midas_scripts/midiart.py Kivy/midas_scripts/midiart3D.py Kivy/midas_scripts/music21funcs.py Kivy/resources/color_palettes Kivy/resources/ColorPaletteAttributions.txt Kivy/resources/coffee_button_background.png Kivy/resources/button_pressed_default.png Kivy/resources/support_banner.png Kivy/resources/coffee_button_background.png Kivy/resources/MIDAS_Mobile_splash.png Kivy/resources/MidasHand.png Kivy/resources/credits_visual.png Kivy/resources/intermediary_path/musicode_write.mid Kivy/resources/intermediary_path/pixels_from_midi_with_piano.png, 

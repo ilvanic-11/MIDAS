@@ -175,6 +175,8 @@ class ZPlanesControlPanel(wx.Panel):
 
 			# ass1 = multiprocessing.Process(target=self.execute_animator)
 			# ass1.start()
+			# ass3 = torch.multiprocessing.Process(target=self.execute_animator)
+			# ass3.start()
 			# print("ass1")
 
 			# fps = (self.m_v.bpm * self.m_v.frames_per_beat) / 60
@@ -208,6 +210,8 @@ class ZPlanesControlPanel(wx.Panel):
 
 			# argh2 = multiprocessing.Process(target=self.execute_player)
 			# argh2.start()
+			# argh4 = torch.multiprocessing.Process(target=self.execute_player)
+			# argh4.start()
 
 			print("Output", self.output)
 			self.GetTopLevelParent().player = Player(midifilepath=self.output, parent=self.GetTopLevelParent(), play_now=True,
