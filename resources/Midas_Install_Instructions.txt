@@ -42,7 +42,54 @@ Instructions from top to bottom for a fresh Midas_wx\Midas_kv installation of Mi
 	git clone https://github.com/openai/point-e
 	cd point-e  (The pip install requirement '-e .' can only be executed from directory \point-e.)
 	
-	From here, execute the following command: pip install -r C:\Users\youtheuser\Midas\resources\Midas_Requirements.txt 
+	##MIDAS_kivy
+	#####
+	(Necessary for Python 3.11.5)
+
+	Then, execute:
+	--> pip install attrdict, requests, matplotlib
+	--> pip install numpy==1.21
+	
+
+	python -m pip install opencv-python==4.5.1.48
+	Locate the mapping.py, mixins.py, merge.py, default.py files within the attrdict package in your site-packages folder.
+	Change the line from collections import Mapping to from collections.abc import Mapping
+	(vtk==9.2.4 for Python3.11)
+	#####
+
+
+
+	##MIDAS_kivy
+	include this is main.spec
+	#####################
+	block_cipher = None
+	from kivy_deps import sdl2, glew
+	from kivymd import hooks_path as kivymd_hooks_path
+	import pkg_resources.py2_warn
+
+	a = Analysis(
+		['main.py'],
+		pathex=["C:\Users\MIDAS_kivy\venv\Lib\site-packages"],
+		binaries=[],
+		datas=[],
+		hiddenimports=['kivy', 'pkg_resources.py2_warn'],
+		hookspath=[],
+		hooksconfig={},
+		runtime_hooks=[],
+		excludes=[],
+		win_no_prefer_redirects=False,
+		win_private_assemblies=False,
+		cipher=block_cipher,
+		noarchive=False,
+	#####################
+	
+
+
+	From here, execute the following command: pip install -r C:\Users\youtheuser\Midas\resources\Midas_Requirements.txt
+
+	##MIDAS_kivy
+	pyinstaller --paths "C:\Users\MIDAS_kivy\venv\Lib\site-packages" C:\Users\MIDAS_kivy\main.py
+	
 	
 5.(Optional)) Install CUDA. Download and install CUDA from their website. Note: Requires about 12gb of free disk space.
 	(Installation of CUDA is not necessary for Midas as whole, but there is one feature that is significantly faster user it.)

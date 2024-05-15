@@ -16,6 +16,7 @@ from collections import OrderedDict
 #import numpy_indexed as npi
 import time
 import logging
+import traceback
 
 """
 PianoRollPanel
@@ -343,16 +344,26 @@ class PianoRollPanel(wx.Panel):
         else:
             current_actor = self.m_v.CurrentActor()
 
+            try:
+                on_points = current_actor.get_points_with_all_data(z=z)
 
-            on_points = current_actor.get_points_with_all_data(z=z)
-            #on_points = np.argwhere(current_actor._array4D[:, :, z, 0] >= 1.0)
-            print("On_Points", on_points)
+                #assert on_points.ndim == 3, "Your on_points are wrong."
+                #on_points = np.argwhere(current_actor._array4D[:, :, z, 0] >= 1.0)
+                print("On_Points", on_points, type(on_points))
+                # CORE
+                # Grid set.
+                print("Here, dude 4.")
+                for i in on_points:
+                    print("POINT_i", i)
+                    self.pianoroll._table.SetValue(127 - i[1], i[0], "0", importing=True)
+                    # TODO Track mode stuff! What can the 'value' parameter be?
 
-            #Grid set.
-            print("Here, dude 4.")
-            for i in on_points:
-                self.pianoroll._table.SetValue(127 - i[1], i[0], "0", importing=True)
-                # TODO Track mode stuff! What can the 'value' parameter be?
+            except Exception as e:
+                print("Traceback___Message:")
+                print(traceback.format_exc())
+                print("Clear Z_Plane On_Points Error", e)
+
+
 
             #_array4D set.
             # for i in range(0, current_actor._array4D.shape[3]):
@@ -362,6 +373,8 @@ class PianoRollPanel(wx.Panel):
             try:
                 self.m_v.actors[self.m_v.cur_ActorIndex].actor_array4D_changed()
             except Exception as e:
+                print("Traceback___Message:")
+                print(traceback.format_exc())
                 print("Clear Zplane Error:", e)
 
             # TODO Different way to write this? Multiply whole array3d by 0?
@@ -372,7 +385,7 @@ class PianoRollPanel(wx.Panel):
         #self.m_v.actors[self.m_v.cur_ActorIndex].array4Dchangedflag = not self.m_v.actors[self.m_v.cur_ActorIndex].array4Dchangedflag
 
         self.pianoroll.ForceRefresh()
-
+        print("Here, dude 5.")
 
     def Scroll_ZPlanesVelocities(self, event):
         #TODO Doc strings.
@@ -1091,6 +1104,8 @@ class PianoRollPanel(wx.Panel):
             else:
                 pass
         except Exception as e:
+            print("Traceback___Message:")
+            print(traceback.format_exc())
             print(e, "No selection yet, nothing to clear out therefore.")
         self.selecting_cells = []
         self.all_edges = np.array([])
@@ -1203,10 +1218,12 @@ class PianoRollPanel(wx.Panel):
         self.rows = range(self.rows_start, self.rows_end + 1)
         self.cols = range(self.cols_start, self.cols_end + 1)
 
+
     ###------------------------------------------------------------------
     def OnMouseLeftUp(self, evt):
         """
-        On mouse left up, in draw mode, flags the change of array4d.  #Todo Do as trait events.
+        #Todo Do as trait events?
+        On mouse left up, in draw mode, flags the change of array4d.
         In selectmode, ...
         :param evt:
         :return:
@@ -1224,7 +1241,10 @@ class PianoRollPanel(wx.Panel):
                 m_v.CurrentActor().array4Dchangedflag = not m_v.CurrentActor().array4Dchangedflag
                 print("Flag changed now.", m_v.CurrentActor().array4Dchangedflag)
                 self.pianoroll.ForceRefresh()
-            except AttributeError:
+            except Exception as e:
+                print("Traceback___Message:")
+                print(traceback.format_exc())
+                print("ATTRIBUTE\_array4Dchangedflag ERROR", e)
                 pass
                 #MAKE SCRATCH ACTOR?
 

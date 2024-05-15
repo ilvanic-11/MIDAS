@@ -168,6 +168,7 @@ class Mayavi3idiView(HasTraits):
         #TODO Should this be in main MIDAS_wx?
         self.current_palette_name = "FLStudioColors"   #Palette on startup.
 
+        self.current_palette_names = []
 
 
         #Grid Construct
@@ -192,6 +193,13 @@ class Mayavi3idiView(HasTraits):
         self.z_flag = False
 
         #self.append_actor("0")
+
+
+        self.MusicodeGlobals = []
+        self.MidiartGlobals = []
+        self.MidiartGlobalsThumbnails = []
+        self.Midiart3DGlobabls = []
+
 
     #TODO For exporting
     def Append_Streams(self):
@@ -398,6 +406,8 @@ class Mayavi3idiView(HasTraits):
     #         layer = self.GetTopLevelParent().pianorollpanel.pianorollNB.FindPage(page)
     #         self._array3D[col, 127 - row, layer] = val
     #     except Exception as e:
+    #         print("Traceback___Message:")
+    #         print(traceback.format_exc())
     #         print(e)
     #         pass
 
@@ -1623,8 +1633,10 @@ class Mayavi3idiView(HasTraits):
         new_id9 = wx.NewIdRef()
         new_id10 = wx.NewIdRef()
 
-        self.parent.mayaviviewcontrolpanel.Bind(wx.EVT_MENU, self.parent.mainbuttonspanel.OnMusic21ConverterParseDialog,
+        self.parent.mayaviviewcontrolpanel.Bind(wx.EVT_MENU, self.parent.mainbuttonspanel.OnTheMidasButtonDialog,
                                                 id=new_id1)
+        # self.parent.mayaviviewcontrolpanel.Bind(wx.EVT_MENU, self.parent.mainbuttonspanel.OnMusic21ConverterParseDialog,
+        #                                         id=new_id1)
         self.parent.mayaviviewcontrolpanel.Bind(wx.EVT_MENU, self.parent.mainbuttonspanel.OnMusicodeDialog,
                                                 id=new_id2)
         self.parent.mayaviviewcontrolpanel.Bind(wx.EVT_MENU, self.parent.mainbuttonspanel.OnMIDIArtDialog,

@@ -4,6 +4,7 @@ import wx
 from traits.etsconfig.api import ETSConfig
 ETSConfig.toolkit = 'wx'
 import torch
+import traceback
 
 #import MIDAS_wx_toolkit
 
@@ -184,7 +185,8 @@ class MyCrust(wx.py.crust.Crust):
         new_id9 = wx.NewIdRef()
         new_id10 = wx.NewIdRef()
 
-        self.Bind(wx.EVT_MENU, self.GetTopLevelParent().mainbuttonspanel.OnMusic21ConverterParseDialog, id=new_id1)
+        self.Bind(wx.EVT_MENU, self.GetTopLevelParent().mainbuttonspanel.OnTheMidasButtonDialog, id=new_id1)
+        #self.Bind(wx.EVT_MENU, self.GetTopLevelParent().mainbuttonspanel.OnMusic21ConverterParseDialog, id=new_id1)
         self.Bind(wx.EVT_MENU, self.GetTopLevelParent().mainbuttonspanel.OnMusicodeDialog, id=new_id2)
         self.Bind(wx.EVT_MENU, self.GetTopLevelParent().mainbuttonspanel.OnMIDIArtDialog, id=new_id3)
         self.Bind(wx.EVT_MENU, self.GetTopLevelParent().mainbuttonspanel.OnMIDIArt3DDialog, id=new_id4)
@@ -264,7 +266,9 @@ class MainWindow(wx.Frame):
         #Torch should come with the git pull installation of point e from the .bat file. #TODO Make the .bat file. 07/11/2023
         self.torch = torch
         if torch.cuda.is_available():
-            self.point_e = Point_E()
+            #REMEMBER TO REENABLE 12/13/2023
+            #self.point_e = Point_E()
+            pass
 
         ###
         self.mmr = Musical_Matrix_Rain
@@ -496,7 +500,7 @@ class MainWindow(wx.Frame):
         # self.pyshellpanel.SetSashPosition(1370)
 
         except AttributeError as e:
-            print("This is error was left deliberately--->   Attribute Error:", e, "Passing....")
+            print("This error was left deliberately--->   Attribute Error:", e, "Passing....")
             pass
         #self.pyshellpanel.shell.SetScrollPos(wx.VERTICAL, pos)
         print("Pyshell Pos successfully set without unnecessary//visible user prompt in the pyshell.")
@@ -1086,6 +1090,8 @@ class MainWindow(wx.Frame):
                         else:
                             pass
                     except Exception as e:
+                        print("Traceback___Message:")
+                        print(traceback.format_exc())
                         print(e)
                         pass
             # print(ref_list[1])

@@ -6,6 +6,9 @@ import music21
 import copy
 import logging
 import numpy as np
+
+import traceback
+
 from midas_scripts.music21funcs import notafy
 
 import os
@@ -182,70 +185,74 @@ class PianoRollDataTable(wx.grid.GridTableBase):
         print("DUR", dur)
         z = self.pianorollpanel.currentZplane
 
-
-        #TODO Call the kwarg import=False?
-        #For Drawing\Import data setting scenarios, specifically(most likely will be notes that don't exist yet and need
-        # their first instances of data.; subject to change.
-        if importing == True:
-            print("Importing", importing)
-            print("Value_type", type(values))
-            assert type(values) == str, "Your values type is incorrect."
-
-            #ARRAY4D
-
-            print("Index", ([int(col)], [127 - row], [z]))
-
-            #ON
-            self._cur_actor._array4D[int(col)][int(127 - row)][int(z)][0] = int(values) \
-                if pr.drawing == 1 else values  #value is 0 when pr.drawing == 0, a general fyi.
-            #TODO Be minddful of these when debugging.   col/self.pianorollpanel.pianoroll._cells_per_qrtrnote
-            # VELOCITY
-            self._cur_actor._array4D[int(col)][int(127 - row)][int(z)][1] = int(pr.draw_velocity) \
-                if pr.drawing == 1 else values
-            # DURATION1
-            self._cur_actor._array4D[int(col)][int(127 - row)][int(z)][2] = int(dur[0]) \
-                if pr.drawing == 1 else values
-            # DURATION2
-            self._cur_actor._array4D[int(col)][int(127 - row)][int(z)][3] = int(dur[1]) \
-                if pr.drawing == 1 else values
-            #UNUSED
-            # self._cur_actor._array4D[int(col)][int(127 - row)][int(z)][int(4)] = int(dur[1]) \
-            #     if pr.drawing == 1 else values
-
-        # For resetting and regetting directly from existing notes.
-        elif importing == False:
-            print("Importing", importing)
-            if self._cur_actor:
+        try:
+            #TODO Call the kwarg import=False?
+            #For Drawing\Import data setting scenarios, specifically(most likely will be notes that don't exist yet and need
+            # their first instances of data.; subject to change.
+            if importing == True:
+                print("Importing", importing)
                 print("Value_type", type(values))
-                assert type(values) == tuple, "You values type is incorrect."
+                assert type(values) == str, "Your values type is incorrect."
+
+                #ARRAY4D
+
+                print("Index", ([int(col)], [127 - row], [z]))
+
                 #ON
-                self._cur_actor._array4D[int(col)][int(127 - row)][int(z)][int(0)] = int(values[0])
+                self._cur_actor._array4D[int(col)][int(127 - row)][int(z)][0] = int(values) \
+                    if pr.drawing == 1 else values  #value is 0 when pr.drawing == 0, a general fyi.
                 #TODO Be minddful of these when debugging.   col/self.pianorollpanel.pianoroll._cells_per_qrtrnote
-                #if pr.drawing == 1 else values#ON
                 # VELOCITY
-                self._cur_actor._array4D[int(col)][int(127 - row)][int(z)][1] = int(values[1])
+                self._cur_actor._array4D[int(col)][int(127 - row)][int(z)][1] = int(pr.draw_velocity) \
+                    if pr.drawing == 1 else values
                 # DURATION1
-                self._cur_actor._array4D[int(col)][int(127 - row)][int(z)][2] = int(values[2])
-                     #value is 0 when pr.drawing == 0
+                self._cur_actor._array4D[int(col)][int(127 - row)][int(z)][2] = int(dur[0]) \
+                    if pr.drawing == 1 else values
                 # DURATION2
-                self._cur_actor._array4D[int(col)][int(127 - row)][int(z)][3] = int(values[3])
-                # UNUSED
-                self._cur_actor._array4D[int(col)][int(127 - row)][int(z)][4] = int(values[4])
-        else:
-            #This block handles the scenario where we don't have an _table.array4D. #
-            # (like deleting cells in the grid without an actor---the method pianoroll.SetCellValue uses this fuction.
-            # So if we use SetCellValue to clear just notes in the grid, nothing should happen here with array4D stuff.
-            print("Importing", importing) #Should be None here.
-            #self.SetValueAsBool(row, col, str(int(values)))
-            # OFF
+                self._cur_actor._array4D[int(col)][int(127 - row)][int(z)][3] = int(dur[1]) \
+                    if pr.drawing == 1 else values
+                #UNUSED
+                # self._cur_actor._array4D[int(col)][int(127 - row)][int(z)][int(4)] = int(dur[1]) \
+                #     if pr.drawing == 1 else values
 
-            #TODO Figure out how to explain this better?.....it works, and I don't fully understand.
-            #Nothing should happen here with array4D stuff, and yet when this line is here in this function,
-            #even though there isn't an actor to draw to, the cell will still clear or instantiate ON\OFF-wise.
-            self._cur_actor._array4D[int(col)][int(127 - row)][int(z)][int(0)] = int(values) \
-                if pr.drawing == 1 else values  # value is 0 when pr.drawing == 0, a general fyi.
-            pass
+            # For resetting and regetting directly from existing notes.
+            elif importing == False:
+                print("Importing", importing)
+                if self._cur_actor:
+                    print("Value_type", type(values))
+                    assert type(values) == tuple, "You values type is incorrect."
+                    print("SETVALUE() __ self.cur_actor._array4D", self._cur_actor._array4D, type(self._cur_actor._array4D))
+                    #ON
+                    self._cur_actor._array4D[int(col)][int(127 - row)][int(z)][int(0)] = int(values[0])
+                    #TODO Be minddful of these when debugging.   col/self.pianorollpanel.pianoroll._cells_per_qrtrnote
+                    #if pr.drawing == 1 else values#ON
+                    # VELOCITY
+                    self._cur_actor._array4D[int(col)][int(127 - row)][int(z)][1] = int(values[1])
+                    # DURATION1
+                    self._cur_actor._array4D[int(col)][int(127 - row)][int(z)][2] = int(values[2])
+                         #value is 0 when pr.drawing == 0
+                    # DURATION2
+                    self._cur_actor._array4D[int(col)][int(127 - row)][int(z)][3] = int(values[3])
+                    # UNUSED
+                    #self._cur_actor._array4D[int(col)][int(127 - row)][int(z)][4] = int(values[4])
+            else:
+                #This block handles the scenario where we don't have an _table.array4D. #
+                # (like deleting cells in the grid without an actor---the method pianoroll.SetCellValue uses this fuction.
+                # So if we use SetCellValue to clear just notes in the grid, nothing should happen here with array4D stuff.
+                print("Importing", importing) #Should be None here.
+                #self.SetValueAsBool(row, col, str(int(values)))
+                # OFF
 
+                #TODO Figure out how to explain this better?.....it works, and I don't fully understand.
+                #Nothing should happen here with array4D stuff, and yet when this line is here in this function,
+                #even though there isn't an actor to draw to, the cell will still clear or instantiate ON\OFF-wise.
+                self._cur_actor._array4D[int(col)][int(127 - row)][int(z)][int(0)] = int(values) \
+                    if pr.drawing == 1 else values  # value is 0 when pr.drawing == 0, a general fyi.
+                pass
+        except Exception as e:
+            print("Traceback___Message:")
+            print(traceback.format_exc())
+            print("_table SetValue() error", e)
 
     def AppendCols(self, numCols=1, updateLables=True, change_value=0):
 
@@ -1519,6 +1526,8 @@ class PianoRoll(wx.grid.Grid, glr.GridWithLabelRenderersMixin):
                     self.SetCellSize(y, x, 1, size)
 
         except Exception as e:
+            print("Traceback___Message:")
+            print(traceback.format_exc())
             print("STREAMTOGRID EXCEPTION!", e)
 
         # print(matrix)
@@ -1759,7 +1768,8 @@ class PianoRoll(wx.grid.Grid, glr.GridWithLabelRenderersMixin):
         new_id11 = wx.NewIdRef()
         new_id12 = wx.NewIdRef()
 
-        self.Bind(wx.EVT_MENU, self.GetTopLevelParent().mainbuttonspanel.OnMusic21ConverterParseDialog, id=new_id1)
+        self.Bind(wx.EVT_MENU, self.GetTopLevelParent().mainbuttonspanel.OnTheMidasButtonDialog, id=new_id1)
+        #self.Bind(wx.EVT_MENU, self.GetTopLevelParent().mainbuttonspanel.OnMusic21ConverterParseDialog, id=new_id1)
         self.Bind(wx.EVT_MENU, self.GetTopLevelParent().mainbuttonspanel.OnMusicodeDialog, id=new_id2)
         self.Bind(wx.EVT_MENU, self.GetTopLevelParent().mainbuttonspanel.OnMIDIArtDialog, id=new_id3)
         self.Bind(wx.EVT_MENU, self.GetTopLevelParent().mainbuttonspanel.OnMIDIArt3DDialog, id=new_id4)

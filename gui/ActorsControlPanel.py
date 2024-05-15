@@ -339,6 +339,7 @@ class ActorsControlPanel(wx.Panel):
                     #pass
                 self.OnBtnDelActor(evt=None, cur=j-1)
                 print("Selection %s Deleted." % (j-1))
+                #print(alb.)
 
         self.GetTopLevelParent().pianorollpanel.pianoroll.ForceRefresh()
 
@@ -565,7 +566,8 @@ class CustomActorsListBox(wx.ListCtrl, CheckListCtrlMixin):
         new_id9 = wx.NewIdRef()
         new_id10 = wx.NewIdRef()
 
-        self.Bind(wx.EVT_MENU, self.GetTopLevelParent().mainbuttonspanel.OnMusic21ConverterParseDialog, id=new_id1)
+        self.Bind(wx.EVT_MENU, self.GetTopLevelParent().mainbuttonspanel.OnTheMidasButtonDialog, id=new_id1)
+        #self.Bind(wx.EVT_MENU, self.GetTopLevelParent().mainbuttonspanel.OnMusic21ConverterParseDialog, id=new_id1)
         self.Bind(wx.EVT_MENU, self.GetTopLevelParent().mainbuttonspanel.OnMusicodeDialog, id=new_id2)
         self.Bind(wx.EVT_MENU, self.GetTopLevelParent().mainbuttonspanel.OnMIDIArtDialog, id=new_id3)
         self.Bind(wx.EVT_MENU, self.GetTopLevelParent().mainbuttonspanel.OnMIDIArt3DDialog, id=new_id4)

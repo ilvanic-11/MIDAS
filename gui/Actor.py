@@ -4,6 +4,7 @@ from traits.trait_types import List, Tuple, Int
 
 import numpy as np
 import torch
+import traceback
 
 from midas_scripts import midiart, midiart3D
 
@@ -15,7 +16,7 @@ class Actor(HasTraits):
     _points = Array(dtype=np.float32)
 
 
-    _array4D = Array()   #dtype=np.int8, shape=(5000, 128, 128, 4)
+    _array4D = Any() #Array()   #dtype=np.int8, shape=(5000, 128, 128, 4)
     #_array4D = Array(dtype=np.int8, shape=(5000, 128, 128, 4))
     #5000  #[x, y, z] coordinates of [on\off, Duration, Velocity, Smallest-Allowed-Duration(SAD)?, color?] values.
     #Velocity doesn't need to be a uniquely stored element on the 4th dimension. It's already our z-value.
@@ -63,7 +64,9 @@ class Actor(HasTraits):
 
         #Our _array4D allows us vectorized access to individual point coordinates via the power of numpy.
         self._array4D = np.zeros(dtype=np.int8, shape=(self.m_v.grid_cells_length, 128, 128, 5))
-        self._array4D = torch.from_numpy(self._array4D)
+
+        # # _______TORCH OVERHAUL_______#
+        # self._array4D = torch.from_numpy(self._array4D)
 
         #TODO Pages workaround for CPQN-changed data loss.
         self._array_pages = []
@@ -88,7 +91,7 @@ class Actor(HasTraits):
         #self.get_ON_points_as_odict()
 
         #??? Necessary?
-        points =  self.get_points_with_all_data()
+        points = self.get_points_with_all_data()
 
         # #Todo Delete? Redundant? 04/13/2021
         # ##Copied from traits_update function. I need these class attributes.
@@ -118,6 +121,8 @@ class Actor(HasTraits):
         #     self._all_points[self.cur_z] = self._cur_plane
         #
         # except Exception as e:
+        #     print("Traceback___Message:")
+        #     print(traceback.format_exc())
         #     print(e)
         #     print("Exception: Your 'points' do not have this --'%s'-- zplane value" % self.cur_z, e)
 
@@ -144,7 +149,7 @@ class Actor(HasTraits):
 
         duration_ratio = pr.GetMusic21DurationRatio() #TODO Make global. 06/20/2022
 
-        #If we don't have durations data, (say, from a point cloud or picture), supply it anyway.
+        #If we don't have durations data, (say, from a point cloud or picture), supply\infer it anyway.
         if points.shape[1] < 4:
             #NOTE: substitute_durations1/substitute_duration2 == desired music21.duration.quarterLength
             #See music21.note.Note().duration.quarterLength.as_integer_ratio()
@@ -182,7 +187,7 @@ class Actor(HasTraits):
         and our new coords_arrays. Therefore, new arrays will always look like :
         np.array([[x, y, z, a, b, c, ..., d1, d2]]) pending the addition of new data per note.
 
-        :param _array4D:       This usually will be the m_v.CurrentActor()._array4D, but may be user-supplied else-wise.
+        :param _array4D:       This usually will be the m_v.CurrentActor()._array4D, but may be user-supplied else-wise. #TODO All the way through get_ON_points_as_odict() and Onarray4dchangedflag() 07/21/2023
         :param z:              If z is specified, only operate on the current zplane, else operate on entire _array4D.
         :return:               Our new coords_array of points with duration data.
         """
@@ -191,7 +196,31 @@ class Actor(HasTraits):
         else:
             _array4D = _array4D
 
+        #_array4D = self._array4D if _array4D is None else _array4D
+
+        print("_array4D?", _array4D)
+
+
+        # #_______TORCH OVERHAUL_______#
+        # if _array4D is None:
+        #     _array4D = torch.from_numpy(self._array4D) if type(self._array4D) is not torch.Tensor else self._array4D   #_array4D is not usually user supplied; that functionality is accomplished with change_array4D()
+        # else:
+        #     _array4D = torch.from_numpy(_array4D) if type(_array4D) is not torch.Tensor else _array4D
+        #    print("Else here happened.")
+            #TODO Pay attention to this. Work through EVERYTHING from the starting input to final output.
+            # Use the traceback module in all try-catch-Excepts.   07/21/2023
+
+        #_array4D = self._array4D if _array4D is None else torch.from_numpy(_array4D)
+
+
+        print("_array4D2?", _array4D, type(_array4D))
+
         points = np.argwhere(_array4D[:, :, :, 0] == 1.0) if z is None else np.argwhere(_array4D[:, :, z, 0] == 1.0)
+
+        # # _______TORCH OVERHAUL_______#
+        # points = torch.argwhere(_array4D[:, :, :, 0] == 1.0) if z is None else torch.argwhere(_array4D[:, :, z, 0] == 1.0)
+
+        print("points_type", type(points))
         print("Z", z)
         #This if statement isn't working....???
         if z:
@@ -219,16 +248,30 @@ class Actor(HasTraits):
         _dur2 = []
         for point in points:
             print("-point-", point)
+            #print("-point0-", point[0])
+            #print("-point1-", point[1])
+            #print("-point2-", point[2])
             #print("-point_data_in_array4D", _array4D[point[0], point[1], point[2]])
+            #print("-PyTorch_point_data_in_array4D", _array4D[point[0], point[1], point[2]])
+
             _dur1.append(_array4D[point[0], point[1], point[2], 2])  #DURATION VALUE Numerator
             _dur2.append(_array4D[point[0], point[1], point[2], 3])  #DURATION VALUE Denominator
+
+
+            # # _______TORCH OVERHAUL_______#
+            # _dur1.append(_array4D[point[0], point[1], point[2], 2].item())  #DURATION VALUE Numerator
+            # _dur2.append(_array4D[point[0], point[1], point[2], 3].item())  #DURATION VALUE Denominator
+
         _dur_array1 = np.array(_dur1, dtype=np.float32).reshape((len(points), 1))  #was float16?
         _dur_array2 = np.array(_dur2, dtype=np.float32).reshape((len(points), 1))  #was float16?
         print("durray1", _dur_array1)
         print("durray2", _dur_array2)
         #(len(points), 1)
         #points = np.r_['1,2,0', points, _dur_array1, _dur_array2]
+
+
         points = np.hstack([points, _dur_array1, _dur_array2])
+
 
         #points.dtype = np.float32
         print("POINTS; get_points_with_all_data", points)
@@ -260,19 +303,23 @@ class Actor(HasTraits):
 
 
         #Reacquire cpqn
+        try:
+            self.cpqn = self.toplevel.pianorollpanel.pianoroll._cells_per_qrtrnote
+            #print("_POINTS Type", type(self._points), self._points.dtype)
 
-        self.cpqn = self.toplevel.pianorollpanel.pianoroll._cells_per_qrtrnote
-        #print("_POINTS Type", type(self._points), self._points.dtype)
+            #CORE
+            self.get_ON_points_as_odict()  #Returns an OrderedDict() as self._all_points
+            self._points = midiart3D.restore_coords_array_from_ordered_dict(self._all_points)
+            #self._points = midiart3D.delete_select_points(self._points, [[0, 0, 0]], tupl=False)
 
-        #CORE
-        self.get_ON_points_as_odict()  #Returns an OrderedDict() as self._all_points
-        self._points = midiart3D.restore_coords_array_from_ordered_dict(self._all_points)
-        #self._points = midiart3D.delete_select_points(self._points, [[0, 0, 0]], tupl=False)
-
-        print("r4Dchangedflag_points", self._points) #[[x,y,z,d1,d2]
-                                                      #[x,y,z,d1,d2]
-                                                      #[x,y,z,d1,d2]   #vstacked?
-                                                      #[x,y,z,d1,d2]]
+            print("r4Dchangedflag_points", self._points) #[[x,y,z,d1,d2]
+                                                          #[x,y,z,d1,d2]
+                                                          #[x,y,z,d1,d2]   #vstacked?
+                                                          #[x,y,z,d1,d2]]
+        except Exception as e:
+            print("Traceback___Message:")
+            print(traceback.format_exc())
+            print("ON POINTS ERROR", e)
 
         try:
             #THIS IS WHERE WE WILL GET A WORKING VERSION OF DISPLAYING DURATIONS. IT WILL BE BASED ON CHOP_UP_NOTES()
@@ -283,6 +330,8 @@ class Actor(HasTraits):
                 points=points)  # TODO Redundant? Traitset happens on x axis item slice reassignment above.
             #NOTE: Cannot trait_set with an empty array, one without points. Clear instead? Workaround?
         except Exception as e:
+            print("Traceback___Message:")
+            print(traceback.format_exc())
             print("Error Here; array_4d_changed", e)
             pass
         print("actor_array4D_changed")
@@ -339,6 +388,8 @@ class Actor(HasTraits):
 
             self._all_points[self.cur_z] = self._cur_plane
         except Exception as e:
+            print("Traceback___Message:")
+            print(traceback.format_exc())
             print(e)
             print("Exception; get_ON_points_as_odict: Your 'points' do not have this --'%s'-- zplane value." % self.cur_z, e)
         #return self._all_points
@@ -396,6 +447,8 @@ class Actor(HasTraits):
 
 
             except Exception as e:
+                print("Traceback___Message:")
+                print(traceback.format_exc())
                 print("EXCEPTION; actor_points_changed:", e)
 
         self.m_v.parent.pianorollpanel.pianoroll.cur_array4d = self._array4D = new_array4D
@@ -406,12 +459,17 @@ class Actor(HasTraits):
         #TODO MAJOR NOTE: trait_set only takes standard coords_arrays. SOOO, with our new core data update, we have to
         # handle every individual case with this new line:
         update_points = np.r_['1,2,0', self._points[:, 0], self._points[:, 1], self._points[:, 2]]
-        #print("UPDATE_POINTS", update_points)
+        print("UPDATE_POINTS", update_points, type(update_points))
 
+        try:
+            self.m_v.sources[self.index].mlab_source.trait_set(points=update_points)
+        except Exception as e:
+            print("Traceback___Message:")
+            print(traceback.format_exc())
+            print("Update Points Exception", e)
 
-        self.m_v.sources[self.index].mlab_source.trait_set(points=update_points)
-
-        #print("sources trait_set after actor_points_changed")
+        print("Earth Here?")
+        # print("sources trait_set after actor_points_changed")
 
         print("actor_points_changed")
 

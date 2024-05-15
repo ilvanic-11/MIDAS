@@ -470,7 +470,8 @@ class CustomZPlanesListBox(wx.ListCtrl, CheckListCtrlMixin):
 		new_id10 = wx.NewIdRef()
 
 
-		self.Bind(wx.EVT_MENU, self.GetTopLevelParent().mainbuttonspanel.OnMusic21ConverterParseDialog, id=new_id1)
+		self.Bind(wx.EVT_MENU, self.GetTopLevelParent().mainbuttonspanel.OnTheMidasButtonDialog, id=new_id1)
+		#self.Bind(wx.EVT_MENU, self.GetTopLevelParent().mainbuttonspanel.OnMusic21ConverterParseDialog, id=new_id1)
 		self.Bind(wx.EVT_MENU, self.GetTopLevelParent().mainbuttonspanel.OnMusicodeDialog, id=new_id2)
 		self.Bind(wx.EVT_MENU, self.GetTopLevelParent().mainbuttonspanel.OnMIDIArtDialog, id=new_id3)
 		self.Bind(wx.EVT_MENU, self.GetTopLevelParent().mainbuttonspanel.OnMIDIArt3DDialog, id=new_id4)
