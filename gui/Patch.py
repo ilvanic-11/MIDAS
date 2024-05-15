@@ -60,6 +60,7 @@ from pyface.timer.api import Timer  #GARBAGE TIMER
 from mayavi.tools import animator
 from multiprocessing import Process, Event
 
+import traceback
 
 #####PATCHES
 ###########################################
@@ -856,6 +857,8 @@ class asyncTimer:
                 await self._callback(self._name, self._context, self)
                 self._is_first_call = False
         except Exception as ex:
+            print("Traceback___Message:")
+            print(traceback.format_exc())
             print(ex)
 
     def cancel(self):

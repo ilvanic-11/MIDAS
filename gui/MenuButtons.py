@@ -634,11 +634,11 @@ class CustomMenuBar(wx.MenuBar):
 
         s.write("mid", os.getcwd() + intermediary_path + "MIDAS_showtemp.mid")
             #TODO Option to choose DAW in Preferences.
-        print("\"C:\Program Files (x86)\Image-Line\FL Studio 20\FL64.exe\" \"" + os.getcwd() + intermediary_path
+        print("\"C:\Program Files (x86)\Image-Line\FL Studio 21\FL64.exe\" \"" + os.getcwd() + intermediary_path
               + "MIDAS_showtemp.mid\"")
         print("FL STUDIO")
         subprocess.Popen(
-            [r"C:\Program Files (x86)\Image-Line\FL Studio 20\FL64.exe", os.getcwd() + intermediary_path + "MIDAS_showtemp.mid"])
+            [r"C:\Program Files (x86)\Image-Line\FL Studio 21\FL64.exe", os.getcwd() + intermediary_path + "MIDAS_showtemp.mid"])  #20
 
 
     def OnShowInMuseScore(self, event):

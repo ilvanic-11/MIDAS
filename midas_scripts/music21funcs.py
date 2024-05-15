@@ -7,8 +7,8 @@
 # Authors:      Zachary Plovanic - Lead Programmer
 #               Isaac Plovanic - Creator, Director, Programmer
 #
-# Copyright:    MIDAS is Copyright © 2017-2019 Isaac Plovanic and Zachary Plovanic
-#               music21 is Copyright © 2006-19 Michael Scott Cuthbert and the music21
+# Copyright:    MIDAS is Copyright © 2017-2024 Isaac Plovanic and Zachary Plovanic
+#               music21 is Copyright © 2006-24 Michael Scott Cuthbert and the music21
 #               Project
 # License:      LGPL or BSD, see license.txt
 #------------------------------------------------------------------------------------
@@ -74,6 +74,7 @@ import random
 import numpy as np
 import math
 import fractions
+import mido
 #from midas_scripts import musicode
 from collections import OrderedDict
 
@@ -284,6 +285,11 @@ def alter_measure_duration( in_stream, range_l, range_h, duration_len):
     in_stream.makeMeasures()
     return in_stream
 
+def compress_durations(in_stream):
+    for i in in_stream.flat.notes:
+        if i.duration.quarterLength > 7.875:
+            i.duration.quarterLength = 7
+    return in_stream
 
 #M-3. TODO NEEDS FIXING!!
 def stretch_by_measure( in_stream, range_l, range_h, ratio, stretchDurations=True):
@@ -361,7 +367,7 @@ def restretch_by_factor(in_stream, factor, in_place=True):
 
 
 #M-4.
-def arpeggiate_chords_in_stream( in_stream, stepsize=1, ascending=True):
+def arpeggiate_chords_in_stream(in_stream, stepsize=1, ascending=True):
     """
         This iterates for the stream.chord.Chord objects and turns them into arpeggiated
     instances of the chord with the same notes, but different offsets.
@@ -401,7 +407,7 @@ def arpeggiate_chords_in_stream( in_stream, stepsize=1, ascending=True):
 
 
 #M-6.
-def chop_up_notes(in_stream, offset_interval):
+def chop_up_notes(in_stream, offset_interval=1):
     """
         This function takes an in_stream and evenly dices all of the notes in it. The offset interval determines the
     size of this dicing.
@@ -1040,22 +1046,32 @@ def notafy(in_stream, part=False, inPlace=False, chordifyFirst=False, specialMer
             for x in notelist:
                 new_stream.insert(i.offset, copy.deepcopy(x))
         elif type(i) is music21.note.Note:
+            #print("note here")
             new_stream.insert(i.offset, copy.deepcopy(i))
-        in_stream.remove(i) if inPlace else None
+        in_stream.remove(i) if inPlace else None  #, recurse=True
+
     print("IN_STREAM_LENGTH2", len(in_stream.flat.notes))
+    print("HERE A")
     if inPlace:
         for j in new_stream.flat.notes:
-            in_stream.insert(j.offset, j)
+            print("in_stream here????")
+            in_stream.insert(j.offset, copy.deepcopy(j))
         print("IN_STREAM_LENGTH3", len(in_stream.flat.notes))
         if specialMerge:
         # A specific use-case requiring an inPlace operation of chordify, notafy, AND merge_contiguous notes.
             #in_stream = \
             merge_contiguous_notes(in_stream, part=True, skip=True, inPlace=True)
+        print("HERE B")
         return in_stream
     else:
         # print("NEW_STREAM BITCH:", new_stream)
         # new_stream.show('txt')
-        return new_stream
+        print("HERE C")
+        real_new_stream = copy.deepcopy(new_stream)
+        print("New_Stream", new_stream)
+        print("real_new_Stream", real_new_stream)
+        return real_new_stream
+
 
 #music21.stream.Stream().chordify()
 # def slice_at_offsets(in_stream, offsetList, in_place=True):
@@ -1303,7 +1319,7 @@ def get_highest_time_from_directory(directory):
 
 
 #M21-8.
-def split_midi_channels(midi_file, directory, name, to_file=False):
+def split_midi_channels(midi_file_or_stream, directory, name): ###, to_file=False, from_stream=False):
     """
         This function uses music21 and takes a midi file on input and separates* all the "channels" of the midi file
     into either parts in a stream, or a directory of written .mid files, one midi file for each said "channel." The
@@ -1322,56 +1338,96 @@ def split_midi_channels(midi_file, directory, name, to_file=False):
 
     ##Read Midi File
     a_file = music21.midi.MidiFile()
-    a_file.open(midi_file, attrib="rb")
+    a_file.open(midi_file_or_stream, attrib="rb")
     a_file.read()
+    for z in range(len([i for i in a_file.tracks if i.hasNotes()])):
 
-    ##Get indices and channels from tracks.
-    a_stream = music21.midi.translate.midiTracksToStreams(a_file.tracks)
+        # Get the z-th track from a_file.tracks
+        first_track = a_file.tracks[z]
 
-    ##Access and separate tracks and name stream.Parts accordingly.
-    parse_stream = music21.converter.parse(midi_file)
+        # Create a new MidiFile object
+        new_midi_file = music21.midi.MidiFile()
 
-    #note_tracks = [m for m in a_file.tracks if m.hasNotes()]
-    note_tracks_channels = []
-    for m in a_file.tracks:
-        if m.hasNotes():
-            if len(m.getChannels()) > 1:
-                note_tracks_channels.append(m.getChannels()[1])
-            else:
-                note_tracks_channels.append(m.getChannels())
-    print("NTCs", note_tracks_channels)
-    index_list = []
-    for indexes in a_file.tracks:
-        if indexes.hasNotes():
-            index_list.append(indexes)
-    print("IndexList", index_list)
-    print("Note_track Length:", len(note_tracks_channels))
+        # Create a MidiTrack object and set its events to the events from the first track
+        midi_track = music21.midi.MidiTrack(index=z)
+        midi_track.events = first_track.events
 
-    for s in a_stream:
-        print("First Partname", s.partName)
+        # Add the track to the new MidiFile
+        new_midi_file.tracks.append(midi_track)
 
-    for z in range(0, len(index_list)):
-        parse_stream[z].partName = note_tracks_channels[z]
+        #Output file naming
+        zero_holder = "_00" if int(z) < 10 else "_0"
+        re_name = os.path.splitext(os.path.basename(name))[0]
+        output_name = directory + "\\" + re_name + "_SPLIT" + zero_holder + "%s" % z + ".mid"
 
-    a_file.close()
-    #a_stream.show('txt')
-    for p in parse_stream:
-        print("Changed partname:", p.partName)
-    if to_file:
-        for part in parse_stream:
-            zero_holder = "_00" if int(part.partName) < 10 else "_0"
-            final_midis = music21.midi.MidiFile()
-            print("Changed partname:", part.partName)
-            part.write("mid", directory + "\\" + name + zero_holder + "%s" % part.partName + ".mid")
-            final_midis.open(directory + "\\" + name + zero_holder + "%s" % part.partName + ".mid", attrib='rb')
-            final_midis.read()
-            final_midis.tracks[0].setChannel(part.partName)
-            final_midis.close()
-            final_midis.open(directory + "\\" + name + zero_holder + "%s" % part.partName + ".mid", attrib='wb')
-            final_midis.write()
-            final_midis.close()
-    else:
-        return parse_stream
+        # Write the new MidiFile to a MIDI file
+        new_midi_file.open(output_name, 'wb')
+        new_midi_file.write()
+        new_midi_file.close()
+
+    # ##Get indices and channels from tracks.
+    # a_stream = music21.midi.translate.midiTracksToStreams(a_file.tracks)
+    #
+    # ##Access and separate tracks and name stream.Parts accordingly.
+    # parse_stream = music21.converter.parse(midi_file_or_stream)
+    # parse_stream.write("mid", midi_file_or_stream)
+    #
+    # #note_tracks = [m for m in a_file.tracks if m.hasNotes()]
+    # note_tracks_channels = []
+    # for m in a_file.tracks:
+    #     if m.hasNotes():
+    #         if len(m.getChannels()) > 1:
+    #             note_tracks_channels.append(m.getChannels()[1])
+    #         else:
+    #             note_tracks_channels.append(m.getChannels())
+    # #print("NTCs", note_tracks_channels)
+    #
+    # index_list = []
+    # for indexes in a_file.tracks:
+    #     if indexes.hasNotes():
+    #         index_list.append(indexes)
+    #
+    # print("IndexList", index_list)
+    # print("Note_track Length:", len(note_tracks_channels))
+    #
+    # for s in a_stream:
+    #     print("First Partname", s.partName)
+    #
+    # for z in range(0, len(index_list)):
+    #     parse_stream[z].partName = note_tracks_channels[z]
+    #
+    # a_file.close()
+    #
+    # #a_stream.show('txt')
+    # for p in parse_stream:
+    #     print("Changed partname:", p.partName)
+    #
+    #
+    # if to_file:
+    #     for part in parse_stream:
+    #         zero_holder = "_00" if int(part.partName) < 10 else "_0"
+    #         final_midis = music21.midi.MidiFile()
+    #         output_name = directory + "\\" + name + zero_holder + "%s" % part.partName + ".mid"
+    #
+    #         print("Changed partname:", part.partName)
+    #         part.write("mid", output_name)
+    #
+    #         new_part_stream = music21.converter.parse(output_name)
+    #         new_part_stream.write("mid", output_name)
+    #
+    #         final_midis.open(output_name, attrib='rb')
+    #         final_midis.read()
+    #         print("PART_NAME", part.partName)
+    #
+    #         #CORE of the Function: this is what makes the colors work in FL Studio.
+    #         final_midis.tracks[0].setChannel(part.partName)
+    #         final_midis.close()
+    #
+    #         final_midis.open(output_name, attrib='wb')
+    #         final_midis.write()
+    #         final_midis.close()
+    # else:
+    #     return parse_stream
 
 
 ##Data Analysis Functions.

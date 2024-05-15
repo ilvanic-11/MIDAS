@@ -797,7 +797,7 @@ In MidasCommitLog.txt
  
 
 
---IP Commit ?????, 2023--
+"--IP Commit July 19, 2023--
 In MidiArt
 --> In function snap_to_key(), fixed a bug that would have had breaks in the scenario where snap_up=False.
 --> New function: snap_enharmonics(in_stream, key) 
@@ -867,14 +867,72 @@ In Generate.py
 --> New class Point_E()
 
 In midiart3D.py
---> Added try-catch-except to function extract_xyz_coordinates_to_array() (This fixes\works around the duration.quarterLength(s) that are represented as music21.common.opFrac() Fraction() objects)
+--> Added try-catch-except to function extract_xyz_coordinates_to_array() (This fixes\works around the duration.quarterLength(s) that are represented as music21.common.opFrac() Fraction() objects)"
 	
 
 
-++++++++++++
+--IP Commit May 15, 2024--
+In midiart.py
+--> New Function: Generate_Random_Progression()
+--> New Function: Generate_Random_Melody() #imperfect, but still useful
+
+
+In MainButtons
+--> Fixed the All Colors? checkbox not working. It was a layout issue, making the box unclickable.
+	In MidiartDialog
+		--> Added 'Colors Transformation by Selection of Colors' feature.
+
+--> New Button: TheMidasButton
+		-->Layout
+		
+			--Generate Random Melody.										#CHECK (can always use improvement. There's lots of generative tech out there now.)
+			--Load Melody. (via midi file.)									#CHECK
+			--Generate Random Chord Progression.  New Function.   			#CHECK
+			--Load Chord Progression. (via midi file.) 						#CHECK
+			--Load Musicode													#CHECK
+			--Corpus Progression                                            #CHECK (needs testing)
+			--Align_Musicode_With_Melody	- Should go through GUI?  		#CHECK
+			--Progressify_Visual_Music   	- Should go through GUI?         Necessary? If I'm operating on a selectable directory, then I can just do one if I want..... Scenario for one: the one goes to the Gui.
+			--Filter midi file												#CHECK
+			--Snap midi file 												#CHECK
+			
+			--Split_Midi_Channels 			- Operate on Selected File only #CHECK
+			--Progressify_Directory  		- Operate on Directory Only? 	#CHECK
+			--In Progressify_Directory, chkbox for colors  ONLY        		#CHECK
+			--Filter_Directory				- Operate on Directory Only?	#CHECK
+			--Snap_Directery				- Operate on Directory Only? 	#CHECK
+			--Select Colors 												#CHECK
+			--GLOBALS -- BUTTONS 											#CHECK		#TODO Test
+			--GLOBALS -- Cycling 											#CHECK 		#TODO Test
+			
+			These require variable parameters.
+			
+			--Final #TODO
+			#In Progress --Thumbnails for ALL transformations, if that’s doable.
+			#CHECK – Globals
+
+In MusicodeDialog
+--> Fixed annoying text erasing when toggling between the checkboxes. The user text is maintained now between checkbox switchings in a user friendly way.
+
+General
+--> Figured out that music21.converter.parse() HUGE bug and made fixes in numerous places.
+--> Unposted Git Commit Message on immediately previous commit.
+--> Miscellaneous tweaks, bugs, code fixes
+
+
+
+In (Android MIDAS_kivy)
+--> Fixed em.txt writing bug for overlapping file line (when a user current email is longer then their previous one upon setting)
+
+In (Windows MIDAS_kivy)
+--> A f**k ton.
+--> Added a Set DAW dialog. It is functional.
+--> Added functional Dragon Drop feature.
+
+++++++++++++    dist/ build/ resources\intermediary_path\lo-ki.p
 #############################################
 ##Git adds. Update as needed. (Git can adds a LOT at once, if separated without commas.) Highlight this line below, copy, and paste into git to git add all quickly.
-git add MIDAS_wx.py MIDAS_wx.spec dist/ build/ substitution_packages.7z TrebleClefIcon.bmp resources/pyinstaller_bug.png resources\intermediary_path\lo-ki.p resources/pyinstaller_correct.png resources/coffee_button_background.png gui/Actor.py gui/ActorsControlPanel.py gui/MainButtons.py gui/Generate.py gui/MenuButtons.py gui/PianoRoll.py gui/PianoRollPanel.py gui/Patch.py gui/Preferences.py gui/StatusBar.py gui/ZPlanesControlPanel.py mayavi3D/Mayavi3DWindow.py mayavi3D/Mayavi3idiArtAnimation.py midas_scripts/midiart3D.py midas_scripts/music21funcs.py midas_scripts/musicode.py midas_scripts/midiart.py resources/ColorPaletteAttributions.txt resources/Midas-Mayavi_Pip_Batch_Install.bat resources/MidasCommitLog.txt resources/Midas_Startup_Configs.py resources/HotkeyAssignments.txt gui/Playback.py gui/Musical_Matrix_Rain.py mayavi3D/MusicObjects.py resources/MIDAS_splash.png resources/color_palettes/ resources/Midas_Requirements.txt resources/Midas_Install_Instructions.txt resources/Pyinstaller_Instructions.txt resources/empty_box.png resources/empty_box_compensation.png resources/unicode_rapid_tables/ resources/pickles/ resources/ThePhatPiano16.png test/MIDAS_UnitTests.py licenses/ MidasHand.bmp resources/MidasHand.bmp resources/MidasHand_32x40.bmp README.md
+git add MIDAS_wx.py MIDAS_wx.spec substitution_packages.7z TrebleClefIcon.bmp resources/pyinstaller_bug.png  resources/pyinstaller_correct.png resources/coffee_button_background.png gui/Actor.py gui/ActorsControlPanel.py gui/MainButtons.py gui/Generate.py gui/MenuButtons.py gui/PianoRoll.py gui/PianoRollPanel.py gui/Patch.py gui/Preferences.py gui/StatusBar.py gui/ZPlanesControlPanel.py mayavi3D/Mayavi3DWindow.py mayavi3D/Mayavi3idiArtAnimation.py midas_scripts/midiart3D.py midas_scripts/music21funcs.py midas_scripts/musicode.py midas_scripts/midiart.py resources/ColorPaletteAttributions.txt resources/Midas-Mayavi_Pip_Batch_Install.bat resources/MidasCommitLog.txt resources/Midas_Startup_Configs.py resources/HotkeyAssignments.txt gui/Playback.py gui/Musical_Matrix_Rain.py mayavi3D/MusicObjects.py resources/MIDAS_splash.png resources/color_palettes/ resources/Midas_Requirements.txt resources/Midas_Install_Instructions.txt resources/Pyinstaller_Instructions.txt resources/empty_box.png resources/empty_box_compensation.png resources/unicode_rapid_tables/ resources/pickles/ resources/ThePhatPiano16.png test/MIDAS_UnitTests.py licenses/ MidasHand.bmp resources/MidasHand.bmp resources/MidasHand_32x40.bmp README.md
 ##
 ##
 git add Kivy/MIDAS.kv Kivy/MIDAS_Settings.py Kivy/MIDAS_kivy.py Kivy/midas_scripts/midiart.py Kivy/midas_scripts/midiart.py Kivy/midas_scripts/midiart3D.py Kivy/midas_scripts/music21funcs.py Kivy/resources/color_palettes Kivy/resources/ColorPaletteAttributions.txt Kivy/resources/coffee_button_background.png Kivy/resources/button_pressed_default.png Kivy/resources/support_banner.png Kivy/resources/coffee_button_background.png Kivy/resources/MIDAS_Mobile_splash.png Kivy/resources/MidasHand.png Kivy/resources/credits_visual.png Kivy/resources/intermediary_path/musicode_write.mid Kivy/resources/intermediary_path/pixels_from_midi_with_piano.png, 

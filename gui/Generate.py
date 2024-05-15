@@ -45,17 +45,25 @@ class Chat_GPT():
 
 class DALL_E():
     def __init__(self):
+        self.model = "dall-e-3", #dall-e-2   #Todo make models optional with checkboxes.
         self.response = None
         self.image = None
         self.url = None
         self.image_counter = -1
+        print("Model", self.model)
+        print("Type", type(self.model))
+        print("Length_of_Type", len(self.model))
+        print("Type[0]", type(self.model[0]))
+
 
     def Generate(self, prompt = "a white siamese cat", image_only=True):
         self.response = openai.Image.create(
+            model=self.model[0],
             prompt=prompt,
             n=1,
             size="1024x1024"
         )
+
         self.image = self.response['data'][0]
         self.url = self.response['data'][0]['url']
 

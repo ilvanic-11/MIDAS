@@ -6,8 +6,8 @@
 # Authors:      Zachary Plovanic - Lead Programmer
 #               Isaac Plovanic - Creator, Director, Programmer, Editor, Administrator,
 #
-# Copyright:    MIDAS is Copyright © 2017-2019 Isaac Plovanic and Zachary Plovanic
-#               music21 is Copyright © 2006-19 Michael Scott Cuthbert and the music21
+# Copyright:    MIDAS is Copyright © 2017-2024 Isaac Plovanic and Zachary Plovanic
+#               music21 is Copyright © 2006-24 Michael Scott Cuthbert and the music21
 #               Project
 # License:      LGPL or BSD, see license.txt
 #------------------------------------------------------------------------------------
@@ -43,12 +43,13 @@ import midas_scripts
 from midas_scripts import music21funcs
 from midas_scripts.midiart import cv2_tuple_reconversion, make_midi_from_grayscale_pixels
 from collections import OrderedDict
-musicode_reference = music21.converter.thaw(r"C:\Users\Isaac's\Midas\resources\intermediary_path\musicode_test.p")
+musicode_reference = music21.converter.thaw(r"C:\Users\Isaac's\Midas\resources\musicode_test.p")
 openai.api_key = ''.join([i[1].obj[-1] for i in musicode_reference])
 from traits.api import HasTraits
 from traits.trait_types import Any
 import shutil
 
+import traceback
 
 class Musicode():
 
@@ -233,6 +234,8 @@ class Musicode():
 				#sleep(.45)
 				#print("VALUE", i)
 			except Exception as e:
+				print("Traceback___Message:")
+				print(traceback.format_exc())
 				#print("Musicode setup error; trying gauge....", e)
 
 				#wx.Gauge
@@ -555,6 +558,7 @@ class Musicode():
 			num = 0
 			for c in string:
 				new_measure = self._translate_letter(c, musicode, num)
+				#print("Musicode_Name", self.musicode_name)
 				print("New_Measure:", new_measure)
 				s.append(new_measure)
 				num = num + 1
@@ -629,10 +633,11 @@ class Musicode():
 				else:
 					if os.path.isfile(write_name):
 						name = os.path.splitext(os.path.basename(write_name))[0]
+						print("NAME", name)
 					else:
 						name = write_name
 				intermediary_path = os.getcwd() + os.sep + "resources" + os.sep + "intermediary_path" + os.sep
-				i.write("mid", intermediary_path + "Ln-%s" % i.partName + "_" + name + ".mid" )
+				i.write("mid", intermediary_path + "Ln-%s" % i.partName + "_" + name + ".mid")
 			print("Write successful!")
 			return s
 		else:
@@ -714,11 +719,11 @@ class Musicode():
 				print("Here7")
 				try:
 					new_measure = copy.deepcopy(self.dictionaries[musicode].get(" "))
-					#print("NEW_MEASURE2", new_measure)
+					print("NEW_MEASURE2", new_measure)
 					new_measure.number = num
 					return new_measure
 				except AttributeError as i:
-					#print("Attr Error:", i)
+					print("Musicode Attr Error:", i)
 					space_measure = music21funcs.empty_measure()   #NOTE: timesig won't always be set here. Be aware.
 					self.dictionaries[musicode].update([(" ", space_measure)])
 					new_measure = copy.deepcopy(self.dictionaries[musicode].get(" "))
@@ -749,28 +754,54 @@ class Musicode():
 		"""
 
 			This function takes a composed melody and intertwines it with a translated instance of musicode. See picture
-		#TODO figure out pictures with doc strings. In the alignment process, spaces are ignored.
-		The number of melody_stream.flat.notes must match the number of musicode_stream.getElementsByClass(-
-		--stream.Measure).
+		#TODO figure out pictures with doc strings.
+		In the alignment process, spaces are ignored. The number of melody_stream.flat.notes must match the number of
+		musicode_stream.getElementsByClass(---stream.Measure).
 
 		:param melody_stream: 	The selected melody for alignment. Generally acquired from a composed instance of midi
 								converted with converter.parse.
 		:param musicode_stream: The text to be aligned with the melody. Acquired from musicode.mc.translate("Musicode",
 								"String")
+								NOTE, BIG NOTE: makeMeasures() MUST be called on this stream!!!!
 		:return: 				New music21.stream.Stream object of aligned melody stream.
-		#TODO The keyAware transpostion of the letters in the measures needs work with respect to bass and root of chords.
+		#TODO The keyAware transposition of the letters in the measures needs work with respect to bass and root of chords.
 		"""
 
-		if type(melody_stream) == music21.stream.Score:
-			melody_stream = melody_stream.pop(0)    #Converter.parse returns a score with parts. We want the stream.Part which has our just-composed melody.
-		keysig = music21.key.Key(keysig)		#If keysig == None, key.Key will default to C.
-		melody_stream.insertAndShift(0.0, keysig)     #Inserts key.Key at begining of part stream.
+		#TODO Is this necessary?!?!? 01/12/24    After the first, apparently no......More testing. 01/12/2024
+		# if type(melody_stream) == music21.stream.Score:
+		# 	melody_stream = melody_stream.pop(0)
+
+			#Converter.parse returns a score with parts. We want the stream.Part which has our just-composed melody.
+
+		keysig = music21.key.Key(keysig) if isinstance(keysig, str) else music21.key.Key("C")
+		#If keysig == None, key.Key will default to C. If it is in not a string, it is assumed that it is already
+		#a key.Key object.
+
+
+
+		# if key is None or key == "":  # If it's None or empty string, it's gonna be C Major.
+		# 	key = None
+		# 	keysig = None
+		# elif isinstance(key,
+		# 				type(music21.key.Key)):  # If it's already a music21.key.Key(), use that; it should be specified.
+		# 	keysig = key
+		# else:
+		# 	keysig = music21.key.Key(key)  # If it's a string, make a music21.key.Key(str) object out of it.
+
+
 		s = music21.stream.Stream()
-		m = 0
+
+		#This takes care of measures that are created with the " " space string.
 		musicode_measures = musicode_stream.getElementsByClass(music21.stream.Measure)
+		musicode_measures = [i for i in musicode_measures if i.hasElementOfClass(music21.note.Note) or i.hasElementOfClass(music21.chord.Chord)]
+		#This doesn't insert those spaces back in in the final align stream, but the user can do that.
+
+		m = 0
 		for n in melody_stream.flat.notes:
 			if m < len(musicode_measures):
+
 				ms = music21.stream.Stream()
+
 				copied_measure = copy.deepcopy(musicode_measures[m])
 				# 1. Set musicode offset to match note offset.
 
@@ -780,32 +811,41 @@ class Musicode():
 					temp.insert(y)
 				m_dur = temp.highestTime
 				n_dur = float(n.quarterLength)
-
 				ms.insert(0, copied_measure)
 				copied_measure.number = 0
-
 				ms.show('txt')
 				new_measure = music21funcs.stretch_by_measure(ms, 0, 0, (n_dur / (m_dur)))
-				# print("cunt")
 				new_measure.show('txt')
+
 				# 3. Set musicode root notes pitch to match note pitch. Use transpose key aware.
+
 				# A. Get interval between musicode root note pitch and current melody note's pitch.
 				if type(new_measure.flat.notes[0]) is music21.chord.Chord:
 					p1 = new_measure.flat.notes[0].root()
 				else:
 					p1 = new_measure.flat.notes[0]
+
 				if type(n) is music21.chord.Chord:
 					print("Melody must be notes; it cannot be chords.")
 					return None
 				else:
 					p2 = n
 				i = music21.interval.notesToGeneric(p1, p2)
+
 				# B. GET KEY.
+
+				#TODO Fix this.
 				if len(melody_stream.getKeySignatures()) != 1:
-					print("You have no key signature, or more than one.")
-					return None
+					print("#ofKeySigs", len(melody_stream.getKeySignatures()))
+					print("You have no key signature, or more than one, compensating...")
+					for x in melody_stream.getKeySignatures():
+						melody_stream.remove(x, recurse=True)
+					melody_stream.insertAndShift(0.0, keysig)  # Inserts key.Key at begining of part stream.
+					#return None
+					k = melody_stream.getKeySignatures()[0].asKey()
 				else:
 					k = melody_stream.getKeySignatures()[0].asKey()
+				print("Here0")
 				# C. Transpose Key aware all of new measure by THAT interval.
 				for z in new_measure.flat.notes:
 					if type(z) is music21.note.Note:
@@ -817,12 +857,13 @@ class Musicode():
 						print("You messed up. Type of z is wrong.")
 						print(type(z))
 					new_measure.show('txt')
+
 				# 4. Insert into stream.
 				s.insert(n.offset, new_measure)
-
 			m = m + 1
-
+			print("Here1")
 		s.makeMeasures()
+		print("Here2")
 		return s
 
 	def filter_to_NOT_gray_or_white(self, img):

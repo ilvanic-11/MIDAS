@@ -6,8 +6,8 @@
 # Authors:      Zachary Plovanic - Lead Programmer
 #               Isaac Plovanic - Creator, Director, Programmer
 #
-# Copyright:    MIDAS is Copyright © 2017-2019 Isaac Plovanic and Zachary Plovanic
-#               music21 is Copyright © 2006-19 Michael Scott Cuthbert and the music21
+# Copyright:    MIDAS is Copyright © 2017-2024 Isaac Plovanic and Zachary Plovanic
+#               music21 is Copyright © 2006-24 Michael Scott Cuthbert and the music21
 #				Project
 #				mayavi #TODO: Add mayavi copyright info
 #
@@ -57,6 +57,7 @@ import vtk
 from vtkmodules.util.numpy_support import numpy_to_vtk, vtk_to_numpy, numpy_to_vtkIdTypeArray
 import statistics
 
+import traceback
 
 #3IDIART_FUNCTIONS
 # --------------------------------------
@@ -627,6 +628,8 @@ def set_z_to_single_value(value, self=None, coords=None,  actor=None):
         try:
             Midas = self
         except Exception as e:
+            print("Traceback___Message:")
+            print(traceback.format_exc())
             print(e)
             return
         coords_array = Midas.mlab_calls[actor].mlab_source.points

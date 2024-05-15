@@ -10,6 +10,8 @@ import os
 
 import torch.cuda
 
+import traceback
+
 os.environ['PYGAME_FREETYPE'] = '1'
 import pygame, random     ##sys,
 from pygame import freetype
@@ -240,6 +242,8 @@ def rain_execute():
         else:
             delay = 7250
     except Exception as e:
+        print("Traceback___Message:")
+        print(traceback.format_exc())
         print('ERROR', e)
         delay = 7250
     screen.fill(BLACK)

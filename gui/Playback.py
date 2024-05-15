@@ -2,11 +2,11 @@
 
 ###NOTE: IMPORTANT STUFF
 #quarterLengthDivisor---DETERMINES QUANTIZATION and THUS the PRESERVATION OF NOTES THAT ARE PARSED FROM A MIDI FILE.
-import threading
-import asyncio
-import itertools
-
-import music21
+# import threading
+# import asyncio
+# import itertools
+#
+# import music21
 
 # sparklead1 = r"resources\OneSpark.mid"
 # spark21 = music21.converter.parse(sparklead1, quantizePost=True, quarterLengthDivisors=(8,6), makeNotation=True)
@@ -86,11 +86,11 @@ class Player():
     #TODO Redundant? Currently implementing method to have timesignature objects and metronomeMark objects in the streams
     # that write to ('mid') file.
     def reset_midi_header(self, midifile, from_gui=False):
-        """This function requires a source midifile called 'Default_Midi_Header.mid'. It gives the midi file necesarry
+        """This function requires a source midifile called 'Default_Midi_Header.mid'. It gives the midi file necessary
         midi musical information.
 
         :param midifile:
-        :return:
+        :return: 
         """
         if self.mid is None:
             self.mid = mido.MidiFile(midifile)
@@ -270,6 +270,7 @@ class Player():
             waveform = eval("pyo.%sTable()" % waveform)
             self.osc = pyo.Osc(waveform, freq=self.pit, mul=self.amp).mix(1)
         self.rev = pyo.STRev(self.osc, revtime=1, cutoff=4000, bal=0.2).out()
+        return self.osc
 
 
 ###################
@@ -1021,3 +1022,56 @@ class Animator(HasTraits):
 #
 # while True:
 #     pass
+
+
+
+## import numpy as np
+##
+## sine_func       = lambda n, f=2:   np.sin(np.arange(n) * np.pi * 2 * f / float(n))
+## sawtooth_func   = lambda n, f=2:   np.mod(np.arange(n) * 2.0 * f/n + f/2.0, 2) - 1
+## square_func     = lambda n, f=2:   (sawtooth(f,n) >= 0) * 2.0 - 1
+## def tri_func(n, f=2):
+##     osc = 2 * sawtooth(f,n) * square(f,n) - 1
+##     # This needs a phase shift on top:
+##     sh = n / f / 4.0
+##     return np.concatenate((osc[sh:], osc[:sh]))
+
+# Define the sine function
+# def sine_func(x, f):
+#     return np.sin(x * np.pi * 2 * f)
+
+# Define the sawtooth function
+# def sawtooth_func(x, f):
+#     return np.mod(x * 2.0 * f + f / 2.0, 2) - 1
+#
+# # Define the square function
+# def square_func(x, f):
+#     return np.where(x >= 0, 1.0, -1.0)
+#
+# # Define the tri function
+# def tri_func(x, f):
+#     osc = 2 * sawtooth_func(x, f) * square_func(x, f) - 1
+#     sh = int(len(x) / f / 4.0)
+#     return np.concatenate((osc[sh:], osc[:sh]))
+
+# Create ufuncs from the functions using np.vectorize
+# sine = np.vectorize(sine_func, excluded=['f'])
+# sawtooth = np.vectorize(sawtooth_func, excluded=['f'])
+# square = np.vectorize(square_func, excluded=['f'])
+# tri = np.vectorize(tri_func, excluded=['f'])
+
+## sine = np.frompyfunc(sine_func, 1, 1)
+## sawtooth = np.frompyfunc(sawtooth_func, 1, 1)
+## square = np.frompyfunc(square_func, 1, 1)
+## tri = np.frompyfunc(tri_func, 1, 1)
+
+# Test the ufuncs
+## n = 1000  # Number of samples
+## f = 5     # Frequency
+##
+## x = np.arange(n)
+##
+## sine_wave = sine(x, f=f)
+## sawtooth_wave = sawtooth(x, f=f)
+## square_wave = square(x, f=f)
+## tri_wave = tri(x, f=f)
